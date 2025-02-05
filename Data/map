@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<osm version="0.6" generator="Overpass API 0.7.62.4 2390de5a">
+<note>The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.</note>
+<meta osm_base="2025-02-05T08:17:27Z"/>
+
+  <bounds minlat="59.4320000" minlon="10.2230000" maxlat="60.5550000" maxlon="12.1390000"/>
+
+<remark> runtime error: Query ran out of memory in "recurse" at line 1. It would need at least 572 MB of RAM to continue. </remark>
+
+</osm>
