@@ -8,12 +8,6 @@ using utils
 sheets_5days = ["30.01", "06.02", "23.01", "16.01", "09.01"]
 sheets_data = ["Data"]
 
-# Prepare layout for 6x2 grid
-layout = @layout [a b a b a b a b a b a b a b a b a b]
-
-# Create a plot object to store the individual subplots
-p = plot(layout=layout, size=(1200, 2000))
-
 # Helper function to unzip coordinates
 function unzip(coords)
     latitudes = [coord[1] for coord in coords]
@@ -21,8 +15,11 @@ function unzip(coords)
     return latitudes, longitudes
 end
 
-# Helper function to create and add plots to the layout grid
-function process_sheet(sheet_name, filename, p, sheet_index)
+# Array to store all generated plots
+plots_list = Plot[]  # Ensure the list has the correct type
+
+# Helper function to create and store plots
+function process_sheet(sheet_name, filename)
     df = DataFrame(XLSX.readtable(filename, sheet_name))
     
     df[!,"Age"] = Int8.(df[!,"Age"]) # convert age to int 
@@ -36,9 +33,9 @@ function process_sheet(sheet_name, filename, p, sheet_index)
 
     # Request time distribution for filtered data
     requestHistogramFilter = histogram(dfFilter[!,"ReqTime"], bins=24, color=:skyblue, xlabel="Minutes since midnight", ylabel="Count", title="Filtered Request Time Distribution - $sheet_name")
-    
-    # Plot the request time distribution in the first column of the layout
-    plot!(p, requestHistogramFilter, subplot=2 * (sheet_index - 1) + 1)
+
+    # Save the request time plot
+    push!(plots_list, requestHistogramFilter)
 
     # Extract coordinates for pickups and drop-offs
     pickup_coords = [(dfFilter[!,"From LAT"][i], dfFilter[!,"From LON"][i]) for i in 1:nrow(dfFilter)]
@@ -49,28 +46,28 @@ function process_sheet(sheet_name, filename, p, sheet_index)
     dropoff_lat, dropoff_lon = unzip(dropoff_coords)
 
     # Plot the map with pickups and drop-offs
-    filtered_geo_plot = plot(size=(600, 400), title="Filtered Pickup and Dropoff Locations - $sheet_name")
+    filtered_geo_plot = plot(size=(200, 1000), title="Filtered Pickup and Dropoff Locations - $sheet_name")
     scatter!(filtered_geo_plot, pickup_lon, pickup_lat, markercolor=:blue, label="Pickups")
     scatter!(filtered_geo_plot, dropoff_lon, dropoff_lat, markercolor=:red, label="Drop-offs")
     xlabel!(filtered_geo_plot, "Longitude")
     ylabel!(filtered_geo_plot, "Latitude")
 
-    # Plot the pickup and dropoff map in the second column of the layout
-    plot!(p, filtered_geo_plot, subplot=2 * (sheet_index - 1) + 2)
+    # Save the pickup and dropoff plot
+    push!(plots_list, filtered_geo_plot)
 end
 
 # Process all sheets from both Excel files
-sheet_index = 1
 for sheet in sheets_5days
-    process_sheet(sheet, "Data/Konsentra/Data5DaysMarch2018.xlsx", p, sheet_index)
-    sheet_index += 1
+    process_sheet(sheet, "Data/Konsentra/Data5DaysMarch2018.xlsx")
 end
 
-sheet_index = 1
 for sheet in sheets_data
-    process_sheet(sheet, "Data/Konsentra/Data.xlsx", p, sheet_index)
-    sheet_index += 1
+    process_sheet(sheet, "Data/Konsentra/Data.xlsx")
 end
 
-# Display the final plot
-display(p)
+# Create a grid matrix for gridstack
+num_rows = Int(ceil(length(plots_list) / 2))
+grid_matrix = reshape(plots_list[1:2*num_rows], num_rows, 2)
+
+# Plot using gridstack
+gridstack(grid_matrix)
