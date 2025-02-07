@@ -22,11 +22,11 @@ end
  Test time window  
 ==#
 @testset "TimeWindow test" begin
-    tw = TimeWindow(DateTime(2025,01,01,14,45),DateTime(2025,01,01,15,45))
+    tw = TimeWindow(8*60,8*60+45)
 
     # Tests
     @test typeof(tw) == TimeWindow
-    @test duration(tw) == 60*60
+    @test duration(tw) == 45
 end
 
 #==

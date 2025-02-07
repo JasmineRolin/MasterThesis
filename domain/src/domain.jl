@@ -15,10 +15,45 @@ using .TimeWindows
 export TimeWindow, duration
 
 #==
- Export from Requests modile 
+ Export from Requests module 
 ==#
 include("Request.jl")
 using .Requests
 export Request
+
+#==
+ Export from Vehicles module 
+==#
+include("Vehicle.jl")
+using .Vehicles
+export Vehicle
+
+#==
+ Export from RequestAssignment module 
+==#
+include("RequestAssignment.jl")
+using .RequestAssignments
+export RequestAssignment
+
+#==
+ Export from VehicleSchedule module 
+==#
+include("VehicleSchedule.jl")
+using .VehicleSchedules
+export VehicleSchedule
+
+#==
+ Export from Solution module 
+==#
+include("Solution.jl")
+using .Solutions
+export Solution
+
+#==
+ Export from Scenario module 
+==#
+include("Scenario.jl")
+using .Scenarios
+export Scenario
 
 end

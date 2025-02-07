@@ -22,10 +22,12 @@ struct Request
     id::Int 
     requestType::RequestType
     mobilityType::MobilityType
+    load::Int 
     callTime::Int # The time the reqeust is received (minutes after midnight)
-    pickupTimeWindow::TimeWindow # Time window for pickup
-    deliveryTimeWindow::TimeWindow # Time window for delivery 
+    pickUpLocation::Location 
+    dropOffLocation::Location 
     pickupLocation::Location # Pickup location
+    pickuopTimeWindow::TimeWindow # Time window for drop off 
     dropOffTimeWindow::Location # Delivery location 
     maximumRideTime::Int # Maximum ride time in minutes 
 end

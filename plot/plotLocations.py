@@ -9,7 +9,7 @@ df = pd.read_csv('../Melbourne_Data/Ridesharing_S_1.csv')
 
 ## ----------------------- Heatmap of Pickup Locations ----------------------- ##
 # Extract Origin Latitude and Longitude for the heatmap
-locations = df[["Origin_Latitude", "Origin_Longitude"]].values.tolist()
+locations = df[["Origin_Latitude", "Origin_Longitude"]].values.toVector()
 
 # Create a folium map centered around the average location
 map_center = [df["Origin_Latitude"].mean(), df["Origin_Longitude"].mean()]
@@ -25,7 +25,7 @@ print("Heatmap created and saved as 'pickup_heatmap.html'. Open this file to vie
 
 ## ----------------------- Heatmap of Dropoff Locations ----------------------- ##
 # Extract Destination Latitude and Longitude for the heatmap    
-locations = df[["Destination_Latitude", "Destination_Longitude"]].values.tolist()
+locations = df[["Destination_Latitude", "Destination_Longitude"]].values.toVector()
 
 # Create a folium map centered around the average location
 map_center = [df["Destination_Latitude"].mean(), df["Destination_Longitude"].mean()]
