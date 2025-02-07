@@ -19,7 +19,8 @@ export TimeWindow, duration
 ==#
 include("Request.jl")
 using .Requests
-export Request
+export Request, RequestType,MobilityType,PICKUP,DROPOFF,WALKING,WHEELCHAIR
+
 
 #==
  Export from Vehicles module 
