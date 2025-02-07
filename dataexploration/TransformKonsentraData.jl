@@ -1,7 +1,7 @@
 # -----
 # Packages
 # -----
-using Distributions, DataFrames
+using Distributions, DataFrames, CSV, XLSX, Dates
 
 
 # ------
@@ -9,7 +9,7 @@ using Distributions, DataFrames
 # ------
 sheets_5days = ["30.01", "06.02", "23.01", "16.01", "09.01"]
 sheets_data = ["Data"]
-DoD = 0.4 # Degree of dynamism
+DoD = 0.3 # Degree of dynamism
 ageLimit = 18
 serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 callBuffer = 2*60 # 2 hours buffer
@@ -18,41 +18,52 @@ callBuffer = 2*60 # 2 hours buffer
 # ------
 # Function to determine pre-known requests
 # ------
-function preKnownRequests(df, DoD)
-    # Check if request time can satisfy call time constraint else they will be known in the offline problem
-    if request_time < serviceWindow[1]+callBuffer
-        return 0
+function preKnownRequests(df, DoD, serviceWindow, callBuffer)
+    geo_dist = Geometric(DoD)
+    known_requests = Array{Bool,1}(undef, nrow(df))
+
+    for i in 1:nrow(df)
+        # Ensure request can satisfy call time constraint
+        request_time = df[!,:request_time][i]
+        if request_time < serviceWindow[1] + callBuffer
+            known_requests[i] = true  # Known by default if request too early
+        else
+            # Randomly decide if pre-known using geometric distribution
+            known_requests[i] = (rand(geo_dist) == 1)
+        end
     end
 
-    # Define geometric distribution
-    geo_dist = Geometric(DoD)
-
-    # Sort by PickupTime (earlier requests first)
-    sort!(df, :request_time)
-
-    # Assign KnownBeforehand based on geometric distribution for requests in service window and not known beforehand
-    
-
-
-    df[!,"KnownBeforehand"] = [rand(geo_dist) == 1 for _ in 1:nrow(df)]
-
-    return df
+    return known_requests
 end
 
 
 # ------
-# Determine call time
+# Function to determine call times
 # ------
-function callTime(request_time, serviceWindow, callBuffer)
+function callTime(df, serviceWindow, callBuffer,preKnown)
 
-    # Determine call window
-    call_window = [serviceWindow - callBuffer, request_time - callBuffer]
+    for i in 1:nrow(df)
+        if preKnown[i]
+            df[i,"call_time"] = 0
+        else
+            # Determine call window
+            call_window = [serviceWindow[1] - callBuffer, df[i,:request_time] - callBuffer]
 
-    mean = (call_window[2]-call_window[1])/2
-    call_time_dist = Normal(mean, mean-call_window[1])
-    df[!,"CallTime"] = [pickup - Dates.Minute(rand(call_time_dist)) for pickup in df[!,"PickupTime"]]
+            # Determine call time from normal distribution
+            mean = (call_window[2]-call_window[1])/2 + call_window[1]
+            call_time_dist = Normal(mean, mean-call_window[1])
+            call_time = rand(call_time_dist)
+            df[i,"call_time"] = clamp(call_time, call_window[1], call_window[2])
+        end  
+    end
 
-    return df
+end
+
+# ------
+# Transform request type to right format
+# ------
+function transformRequestType(df)
+    df[!,:request_type] = map(row -> row == "PU" ? 1 : 0, df[!,:request_type])
 end
 
 # ------
@@ -91,20 +102,24 @@ function transformData(sheet_name, filename)
         dropoff_longitude = dfFilter[!,"To LON"],
         request_type = dfFilter[!,"ReqType"],
         request_time = dfFilter[!,"ReqTime"],
-        mobility_type = dfFilter[!,"MobilityType"],
-        call_time = zeros(Int8, nrow(dfFilter))
+        mobility_type = dfFilter[!,"SpaceType"],
+        call_time = zeros(Float64, nrow(dfFilter))
     )
+    
+    # Transform request type
+    transformRequestType(dfTransformed)
 
     # Determine pre-known requests
-    dfTransformed = preKnownRequests(dfTransformed, DoD)
+    preKnown = preKnownRequests(dfTransformed, DoD, serviceWindow, callBuffer)
 
     # Determine call time
-    dfTransformed = callTime(dfTransformed, serviceWindow, callBuffer)
+    callTime(dfTransformed, serviceWindow, callBuffer, preKnown)
 
     return dfTransformed
 
     
 end
+
 
 # ------
 # Process all sheets from both Excel files
@@ -114,3 +129,7 @@ for sheet in sheets_5days
     CSV.write("Data/Konsentra/TransformedData_$sheet.csv", dfTransformed)
 end
 
+for sheet in sheets_data
+    dfTransformed = transformData(sheet, "Data/Konsentra/Data.xlsx")
+    CSV.write("Data/Konsentra/TransformedData_$sheet.csv", dfTransformed)
+end
