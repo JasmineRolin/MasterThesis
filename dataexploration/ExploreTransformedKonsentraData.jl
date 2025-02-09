@@ -9,35 +9,68 @@ sheets_data = ["Data"]
 # ------
 # Plot grid of histograms for call time
 # ------
-function plotHistograms(df_list)
+function plotHistogramsCallTime(df_list)
     # Create an array to store the plots
     plots = []
 
     for df in df_list
         # Create a histogram for call time and append to plots list
-        p = histogram(df[!,:call_time], bins=30, title="Call Time Histogram", xlabel="Call Time (minutes)", ylabel="Frequency")
+        p = histogram(df[!,:call_time]/60, bins=24, title="Call Time Histogram", xlabel="Call Time (hours)", ylabel="Frequency")
         push!(plots, p)
     end
 
     # Create grid layout for the plots
-    plot(plots..., layout=(3, 2))
+    plot(plots..., layout=(3, 2), size=(1000, 1500))
 end
 
 # ------
 # Plot grid of histograms for request time
 # ------
-function plotHistograms(df_list)
+function plotHistogramsRequestTime(df_list)
     # Create an array to store the plots
     plots = []
 
     for df in df_list
         # Create a histogram for call time and append to plots list
-        p = histogram(df[!,:request_time], bins=24, title="Request Time Histogram", xlabel="Request Time (minutes)", ylabel="Frequency")
+        p = histogram(df[!,:request_time]/60, bins=24, title="Request Time Histogram", xlabel="Request Time (hours)", ylabel="Frequency")
         push!(plots, p)
     end
 
     # Create grid layout for the plots
-    plot(plots..., layout=(3, 2))
+    plot(plots..., layout=(3, 2), size=(1000, 1500))
+end
+
+# ------
+# Plot gant chart of time between request time and call time for each request 
+# ------
+function plotGantChart(df_list)
+    # Array to store individual plots
+    plots = []
+
+    for df in df_list
+        # Sort the DataFrame in new dataframe by request time
+        dfsorted = df
+        dfsorted = sort!(dfsorted, [:request_time])
+
+        # Calculate the duration for each task
+        task_labels = [i for i in 1:nrow(dfsorted)]
+        durations = dfsorted[!,:request_time] .- dfsorted[!,:call_time]
+
+        # Create the Gantt chart as horizontal bar plot
+        p = bar(
+            task_labels, durations, 
+            label="", orientation=:horizontal, 
+            xlims=(0, maximum(df[!,:call_time]) + 1),
+            ylims=(0, nrow(df) + 1),
+            title="Gantt Chart: Time Between Request and Call",
+            xlabel="Duration", ylabel="Task"
+        )
+
+        push!(plots, p)
+    end
+
+    # Combine plots in a grid layout
+    plot(plots..., layout=(ceil(Int, length(plots) / 2), 2), size=(1000, 1500))
 end
 
 # ------
@@ -53,21 +86,17 @@ function plotGeographicalData(df_list)
         p = scatter(df[!,:pickup_longitude], df[!,:pickup_latitude], label="Pickup", color=:blue, xlabel="Longitude", ylabel="Latitude", title="Pickup and Dropoff Locations")
         scatter!(p, df[!,:dropoff_longitude], df[!,:dropoff_latitude], label="Dropoff", color=:red)
         push!(plots, p)
-    end
 
-    # Only request with request_time > 0
-    for df in df_list
         # Filter out requests with request_time > 0
-        df_filtered = filter(row -> row[:call_time] > 0, df)
-
+        df_filtered = filter(row -> row[:call_time] == 0, df)
         # Create a scatter plot for geographical data
-        p = scatter(df_filtered[!,:pickup_longitude], df_filtered[!,:pickup_latitude], label="Pickup", color=:blue, xlabel="Longitude", ylabel="Latitude", title="Pickup and Dropoff Locations (Request Time > 0)")
+        p = scatter(df_filtered[!,:pickup_longitude], df_filtered[!,:pickup_latitude], label="Pickup", color=:blue, xlabel="Longitude", ylabel="Latitude", title="Pickup and Dropoff Locations for the offline problem")
         scatter!(p, df_filtered[!,:dropoff_longitude], df_filtered[!,:dropoff_latitude], label="Dropoff", color=:red)
         push!(plots, p)
     end
 
     # Create grid layout for the plots
-    plot(plots..., layout=(length(df_list), 2), size=(2000, 900))
+    plot(plots..., layout=(length(df_list), 2), size=(1000, 1500))
 end
 
 # ------
@@ -79,6 +108,11 @@ function getKeyNumbers(df_list, sheet_names)
         sheet = sheet_names,
         n_requests = [nrow(df) for df in df_list],
         n_offline = [sum(df[!,:call_time] .== 0) for df in df_list],
+        earliest_request = [minimum(df[!,:request_time]) for df in df_list],
+        latest_request = [maximum(df[!,:request_time]) for df in df_list],
+        earliest_call = [minimum(df[!,:call_time]) for df in df_list],
+        latest_call = [maximum(df[!,:call_time]) for df in df_list],
+        smallest_time_between_call_request = [minimum(df[!,:request_time] .- df[!,:call_time]) for df in df_list]
     )
     return key_numbers
 end
@@ -100,6 +134,11 @@ for sheet in sheets_data
     push!(sheet_names, sheet)
 end
 
-display(plotHistograms(df_list))
+# ------
+# Plots
+# ------
+display(plotHistogramsCallTime(df_list))
+display(plotHistogramsRequestTime(df_list))
 display(plotGeographicalData(df_list))
+display(plotGantChart(df_list))
 println(getKeyNumbers(df_list, sheet_names))
