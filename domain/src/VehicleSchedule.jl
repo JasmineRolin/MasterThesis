@@ -4,7 +4,7 @@ using ..Vehicles, ..RequestAssignments, ..TimeWindows
 
 export VehicleSchedule 
 
-struct VehicleSchedule 
+mutable struct VehicleSchedule 
     vehicle::Vehicle 
     route::Vector{RequestAssignment}
     activeTimeWindow::TimeWindow 

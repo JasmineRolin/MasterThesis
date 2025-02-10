@@ -4,7 +4,7 @@ using ..Requests, ..Vehicles
 
 export RequestAssignment 
 
-struct RequestAssignment
+mutable struct RequestAssignment
     request::Request 
     vehicle::Vehicle 
     startOfServiceTime::Int 

@@ -7,8 +7,8 @@ struct TimeWindow
     endTime::Int
 
     function TimeWindow(startTime::Int,endTime::Int)
-        if endTime <= startTime
-            throw(ArgumentError("End time window should be after start"))
+        if endTime < startTime
+            throw(ArgumentError(string("End time window should be after start: start=",startTime," end=",endTime)))
         else
             return new(startTime,endTime)
         end

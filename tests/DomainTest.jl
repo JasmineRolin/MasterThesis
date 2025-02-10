@@ -10,7 +10,7 @@ using domain
  Test Location 
 ==#
 @testset "Location test" begin
-    location = Location("test",1,1)
+    location = Location("test",1.0,1.0)
 
     # Tests
     @test typeof(location) == Location
@@ -34,8 +34,8 @@ end
  Test request
 ==#
 @testset "Request test" begin
-    pickUpLocation = Location("PU",10,10)
-    dropOffLocation = Location("DO",10,10)
+    pickUpLocation = Location("PU",10.0,10.0)
+    dropOffLocation = Location("DO",10.0,10.0)
 
     pickUpTimeWindow = TimeWindow(90,100)
     dropOffTimeWindow = TimeWindow(900,980)
@@ -51,7 +51,7 @@ end
  Test vehicle
 ==#
 @testset "vehicle test" begin
-    depotLocation = Location("depot",10,10)
+    depotLocation = Location("depot",10.0,10.0)
     timeWindow = TimeWindow(900,980)
 
     capacities = Dict{MobilityType, Int}(WALKING => 3, WHEELCHAIR => 5)

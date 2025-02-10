@@ -1,5 +1,5 @@
 id,start_of_availability,end_of_availability,maximum_ride_time,capacity_wheelchair,capacity_walking,depot_latitude,depot_longitude
-1,360, 1380,480,2,2,59.635075,10.672229
+1,360, 1380,480,2,2,60.123722,11.465924
 2,600, 1380,480,0,4,59.922336,10.959432
 3,360, 1380,480,4,4,59.971423,12.138335
 4,460, 890,480,0,4,60.123722,11.465924
