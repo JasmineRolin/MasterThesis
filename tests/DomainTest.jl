@@ -40,7 +40,7 @@ end
     pickUpTimeWindow = TimeWindow(90,100)
     dropOffTimeWindow = TimeWindow(900,980)
 
-    request = Request(0,PICKUP,WALKING,1,500,pickUpLocation,dropOffLocation,pickUpTimeWindow,dropOffTimeWindow,100)
+    request = Request(0,PICKUP,WALKING,500,pickUpLocation,dropOffLocation,pickUpTimeWindow,dropOffTimeWindow,10,100)
 
     # Tests
     @test typeof(request) == Request
