@@ -9,8 +9,8 @@ struct Scenario
     vehicles::Vector{Vehicle}
     vehicleCostPrHour::Float32
     vehicleStartUpCost::Float32 
-    serviceTimes::Dict 
-    planningPeriod::TimeWindow
+    serviceTimes::Dict # Minutes 
+    planningPeriod::TimeWindow # Minutes after midnight
 end 
 
 

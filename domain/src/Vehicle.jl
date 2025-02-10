@@ -6,9 +6,9 @@ export Vehicle
 
 struct Vehicle 
     id::Int 
-    availableTimeWindow::TimeWindow
+    availableTimeWindow::TimeWindow # Minutes after midnight 
     depotLocation::Location 
-    maximumRideTime::Int 
+    maximumRideTime::Int # Minutes 
     capacities::Dict 
     totalCapacity::Int
 end

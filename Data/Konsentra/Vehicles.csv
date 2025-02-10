@@ -1,0 +1,5 @@
+id,start_of_availability,end_of_availability,maximum_ride_time,capacity_wheelchair,capacity_walking
+1,360, 1380,480,2,2
+2,600, 1380,480,0,4
+3,360, 1380,480,4,4
+4,460, 890,480,0,4
