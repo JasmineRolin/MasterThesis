@@ -34,11 +34,18 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     serviceTimes = Dict{MobilityType,Int}(WALKING => parametersDf[1,"service_time_walking"], WHEELCHAIR => parametersDf[1,"service_time_wheelchair"])
     vehicleCostPrHour = parametersDf[1,"vehicle_cost_pr_hour"]
     vehicleStartUpCost = parametersDf[1,"vehicle_start_up_cost"]
+    bufferTime = parametersDf[1,"buffer_time"]
+    maximumRideTimePercent = parametersDf[1,"maximum_ride_time_percent"]
+    minimumMaximumRideTime = parametersDf[1,"minimum_maximum_ride_time"]
+    
 
     # Get vehicles 
     vehicles = readVehicles(vehiclesDf,nVehicles,nRequests)
 
-    scenario = Scenario([], vehicles, 0.0f0, 0.0f0, Dict(), TimeWindow(0, 0))
+    # Get requests 
+    requests = readRequests(requestsDf,bufferTime,maximumRideTimePercent,minimumMaximumRideTime)
+
+    scenario = Scenario(requests,vehicles,vehicleCostPrHour,vehicleStartUpCost,serviceTimes,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime)
 
     return scenario
 
@@ -88,8 +95,87 @@ function readVehicles(vehiclesDf::DataFrame,nVehicles::Int, nRequests::Int)::Vec
 end
 
 
+#==
+ Function to read requests 
+==#
+function readRequests(requestDf::DataFrame, bufferTime::Int,maximumRideTimePercent::Int, minimumMaximumRideTime::Int)::Vector{Request}
+    requests = Vector{Request}()
+   
+    for row in eachrow(requestDf)
+        id = row.id 
+
+        # Read location 
+        pickUpLocation = Location(string("PU R",id),row.pickup_latitude,row.pickup_longitude) 
+        dropOffLocation = Location(string("DO R",id),row.dropoff_latitude,row.dropoff_longitude) 
+
+        # Read request type 
+        requestType = row.request_type == 1 ? PICKUP : DROPOFF
+
+        # Read mobility type 
+        mobilityType = row.mobility_type == "Walking" ? WALKING : WHEELCHAIR
+
+        # Read call time 
+        callTime = floor(row.call_time)
+
+        # Read request time 
+        requestTime = row.request_time 
+
+        if callTime > requestTime - bufferTime
+            throw(ArgumentError(string("Call time is not before required buffer period for request: ",id)))
+        end
+
+        # Read maximum drive time 
+        directDriveTime = computeDirectDriveTime(pickUpLocation,dropOffLocation)
+        maximumRideTime = findMaximumRideTime(directDriveTime,maximumRideTimePercent,minimumMaximumRideTime)
+
+        if directDriveTime >= maximumRideTime
+            throw(ArgumentError(string("Direct drive time is larger than maximum ride time: ",id)))
+        end
+
+        # Create time windows 
+        pickUpTimeWindow = TimeWindow(0,0)
+        dropOffTimeWindow = TimeWindow(0,0)
+
+        if requestType == PICKUP
+            pickUpTimeWindow = findTimeWindowOfRequestedPickUpTime(requestTime)
+            dropOffTimeWindow = findTimeWindowOfDropOff(pickUpTimeWindow,directDriveTime,maximumRideTime)
+        else
+            dropOffTimeWindow = findTimeWindowOfRequestedDropOffTime(requestTime)
+            pickUpTimeWindow = findTimeWindowOfPickUp(dropOffTimeWindow,directDriveTime,maximumRideTime)
+        end
+
+        request = Request(id,requestType,mobilityType,callTime,pickUpLocation,dropOffLocation,pickUpTimeWindow,dropOffTimeWindow,directDriveTime,maximumRideTime)
+        push!(requests,request)
+        
+    end
 
 
+    return requests
+end
+
+
+# TODO: remove when distance function is working 
+using .MathConstants: pi
+
+function haversine_distance(lat1::Float64, long1::Float64, lat2::Float64, long2::Float64)::Float64
+    EARTH_RADIUS_KM = 6371.0
+
+    # Convert degrees to radians
+    φ1, φ2 = deg2rad(lat1), deg2rad(lat2)
+    Δφ = deg2rad(lat2 - lat1)
+    Δλ = deg2rad(long2 - long1)
+
+    # Haversine formula
+    a = sin(Δφ / 2)^2 + cos(φ1) * cos(φ2) * sin(Δλ / 2)^2
+    c = 2 * atan(sqrt(a), sqrt(1 - a))
+
+    return EARTH_RADIUS_KM * c  # Distance in km
+end
+
+function computeDirectDriveTime(location1::Location, location2::Location)::Int
+    distance_km = haversine_distance(location1.lat, location1.long, location2.lat, location2.long)
+    return 10*ceil(distance_km)  # Assuming time is proportional to distance
+end
 
 
 

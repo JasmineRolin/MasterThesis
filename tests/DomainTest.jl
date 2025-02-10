@@ -56,7 +56,7 @@ end
 
     capacities = Dict{MobilityType, Int}(WALKING => 3, WHEELCHAIR => 5)
 
-    vehicle = Vehicle(0,timeWindow,depotLocation,80,capacities,8)
+    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,capacities,8)
 
     # Tests
     @test typeof(vehicle) == Vehicle
@@ -73,7 +73,7 @@ end
 
     capacities = Dict{MobilityType, Int}(WALKING => 3, WHEELCHAIR => 5)
 
-    vehicle = Vehicle(0,timeWindow,depotLocation,80,capacities,8)
+    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,capacities,8)
 
     # Request 
     pickUpLocation = Location("PU",10,10)
@@ -82,7 +82,7 @@ end
     pickUpTimeWindow = TimeWindow(90,100)
     dropOffTimeWindow = TimeWindow(900,980)
 
-    request = Request(0,PICKUP,WALKING,1,500,pickUpLocation,dropOffLocation,pickUpTimeWindow,dropOffTimeWindow,100)
+    request = Request(0,PICKUP,WALKING,500,pickUpLocation,dropOffLocation,pickUpTimeWindow,dropOffTimeWindow,100,10)
 
     # RequestAssignment
     requestAssignment = RequestAssignment(request,vehicle,8,7)
@@ -103,7 +103,7 @@ end
 
     capacities = Dict{MobilityType, Int}(WALKING => 3, WHEELCHAIR => 5)
 
-    vehicle = Vehicle(0,timeWindow,depotLocation,80,capacities,8)
+    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,capacities,8)
 
     # Request 
     pickUpLocation = Location("PU",10,10)
@@ -112,7 +112,7 @@ end
     pickUpTimeWindow = TimeWindow(90,100)
     dropOffTimeWindow = TimeWindow(900,980)
 
-    request = Request(0,PICKUP,WALKING,1,500,pickUpLocation,dropOffLocation,pickUpTimeWindow,dropOffTimeWindow,100)
+    request = Request(0,PICKUP,WALKING,500,pickUpLocation,dropOffLocation,pickUpTimeWindow,dropOffTimeWindow,100,10)
 
     # RequestAssignment
     requestAssignment = RequestAssignment(request,vehicle,8,7)
@@ -138,7 +138,7 @@ end
 
     capacities = Dict{MobilityType, Int}(WALKING => 3, WHEELCHAIR => 5)
 
-    vehicle = Vehicle(0,timeWindow,depotLocation,80,capacities,8)
+    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,capacities,8)
 
     # Request 
     pickUpLocation = Location("PU",10,10)
@@ -147,7 +147,7 @@ end
     pickUpTimeWindow = TimeWindow(90,100)
     dropOffTimeWindow = TimeWindow(900,980)
 
-    request = Request(0,PICKUP,WALKING,1,500,pickUpLocation,dropOffLocation,pickUpTimeWindow,dropOffTimeWindow,100)
+    request = Request(0,PICKUP,WALKING,500,pickUpLocation,dropOffLocation,pickUpTimeWindow,dropOffTimeWindow,100,10)
 
     # RequestAssignment
     requestAssignment = RequestAssignment(request,vehicle,8,7)
