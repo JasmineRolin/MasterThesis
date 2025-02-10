@@ -70,3 +70,14 @@ using utils
 
 end
 
+@testset "Test InstanceReader on Konsentra" begin 
+    requestFile = "Data/Konsentra/TransformedData_Data.csv"
+    vehiclesFile = "tests/resources/Vehicles.csv"
+    parametersFile = "tests/resources/Parameters.csv"
+
+    # Read instance 
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile)
+
+    @test length(scenario.requests) == 28 
+
+end
