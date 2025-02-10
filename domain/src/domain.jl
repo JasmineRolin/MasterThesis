@@ -20,6 +20,8 @@ export TimeWindow, duration
 include("Request.jl")
 using .Requests
 export Request, RequestType,MobilityType,PICKUP,DROPOFF,WALKING,WHEELCHAIR
+export findTimeWindowOfRequestedPickUpTime, findTimeWindowOfDropOff, findTimeWindowOfRequestedDropOffTime, findTimeWindowOfPickUp
+export findMaximumRideTime
 
 
 #==

@@ -1,8 +1,8 @@
 # -----
 # Packages
 # -----
-using Distributions, DataFrames, CSV, XLSX, Dates
-using utils
+
+using Distributions, DataFrames, CSV, XLSX, Dates, utils
 
 
 # ------
@@ -95,8 +95,12 @@ function transformData(sheet_name, filename)
     # Filter data
     dfFilter = filterData(df, ageLimit, serviceWindow)
 
+    # id 
+    ids = collect(1:nrow(dfFilter))
+
     # Make new dataframe with right coloumns
     dfTransformed = DataFrame(
+        id = ids,
         pickup_latitude = dfFilter[!,"From LAT"],
         pickup_longitude = dfFilter[!,"From LON"],
         dropoff_latitude = dfFilter[!,"To LAT"],

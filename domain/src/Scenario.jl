@@ -9,8 +9,11 @@ struct Scenario
     vehicles::Vector{Vehicle}
     vehicleCostPrHour::Float32
     vehicleStartUpCost::Float32 
-    serviceTimes::Dict 
-    planningPeriod::TimeWindow
+    serviceTimes::Dict # Minutes 
+    planningPeriod::TimeWindow # Minutes after midnight
+    bufferTime::Int # Latest call time for a request in minutes
+    maximumDriveTimePercent::Int # Percent of direct drive time to find maximum ride time
+    minimumMaximumDriveTime::Int # Minimum duration in minutes of maximum drive time 
 end 
 
 

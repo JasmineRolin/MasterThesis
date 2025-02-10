@@ -4,7 +4,7 @@ using ..VehicleSchedules
 
 export Solution 
 
-struct Solution 
+mutable struct Solution 
     vehicleSchedules::Vector{VehicleSchedule}
     totalCost::Float32
 end

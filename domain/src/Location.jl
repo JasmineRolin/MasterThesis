@@ -4,8 +4,8 @@ export Location
 
 struct Location 
     name::String 
-    lat::Int
-    long::Int
+    lat::Float64
+    long::Float64
 end
 
 
