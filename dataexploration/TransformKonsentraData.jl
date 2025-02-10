@@ -2,6 +2,7 @@
 # Packages
 # -----
 using Distributions, DataFrames, CSV, XLSX, Dates
+using utils
 
 
 # ------
@@ -47,7 +48,7 @@ function callTime(df, serviceWindow, callBuffer,preKnown)
             df[i,"call_time"] = 0
         else
             # Determine call window
-            call_window = [serviceWindow[1] - callBuffer, df[i,:request_time] - callBuffer]
+            call_window = [serviceWindow[1], df[i,:request_time] - callBuffer]
 
             # Determine call time from normal distribution
             mean = (call_window[2]-call_window[1])/2 + call_window[1]

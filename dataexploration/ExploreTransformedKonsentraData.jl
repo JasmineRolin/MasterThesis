@@ -43,36 +43,38 @@ end
 # ------
 # Plot gant chart of time between request time and call time for each request 
 # ------
-function plotGantChart(df_list)
-    # Array to store individual plots
+function plotGanttChart(df_list)
     plots = []
 
     for df in df_list
-        # Sort the DataFrame in new dataframe by request time
-        dfsorted = df
-        dfsorted = sort!(dfsorted, [:request_time])
+        # Ensure data has valid columns
+        dfsorted = sort(df, [:request_time])
+        dfsorted.duration = dfsorted[!,:request_time] .- dfsorted[!,:call_time]
+        
+        # Create rectangles for each task
+        rect(w, h, x, y) = Shape(x .+ [0, w, w, 0], y .+ [0, 0, h, h])
+        rectangles = [rect(t[1], 1, t[2], t[3]) for t in zip(dfsorted.duration, dfsorted[!,:call_time], 1:nrow(dfsorted))]
 
-        # Calculate the duration for each task
-        task_labels = [i for i in 1:nrow(dfsorted)]
-        durations = dfsorted[!,:request_time] .- dfsorted[!,:call_time]
+        # Get every 5th label for yticks
+        yticks_labels = string.(1:nrow(dfsorted))
+        yticks_labels = yticks_labels[1:5:nrow(dfsorted)]  # Select every 5th label
+        yticks_pos = 1:5:nrow(dfsorted)  # Corresponding positions for every 5th label
 
-        # Create the Gantt chart as horizontal bar plot
-        p = bar(
-            task_labels, durations, 
-            label="", orientation=:horizontal, 
-            xlims=(0, maximum(df[!,:call_time]) + 1),
-            ylims=(0, nrow(df) + 1),
-            title="Gantt Chart: Time Between Request and Call",
-            xlabel="Duration", ylabel="Task"
+        # Plot Gantt chart
+        p = plot(
+            rectangles,
+            c=:blue,
+            yticks=(yticks_pos, yticks_labels),
+            xlabel="Time (minutes)",
+            title="Gantt Chart: Call Time to Request Time",
+            legend=false
         )
-
         push!(plots, p)
     end
 
-    # Combine plots in a grid layout
-    plot(plots..., layout=(ceil(Int, length(plots) / 2), 2), size=(1000, 1500))
+    # Create grid layout for the plots
+    plot(plots..., layout=(length(df_list), 2), size=(1000, 1500))
 end
-
 # ------
 # Plot Geographical data
 # ------
@@ -140,5 +142,5 @@ end
 display(plotHistogramsCallTime(df_list))
 display(plotHistogramsRequestTime(df_list))
 display(plotGeographicalData(df_list))
-display(plotGantChart(df_list))
+display(plotGanttChart(df_list))
 println(getKeyNumbers(df_list, sheet_names))
