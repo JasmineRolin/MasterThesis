@@ -2,6 +2,7 @@ using PyCall
 
 # Import the required Python libraries
 osmnx = pyimport("osmnx")
+nx = pyimport("networkx")
 
 # Function to compute the distance matrix in Python
 function get_distance_matrix_python(vehicle_positions, locations, graph)
@@ -15,7 +16,7 @@ function get_distance_matrix_python(vehicle_positions, locations, graph)
             nearest_location_node = osmnx.distance.nearest_nodes(graph, location[1], location[2])
 
             # Compute the shortest path distance using osmnx
-            distance = osmnx.distance.shortest_path_length(graph, nearest_vehicle_node, nearest_location_node)
+            distance = nx.distance.shortest_path_length(graph, nearest_vehicle_node, nearest_location_node)
             push!(row, distance)
         end
         push!(dist_matrix, row)
