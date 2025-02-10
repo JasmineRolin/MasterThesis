@@ -1,18 +1,24 @@
 module Requests 
 
-using Dates, ..TimeWindows, ..Locations
+using ..TimeWindows, ..Locations
 
-export Request, Activity,CustomerType
+export Request, RequestType,MobilityType,PICKUP,DROPOFF,WALKING,WHEELCHAIR
 
 #==
  Enum that describes activity type
 ==#
-@enum Activity PICKUP=0 DELIVERY=1
+@enum RequestType begin
+    PICKUP = 0
+    DROPOFF = 1
+end 
 
 #==
  Enum that describes customer type
 ==# 
-@enum CustomerType WALKING=0 WHEELCHAIR=1
+@enum MobilityType begin 
+    WALKING = 0
+    WHEELCHAIR = 1
+end
 
 
 #== 
@@ -20,16 +26,15 @@ export Request, Activity,CustomerType
 ==#
 struct Request
     id::Int 
-    activity::Activity
-    customerType::CustomerType
-    date::Date # The date where the request happens
-    timeReceived::DateTime # The date and time the reqeust is received 
-    pickupTimeWindow::TimeWindow # Time window for pickup
-    deliveryTimeWindow::TimeWindow # Time window for delivery 
+    requestType::RequestType
+    mobilityType::MobilityType
+    load::Int 
+    callTime::Int # The time the reqeust is received (minutes after midnight)
+    dropOffLocation::Location 
     pickupLocation::Location # Pickup location
-    deliveryLocation::Location # Delivery location 
+    pickuopTimeWindow::TimeWindow # Time window for drop off 
+    dropOffTimeWindow::TimeWindow # Delivery location 
     maximumRideTime::Int # Maximum ride time in minutes 
-    numberOfTravellers::Int # Number of travellers including customer 
 end
 
 
