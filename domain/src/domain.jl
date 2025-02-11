@@ -76,4 +76,12 @@ include("Scenario.jl")
 using .Scenarios
 export Scenario
 
+#==
+ Export from Scenario module 
+==#
+include("State.jl")
+using .States
+export State
+
+
 end

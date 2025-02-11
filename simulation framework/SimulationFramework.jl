@@ -2,18 +2,19 @@
 module SimulationFramework
 
 using utils
+using domain
+
+export simulateScenario
 
 # ------
 # Function to determine current KPIs
 # ------
-function currentKPIs(completedRoutes::Vector{VehicleSchedule},oldState::State)
+function currentKPIs(state::State)
 
-    for route in completedRoutes
-        # Update KPIs
+    totalRideTime = 0
+    idleTime = 0
 
-    end
-
-    return totalCost, nTaxi, totalRideTime, totalViolationTW, totalDistance, idleTime
+    return totalRideTime, idleTime
 
 end
 
@@ -21,7 +22,7 @@ end
 # ------
 # Function to determine current state
 # ------
-function determineCurrentState(solution::Solution,event::Request,oldState::State,completedRoutes::Vector{VehicleSchedule})
+function determineCurrentState(solution::Solution,event::Request,completedState::State,scenario::Scenario)
 
     # Initialize current state
     currentState = State()
@@ -36,10 +37,18 @@ function determineCurrentState(solution::Solution,event::Request,oldState::State
                 # Update vehicle schedule for current state
                 currentState.vehicleSchedules[vehicle].route = schedule.route[j:end]
                 currentState.vehicleSchedules[vehicle].totalDistance = getTotalDistanceRoute(currentState.vehicleSchedules[vehicle].route)
-                currentState.vehicleSchedules[vehicle].totalCost = getTotalCostRoute(currentState.vehicleSchedules[vehicle].route)
+                currentState.vehicleSchedules[vehicle].totalCost = getTotalCostRoute(scenario,currentState.vehicleSchedules[vehicle].route)
+                currentState.totalCost += currentState.vehicleSchedules[vehicle].totalCost
+                currentState.totalDistance += currentState.vehicleSchedules[vehicle].totalDistance
+                currentState.nTaxi = 0
 
                 # Update completed routes
-                append!(completedRoutes[vehicle], schedule.route[1:j-1])
+                append!(completedState.vehicleSchedules[vehicle], schedule.route[1:j-1])
+                completedState.vehicleSchedules[vehicle].totalDistance += getTotalDistanceRoute(completedState.vehicleSchedules[vehicle].route)
+                completedState.vehicleSchedules[vehicle].totalCost += getTotalCostRoute(scenario,completedState.vehicleSchedules[vehicle].route)
+                completedState.totalCost += completedState.vehicleSchedules[vehicle].totalCost
+                completedState.totalDistance += completedState.vehicleSchedules[vehicle].totalDistance
+                completedState.nTaxi += solution.nTaxi
                 break
             end
         end
@@ -47,9 +56,10 @@ function determineCurrentState(solution::Solution,event::Request,oldState::State
     end
 
     # Update KPIs
-    currentState.totalCost, currentState.nTaxi, currentState.totalRideTime, currentState.totalViolationTW, currentState.totalDistance, currentState.idleTime = currentKPIs(completedRoutes,oldState) #Change to right function name !!!!!!!!!!
+    currentState.totalRideTime, currentState.idleTime = currentKPIs(currentState) #Change to right function name !!!!!!!!!!
+    completedState.totalRideTime, completedState.idleTime = currentKPIs(completedState) #Change to right function name !!!!!!!!!!
 
-    return currentState, completedRoutes
+    return currentState, completedState
 
 
 end
@@ -60,21 +70,20 @@ end
 function simulateScenario(scenario::Scenario)
 
     # Initialize current state 
-    oldState = State()
-    currentState = State()
-    completedRoutes = Vector{VehicleSchedule}()
+    completedState = State(Vector{VehicleSchedule}(),0,0,0,0,0)
+    currentState = State(Vector{VehicleSchedule}(),0,0,0,0,0)
 
     # Get solution for initial solution (online problem)
-    solution = offlineAlgorithm(scenario) #Change to right function name !!!!!!!!!!
+    #solution = offlineAlgorithm(scenario) #Change to right function name !!!!!!!!!!
 
     # Get solution for online problem
     for (itr,event) in enumerate(onlineRequests)
         # Determine current state 
-        oldState = copy(currentState)
-        currentState = determineCurrentState(solution, event, oldState, completedRoutes)
+        completedState = copy(currentState)
+        currentState = determineCurrentState(solution,event,completedState,scenario)
 
         # Get solution for online problem
-        solution = onlineAlgorithm(currentState, event, scenario) #Change to right function name !!!!!!!!!!
+        #solution = onlineAlgorithm(currentState, event, scenario) #Change to right function name !!!!!!!!!!
     end
 
     return solution
