@@ -4,9 +4,23 @@ module SimulationFramework
 using utils
 
 # ------
+# Function to determine current KPIs
+# ------
+function currentKPIs(completedRoutes::Vector{VehicleSchedule},oldState::State)
+
+    for route in completedRoutes
+        # Update KPIs
+    end
+
+    return nTaxi, totalRideTime, totalViolationTW, totalDistance, idleTime
+
+end
+
+
+# ------
 # Function to determine current state
 # ------
-function determineCurrentState(solution::Solution,event::Request)
+function determineCurrentState(solution::Solution,event::Request,oldState::State)
 
     # Initialize current state
     currentState = State()
@@ -19,7 +33,11 @@ function determineCurrentState(solution::Solution,event::Request)
     for (i,vehicle) in enumerate(solution.vehicleSchedule)
         for (j,assignment) in enumerate(vehicle.requestAssignments)
             if assignment.endOfServiceTime < currentTime
+                # Update vehicle schedule for current state
                 currentState.vehicleSchedule[i].requestAssignments = assignment[j:end]
+
+
+                # Update completed routes
                 completededRoute[i] = assignment[1:j-1]
                 break
             end
@@ -32,7 +50,7 @@ function determineCurrentState(solution::Solution,event::Request)
     currentState.totalCost = currentObjectiveFunction(completedRoutes) #Change to right function name !!!!!!!!!!
 
     # Update KPIs
-    currentState.nTaxi, currentState.totalRideTime, currentState.totalViolationTW, currentState.totalDistance, currentState.idleTime = currentKPIs(completedRoutes) #Change to right function name !!!!!!!!!!
+    currentState.nTaxi, currentState.totalRideTime, currentState.totalViolationTW, currentState.totalDistance, currentState.idleTime = currentKPIs(completedRoutes,oldState) #Change to right function name !!!!!!!!!!
 
     return currentState
 
@@ -44,6 +62,10 @@ end
 # ------
 function simulateScenario(scenario::Scenario)
 
+    # Initilize current state 
+    oldState = State()
+    currentState = State()
+
     # Get online and offline requests
     onlineRequests, offlineRequests = splitRequests(scenario.requests)
 
@@ -53,7 +75,8 @@ function simulateScenario(scenario::Scenario)
     # Get solution for online problem
     for (itr,event) in enumerate(onlineRequests)
         # Determine current state 
-        currentState = determineCurrentState(solution, event)
+        oldState = copy(currentState)
+        currentState = determineCurrentState(solution, event, oldState)
 
         # Update distance matrix
         updateDistanceMatrix(event, scenario) #Change to right function name !!!!!!!!!!

@@ -10,9 +10,9 @@ mutable struct State
     nTaxi::Int
     totalRideTime::Int
     totalViolationTW::Int
-    totalDistance::Float32
+    totalDistance::Int
     idleTime::Int
-    
+
 end
 
 
