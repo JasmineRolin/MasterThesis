@@ -45,7 +45,10 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     # Get requests 
     requests = readRequests(requestsDf,bufferTime,maximumRideTimePercent,minimumMaximumRideTime)
 
-    scenario = Scenario(requests,vehicles,vehicleCostPrHour,vehicleStartUpCost,serviceTimes,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime)
+    # Split into offline and online requests
+    onlineRequests, offlineRequests = splitRequests(requests)
+
+    scenario = Scenario(requests,vehicles,vehicleCostPrHour,vehicleStartUpCost,serviceTimes,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,onlineRequests,offlineRequests)
 
     return scenario
 
@@ -151,6 +154,29 @@ function readRequests(requestDf::DataFrame, bufferTime::Int,maximumRideTimePerce
 
 
     return requests
+end
+
+
+# ------
+# Function to split requests into online and offline requests
+# ------
+function splitRequests(requests::Vector{Request})
+
+    onlineRequests = Request[]
+    offlineRequests = Request[]
+
+    for (~,r) in enumerate(requests)
+        if r.callTime == 0
+            push!(offlineRequests, r)
+        else
+            push!(onlineRequests, r)
+        end
+    end
+
+    sort!(onlineRequests, by = x -> x.callTime)
+
+    return onlineRequests, offlineRequests
+
 end
 
 

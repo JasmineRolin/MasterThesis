@@ -14,6 +14,8 @@ struct Scenario
     bufferTime::Int # Latest call time for a request in minutes
     maximumDriveTimePercent::Int # Percent of direct drive time to find maximum ride time
     minimumMaximumDriveTime::Int # Minimum duration in minutes of maximum drive time 
+    onlineRequests::Vector{Request}
+    offlineRequests::Vector{Request}
 end 
 
 

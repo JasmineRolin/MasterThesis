@@ -1,16 +1,14 @@
-module State 
+module States 
 
-using ..Request,..VehicleLocation,..Solution
+using ..VehicleSchedules 
 
 export State 
 
 mutable struct State 
-    requests::Vector{Request}
-    vehicleLocations::Vector{VehicleLocation}
-    eventTime::Int
-    solution::Solution
- 
-end 
+    vehicleSchedules::Vector{VehicleSchedule}
+    totalCost::Float32
+end
+
 
 
 end

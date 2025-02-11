@@ -67,6 +67,15 @@ using utils
     @test scenario.requests[5].dropOffTimeWindow.startTime == requestTime5 - 5 + 70
     @test scenario.requests[5].dropOffTimeWindow.endTime == requestTime5 + 15 + 140
 
+    # Check online and offline requests
+    for (i,request) in enumerate(scenario.requests)
+        if request.callTime == 0
+            @test request in scenario.offlineRequests
+        else
+            @test request in scenario.onlineRequests
+        end
+    end
+
 
 end
 
