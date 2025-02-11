@@ -28,6 +28,17 @@ end
     WHEELCHAIR = 1
 end
 
+#==
+ Enum that describes task type
+==# 
+@enum taskType begin 
+    PICKUP = 0
+    DROPOFF = 1
+    WAITING = 2
+    DEPOT = 3
+end
+
+
 
 #== 
  Struct that defines request 

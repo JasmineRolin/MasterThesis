@@ -12,7 +12,7 @@ function currentKPIs(completedRoutes::Vector{VehicleSchedule},oldState::State)
         # Update KPIs
     end
 
-    return nTaxi, totalRideTime, totalViolationTW, totalDistance, idleTime
+    return totalCost, nTaxi, totalRideTime, totalViolationTW, totalDistance, idleTime
 
 end
 
@@ -20,39 +20,35 @@ end
 # ------
 # Function to determine current state
 # ------
-function determineCurrentState(solution::Solution,event::Request,oldState::State)
+function determineCurrentState(solution::Solution,event::Request,oldState::State,completedRoutes::Vector{VehicleSchedule})
 
     # Initialize current state
     currentState = State()
-    completedRoutes = Vector{VehicleSchedule}()
 
     # Get current time
     currentTime = event.callTime
 
     # Update vehicle schedule
-    for (i,vehicle) in enumerate(solution.vehicleSchedule)
-        for (j,assignment) in enumerate(vehicle.requestAssignments)
-            if assignment.endOfServiceTime < currentTime
+    for (vehicle,schedule) in enumerate(solution.vehicleSchedules)
+        for (idx,node) in enumerate(schedule.route)
+            if node.endOfServiceTime < currentTime
                 # Update vehicle schedule for current state
-                currentState.vehicleSchedule[i].requestAssignments = assignment[j:end]
-
+                currentState.vehicleSchedules[vehicle].route = schedule.route[j:end]
+                currentState.vehicleSchedules[vehicle].totalDistance = getTotalDistanceRoute(currentState.vehicleSchedules[vehicle].route)
+                currentState.vehicleSchedules[vehicle].totalCost = getTotalCostRoute(currentState.vehicleSchedules[vehicle].route)
 
                 # Update completed routes
-                completededRoute[i] = assignment[1:j-1]
+                append!(completededRoutes[vehicle], schedule.route[1:j-1])
                 break
             end
         end
         
     end
 
-    
-    # Update total cost
-    currentState.totalCost = currentObjectiveFunction(completedRoutes) #Change to right function name !!!!!!!!!!
-
     # Update KPIs
-    currentState.nTaxi, currentState.totalRideTime, currentState.totalViolationTW, currentState.totalDistance, currentState.idleTime = currentKPIs(completedRoutes,oldState) #Change to right function name !!!!!!!!!!
+    currentState.totalCost, currentState.nTaxi, currentState.totalRideTime, currentState.totalViolationTW, currentState.totalDistance, currentState.idleTime = currentKPIs(completedRoutes,oldState) #Change to right function name !!!!!!!!!!
 
-    return currentState
+    return currentState, completedRoutes
 
 
 end
@@ -62,24 +58,19 @@ end
 # ------
 function simulateScenario(scenario::Scenario)
 
-    # Initilize current state 
+    # Initialize current state 
     oldState = State()
     currentState = State()
-
-    # Get online and offline requests
-    onlineRequests, offlineRequests = splitRequests(scenario.requests)
+    completedRoutes = Vector{VehicleSchedule}()
 
     # Get solution for initial solution (online problem)
-    solution = offlineAlgorithm(offlineRequests, scenario) #Change to right function name !!!!!!!!!!
+    solution = offlineAlgorithm(scenario) #Change to right function name !!!!!!!!!!
 
     # Get solution for online problem
     for (itr,event) in enumerate(onlineRequests)
         # Determine current state 
         oldState = copy(currentState)
-        currentState = determineCurrentState(solution, event, oldState)
-
-        # Update distance matrix
-        updateDistanceMatrix(event, scenario) #Change to right function name !!!!!!!!!!
+        currentState = determineCurrentState(solution, event, oldState, completedRoutes)
 
         # Get solution for online problem
         solution = onlineAlgorithm(currentState, event, scenario) #Change to right function name !!!!!!!!!!
