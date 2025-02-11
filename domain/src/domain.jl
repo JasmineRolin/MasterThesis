@@ -1,6 +1,16 @@
 module domain
 
 #==
+ Export from Enums module 
+==#
+include("Enums.jl")
+using .Enums  # Using the relative module
+export RequestType,PICKUP_REQUEST,DROPOFF_REQUEST
+export MobilityType,WALKING,WHEELCHAIR
+export ActivityType, PICKUP, DROPOFF, WAITING, DEPOT 
+
+
+#==
  Export from Locations module 
 ==#
 include("Location.jl")
@@ -13,6 +23,13 @@ export Location
 include("TimeWindow.jl")
 using .TimeWindows
 export TimeWindow, duration
+
+#==
+ Export from Activitys module 
+==#
+include("Activity.jl")
+using .Activities
+export Activity
 
 #==
  Export from Requests module 
@@ -34,9 +51,9 @@ export Vehicle
 #==
  Export from RequestAssignment module 
 ==#
-include("RequestAssignment.jl")
-using .RequestAssignments
-export RequestAssignment
+include("ActivityAssignment.jl")
+using .ActivityAssignments
+export ActivityAssignment
 
 #==
  Export from VehicleSchedule module 

@@ -9,21 +9,21 @@ function getTotalDistanceRoute(route::Vector{Int},scenario::Scenario)
     distanceMatrix = scenario.distanceMatrix
 
     for i in 1:length(route)-1
-        if route[i].request.task == "PICKUP" && route[i+1].request.task == "PICKUP"
+        if route[i].request.activity == "PICKUP" && route[i+1].request.activity == "PICKUP"
             totalDistance += distanceMatrix[route[i].request.id, route[i+1].request.id]
-        elseif route[i].request.task == "DROPOFF" && route[i+1].request.task == "DROPOFF"
+        elseif route[i].request.activity == "DROPOFF" && route[i+1].request.activity == "DROPOFF"
             totalDistance += distanceMatrix[route[i].request.id+nRequests, route[i+1].request.id+nRequests]
-        elseif route[i].request.task == "PICKUP" && route[i+1].request.task == "DROPOFF"
+        elseif route[i].request.activity == "PICKUP" && route[i+1].request.activity == "DROPOFF"
             totalDistance += distanceMatrix[route[i].request.id, route[i+1].request.id+nRequests]
-        elseif route[i].request.task == "DROPOFF" && route[i+1].request.task == "PICKUP"
+        elseif route[i].request.activity == "DROPOFF" && route[i+1].request.activity == "PICKUP"
             totalDistance += distanceMatrix[route[i].request.id+nRequests, route[i+1].request.id]
-        elseif route[i].request.task == "PICKUP" && route[i+1].request.task == "DEPOT"
+        elseif route[i].request.activity == "PICKUP" && route[i+1].request.activity == "DEPOT"
             totalDistance += distanceMatrix[route[i].request.id, route[i].request.id]
-        elseif route[i].request.task == "DROPOFF" && route[i+1].request.task == "DEPOT"
+        elseif route[i].request.activity == "DROPOFF" && route[i+1].request.activity == "DEPOT"
             totalDistance += distanceMatrix[route[i].request.id+nRequests, route[i].request.id]
-        elseif route[i].request.task == "DEPOT" && route[i+1].request.task == "PICKUP"
+        elseif route[i].request.activity == "DEPOT" && route[i+1].request.activity == "PICKUP"
             totalDistance += distanceMatrix[route[i].request.id, route[i+1].request.id]
-        elseif route[i].request.task == "DEPOT" && route[i+1].request.task == "DROPOFF"
+        elseif route[i].request.activity == "DEPOT" && route[i+1].request.activity == "DROPOFF"
             totalDistance += distanceMatrix[route[i].request.id, route[i+1].request.id+nRequests]
         end
         totalDistance += distanceMatrix[route[i], route[i+1]]

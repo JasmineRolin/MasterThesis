@@ -51,7 +51,7 @@ function plotGanttChart(df_list)
         dfsorted = sort(df, [:request_time])
         dfsorted.duration = dfsorted[!,:request_time] .- dfsorted[!,:call_time]
         
-        # Create rectangles for each task
+        # Create rectangles for each activity
         rect(w, h, x, y) = Shape(x .+ [0, w, w, 0], y .+ [0, 0, h, h])
         rectangles = [rect(t[1], 1, t[2], t[3]) for t in zip(dfsorted.duration, dfsorted[!,:call_time], 1:nrow(dfsorted))]
 

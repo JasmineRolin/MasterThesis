@@ -40,7 +40,10 @@ end
     pickUpTimeWindow = TimeWindow(90,100)
     dropOffTimeWindow = TimeWindow(900,980)
 
-    request = Request(0,PICKUP,WALKING,500,pickUpLocation,dropOffLocation,pickUpTimeWindow,dropOffTimeWindow,10,100)
+    pickUpActivity = Activity(1,0,PICKUP,WALKING,pickUpLocation,pickUpTimeWindow)
+    dropOffActivity = Activity(1,0,PICKUP,WALKING,dropOffLocation,dropOffTimeWindow)
+
+    request = Request(0,PICKUP_REQUEST,WALKING,500,pickUpActivity,dropOffActivity,10,100)
 
     # Tests
     @test typeof(request) == Request
@@ -64,9 +67,9 @@ end
 
 
 #==
- Test RequestAssignment
+ Test ActivityAssignment
 ==#
-@testset "RequestAssignment test" begin
+@testset "ActivityAssignment test" begin
     # Vehicle 
     depotLocation = Location("depot",10,10)
     timeWindow = TimeWindow(900,980)
@@ -75,20 +78,16 @@ end
 
     vehicle = Vehicle(0,timeWindow,1,depotLocation,80,capacities,8)
 
-    # Request 
-    pickUpLocation = Location("PU",10,10)
-    dropOffLocation = Location("DO",10,10)
-
-    pickUpTimeWindow = TimeWindow(90,100)
-    dropOffTimeWindow = TimeWindow(900,980)
-
-    request = Request(0,PICKUP,WALKING,500,pickUpLocation,dropOffLocation,pickUpTimeWindow,dropOffTimeWindow,100,10)
+    # Activitys 
+    location = Location("PU",10.0,10.0)
+    timeWindow = TimeWindow(90,100)
+    activity = Activity(1,0,PICKUP,WALKING,location,timeWindow)
 
     # RequestAssignment
-    requestAssignment = RequestAssignment(request,vehicle,8,7)
+    activityAssignment = ActivityAssignment(activity,vehicle,8,7)
 
     # Tests
-    @test typeof(requestAssignment) == RequestAssignment
+    @test typeof(activityAssignment) == ActivityAssignment
 end
 
 
@@ -105,20 +104,16 @@ end
 
     vehicle = Vehicle(0,timeWindow,1,depotLocation,80,capacities,8)
 
-    # Request 
-    pickUpLocation = Location("PU",10,10)
-    dropOffLocation = Location("DO",10,10)
-
-    pickUpTimeWindow = TimeWindow(90,100)
-    dropOffTimeWindow = TimeWindow(900,980)
-
-    request = Request(0,PICKUP,WALKING,500,pickUpLocation,dropOffLocation,pickUpTimeWindow,dropOffTimeWindow,100,10)
+    # Activitys 
+    location = Location("PU",10.0,10.0)
+    timeWindow = TimeWindow(90,100)
+    activity = Activity(1,0,PICKUP,WALKING,location,timeWindow)
 
     # RequestAssignment
-    requestAssignment = RequestAssignment(request,vehicle,8,7)
+    activityAssignment = ActivityAssignment(activity,vehicle,8,7)
 
     # VehicleSchedule
-    route = [requestAssignment]
+    route = [activityAssignment]
     vehicleSchedule = VehicleSchedule(vehicle,route,timeWindow,40,40)
 
     # Tests
@@ -140,24 +135,20 @@ end
 
     vehicle = Vehicle(0,timeWindow,1,depotLocation,80,capacities,8)
 
-    # Request 
-    pickUpLocation = Location("PU",10,10)
-    dropOffLocation = Location("DO",10,10)
-
-    pickUpTimeWindow = TimeWindow(90,100)
-    dropOffTimeWindow = TimeWindow(900,980)
-
-    request = Request(0,PICKUP,WALKING,500,pickUpLocation,dropOffLocation,pickUpTimeWindow,dropOffTimeWindow,100,10)
+    # Activitys 
+    location = Location("PU",10.0,10.0)
+    timeWindow = TimeWindow(90,100)
+    activity = Activity(1,0,PICKUP,WALKING,location,timeWindow)
 
     # RequestAssignment
-    requestAssignment = RequestAssignment(request,vehicle,8,7)
+    activityAssignment = ActivityAssignment(activity,vehicle,8,7)
 
     # VehicleSchedule
-    route = [requestAssignment]
+    route = [activityAssignment]
     vehicleSchedule = VehicleSchedule(vehicle,route,timeWindow,40,40)
 
     # Solution 
-    solution = Solution([vehicleSchedule],70)
+    solution = Solution([vehicleSchedule],70,4,5,2,4)
 
     # Tests
     @test typeof(solution) == Solution

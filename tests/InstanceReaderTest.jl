@@ -38,34 +38,34 @@ using utils
 
     # Time windows 
     requestTime1 = 495 
-    @test scenario.requests[1].pickUpTimeWindow.startTime == requestTime1 - 15 - 30 
-    @test scenario.requests[1].pickUpTimeWindow.endTime == requestTime1 + 5 - 10 
-    @test scenario.requests[1].dropOffTimeWindow.startTime == requestTime1 - 15
-    @test scenario.requests[1].dropOffTimeWindow.endTime == requestTime1 + 5
+    @test scenario.requests[1].pickUpActivity.timeWindow.startTime == requestTime1 - 15 - 30 
+    @test scenario.requests[1].pickUpActivity.timeWindow.endTime == requestTime1 + 5 - 10 
+    @test scenario.requests[1].dropOffActivity.timeWindow.startTime == requestTime1 - 15
+    @test scenario.requests[1].dropOffActivity.timeWindow.endTime == requestTime1 + 5
 
     requestTime2 = 870 
-    @test scenario.requests[2].pickUpTimeWindow.startTime == requestTime2 - 5
-    @test scenario.requests[2].pickUpTimeWindow.endTime == requestTime2 + 15 
-    @test scenario.requests[2].dropOffTimeWindow.startTime == requestTime2 - 5 + 50 
-    @test scenario.requests[2].dropOffTimeWindow.endTime == requestTime2 + 15 + 100
+    @test scenario.requests[2].pickUpActivity.timeWindow.startTime == requestTime2 - 5
+    @test scenario.requests[2].pickUpActivity.timeWindow.endTime == requestTime2 + 15 
+    @test scenario.requests[2].dropOffActivity.timeWindow.startTime == requestTime2 - 5 + 50 
+    @test scenario.requests[2].dropOffActivity.timeWindow.endTime == requestTime2 + 15 + 100
     
     requestTime3 = 530
-    @test scenario.requests[3].pickUpTimeWindow.startTime == requestTime3 - 15 - 100
-    @test scenario.requests[3].pickUpTimeWindow.endTime == requestTime3 + 5 - 50 
-    @test scenario.requests[3].dropOffTimeWindow.startTime == requestTime3 - 15
-    @test scenario.requests[3].dropOffTimeWindow.endTime == requestTime3 + 5
+    @test scenario.requests[3].pickUpActivity.timeWindow.startTime == requestTime3 - 15 - 100
+    @test scenario.requests[3].pickUpActivity.timeWindow.endTime == requestTime3 + 5 - 50 
+    @test scenario.requests[3].dropOffActivity.timeWindow.startTime == requestTime3 - 15
+    @test scenario.requests[3].dropOffActivity.timeWindow.endTime == requestTime3 + 5
 
     requestTime4 = 425
-    @test scenario.requests[4].pickUpTimeWindow.startTime == requestTime4 - 15 - 140 
-    @test scenario.requests[4].pickUpTimeWindow.endTime == requestTime4 + 5 - 70 
-    @test scenario.requests[4].dropOffTimeWindow.startTime == requestTime4 - 15
-    @test scenario.requests[4].dropOffTimeWindow.endTime == requestTime4 + 5
+    @test scenario.requests[4].pickUpActivity.timeWindow.startTime == requestTime4 - 15 - 140 
+    @test scenario.requests[4].pickUpActivity.timeWindow.endTime == requestTime4 + 5 - 70 
+    @test scenario.requests[4].dropOffActivity.timeWindow.startTime == requestTime4 - 15
+    @test scenario.requests[4].dropOffActivity.timeWindow.endTime == requestTime4 + 5
 
     requestTime5 = 990 
-    @test scenario.requests[5].pickUpTimeWindow.startTime == requestTime5 - 5
-    @test scenario.requests[5].pickUpTimeWindow.endTime == requestTime5 + 15 
-    @test scenario.requests[5].dropOffTimeWindow.startTime == requestTime5 - 5 + 70
-    @test scenario.requests[5].dropOffTimeWindow.endTime == requestTime5 + 15 + 140
+    @test scenario.requests[5].pickUpActivity.timeWindow.startTime == requestTime5 - 5
+    @test scenario.requests[5].pickUpActivity.timeWindow.endTime == requestTime5 + 15 
+    @test scenario.requests[5].dropOffActivity.timeWindow.startTime == requestTime5 - 5 + 70
+    @test scenario.requests[5].dropOffActivity.timeWindow.endTime == requestTime5 + 15 + 140
 
     # Check online and offline requests
     for (i,request) in enumerate(scenario.requests)

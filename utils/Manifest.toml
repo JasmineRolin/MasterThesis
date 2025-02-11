@@ -1,10 +1,8 @@
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.11.3"
+julia_version = "1.11.2"
 manifest_format = "2.0"
-
-project_hash = "47db1154d4dccdd573e98dd9a0351d25204b06c6"
-
+project_hash = "6215e61e2783b47ae635cd4f1db307e839e99089"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -399,13 +397,11 @@ git-tree-sha1 = "a94945b7faff91d6feba4b6e0fc95e5c44eb5a67"
 uuid = "3349acd9-ac6a-5e09-bcdb-63829b23a429"
 version = "1.0.16"
 
-
 [[deps.PyCall]]
 deps = ["Conda", "Dates", "Libdl", "LinearAlgebra", "MacroTools", "Serialization", "VersionParsing"]
 git-tree-sha1 = "9816a3826b0ebf49ab4926e2b18842ad8b5c8f04"
 uuid = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
 version = "1.96.4"
-
 
 [[deps.REPL]]
 deps = ["InteractiveUtils", "Markdown", "Sockets", "StyledStrings", "Unicode"]

@@ -48,7 +48,7 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     # Split into offline and online requests
     onlineRequests, offlineRequests = splitRequests(requests)
 
-    scenario = Scenario(requests,vehicles,vehicleCostPrHour,vehicleStartUpCost,serviceTimes,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,onlineRequests,offlineRequests)
+    scenario = Scenario(requests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime)
 
     return scenario
 
@@ -112,7 +112,7 @@ function readRequests(requestDf::DataFrame, bufferTime::Int,maximumRideTimePerce
         dropOffLocation = Location(string("DO R",id),row.dropoff_latitude,row.dropoff_longitude) 
 
         # Read request type 
-        requestType = row.request_type == 1 ? PICKUP : DROPOFF
+        requestType = row.request_type == 1 ? PICKUP_REQUEST : DROPOFF_REQUEST
 
         # Read mobility type 
         mobilityType = row.mobility_type == "Walking" ? WALKING : WHEELCHAIR
@@ -139,7 +139,7 @@ function readRequests(requestDf::DataFrame, bufferTime::Int,maximumRideTimePerce
         pickUpTimeWindow = TimeWindow(0,0)
         dropOffTimeWindow = TimeWindow(0,0)
 
-        if requestType == PICKUP
+        if requestType == PICKUP_REQUEST
             pickUpTimeWindow = findTimeWindowOfRequestedPickUpTime(requestTime)
             dropOffTimeWindow = findTimeWindowOfDropOff(pickUpTimeWindow,directDriveTime,maximumRideTime)
         else
@@ -147,7 +147,9 @@ function readRequests(requestDf::DataFrame, bufferTime::Int,maximumRideTimePerce
             pickUpTimeWindow = findTimeWindowOfPickUp(dropOffTimeWindow,directDriveTime,maximumRideTime)
         end
 
-        request = Request(id,requestType,mobilityType,callTime,pickUpLocation,dropOffLocation,pickUpTimeWindow,dropOffTimeWindow,directDriveTime,maximumRideTime)
+        pickUpActivity = Activity(id,id,PICKUP,mobilityType,pickUpLocation,pickUpTimeWindow)
+        dropOffActivity = Activity(2*id,id,DROPOFF,mobilityType,dropOffLocation,dropOffTimeWindow)
+        request = Request(id,requestType,mobilityType,callTime,pickUpActivity,dropOffActivity,directDriveTime,maximumRideTime)
         push!(requests,request)
         
     end
