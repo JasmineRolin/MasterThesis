@@ -31,6 +31,9 @@ function determineCurrentState(solution::Solution,event::Request)
     # Update total cost
     currentState.totalCost = currentObjectiveFunction(completedRoutes) #Change to right function name !!!!!!!!!!
 
+    # Update KPIs
+    currentState.nTaxi, currentState.totalRideTime, currentState.totalViolationTW, currentState.totalDistance, currentState.idleTime = currentKPIs(completedRoutes) #Change to right function name !!!!!!!!!!
+
     return currentState
 
 
