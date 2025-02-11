@@ -10,9 +10,9 @@ export minutesSinceMidnight
 #==
  Export from TimeUtils module
 ==#
-include("DistanceMatrix.jl")
-using .DistanceMatrix 
-export getDistanceMatrix
+include("DistanceUtils.jl")
+using .DistanceUtils 
+export getDistanceAndTimeMatrix
 
 #==
  Export from InstanceReaders module
