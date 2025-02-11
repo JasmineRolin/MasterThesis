@@ -10,6 +10,7 @@ function currentKPIs(completedRoutes::Vector{VehicleSchedule},oldState::State)
 
     for route in completedRoutes
         # Update KPIs
+
     end
 
     return totalCost, nTaxi, totalRideTime, totalViolationTW, totalDistance, idleTime
@@ -38,7 +39,7 @@ function determineCurrentState(solution::Solution,event::Request,oldState::State
                 currentState.vehicleSchedules[vehicle].totalCost = getTotalCostRoute(currentState.vehicleSchedules[vehicle].route)
 
                 # Update completed routes
-                append!(completededRoutes[vehicle], schedule.route[1:j-1])
+                append!(completedRoutes[vehicle], schedule.route[1:j-1])
                 break
             end
         end

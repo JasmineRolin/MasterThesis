@@ -3,9 +3,11 @@ module costCalculator
 export getTotalDistanceRoute
 export getTotalCostRoute
 
-function getTotalDistanceRoute(route::Vector{Int}, distanceMatrix::Matrix{Int},scenario::Scenario)
+function getTotalDistanceRoute(route::Vector{Int},scenario::Scenario)
     nRequests = length(scenario.requests)
     totalDistance = 0
+    distanceMatrix = scenario.distanceMatrix
+
     for i in 1:length(route)-1
         if route[i].request.task == "PICKUP" && route[i+1].request.task == "PICKUP"
             totalDistance += distanceMatrix[route[i].request.id, route[i+1].request.id]
@@ -29,14 +31,8 @@ function getTotalDistanceRoute(route::Vector{Int}, distanceMatrix::Matrix{Int},s
     return totalDistance
 end
 
-function getTotalCostRoute(route::Vector{Int}, costMatrix::Matrix{Float32})
-    totalCost = 0
-    for i in 1:length(route)-1
-        totalCost += costMatrix[route[i].request, route[i+1]]
-    end
-    return totalCost
-
-
+function getTotalCostRoute(totalDistance::Float32, scenario::Scenario)
+    return scenario.vehicleCostPerKm * totalDistance
 end
 
 end
