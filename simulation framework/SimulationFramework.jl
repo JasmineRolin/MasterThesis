@@ -52,8 +52,11 @@ function simulateScenario(scenario::Scenario)
         # Determine current state 
         currentState = determineCurrentState(solution, event)
 
+        # Update distance matrix
+        updateDistanceMatrix(event, scenario) #Change to right function name !!!!!!!!!!
 
-        solution = onlineAlgorithm(currentState, event) #Change to right function name !!!!!!!!!!
+        # Get solution for online problem
+        solution = onlineAlgorithm(currentState, event, scenario) #Change to right function name !!!!!!!!!!
     end
 
     return solution
