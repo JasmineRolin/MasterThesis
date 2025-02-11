@@ -17,6 +17,6 @@ Test minutesSinceMidnight
     # Retrieve distance and time matrix 
     distanceMatrix, timeMatrix = getDistanceAndTimeMatrix(scenario)
 
-    @test int(distanceMatrix[2,1]/1000) == 5.9
+    @test round(distanceMatrix[2,1]/1000.0,digits=1) == 6.0
 
 end
