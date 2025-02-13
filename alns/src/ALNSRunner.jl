@@ -8,7 +8,7 @@ using domain, UnPack, ..ALNSParameters, ..ALNSConfiguration, ..ALNSAlgorithm
 
 function runALNS(scenario::Scenario, parametersFile::String)
     # Unpack scenario
-    @unpack requests, onlineRequests, offlineRequests, serviceTimes, vehicles, vehicleCostPrHour, vehicleStartUpCost,planningPeriod,_,_,_ = scenario
+    @unpack requests, onlineRequests, offlineRequests, serviceTimes, vehicles, vehicleCostPrHour, vehicleStartUpCost,planningPeriod = scenario
 
     # Read parameters 
     parameters = readParameters(parametersFile)

@@ -50,24 +50,54 @@ end
 #==
  Method to do roulette wheel selection 
 ==#
-function rouletteWheel()
-    # TODO: implement roulette wheel selection 
+function rouletteWheel(weights::Vector{Float64})::Int
+    totalWeight = sum(weights)
+    r = rand() * totalWeight  # Generate a random number in [0, totalWeight]
+
+    cumulativeSum = 0.0
+    for (i, w) in enumerate(weights)
+        cumulativeSum += w
+        if r <= cumulativeSum
+            return i  # Return the index of the selected element
+        end
+    end
+
+    return length(weights)  # Fallback (should never be reached)
 end
 
 #==
  Method to calculate score of destroy or repair method 
 ==#
 function calculateScore(parameters::ALNSParameters,isAccepted::Bool, isImproved::Bool, isNewBest::Bool)::Float64
-    # TODO: implement method to calculate score 
-    # Return score 
+    @unpack scoreAccepted, scoreImproved, scoreNewBest = parameters
+    
+    score = 1.0 # Initialize score to 1 of no update should be made 
+
+	if isAccepted
+		score = max(score, scoreAccepted)
+	end
+	if isImproved
+		score = max(score, scoreImproved)
+	end
+	if isNewBest
+		score = max(score, scoreNewBest)
+	end
+
+    return score 
 end
 
 #==
  Method to update weight of destroy/repair method 
 ==#
-function updateWeights!(parameters::ALNSParameters,state::ALNSState,isAccepted::Bool, isImproved::Bool, isNewBest::Bool)
-    # TODO: implement method to update weights 
-    # Use calculateScore
+function updateWeights!(state::ALNSState,configuration::ALNSConfiguration,isAccepted::Bool, isImproved::Bool, isNewBest::Bool)
+    @unpack reactionFactor = configuration.parameters
+
+    # Find score of destroy-repair pair 
+    score = calculateScore(configuration.parameters,isAccepted,isImproved,isNewBest)
+
+    # Update weights 
+
+
 end
 
 
