@@ -4,8 +4,8 @@ module alns
  Import from GenericMethod
 ==#
 include("GenericMethod.jl")
-using .GenericMethod
-export GenericMethods
+using .GenericMethods
+export GenericMethod
 
 #==
  Import from DestroyMethods 
