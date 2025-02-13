@@ -21,4 +21,13 @@ include("InstanceReader.jl")
 using .InstanceReaders
 export readInstance
 
+#==
+ Export from costCalculator module
+==#
+include("costCalculator.jl")
+using .costCalculator
+export getTotalDistanceRoute
+export getTotalCostRoute
+export getTotalTimeRoute
+
 end 

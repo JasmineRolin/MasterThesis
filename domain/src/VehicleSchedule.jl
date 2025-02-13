@@ -1,12 +1,12 @@
 module VehicleSchedules 
 
-using ..Vehicles, ..RequestAssignments, ..TimeWindows 
+using ..Vehicles, ..ActivityAssignments, ..TimeWindows 
 
 export VehicleSchedule 
 
 mutable struct VehicleSchedule 
     vehicle::Vehicle 
-    route::Vector{RequestAssignment}
+    route::Vector{ActivityAssignment}
     activeTimeWindow::TimeWindow 
     totalDistance::Float32
     totalCost::Float32 

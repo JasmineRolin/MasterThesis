@@ -13,8 +13,8 @@ function getDistanceAndTimeMatrix(scenario::Scenario)::Tuple{Array{Int, 2}, Arra
 
 
     # Collect request info 
-    pickUpLocations = [(r.pickupLocation.lat,r.pickupLocation.long) for r in scenario.requests]
-    dropOffLocations = [(r.dropOffLocation.lat,r.dropOffLocation.long) for r in scenario.requests]
+    pickUpLocations = [(r.pickUpActivity.location.lat,r.pickUpActivity.location.long) for r in scenario.requests]
+    dropOffLocations = [(r.dropOffActivity.location.lat,r.dropOffActivity.location.long) for r in scenario.requests]
 
     # Collect depot info
     depotLocations = Vector{Tuple{Float64, Float64}}()

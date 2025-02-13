@@ -1,8 +1,9 @@
 using Test 
 using Dates
 using utils 
+include("../simulation framework/SimulationFramework.jl")
 
-
+using .SimulationFramework
 
 #==
  Test InstanceReader 
@@ -76,6 +77,8 @@ using utils
         end
     end
 
+    simulateScenario(scenario)
+
 
 end
 
@@ -86,6 +89,9 @@ end
 
     # Read instance 
     scenario = readInstance(requestFile,vehiclesFile,parametersFile)
+
+    simulateScenario(scenario)
+
 
     @test length(scenario.requests) == 28 
 

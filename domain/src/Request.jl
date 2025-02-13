@@ -1,8 +1,10 @@
 module Requests 
 
-using ..TimeWindows, ..Locations
+using ..TimeWindows, ..Locations, ..Enums
+using ..Activities
 
-export Request, RequestType,MobilityType,PICKUP,DROPOFF,WALKING,WHEELCHAIR
+
+export Request
 export findTimeWindowOfRequestedPickUpTime, findTimeWindowOfDropOff, findTimeWindowOfRequestedDropOffTime, findTimeWindowOfPickUp
 export findMaximumRideTime
 
@@ -12,23 +14,6 @@ export findMaximumRideTime
 MAX_DELAY = 15
 MAX_EARLY_ARRIVAL = 5
 
-#==
- Enum that describes activity type
-==#
-@enum RequestType begin
-    PICKUP = 0
-    DROPOFF = 1
-end 
-
-#==
- Enum that describes customer type
-==# 
-@enum MobilityType begin 
-    WALKING = 0
-    WHEELCHAIR = 1
-end
-
-
 #== 
  Struct that defines request 
 ==#
@@ -36,11 +21,9 @@ struct Request
     id::Int 
     requestType::RequestType
     mobilityType::MobilityType
-    callTime::Int # The time the reqeust is received (minutes after midnight)
-    pickupLocation::Location 
-    dropOffLocation::Location 
-    pickUpTimeWindow::TimeWindow 
-    dropOffTimeWindow::TimeWindow 
+    callTime::Int # The time the request is received (minutes after midnight)
+    pickUpActivity::Activity 
+    dropOffActivity::Activity 
     directDriveTime::Int # Direct drive time in minutes 
     maximumRideTime::Int # Maximum ride time in minutes 
 end
