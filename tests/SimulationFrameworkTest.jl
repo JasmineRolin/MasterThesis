@@ -77,6 +77,8 @@ using .SimulationFramework
         end
     end
 
+    simulateScenario(scenario)
+
 
 end
 
@@ -87,6 +89,7 @@ end
 
     # Read instance 
     scenario = readInstance(requestFile,vehiclesFile,parametersFile)
+
     simulateScenario(scenario)
 
 

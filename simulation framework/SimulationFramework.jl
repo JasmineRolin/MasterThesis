@@ -25,7 +25,7 @@ end
 function determineCurrentState(solution::Solution,event::Request,completedState::State,scenario::Scenario)
 
     # Initialize current state
-    currentState = State()
+    currentState = State(Vector{VehicleSchedule}(),0,0,0,0,0)
 
     # Get current time
     currentTime = event.callTime
@@ -36,7 +36,7 @@ function determineCurrentState(solution::Solution,event::Request,completedState:
             if node.endOfServiceTime < currentTime
                 # Update vehicle schedule for current state
                 currentState.vehicleSchedules[vehicle].route = schedule.route[j:end]
-                currentState.vehicleSchedules[vehicle].totalDistance = getTotalDistanceRoute(currentState.vehicleSchedules[vehicle].route)
+                currentState.vehicleSchedules[vehicle].totalDistance = getTotalDistanceRoute(currentState.vehicleSchedules[vehicle].route,scenario)
                 currentState.vehicleSchedules[vehicle].totalCost = getTotalCostRoute(scenario,currentState.vehicleSchedules[vehicle].route)
                 currentState.totalCost += currentState.vehicleSchedules[vehicle].totalCost
                 currentState.totalDistance += currentState.vehicleSchedules[vehicle].totalDistance
@@ -44,7 +44,7 @@ function determineCurrentState(solution::Solution,event::Request,completedState:
 
                 # Update completed routes
                 append!(completedState.vehicleSchedules[vehicle], schedule.route[1:j-1])
-                completedState.vehicleSchedules[vehicle].totalDistance += getTotalDistanceRoute(completedState.vehicleSchedules[vehicle].route)
+                completedState.vehicleSchedules[vehicle].totalDistance += getTotalDistanceRoute(completedState.vehicleSchedules[vehicle].route,scenario)
                 completedState.vehicleSchedules[vehicle].totalCost += getTotalCostRoute(scenario,completedState.vehicleSchedules[vehicle].route)
                 completedState.totalCost += completedState.vehicleSchedules[vehicle].totalCost
                 completedState.totalDistance += completedState.vehicleSchedules[vehicle].totalDistance
@@ -75,12 +75,12 @@ function simulateScenario(scenario::Scenario)
 
     # Get solution for initial solution (online problem)
     #solution = offlineAlgorithm(scenario) #Change to right function name !!!!!!!!!!
+    solution = Solution(Vector{VehicleSchedule}(),0,0,0,0,0)
 
     # Get solution for online problem
-    for (itr,event) in enumerate(onlineRequests)
-        # Determine current state 
-        completedState = copy(currentState)
-        currentState = determineCurrentState(solution,event,completedState,scenario)
+    for (itr,event) in enumerate(scenario.onlineRequests)
+        # Determine current state
+        currentState, completedState = determineCurrentState(solution,event,completedState,scenario)
 
         # Get solution for online problem
         #solution = onlineAlgorithm(currentState, event, scenario) #Change to right function name !!!!!!!!!!
