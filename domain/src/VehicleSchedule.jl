@@ -10,7 +10,15 @@ mutable struct VehicleSchedule
     activeTimeWindow::TimeWindow 
     totalDistance::Float32
     totalCost::Float32 
+
+    #Constructor
+    function VehicleSchedule(vehicle::Vehicle)
+        # Create empty VehicleSchedule objects
+        return new(vehicle, Vector{ActivityAssignment}(), TimeWindow(0, 0), 0.0, 0.0) 
+    end
+
 end 
+
 
 
 end
