@@ -11,7 +11,6 @@ mutable struct Solution
     totalRideTime::Int
     totalDistance::Int
     idleTime::Int
-
 end
 
 end

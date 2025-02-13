@@ -11,7 +11,6 @@ mutable struct State
     totalRideTime::Int 
     totalDistance::Int 
     idleTime::Int 
-
 end
 
 
