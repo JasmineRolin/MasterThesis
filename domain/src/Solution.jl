@@ -1,9 +1,9 @@
 module Solutions 
 
 using ..VehicleSchedules 
+using ..Scenarios
 
 export Solution 
-export initializeSolution
 
 mutable struct Solution 
     vehicleSchedules::Vector{VehicleSchedule}

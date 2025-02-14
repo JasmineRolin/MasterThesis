@@ -20,6 +20,10 @@ export getDistanceAndTimeMatrix
 include("InstanceReader.jl")
 using .InstanceReaders
 export readInstance
+export readVehicles
+export readRequests
+export splitRequests
+
 
 #==
  Export from costCalculator module

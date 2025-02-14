@@ -63,18 +63,19 @@ using .VehicleSchedules
 export VehicleSchedule
 
 #==
+ Export from Scenario module 
+==#
+include("Scenario.jl")
+using .Scenarios
+export Scenario
+
+#==
  Export from Solution module 
 ==#
 include("Solution.jl")
 using .Solutions
 export Solution
 
-#==
- Export from Scenario module 
-==#
-include("Scenario.jl")
-using .Scenarios
-export Scenario
 
 #==
  Export from Scenario module 

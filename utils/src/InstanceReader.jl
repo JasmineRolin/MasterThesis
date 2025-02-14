@@ -1,8 +1,13 @@
 module InstanceReaders 
 
 using DataFrames, CSV, domain
+using ..utils
+
 
 export readInstance
+export readVehicles
+export readRequests
+export splitRequests
 
 #==
  Function to read instance 
@@ -51,8 +56,9 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     # Get distance and time matrix
     
 
-    scenario = Scenario(requests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,Vector{Vector{Int}}(),Vector{Vector{Int}}())
-    scenario.distance, scenario.timeMatrix = getDistanceAndTimeMatrix(scenario)
+    scenario = Scenario(requests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,zeros(Int, 0, 0),zeros(Int, 0, 0))
+    distance, time = getDistanceAndTimeMatrix(scenario)
+    scenario = Scenario(requests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time)
 
     return scenario
 
