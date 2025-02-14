@@ -1,31 +1,19 @@
 module ALNSDomain 
 
+using domain 
+
 export GenericMethod
-export ALNSParameter
+export ALNSParameters
 export ALNSConfiguration
+export ALNSState
+
 #==
  Struct to describe destroy or repair method 
 ==#
 mutable struct GenericMethod
     name::String 
     method::Function
-    numberOfUses::Int # Number of times we have used the method in the current segment 
 end
-
-
-#==
- Struct to describe configuration of ALNS algorithm 
-==#
-mutable struct ALNSConfiguration
-    destroyMethods::Vector{GenericMethod}
-    repairMethods::Vector{GenericMethod}
-    parameters::ALNSParameters
-
-    function ALNSConfiguration(parameters::ALNSParameters)
-        return new(Vector{GenericMethod}(), Vector{GenericMethod}(),parameters)
-    end
-end
-
 
 
 #==
@@ -41,8 +29,21 @@ struct ALNSParameters
 	scoreNewBest::Float64 # Score given for a new global best solution
     # TODO: add parameters for different destroy/repair methods 
 
-    function ALNSParameter()
+    function ALNSParameters()
         new(10.0,0.01,0.03,0.0,2.0,4.0,10.0)        
+    end
+end
+
+#==
+ Struct to describe configuration of ALNS algorithm 
+==#
+mutable struct ALNSConfiguration
+    destroyMethods::Vector{GenericMethod}
+    repairMethods::Vector{GenericMethod}
+    parameters::ALNSParameters
+
+    function ALNSConfiguration(parameters::ALNSParameters)
+        return new(Vector{GenericMethod}(), Vector{GenericMethod}(),parameters)
     end
 end
 
@@ -52,6 +53,8 @@ end
 mutable struct ALNSState 
     destroyWeights::Vector{Float64}
     repairWeights::Vector{Float64}
+    destroyNumberOfUses::Vector{Int} # Number of times method has been used in current segment 
+    repairNumberOfUses::Vector{Int} # Number of times method has been used in current segment 
     bestSolution::Solution 
     currentSolution::Solution
 end

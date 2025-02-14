@@ -7,18 +7,23 @@ module alns
  Import from ALNSDomain 
 ==#
 include("ALNSDomain.jl")
+using .ALNSDomain
 export GenericMethod
 export ALNSParameters, readParameters
 export ALNSConfiguration
+export ALNSState
 
 #== 
  Import from ALNSFunctions 
 ==#
 include("ALNSFunctions.jl")
+using .ALNSFunctions
 export readParameters
 export addDestroyMethod!, addRepairMethod!
-export destroy, repair
+export destroy!, repair!
 export rouletteWheel
+export calculateScore, updateWeights!
+
 
 #==
  Import from DestroyMethods 

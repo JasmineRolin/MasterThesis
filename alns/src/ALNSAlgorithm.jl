@@ -1,6 +1,6 @@
 module ALNSAlgorithm 
 
-using domain, ..ALNSConfigurations, ..ALNSParameters
+using domain, ..ALNSDomain, ..ALNSFunctions
 
 export ALNS
 
@@ -11,7 +11,7 @@ export ALNS
 #==
  Method to run ALNS algorithm
 ==#
-function ALNS(scenario::Scenario,initialSolution::Solution,configuration::ALNSConfiguration, parameters::ALNSParameter)::Solution 
+function ALNS(scenario::Scenario,initialSolution::Solution,configuration::ALNSConfiguration, parameters::ALNSParameters)::Solution 
     # TODO: implement ALNS     
 end
 

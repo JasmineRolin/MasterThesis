@@ -1,6 +1,6 @@
 module ALNSRunner
 
-using domain, UnPack, ..ALNSParameters, ..ALNSConfiguration, ..ALNSAlgorithm
+using domain, UnPack, ..ALNSDomain, ..ALNSFunctions, ..ALNSAlgorithm
 
 #==
  Module to run ALNS algorithm 

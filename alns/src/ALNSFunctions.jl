@@ -1,11 +1,12 @@
 module ALNSFunctions 
 
-using ..ALNSDomain
+using UnPack, domain, ..ALNSDomain
 
 export readParameters
 export addDestroyMethod!, addRepairMethod!
-export destroy, repair
+export destroy!, repair!
 export rouletteWheel
+export calculateScore, updateWeights!
 
 
 #==
@@ -13,7 +14,7 @@ export rouletteWheel
 ==#
  # TODO: Implement function to read parameters 
  function readParameters(parametersFile::String)::ALNSParameters
-    return ALNSParameter()
+    return ALNSParameters()
 end
 
 #==
@@ -33,17 +34,33 @@ end
 #==
  Method to Destroy 
 ==#
-function destroy()
-    # TODO: use roulettewheel to select method and then use method 
-    # Return solution and destroy method index
+function destroy!(configuration::ALNSConfiguration,parameters::ALNSParameters,state::ALNSState,solution::Solution)::Int
+    # Select method 
+    destroyIdx = rouletteWheel(state.destroyWeights)
+
+    # Update count 
+    state.destroyNumberOfUses[destroyIdx] += 1
+
+    # Use method 
+    configuration.destroyMethods[destroyIdx].method(solution,parameters)
+
+    return destroyIdx
 end
 
 #==
  Method to Repair  
 ==#
-function repair()
-    # TODO: use roulettewheel to select method and then use method 
-    # Return solution and repair method index
+function repair!(configuration::ALNSConfiguration,parameters::ALNSParameters,state::ALNSState,solution::Solution)::Int
+    # Select method 
+    repairIdx = rouletteWheel(state.repairWeights)
+
+    # Update count 
+    state.repairNumberOfUses[repairIdx] += 1
+
+    # Use method 
+    configuration.repairMethods[repairIdx].method(solution,parameters)
+
+    return repairIdx
 end
 
 
@@ -89,15 +106,15 @@ end
 #==
  Method to update weight of destroy/repair method 
 ==#
-function updateWeights!(state::ALNSState,configuration::ALNSConfiguration,isAccepted::Bool, isImproved::Bool, isNewBest::Bool)
+function updateWeights!(state::ALNSState,configuration::ALNSConfiguration,destroyIdx::Int, repairIdx::Int,isAccepted::Bool, isImproved::Bool, isNewBest::Bool)
     @unpack reactionFactor = configuration.parameters
 
     # Find score of destroy-repair pair 
     score = calculateScore(configuration.parameters,isAccepted,isImproved,isNewBest)
 
     # Update weights 
-
-
+    state.destroyWeights[destroyIdx] = state.destroyWeights[destroyIdx]*(1-reactionFactor) + reactionFactor*(score/state.destroyNumberOfUses[destroyIdx])
+    state.repairWeights[repairIdx] = state.repairWeights[repairIdx]*(1-reactionFactor) + reactionFactor*(score/state.repairNumberOfUses[repairIdx])
 end
 
 
