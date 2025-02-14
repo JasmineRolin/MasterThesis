@@ -10,8 +10,8 @@ mutable struct VehicleSchedule
     activeTimeWindow::TimeWindow 
     totalDistance::Float32
     totalCost::Float32 
-    nWalking::Int
-    nWheelchair::Int
+    numberOfWalking::Vector{Int} # number of WALKING customers on vehicle after servicing node idx
+    numberOfWheelchair::Vector{Int} # number of WHEELCHAIR customers on vehicle after servicing node idx
 
     # Constructor
     function VehicleSchedule(vehicle::Vehicle)
@@ -21,7 +21,7 @@ mutable struct VehicleSchedule
         endDepot = ActivityAssignment(Activity(vehicle.depotId,-1,DEPOT,WALKING,vehicle.depotLocation,TimeWindow(24*60,24*60)),vehicle,24*60,24*60)
 
         # Create empty VehicleSchedule objects
-        return new(vehicle, [startDepot,endDepot], TimeWindow(0, 0), 0.0, 0.0) 
+        return new(vehicle, [startDepot,endDepot], TimeWindow(0, 0), 0.0, 0.0, [0,0], [0,0]) 
     end
 
 end 

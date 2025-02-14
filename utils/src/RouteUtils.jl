@@ -1,6 +1,6 @@
 module RouteUtils 
 
-using domain 
+using UnPack, domain 
 
 export printRoute,insertRequest!
 
@@ -44,6 +44,73 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idx_pi
     # TODO Update vehicle
 end
 
+
+#==
+ Method to check feasibility of route  
+==#
+function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedule)
+    @unpack vehicle, route, activeTimeWindow, totalDistance, totalCost, numberOfWalking, numberOfWheelchair = vehicleSchedule
+    nActivities = length(route)
+
+    # Check vehicle capacities
+
+
+    # Check available time window
+    
+    # Check maximum route duration 
+        # Check that active time window matches and is correct 
+
+    # Check total distance
+
+    # Check cost 
+
+    # Check activity assignments 
+        # Check that vehicle is compatible with request 
+        # Check that time windows are respected
+        # Check that service times are correct
+        # Check that pickup is before dropoff
+        # Check that capacities are respected
+        # Check maximum ride time 
+
+    totalDistanceCheck = 0.0
+    totalDurationCheck = 0.0 
+    hasPickUpBeenServiced = Set{Int}()
+    for (idx,activityAssignment) in enumerate(route) 
+        @unpack activity, startOfServiceTime, endOfServiceTime = activityAssignment
+
+        # Check vehicle compatibility with the request
+        if activity.mobilityType == WHEELCHAIR && vehicle.capacities[WHEELCHAIR] == 0
+            error("ROUTE INFEASIBLE: Activity $(activity.id) is not compatible with vehicle $(vehicle.id)")
+            return false
+        end
+
+        # Ensure pickup is visited before drop-off
+        if activity.activityType == PICKUP
+            push!(pickupServiced,activity.requestId)
+        elseif activity.activityType == DROPOFF
+            if !haskey(pickupServiced, activity.requestId) || !(pickupServicedactivity.requestId in pickupServiced)
+                error("ROUTE INFEASIBLE: Drop-off $(activity.id) before pick-up, vehicle: $(vehicle.id)")
+                return false
+            end
+        end
+
+
+        # Check that time windows are respected
+        if startOfServiceTime < activity.timeWindow.startTime || endOfServiceTime > activity.timeWindow.endTime
+            error("ROUTE INFEASIBLE: Time window not respected for activity $(activity.id) on vehicle $(vehicle.id). 
+                   Start/End of Service: ($startOfServiceTime, $endOfServiceTime), 
+                   Expected Time Window: ($(activity.timeWindow.startTime), $(activity.timeWindow.endTime))")
+        end
+
+
+
+    end
+
+
+
+    return true
+    
+end
 
 
 end
