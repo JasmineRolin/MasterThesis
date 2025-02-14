@@ -13,7 +13,7 @@ mutable struct VehicleSchedule
     nWalking::Int
     nWheelchair::Int
 
-    #Constructor
+    # Constructor
     function VehicleSchedule(vehicle::Vehicle)
         # Create route with depots
         startDepot = ActivityAssignment(Activity(vehicle.depotId,-1,DEPOT,WALKING,vehicle.depotLocation,TimeWindow(0,0)),vehicle,0,0)

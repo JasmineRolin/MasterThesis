@@ -13,7 +13,7 @@ export splitRequests
  Function to read instance 
  Takes request, vehicles and parameters .csv as input 
 ==#
-function readInstance(requestFile::String, vehicleFile::String, parametersFile::String,distanceMatrixFile::String,timeMatrixFile::String)::Scenario
+function readInstance(requestFile::String, vehicleFile::String, parametersFile::String,distanceMatrixFile=""::String,timeMatrixFile=""::String)::Scenario
 
     # Check that files exist 
     if !isfile(requestFile)
@@ -25,27 +25,18 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     if !isfile(parametersFile)
         error("Error: Parameters file $parametersFile does not exist.")
     end
-    if !isfile(distanceMatrixFile)
-        error("Error: Parameters file $distanceMatrixFile does not exist.")
+    if distanceMatrixFile != "" && !isfile(distanceMatrixFile)
+        error("Error: distanceMatrixFile file $distanceMatrixFile does not exist.")
     end
-    if !isfile(timeMatrixFile)
-        error("Error: Parameters file $timeMatrixFile does not exist.")
+    if timeMatrixFile != "" && !isfile(timeMatrixFile)
+        error("Error: timeMatrixFile file $timeMatrixFile does not exist.")
     end 
 
-    # Read input 
+    # Read request, vehicle and parameters dataframes from input
     requestsDf = CSV.read(requestFile, DataFrame)
     vehiclesDf = CSV.read(vehicleFile, DataFrame)
     parametersDf = CSV.read(parametersFile, DataFrame)
-    lines = readlines(distanceMatrixFile)
-    distance = [parse.(Int, split(line)) for line in lines]
-    distance = hcat(distance...)'
-    lines = readlines(timeMatrixFile)
-    time = [parse.(Int, split(line)) for line in lines]
-    time = hcat(time...)'
-
-
     nRequests = nrow(requestsDf)
-    nVehicles = nrow(vehiclesDf)
     
     # Get parameters 
     planningPeriod = TimeWindow(parametersDf[1,"start_of_planning_period"],parametersDf[1,"end_of_planning_period"])
@@ -58,16 +49,29 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     
 
     # Get vehicles 
-    vehicles = readVehicles(vehiclesDf,nVehicles,nRequests)
+    vehicles,nDepots = readVehicles(vehiclesDf,nRequests)
+
+    # Read time and distance matrices from input 
+    if timeMatrixFile != "" && distanceMatrixFile != ""
+        lines = readlines(distanceMatrixFile)
+        distance = [parse.(Int, split(line)) for line in lines]
+        distance = convert(Matrix{Int}, hcat(distance...)')
+    
+        lines = readlines(timeMatrixFile)
+        time = [parse.(Int, split(line)) for line in lines]
+        time = convert(Matrix{Int}, hcat(time...)')
+    else
+        # Initialize empty matrices if not given 
+        time = zeros(Int,2*nRequests+nDepots,2*nRequests+nDepots)
+        distance = zeros(Int,2*nRequests+nDepots,2*nRequests+nDepots)
+        # TODO: add calculations of actual distance and time matrices
+    end 
 
     # Get requests 
-    requests = readRequests(requestsDf,bufferTime,maximumRideTimePercent,minimumMaximumRideTime)
+    requests = readRequests(requestsDf,nRequests,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time)
 
     # Split into offline and online requests
     onlineRequests, offlineRequests = splitRequests(requests)
-
-    # Number of depots
-    nDepots = size(time)[1] - 2*nRequests
 
     # Get distance and time matrix
     scenario = Scenario(requests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots)
@@ -80,12 +84,13 @@ end
 #==
  Function to read vehicles  
 ==#
-function readVehicles(vehiclesDf::DataFrame,nVehicles::Int, nRequests::Int)::Vector{Vehicle}
+function readVehicles(vehiclesDf::DataFrame, nRequests::Int)
     # Get vehicles
     vehicles = Vector{Vehicle}()
     depots = Dict{Tuple{Float64,Float64},Int}() # Keep track of depots to give them an Id 
 
     currentDepotId = 2*nRequests + 1
+    nDepots = 0
     for row in eachrow(vehiclesDf)
         id = row.id
 
@@ -106,6 +111,7 @@ function readVehicles(vehiclesDf::DataFrame,nVehicles::Int, nRequests::Int)::Vec
         depotId = get!(depots, (depotLatitude, depotLongitude), currentDepotId) # Get or default
         if depotId == currentDepotId  
             currentDepotId += 1
+            nDepots += 1
         end
 
         depotLocation = Location(string("Depot ",depotId),depotLatitude,depotLongitude)
@@ -116,18 +122,19 @@ function readVehicles(vehiclesDf::DataFrame,nVehicles::Int, nRequests::Int)::Vec
         
     end
 
-    return vehicles
+    return vehicles, nDepots 
 end
 
 
 #==
  Function to read requests 
 ==#
-function readRequests(requestDf::DataFrame, bufferTime::Int,maximumRideTimePercent::Int, minimumMaximumRideTime::Int)::Vector{Request}
+function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maximumRideTimePercent::Int, minimumMaximumRideTime::Int,time::Array{Int,2})::Vector{Request}
     requests = Vector{Request}()
    
     for row in eachrow(requestDf)
         id = row.id 
+        dropOffId = nRequests + id
 
         # Read location 
         pickUpLocation = Location(string("PU R",id),row.pickup_latitude,row.pickup_longitude) 
@@ -150,7 +157,7 @@ function readRequests(requestDf::DataFrame, bufferTime::Int,maximumRideTimePerce
         end
 
         # Read maximum drive time 
-        directDriveTime = computeDirectDriveTime(pickUpLocation,dropOffLocation)
+        directDriveTime = time[id,dropOffId]
         maximumRideTime = findMaximumRideTime(directDriveTime,maximumRideTimePercent,minimumMaximumRideTime)
 
         if directDriveTime >= maximumRideTime
@@ -170,7 +177,7 @@ function readRequests(requestDf::DataFrame, bufferTime::Int,maximumRideTimePerce
         end
 
         pickUpActivity = Activity(id,id,PICKUP,mobilityType,pickUpLocation,pickUpTimeWindow)
-        dropOffActivity = Activity(2*id,id,DROPOFF,mobilityType,dropOffLocation,dropOffTimeWindow)
+        dropOffActivity = Activity(dropOffId,id,DROPOFF,mobilityType,dropOffLocation,dropOffTimeWindow)
         request = Request(id,requestType,mobilityType,callTime,pickUpActivity,dropOffActivity,directDriveTime,maximumRideTime)
         push!(requests,request)
         
@@ -181,9 +188,9 @@ function readRequests(requestDf::DataFrame, bufferTime::Int,maximumRideTimePerce
 end
 
 
-# ------
-# Function to split requests into online and offline requests
-# ------
+#==
+ Function to split requests into online and offline requests
+==#
 function splitRequests(requests::Vector{Request})
 
     onlineRequests = Request[]
@@ -203,28 +210,11 @@ function splitRequests(requests::Vector{Request})
 
 end
 
-
-# TODO: remove when distance function is working 
-using .MathConstants: pi
-
-function haversine_distance(lat1::Float64, long1::Float64, lat2::Float64, long2::Float64)::Float64
-    EARTH_RADIUS_KM = 6371.0
-
-    # Convert degrees to radians
-    φ1, φ2 = deg2rad(lat1), deg2rad(lat2)
-    Δφ = deg2rad(lat2 - lat1)
-    Δλ = deg2rad(long2 - long1)
-
-    # Haversine formula
-    a = sin(Δφ / 2)^2 + cos(φ1) * cos(φ2) * sin(Δλ / 2)^2
-    c = 2 * atan(sqrt(a), sqrt(1 - a))
-
-    return EARTH_RADIUS_KM * c  # Distance in km
-end
-
-function computeDirectDriveTime(location1::Location, location2::Location)::Int
-    distance_km = haversine_distance(location1.lat, location1.long, location2.lat, location2.long)
-    return 10*ceil(distance_km)  # Assuming time is proportional to distance
+#==
+ Method to find distance and time matrices 
+==#
+function getDistanceAndTimeMatrix()::Tuple{Matrix{Float64},Matrix{Float64}}
+    
 end
 
 

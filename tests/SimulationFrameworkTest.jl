@@ -3,8 +3,6 @@ using Dates
 using utils 
 include("../simulation framework/SimulationFramework.jl")
 
-
-
 using .SimulationFramework
 
 
@@ -52,8 +50,8 @@ end
 requestFile = "tests/resources/Requests.csv"
 vehiclesFile = "tests/resources/Vehicles.csv"
 parametersFile = "tests/resources/Parameters.csv"
-distanceMatrixFile = "Data/Matrices/distanceMatrix_Small.txt"
-timeMatrixFile = "Data/Matrices/timeMatrix_Small.txt"
+distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
+timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
 
 # Read instance 
 scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)

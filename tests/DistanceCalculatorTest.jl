@@ -6,7 +6,7 @@ using utils
 Test minutesSinceMidnight 
 ==#
 @testset "getDistanceAndTimeMatrix test" begin
-    requestFile = "tests/resources/Requests.csv"
+    requestFile = "tests/resources/Requests.csv" #"tests/resources/Requests.csv"
     vehiclesFile = "tests/resources/Vehicles.csv"
     parametersFile = "tests/resources/Parameters.csv"
 

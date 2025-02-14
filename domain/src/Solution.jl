@@ -15,8 +15,8 @@ mutable struct Solution
 
     # Constructor
     function Solution(scenario::Scenario)
-        vehicle_schedules = [VehicleSchedule(vehicle) for vehicle in scenario.vehicles]
-        return new(vehicle_schedules, 0.0, 0, 0, 0, 0)
+        vehicleSchedules = [VehicleSchedule(vehicle) for vehicle in scenario.vehicles]
+        return new(vehicleSchedules, 0.0, 0, 0, 0, 0)
     end
 
 end
