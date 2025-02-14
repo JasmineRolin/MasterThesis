@@ -13,7 +13,7 @@ export splitRequests
  Function to read instance 
  Takes request, vehicles and parameters .csv as input 
 ==#
-function readInstance(requestFile::String, vehicleFile::String, parametersFile::String)::Scenario
+function readInstance(requestFile::String, vehicleFile::String, parametersFile::String,distanceMatrixFile::String,timeMatrixFile::String)::Scenario
 
     # Check that files exist 
     if !isfile(requestFile)
@@ -25,11 +25,24 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     if !isfile(parametersFile)
         error("Error: Parameters file $parametersFile does not exist.")
     end
+    if !isfile(distanceMatrixFile)
+        error("Error: Parameters file $distanceMatrixFile does not exist.")
+    end
+    if !isfile(timeMatrixFile)
+        error("Error: Parameters file $timeMatrixFile does not exist.")
+    end 
 
     # Read input 
     requestsDf = CSV.read(requestFile, DataFrame)
     vehiclesDf = CSV.read(vehicleFile, DataFrame)
     parametersDf = CSV.read(parametersFile, DataFrame)
+    lines = readlines(distanceMatrixFile)
+    distance = [parse.(Int, split(line)) for line in lines]
+    distance = hcat(distance...)'
+    lines = readlines(timeMatrixFile)
+    time = [parse.(Int, split(line)) for line in lines]
+    time = hcat(time...)'
+
 
     nRequests = nrow(requestsDf)
     nVehicles = nrow(vehiclesDf)
@@ -53,12 +66,11 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     # Split into offline and online requests
     onlineRequests, offlineRequests = splitRequests(requests)
 
-    # Get distance and time matrix
-    
+    # Number of depots
+    nDepots = size(time)[1] - 2*nRequests
 
-    scenario = Scenario(requests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,zeros(Int, 0, 0),zeros(Int, 0, 0))
-    distance, time = getDistanceAndTimeMatrix(scenario)
-    scenario = Scenario(requests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time)
+    # Get distance and time matrix
+    scenario = Scenario(requests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots)
 
     return scenario
 

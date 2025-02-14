@@ -18,6 +18,7 @@ struct Scenario
     minimumMaximumDriveTime::Int # Minimum duration in minutes of maximum drive time 
     distance::Array{Int, 2}
     time::Array{Int, 2}
+    nDepots::Int
 end 
 
 

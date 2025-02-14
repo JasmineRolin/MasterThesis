@@ -1,8 +1,11 @@
 
 module SimulationFramework
 
+include("../offlinesolution/src/ConstructionHeuristic.jl")
+
 using utils
 using domain
+using .ConstructionHeuristic
 
 export simulateScenario
 
@@ -25,7 +28,7 @@ end
 function determineCurrentState(solution::Solution,event::Request,completedState::State,scenario::Scenario)
 
     # Initialize current state
-    currentState = State(Vector{VehicleSchedule}(),0,0,0,0,0)
+    currentState = State(scenario)
 
     # Get current time
     currentTime = event.callTime
@@ -70,17 +73,18 @@ end
 function simulateScenario(scenario::Scenario)
 
     # Initialize current state 
-    completedState = State(Vector{VehicleSchedule}(),0,0,0,0,0)
-    currentState = State(Vector{VehicleSchedule}(),0,0,0,0,0)
+    completedState = State(scenario)
+    currentState = State(scenario)
 
     # Get solution for initial solution (online problem)
     #solution = offlineAlgorithm(scenario) #Change to right function name !!!!!!!!!!
-    solution = Solution(Vector{VehicleSchedule}(),0,0,0,0,0)
+    solution = Solution(scenario)
+    solution = simpleConstruction(scenario::Scenario)
 
     # Get solution for online problem
     for (itr,event) in enumerate(scenario.onlineRequests)
         # Determine current state
-        currentState, completedState = determineCurrentState(solution,event,completedState,scenario)
+        #currentState, completedState = determineCurrentState(solution,event,completedState,scenario)
 
         # Get solution for online problem
         #solution = onlineAlgorithm(currentState, event, scenario) #Change to right function name !!!!!!!!!!

@@ -11,7 +11,7 @@ export simpleConstruction
 function getClosestDepot(request::Request, triedVehicles::Vector{Int},scenario::Scenario)
     closest_depot = -1
     nRequests = length(scenario.requests)
-    allDepotsIdx = collect(2 * nRequests + 1 : 2 * nRequests + length(scenario.vehicles))
+    allDepotsIdx = collect(2 * nRequests + 1 : 2 * nRequests + scenario.nDepots)
     considerDepots = setdiff(allDepotsIdx,triedVehicles)
 
     if isempty(considerDepots)
@@ -114,26 +114,34 @@ function simpleConstruction(scenario::Scenario)
         # Determine closest depot until feasible request is found
         feasible = false
         getTaxi = false
-        triedVehicles = []
+        triedDepots = Int[]
         nVehicles = length(scenario.vehicles)
         idx_pickup, idx_dropoff = -1, -1
-        while !feasible || !getTaxi
-            closestDepot = getClosestDepot(request,triedVehicles,scenario)
+        closestDepot = -1
+        while !feasible && !getTaxi
+            closestDepot = getClosestDepot(request,triedDepots,scenario)
             feasible, idx_pickup, idx_dropoff = feasibilityInsertion(request,solution.vehicleSchedules[closestDepot-2*nRequests],scenario)
             if !feasible
-                append!(triedVehicles,taxi)
+                append!(triedDepots,closestDepot)
             end
-            getTaxi = length(triedVehicles) == nVehicles
+            println(triedDepots)
+            println(length(triedDepots) == scenario.nDepots)
+            getTaxi = length(triedDepots) == scenario.nDepots
         end
+        println(getTaxi)
 
         # Insert request
-        solution = insertRequest(request,solution,closestDepot,idx_pickup,idx_dropoff,scenario)
+        if feasible
+            solution = insertRequest(request,solution,closestDepot,idx_pickup,idx_dropoff,scenario)
 
-        # Update solution
-        solution.vehicleSchedules = newVehicleSchedule
-        solution.totalCost += getTotalCostRoute(scenario,route)
-        solution.totalDistance += getTotalDistanceRoute(route,scenario)
-        solution.nTaxi += getTaxi
+            # Update solution
+            solution.vehicleSchedules = newVehicleSchedule
+            solution.totalCost += getTotalCostRoute(scenario,route)
+            solution.totalDistance += getTotalDistanceRoute(route,scenario)
+        else
+            solution.nTaxi += getTaxi
+        end
+
     end
 
     return solution
