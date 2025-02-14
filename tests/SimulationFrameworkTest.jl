@@ -57,3 +57,7 @@ timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
 scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
 
 solution = simulateScenario(scenario)
+
+for schedule in solution.vehicleSchedules
+    printRoute(schedule)
+end
