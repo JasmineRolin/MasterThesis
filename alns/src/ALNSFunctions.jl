@@ -16,14 +16,15 @@ export calculateScore, updateWeights!
  function readALNSParameters(parametersFile::String)::ALNSParameters
     jsonData = JSON3.read(read(parametersFile, String))  # Read JSON file as a string and parse it
     return ALNSParameters(
-        jsonData["timeLimit"],
-        jsonData["reactionFactor"],
-        jsonData["startThreshold"],
-        jsonData["solCostEps"],
-        jsonData["scoreAccepted"],
-        jsonData["scoreImproved"],
-        jsonData["scoreNewBest"]
+        Float64(jsonData["timeLimit"]),
+        Float64(jsonData["reactionFactor"]),
+        Float64(jsonData["startThreshold"]),
+        Float64(jsonData["solCostEps"]),
+        Float64(jsonData["scoreAccepted"]),
+        Float64(jsonData["scoreImproved"]),
+        Float64(jsonData["scoreNewBest"])
     )
+    
 end
 
 #==

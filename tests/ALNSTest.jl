@@ -4,6 +4,23 @@ using alns, domain
 #==
 Test ALNSFunctions
 ==#
+@testset "readALNSParameters test" begin 
+    parametersFile = "tests/resources/ALNSParameters.json"
+
+    # Read parameters 
+    parameters = readALNSParameters(parametersFile)
+
+    @test typeof(parameters) == ALNSParameters
+    @test parameters.timeLimit == 10.0 
+    @test parameters.reactionFactor == 0.01 
+    @test parameters.startThreshold == 0.03 
+    @test parameters.solCostEps == 0.0 
+    @test parameters.scoreAccepted == 2.0 
+    @test parameters.scoreImproved == 4.0 
+    @test parameters.scoreNewBest == 10.0
+end
+
+
 @testset "rouletteWheel test" begin
     weights = Float64[1.0,3.4,5.0,9.3]
 

@@ -29,8 +29,16 @@ struct ALNSParameters
 	scoreNewBest::Float64 # Score given for a new global best solution
     # TODO: add parameters for different destroy/repair methods 
 
-    function ALNSParameters()
-        new(10.0,0.01,0.03,0.0,2.0,4.0,10.0)        
+    function ALNSParameters( 
+        timeLimit=10.0, 
+        reactionFactor=0.01, 
+        startThreshold=0.03, 
+        solCostEps=0.0, 
+        scoreAccepted=2.0, 
+        scoreImproved=4.0, 
+        scoreNewBest=10.0
+    )
+        return new(timeLimit, reactionFactor, startThreshold, solCostEps, scoreAccepted, scoreImproved, scoreNewBest)
     end
 end
 
