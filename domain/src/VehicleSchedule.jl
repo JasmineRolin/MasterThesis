@@ -16,6 +16,7 @@ mutable struct VehicleSchedule
     # Constructor
     function VehicleSchedule(vehicle::Vehicle)
         # Create route with depots
+        # TODO: set the correct start and end of service for depots (according to availableTimeWindow)
         startDepot = ActivityAssignment(Activity(vehicle.depotId,-1,DEPOT,WALKING,vehicle.depotLocation,TimeWindow(0,0)),vehicle,0,0)
         endDepot = ActivityAssignment(Activity(vehicle.depotId,-1,DEPOT,WALKING,vehicle.depotLocation,TimeWindow(24*60,24*60)),vehicle,24*60,24*60)
 
