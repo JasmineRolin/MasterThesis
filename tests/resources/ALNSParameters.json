@@ -1,0 +1,9 @@
+{
+    "timeLimit": 10.0,
+    "reactionFactor": 0.01,
+    "startThreshold": 0.03,
+    "solCostEps": 0.0,
+    "scoreAccepted": 2.0,
+    "scoreImproved": 4.0,
+    "scoreNewBest": 10.0
+}

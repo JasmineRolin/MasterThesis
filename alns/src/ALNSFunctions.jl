@@ -1,8 +1,8 @@
 module ALNSFunctions 
 
-using UnPack, domain, ..ALNSDomain
+using UnPack, JSON3, domain, ..ALNSDomain
 
-export readParameters
+export readALNSParameters
 export addDestroyMethod!, addRepairMethod!
 export destroy!, repair!
 export rouletteWheel
@@ -13,8 +13,17 @@ export calculateScore, updateWeights!
  Method to read parameters from file  
 ==#
  # TODO: Implement function to read parameters 
- function readParameters(parametersFile::String)::ALNSParameters
-    return ALNSParameters()
+ function readALNSParameters(parametersFile::String)::ALNSParameters
+    jsonData = JSON3.read(read(parametersFile, String))  # Read JSON file as a string and parse it
+    return ALNSParameters(
+        jsonData["timeLimit"],
+        jsonData["reactionFactor"],
+        jsonData["startThreshold"],
+        jsonData["solCostEps"],
+        jsonData["scoreAccepted"],
+        jsonData["scoreImproved"],
+        jsonData["scoreNewBest"]
+    )
 end
 
 #==

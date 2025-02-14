@@ -18,7 +18,7 @@ export ALNSState
 ==#
 include("ALNSFunctions.jl")
 using .ALNSFunctions
-export readParameters
+export readALNSParameters
 export addDestroyMethod!, addRepairMethod!
 export destroy!, repair!
 export rouletteWheel
