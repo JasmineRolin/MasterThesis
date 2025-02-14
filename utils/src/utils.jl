@@ -34,4 +34,11 @@ export getTotalDistanceRoute
 export getTotalCostRoute
 export getTotalTimeRoute
 
+#==
+ Export from RouteUtils module
+==#
+include("RouteUtils.jl")
+using .RouteUtils
+export printRoute, insertRequest!
+
 end 
