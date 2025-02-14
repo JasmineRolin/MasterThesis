@@ -79,7 +79,7 @@ function simulateScenario(scenario::Scenario)
     # Get solution for initial solution (online problem)
     #solution = offlineAlgorithm(scenario) #Change to right function name !!!!!!!!!!
     solution = Solution(scenario)
-    solution = simpleConstruction(scenario::Scenario)
+    solution = simpleConstruction(scenario)
 
     # Get solution for online problem
     for (itr,event) in enumerate(scenario.onlineRequests)

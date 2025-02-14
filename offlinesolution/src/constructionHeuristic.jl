@@ -4,6 +4,8 @@ using utils
 using domain
 
 export simpleConstruction
+export checkFeasibilityRoute
+export feasibilityInsertion
 
 
 
@@ -26,9 +28,12 @@ function getClosestDepot(request::Request, triedVehicles::Vector{Int},scenario::
 end
 
 # Function to check feasibility of given placement of a request for a vehicle
+# OBS: Made for when a service time is determined, it cannot be changed
 function checkFeasibilityRoute(request::Request, vehicleSchedule::VehicleSchedule,pickUpIdx::Int,dropOffIdx::Int,scenario::Scenario)
-    updatedRideTime = vehicleSchedule.vehicle.availableTimeWindow.endTime - vehicleSchedule.vehicle.availableTimeWindow.startTime
+    # Determine ride time
+    updatedRideTime = vehicleSchedule.activeTimeWindow.endTime - vehicleSchedule.activeTimeWindow.startTime
 
+    # TODO Make special case for when idx of pick up and drop off is the same
     for activity in [request.pickUpActivity, request.dropOffActivity]
         if activity == request.pickUpActivity
             idx = pickUpIdx
@@ -37,18 +42,21 @@ function checkFeasibilityRoute(request::Request, vehicleSchedule::VehicleSchedul
         end
         
         # Check timewindows
-        if vehicleSchedule.route[idx].endOfServiceTime > activity.timeWindow.endTime || vehicleSchedule.route[idx+1].startOfServiceTime < activity.timeWindow.startTime
+        if (vehicleSchedule.route[idx].endOfServiceTime > activity.timeWindow.endTime) || (vehicleSchedule.route[idx+1].startOfServiceTime < activity.timeWindow.startTime)
+            println("Infeasible: Time window")
             return false
         end
         
         # Check drive time: Vehicle cannot reach activity within timewindow from first node
         if vehicleSchedule.route[idx].endOfServiceTime + scenario.time[vehicleSchedule.route[idx].activity.id, activity.id] > activity.timeWindow.endTime
+            println("Infeasible: Drive time from first node")
             return false
         end
         
         # Check drive time: Vehicle cannot reach next node from activity
         endService = vehicleSchedule.route[idx].endOfServiceTime + scenario.time[vehicleSchedule.route[idx].activity.id, activity.id] + scenario.serviceTimes[activity.mobilityType]
         if endService + scenario.time[activity.id, vehicleSchedule.route[idx+1].activity.id] > vehicleSchedule.route[idx+1].startOfServiceTime
+            println("Infeasible: Drive time to next node")
             return false
         end
 
@@ -62,45 +70,61 @@ function checkFeasibilityRoute(request::Request, vehicleSchedule::VehicleSchedul
 
     # Check maximum ride time
     if updatedRideTime > vehicleSchedule.vehicle.maximumRideTime
+        println("Infeasible: Maximum ride time")
         return false
     end
     
 
     # If all checks pass, the activity is feasible
+    println("FEASIBLE")
     return true
 end
 
 # Function to check feasibility of inserting a request in a vehicle schedule
 function feasibilityInsertion(request::Request,vehicleSchedule::VehicleSchedule,scenario::Scenario)
+    
+    # Check vehicle capacity 
+    if request.mobilityType == WHEELCHAIR && vehicleSchedule.nWheelchair == vehicleSchedule.vehicle.capacities[WHEELCHAIR] 
+        return false, -1, -1
+    elseif request.mobilityType == WALKING && vehicleSchedule.nWalking + vehicleSchedule.nWheelchair == vehicleSchedule.vehicle.totalCapacity
+        return false, -1, -1
+    end
 
+    # Check inside available time window
+    if vehicleSchedule.active.timeWindow.startTime > request.pickUpActivity.timeWindow.endTime || vehicleSchedule.active.timeWindow.endTime < request.dropOffActivity.timeWindow.startTime 
+        return false, -1, -1
+    end
+
+    # Find feasible placement
     for idx_pickup in 1:length(vehicleSchedule.route)-1
-        for idx_dropoff in idx_pickup+1:length(vehicleSchedule.route)
+        for idx_dropoff in idx_pickup:length(vehicleSchedule.route)-1
             # Check feasibility
             if checkFeasibilityRoute(request,vehicleSchedule,idx_pickup,idx_dropoff,scenario)
                 return true, idx_pickup, idx_dropoff
             end
         end 
     end
+
     return false, -1, -1
 end
 
 
 # Function to insert a request in a vehicle schedule
-function insertRequest(request::Request,solution::Solution,depot::Int,idx_pickup::Int,idx_dropoff::Int,scenario::Scenario)
-
+function insertRequest(request::Request,vehicleSchedule::VehicleSchedule,idx_pickup::Int,idx_dropoff::Int,scenario::Scenario)
+    nRequests = length(scenario.requests)
     ### Update Vehicle Schedule
     # Update route
-    startOfServicePick = solution.vehicleSchedules[depot-2*nRequests].route[idx_pickup].endOfServiceTime + scenario.time[solution.vehicleSchedules[depot-2*nRequests].route[idx_pickup].activity.id,request.pickUpActivity.id] 
-    startOfServiceDrop = solution.vehicleSchedules[depot-2*nRequests].route[idx_dropoff].endOfServiceTime + scenario.time[solution.vehicleSchedules[depot-2*nRequests].route[idx_dropoff].activity.id,request.dropOffActivity.id] 
-    pickUpActivity = ActivityAssignment(request.pickUpActivity, depot, startOfServicePick, startOfServicePick+scenario.serviceTimes[request.dropOffActivity.mobilityType])
-    dropOffActivity = ActivityAssignment(request.dropOffActivity, depot, startOfServiceDrop, startOfServiceDrop+scenario.serviceTimes[request.dropOffActivity.mobilityType])
-    insert!(solution.vehicleSchedules[depot-2*nRequests].route,idx_pickup,pickUpActivity)
-    insert!(solution.vehicleSchedules[depot-2*nRequests].route,idx_dropoff+1,dropOffActivity)
+    startOfServicePick = vehicleSchedule.route[idx_pickup].endOfServiceTime + scenario.time[vehicleSchedule.route[idx_pickup].activity.id,request.pickUpActivity.id] 
+    startOfServiceDrop = vehicleSchedule.route[idx_dropoff].endOfServiceTime + scenario.time[vehicleSchedule.route[idx_dropoff].activity.id,request.dropOffActivity.id] 
+    pickUpActivity = ActivityAssignment(request.pickUpActivity, vehicleSchedule.vehicle, startOfServicePick, startOfServicePick+scenario.serviceTimes[request.dropOffActivity.mobilityType])
+    dropOffActivity = ActivityAssignment(request.dropOffActivity, vehicleSchedule.vehicle, startOfServiceDrop, startOfServiceDrop+scenario.serviceTimes[request.dropOffActivity.mobilityType])
+    insert!(vehicleSchedule.route,idx_pickup,pickUpActivity)
+    insert!(vehicleSchedule.route,idx_dropoff+1,dropOffActivity)
 
     # TODO Update activeTimeWindow + totalDistance
     # TODO Update vehicle
 
-    return solution
+    return vehicleSchedule
 end
 
 function simpleConstruction(scenario::Scenario)
@@ -117,6 +141,9 @@ function simpleConstruction(scenario::Scenario)
         triedDepots = Int[]
         nVehicles = length(scenario.vehicles)
         idx_pickup, idx_dropoff = -1, -1
+        
+        
+        # Determine closest feasible depot
         closestDepot = -1
         while !feasible && !getTaxi
             closestDepot = getClosestDepot(request,triedDepots,scenario)
@@ -124,20 +151,17 @@ function simpleConstruction(scenario::Scenario)
             if !feasible
                 append!(triedDepots,closestDepot)
             end
-            println(triedDepots)
-            println(length(triedDepots) == scenario.nDepots)
             getTaxi = length(triedDepots) == scenario.nDepots
         end
-        println(getTaxi)
 
         # Insert request
         if feasible
-            solution = insertRequest(request,solution,closestDepot,idx_pickup,idx_dropoff,scenario)
+            #TODO: Everything here has to be done right
+            solution.vehicleSchedules[closestDepot-2*nRequests] = insertRequest(request,solution.vehicleSchedules[closestDepot-2*nRequests],idx_pickup,idx_dropoff,scenario)
 
             # Update solution
-            solution.vehicleSchedules = newVehicleSchedule
-            solution.totalCost += getTotalCostRoute(scenario,route)
-            solution.totalDistance += getTotalDistanceRoute(route,scenario)
+            solution.totalCost = getTotalCostRoute(scenario,solution.vehicleSchedules)
+            solution.totalDistance += getTotalDistanceRoute(solution.vehicleSchedules[closestDepot-2*nRequests].route,scenario)
         else
             solution.nTaxi += getTaxi
         end
