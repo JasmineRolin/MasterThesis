@@ -8,7 +8,7 @@ using .ALNSParameters, .GenericMethods
 struct ALNSConfiguration
     destroyMethods::Vector{GenericMethod}
     repairMethods::Vector{GenericMethod}
-    parameters::ALNSParameter
+    parameters::ALNSParameters
 end
 
 
