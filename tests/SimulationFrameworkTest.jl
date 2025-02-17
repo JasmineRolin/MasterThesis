@@ -30,6 +30,7 @@ using .SimulationFramework
 end
 ===#
 
+#==
 @testset "Test InstanceReader on Konsentra" begin 
     requestFile = "Data/Konsentra/TransformedData_Data.csv"
     vehiclesFile = "tests/resources/Vehicles.csv"
@@ -46,9 +47,10 @@ end
 
 
 end
+==#
 
 
-#==
+
 requestFile = "tests/resources/Requests.csv"
 vehiclesFile = "tests/resources/Vehicles.csv"
 parametersFile = "tests/resources/Parameters.csv"
@@ -70,4 +72,3 @@ for schedule in solution.vehicleSchedules
     feasible, msg = checkRouteFeasibility(scenario,schedule)
     println(msg)
 end
-==#

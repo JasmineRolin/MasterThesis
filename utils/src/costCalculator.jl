@@ -16,23 +16,12 @@ function getTotalDistanceRoute(route::Vector{ActivityAssignment},scenario::Scena
     return totalDistance
 end
 
-function getTotalTimeRoute(vehicleSchedules::Vector{VehicleSchedule})
-    totalTime = 0
-
-    for schedule in vehicleSchedules
-        totalTime += schedule.activeTimeWindow.endTime - schedule.activeTimeWindow.startTime
-        for node in schedule.route
-            if node.activity == "WAITING"
-                totalTime -= node.endOfServiceTime - node.startOfServiceTime
-            end
-        end
-    end
-
-    return totalTime
+function getTotalTimeRoute(schedule::VehicleSchedule)
+    return schedule.activeTimeWindow.endTime - schedule.activeTimeWindow.startTime
 end
 
-function getTotalCostRoute(scenario::Scenario,vehicleSchedules::Vector{VehicleSchedule})
-    totalTime = getTotalTimeRoute(vehicleSchedules)
+function getTotalCostRoute(scenario::Scenario,vehicleSchedule::VehicleSchedule)
+    totalTime = getTotalTimeRoute(vehicleSchedule)
     return scenario.vehicleCostPrHour * totalTime + scenario.vehicleStartUpCost
 end
 
