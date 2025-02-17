@@ -17,7 +17,7 @@ end
  Method to find corresponding activity id for PICKUP/DROPOFF activity
 ==#
 function findCorrespondingId(activity::Activity, nRequests::Int)::Int
-    if activity.activityType == ActivityType.PICKUP
+    if activity.activityType == PICKUP
         return activity.id + nRequests
     else
         return activity.id - nRequests
@@ -28,9 +28,9 @@ end
  Method to return load of activity
 ==#
 function findLoadOfActivity(activity::Activity)::Int
-    if activity.activityType == ActivityType.PICKUP
+    if activity.activityType == PICKUP
         return 1
-    elseif activity.activityType == ActivityType.DROPOFF
+    elseif activity.activityType == DROPOFF
         return -1
     end
     
