@@ -58,6 +58,10 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
     @unpack vehicle, route, activeTimeWindow, totalDistance, totalCost, numberOfWalking, numberOfWheelchair = vehicleSchedule
     nRequests = length(scenario.requests)
 
+    if length(route) == 2
+        return true, ""
+    end
+
     # Check that active time window of vehicle is correct 
     if activeTimeWindow.startTime != route[1].startOfServiceTime || activeTimeWindow.endTime != route[end].endOfServiceTime
         msg = "ROUTE INFEASIBLE: Active time window of vehicle $(vehicle.id) is incorrect"
