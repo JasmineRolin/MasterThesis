@@ -10,8 +10,8 @@ struct Scenario
     offlineRequests::Vector{Request}
     serviceTimes::Dict # Minutes 
     vehicles::Vector{Vehicle}
-    vehicleCostPrHour::Float32
-    vehicleStartUpCost::Float32 
+    vehicleCostPrHour::Float64
+    vehicleStartUpCost::Float64 
     planningPeriod::TimeWindow # Minutes after midnight
     bufferTime::Int # Latest call time for a request in minutes
     maximumDriveTimePercent::Int # Percent of direct drive time to find maximum ride time

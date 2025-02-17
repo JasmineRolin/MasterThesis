@@ -7,7 +7,7 @@ export Solution
 
 mutable struct Solution 
     vehicleSchedules::Vector{VehicleSchedule}
-    totalCost::Float32
+    totalCost::Float64
     nTaxi::Int
     totalRideTime::Int
     totalDistance::Int
@@ -17,6 +17,11 @@ mutable struct Solution
     function Solution(scenario::Scenario)
         vehicleSchedules = [VehicleSchedule(vehicle) for vehicle in scenario.vehicles]
         return new(vehicleSchedules, 0.0, 0, 0, 0, 0)
+    end
+
+    # All-argument constructor
+    function Solution(vehicleSchedules::Vector{VehicleSchedule}, totalCost::Float64, nTaxi::Int, totalRideTime::Int, totalDistance::Int, idleTime::Int)
+        new(vehicleSchedules, totalCost, nTaxi, totalRideTime, totalDistance, idleTime)
     end
 end
 

@@ -36,7 +36,7 @@ function getTotalCostRoute(scenario::Scenario,vehicleSchedules::Vector{VehicleSc
     return scenario.vehicleCostPrHour * totalTime + scenario.vehicleStartUpCost
 end
 
-function getTotalCostRoute(scenario::Scenario,totalTime::Float32)
+function getTotalCostRoute(scenario::Scenario,totalTime::Float64)
     return scenario.vehicleCostPrHour * totalTime + scenario.vehicleStartUpCost
 end
 

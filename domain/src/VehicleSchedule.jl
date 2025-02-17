@@ -8,9 +8,9 @@ mutable struct VehicleSchedule
     vehicle::Vehicle 
     route::Vector{ActivityAssignment}
     activeTimeWindow::TimeWindow 
-    totalDistance::Float32
-    totalTime::Float32
-    totalCost::Float32 
+    totalDistance::Float64
+    totalTime::Float64
+    totalCost::Float64 
     numberOfWalking::Vector{Int}
     numberOfWheelchair::Vector{Int}
 

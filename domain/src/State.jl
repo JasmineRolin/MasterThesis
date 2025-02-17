@@ -7,7 +7,7 @@ export State
 
 mutable struct State 
     vehicleSchedules::Vector{VehicleSchedule}
-    totalCost::Float32 
+    totalCost::Float64 
     nTaxi::Int 
     totalRideTime::Int 
     totalDistance::Int 

@@ -111,10 +111,10 @@ end
 
     # VehicleSchedule
     route = [activityAssignment]
-    vehicleSchedule = VehicleSchedule(vehicle,route,timeWindow,40,40)
+    vehicleSchedule = VehicleSchedule(vehicle)
 
     # Solution 
-    solution = Solution([vehicleSchedule],70,4,5,2,4)
+    solution = Solution([vehicleSchedule],70.0,4,5,2,4)
     
     state = ALNSState(Float64[2.0,3.5],Float64[1.0,3.0],[1,2],[2,0],solution,solution)
 
@@ -165,10 +165,10 @@ end
 
     # VehicleSchedule
     route = [activityAssignment]
-    vehicleSchedule = VehicleSchedule(vehicle,route,timeWindow,40,40)
+    vehicleSchedule = VehicleSchedule(vehicle)
 
     # Solution 
-    solution = Solution([vehicleSchedule],70,4,5,2,4)
+    solution = Solution([vehicleSchedule],70.0,4,5,2,4)
     
     state = ALNSState(Float64[2.0],Float64[3.0],[1],[2],solution,solution)
 
