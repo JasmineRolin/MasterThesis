@@ -191,13 +191,11 @@ function insertRequest(request::Request,vehicleSchedule::VehicleSchedule,idx_pic
         vehicleSchedule.activeTimeWindow.startTime = startOfServicePick - scenario.time[vehicleSchedule.route[idx_pickup].activity.id,request.pickUpActivity.id]
         vehicleSchedule.route[1].startOfServiceTime = vehicleSchedule.activeTimeWindow.startTime
         vehicleSchedule.route[1].endOfServiceTime = vehicleSchedule.activeTimeWindow.startTime
-    elseif idx_dropoff == length(vehicleSchedule.route)-3
-        vehicleSchedule.activeTimeWindow.endTime = startOfServiceDrop + scenario.time[request.dropOffActivity.id,vehicleSchedule.route[idx_dropoff+3].activity.id] + scenario.serviceTimes[request.dropOffActivity.mobilityType]
-        vehicleSchedule.route[idx_dropoff+3].startOfServiceTime = vehicleSchedule.activeTimeWindow.endTime
-        vehicleSchedule.route[idx_dropoff+3].endOfServiceTime = vehicleSchedule.activeTimeWindow.endTime
     end
-    if length(vehicleSchedule.route) == 4
+    if idx_dropoff == length(vehicleSchedule.route)-3 
         vehicleSchedule.activeTimeWindow.endTime = startOfServiceDrop + scenario.time[request.dropOffActivity.id,vehicleSchedule.route[idx_dropoff+3].activity.id] + scenario.serviceTimes[request.dropOffActivity.mobilityType]
+        vehicleSchedule.route[end].startOfServiceTime = vehicleSchedule.activeTimeWindow.endTime
+        vehicleSchedule.route[end].endOfServiceTime = vehicleSchedule.activeTimeWindow.endTime
     end
 
     # Update capacities
@@ -228,32 +226,32 @@ function insertRequest(request::Request,vehicleSchedule::VehicleSchedule,idx_pic
 
     # Update total distance
     if idx_dropoff == idx_pickup
-        vehicleSchedule.totalDistance -= (scenario.distance[vehicleSchedule.route[idx_pickup].activity.id,vehicleSchedule.route[idx_pickup+3].activity.id])/1000
-        vehicleSchedule.totalDistance += (scenario.distance[vehicleSchedule.route[idx_pickup].activity.id,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicleSchedule.route[idx_pickup+3].activity.id])/1000
+        vehicleSchedule.totalDistance -= (scenario.distance[vehicleSchedule.route[idx_pickup].activity.id,vehicleSchedule.route[idx_pickup+3].activity.id])
+        vehicleSchedule.totalDistance += (scenario.distance[vehicleSchedule.route[idx_pickup].activity.id,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicleSchedule.route[idx_pickup+3].activity.id])
     else
         # PickUp
-        vehicleSchedule.totalDistance -= (scenario.distance[vehicleSchedule.route[idx_pickup].activity.id,vehicleSchedule.route[idx_pickup+2].activity.id])/1000
-        vehicleSchedule.totalDistance += (scenario.distance[vehicleSchedule.route[idx_pickup].activity.id,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,vehicleSchedule.route[idx_pickup+2].activity.id])/1000
+        vehicleSchedule.totalDistance -= (scenario.distance[vehicleSchedule.route[idx_pickup].activity.id,vehicleSchedule.route[idx_pickup+2].activity.id])
+        vehicleSchedule.totalDistance += (scenario.distance[vehicleSchedule.route[idx_pickup].activity.id,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,vehicleSchedule.route[idx_pickup+2].activity.id])
         # DropOff
-        vehicleSchedule.totalDistance -= (scenario.distance[vehicleSchedule.route[idx_dropoff].activity.id,vehicleSchedule.route[idx_dropoff+2].activity.id])/1000
-        vehicleSchedule.totalDistance += (scenario.distance[vehicleSchedule.route[idx_dropoff].activity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicleSchedule.route[idx_dropoff+2].activity.id])/1000
+        vehicleSchedule.totalDistance -= (scenario.distance[vehicleSchedule.route[idx_dropoff].activity.id,vehicleSchedule.route[idx_dropoff+2].activity.id])
+        vehicleSchedule.totalDistance += (scenario.distance[vehicleSchedule.route[idx_dropoff].activity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicleSchedule.route[idx_dropoff+2].activity.id])
     end
 
     # Update total time
     if idx_dropoff == idx_pickup
-        vehicleSchedule.totalTime -= (scenario.distance[vehicleSchedule.route[idx_pickup].activity.id, vehicleSchedule.route[idx_pickup+3].activity.id]) / 1000
+        vehicleSchedule.totalTime -= (scenario.distance[vehicleSchedule.route[idx_pickup].activity.id, vehicleSchedule.route[idx_pickup+3].activity.id]) 
         vehicleSchedule.totalTime += (scenario.distance[vehicleSchedule.route[idx_pickup].activity.id, request.pickUpActivity.id] + 
                                     scenario.distance[request.pickUpActivity.id, request.dropOffActivity.id] + 
-                                    scenario.distance[request.dropOffActivity.id, vehicleSchedule.route[idx_pickup+3].activity.id]) / 1000
+                                    scenario.distance[request.dropOffActivity.id, vehicleSchedule.route[idx_pickup+3].activity.id]) 
     else
         # PickUp
-        vehicleSchedule.totalTime -= (scenario.distance[vehicleSchedule.route[idx_pickup].activity.id, vehicleSchedule.route[idx_pickup+2].activity.id]) / 1000
+        vehicleSchedule.totalTime -= (scenario.distance[vehicleSchedule.route[idx_pickup].activity.id, vehicleSchedule.route[idx_pickup+2].activity.id]) 
         vehicleSchedule.totalTime += (scenario.distance[vehicleSchedule.route[idx_pickup].activity.id, request.pickUpActivity.id] + 
-                                    scenario.distance[request.pickUpActivity.id, vehicleSchedule.route[idx_pickup+2].activity.id]) / 1000
+                                    scenario.distance[request.pickUpActivity.id, vehicleSchedule.route[idx_pickup+2].activity.id])
         # DropOff
-        vehicleSchedule.totalTime -= (scenario.distance[vehicleSchedule.route[idx_dropoff].activity.id, vehicleSchedule.route[idx_dropoff+2].activity.id]) / 1000
+        vehicleSchedule.totalTime -= (scenario.distance[vehicleSchedule.route[idx_dropoff].activity.id, vehicleSchedule.route[idx_dropoff+2].activity.id]) 
         vehicleSchedule.totalTime += (scenario.distance[vehicleSchedule.route[idx_dropoff].activity.id, request.dropOffActivity.id] + 
-                                    scenario.distance[request.dropOffActivity.id, vehicleSchedule.route[idx_dropoff+2].activity.id]) / 1000
+                                    scenario.distance[request.dropOffActivity.id, vehicleSchedule.route[idx_dropoff+2].activity.id])
     end
 
     # Update total cost
@@ -287,8 +285,6 @@ function simpleConstruction(scenario::Scenario)
             closestDepot = getClosestDepot(request,triedDepots,scenario)
             for vehicleIdx in scenario.depots[closestDepot]
                 vehicle = vehicleIdx
-                println(vehicle)
-                println(triedDepots)
                 feasible, idx_pickup, idx_dropoff, typeOfSeat = feasibilityInsertion(request,solution.vehicleSchedules[vehicle],scenario)
                 if !feasible
                     push!(triedDepots, closestDepot)
