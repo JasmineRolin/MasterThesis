@@ -15,7 +15,7 @@ using utils
     timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile)#,distanceMatrixFile,timeMatrixFile)
 
     # Check vehicles
     @test length(scenario.vehicles) == 4

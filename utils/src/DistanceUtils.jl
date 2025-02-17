@@ -1,47 +1,81 @@
 module DistanceUtils
 
-using PyCall, domain
+using PyCall, DataFrames, CSV,domain
 
-export getDistanceAndTimeMatrix
+export getDistanceAndTimeMatrix,getDistanceAndTimeMatrixFromLocations
 
-function getDistanceAndTimeMatrix(scenario::Scenario)::Tuple{Array{Int, 2}, Array{Int, 2}}
+#==
+ Function to read or calculate distance and time matrix
+==#
+function getDistanceAndTimeMatrix(distanceMatrixFile=""::String,timeMatrixFile=""::String,requestFile=""::String,depotLocations=Vector{Tuple{Float64,Float64}}()::Vector{Tuple{Float64,Float64}})::Tuple{Array{Float64, 2}, Array{Int, 2}}
+    if distanceMatrixFile != "" && !isfile(distanceMatrixFile)
+        error("Error: distanceMatrixFile file $distanceMatrixFile does not exist.")
+    end
+    if timeMatrixFile != "" && !isfile(timeMatrixFile)
+        error("Error: timeMatrixFile file $timeMatrixFile does not exist.")
+    end 
+
+    # Read time and distance file if given else calculate
+    if distanceMatrixFile != "" && timeMatrixFile != ""
+        lines = readlines(distanceMatrixFile)
+        distance = [parse.(Float64, split(line)) for line in lines]
+        distance = convert(Matrix{Int}, hcat(distance...)')
+
+        lines = readlines(timeMatrixFile)
+        time = [parse.(Int, split(line)) for line in lines]
+        time = convert(Matrix{Int}, hcat(time...)')
+
+        return distance, time
+    end 
+
+    # Calculate distance and time 
+    requestsDf = CSV.read(requestFile, DataFrame)
+
+    return getDistanceAndTimeMatrixFromDataFrame(requestsDf,depotLocations)
+end
+
+
+#==
+#  Function to get distance and time matrix from data frame and depot location dictionary 
+==#
+function getDistanceAndTimeMatrixFromDataFrame(requestsDf::DataFrame,depotLocations::Vector{Tuple{Float64,Float64}})::Tuple{Array{Float64, 2}, Array{Int, 2}}
+    # Collect request info 
+    pickUpLocations = [(r.pickup_latitude,r.dropoff_longitude) for r in eachrow(requestsDf)]
+    dropOffLocations = [(r.dropoff_latitude,r.dropoff_longitude)  for r in eachrow(requestsDf)]
+
+    # Initialize the distance matrix
+    locations = [pickUpLocations;dropOffLocations;depotLocations]
+
+    return getDistanceAndTimeMatrixFromLocations(locations)
+end
+
+
+#==
+#  Function to get distance and time matrix
+==#
+function getDistanceAndTimeMatrixFromLocations(locations::Vector{Tuple{Float64, Float64}})::Tuple{Array{Float64, 2}, Array{Int, 2}}
     # Ensure Julia can find the Python script
     push!(pyimport("sys")."path", "utils/src")  
 
     # Import the py module 
     osrm = pyimport("DistanceCalculator")  
 
-
-    # Collect request info 
-    pickUpLocations = [(r.pickUpActivity.location.lat,r.pickUpActivity.location.long) for r in scenario.requests]
-    dropOffLocations = [(r.dropOffActivity.location.lat,r.dropOffActivity.location.long) for r in scenario.requests]
-
-    # Collect depot info
-    depotLocations = Vector{Tuple{Float64, Float64}}()
-    depotIds = Set{Int}()
-    for veh in scenario.vehicles
-        if !(veh.depotId in depotIds)
-            push!(depotIds,veh.depotId)
-            push!(depotLocations,(veh.depotLocation.lat,veh.depotLocation.long))
-        end
-    end
-
-    # Initialize the distance matrix
-    locations = [pickUpLocations;dropOffLocations;depotLocations]
+    # Initialize
     nLocations = length(locations)
 
-    distanceMatrix = zeros(Int,nLocations,nLocations)
+    distanceMatrix = zeros(Float64,nLocations,nLocations)
     travelTimeMatrix = zeros(Int,nLocations,nLocations)
 
-    # Use parallelization to compute the distances (if possible, depending on your system)
+    # Compute the distances 
     for (i,loc1) in enumerate(locations)
         for (j,loc2) in enumerate(locations)
+            println(i,",",j)
             if i == j 
                 distanceMatrix[i,j] = 0
                 travelTimeMatrix[i,j] = 0
             else
                 dist, time = osrm.fetch_distance_travel_time_osrm(loc1, loc2)
-                distanceMatrix[i,j] = ceil(dist)
+                distanceMatrix[i,j] = dist/1000.0
                 travelTimeMatrix[i,j] = ceil(time)
             end
         end
