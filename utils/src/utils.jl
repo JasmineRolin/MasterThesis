@@ -39,6 +39,6 @@ export getTotalTimeRoute
 ==#
 include("RouteUtils.jl")
 using .RouteUtils
-export printRoute, insertRequest!
+export printRoute, insertRequest!, checkRouteFeasibility
 
 end 

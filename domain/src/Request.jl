@@ -67,5 +67,4 @@ function findMaximumRideTime(directDriveTime::Int,maximumDriveTimePercent::Int,m
     return Int(max(directDriveTime + directDriveTime*percent,minimumMaximumDriveTime))
 end
 
-
 end 
