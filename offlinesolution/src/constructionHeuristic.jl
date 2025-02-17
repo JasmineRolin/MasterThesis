@@ -11,7 +11,7 @@ export feasibilityInsertion
 # ----------
 # Function to find the closest depot
 # ----------
-function getClosestDepot(request::Request, triedDepots::Vector{Int},scenario::Scenario)
+function getClosestDepot(request::Request, triedDepots::Set{Int},scenario::Scenario)
     closest_depot = -1
     nRequests = length(scenario.requests)
     allDepotsIdx = collect(2 * nRequests + 1 : 2 * nRequests + scenario.nDepots)
@@ -139,6 +139,7 @@ function feasibilityInsertion(request::Request,vehicleSchedule::VehicleSchedule,
 
     # Check inside available time window
     if vehicleSchedule.vehicle.availableTimeWindow.startTime > request.pickUpActivity.timeWindow.endTime || vehicleSchedule.vehicle.availableTimeWindow.endTime < request.dropOffActivity.timeWindow.startTime 
+        println("Infeasible: Outside available time window")
         return false, -1, -1, nothing
     end
 
@@ -148,8 +149,6 @@ function feasibilityInsertion(request::Request,vehicleSchedule::VehicleSchedule,
             # Check feasibility
             feasible, typeOfSeat = checkFeasibilityRoute(request,vehicleSchedule,idx_pickup,idx_dropoff,scenario)
             if feasible
-                println("feasibilityInsertion")
-                println(typeOfSeat)
                 return true, idx_pickup, idx_dropoff, typeOfSeat
             end
         end 
@@ -249,44 +248,49 @@ function simpleConstruction(scenario::Scenario)
    
     # Initialize solution
     solution = Solution(scenario)
-    nRequests = length(scenario.requests)
 
     for request in scenario.offlineRequests
 
-        # Determine closest depot until feasible request is found
+        # Initialize variables
         feasible = false
         getTaxi = false
-        typeOfSeat = WALKING
-        triedDepots = Int[]
-        nVehicles = length(scenario.vehicles)
+        typeOfSeat = nothing
+        triedDepots = Set{Int}()
         idx_pickup, idx_dropoff = -1, -1
+        vehicle = -1
+        closestDepot = -1
         
         
         # Determine closest feasible depot
-        closestDepot = -1
         while !feasible && !getTaxi
             closestDepot = getClosestDepot(request,triedDepots,scenario)
-            feasible, idx_pickup, idx_dropoff, typeOfSeat = feasibilityInsertion(request,solution.vehicleSchedules[closestDepot-2*nRequests],scenario)
-            if !feasible
-                append!(triedDepots,closestDepot)
+            for vehicleIdx in scenario.depots[closestDepot]
+                vehicle = vehicleIdx
+                println(vehicle)
+                println(triedDepots)
+                feasible, idx_pickup, idx_dropoff, typeOfSeat = feasibilityInsertion(request,solution.vehicleSchedules[vehicle],scenario)
+                if !feasible
+                    push!(triedDepots, closestDepot)
+                end
             end
-            println(triedDepots)
             getTaxi = length(triedDepots) == scenario.nDepots
         end
 
         # Insert request
         if feasible
-            #TODO: Everything here has to be done right
-            println(typeOfSeat)
-            solution.vehicleSchedules[closestDepot-2*nRequests] = insertRequest(request,solution.vehicleSchedules[closestDepot-2*nRequests],idx_pickup,idx_dropoff,typeOfSeat,scenario)
-
-            # Update solution
-            solution.totalCost = getTotalCostRoute(scenario,solution.vehicleSchedules)
-            solution.totalDistance += getTotalDistanceRoute(solution.vehicleSchedules[closestDepot-2*nRequests].route,scenario)
+            solution.vehicleSchedules[vehicle] = insertRequest(request,solution.vehicleSchedules[vehicle],idx_pickup,idx_dropoff,typeOfSeat,scenario)
         else
             solution.nTaxi += getTaxi
         end
 
+    end
+
+    # Update solution
+    solution.totalCost = 0
+    solution.totalDistance = 0
+    for schedule in solution.vehicleSchedules
+        solution.totalCost += Int(round(schedule.totalCost))
+        solution.totalDistance += Int(round(schedule.totalDistance))
     end
 
     return solution

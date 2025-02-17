@@ -19,6 +19,7 @@ struct Scenario
     distance::Array{Int, 2}
     time::Array{Int, 2}
     nDepots::Int
+    depots::Dict
 end 
 
 

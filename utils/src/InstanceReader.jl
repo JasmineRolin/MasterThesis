@@ -73,11 +73,32 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     # Split into offline and online requests
     onlineRequests, offlineRequests = splitRequests(requests)
 
+    # Get depots
+    depots = dictDepots(vehicles)
+
     # Get distance and time matrix
-    scenario = Scenario(requests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots)
+    scenario = Scenario(requests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots,depots)
 
     return scenario
 
+end
+
+#==
+ Function to create dictionary of depots
+==#
+function dictDepots(vehicles)
+    depots = Dict{Int, Vector{Int}}()  # Dictionary where keys are depot IDs and values are vectors of vehicle IDs
+    
+    for vehicle in vehicles
+        depotId = vehicle.depotId
+        if haskey(depots, depotId)
+            push!(depots[depotId], vehicle.id)  # Append vehicle ID to existing vector
+        else
+            depots[depotId] = [vehicle.id]  # Create new vector with the first vehicle ID
+        end
+    end
+    
+    return depots    
 end
 
 
