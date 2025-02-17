@@ -2,7 +2,7 @@ module TimeWindows
 
 export TimeWindow,duration
 
-struct TimeWindow
+mutable struct TimeWindow
     startTime::Int
     endTime::Int
 

@@ -9,19 +9,19 @@ mutable struct VehicleSchedule
     route::Vector{ActivityAssignment}
     activeTimeWindow::TimeWindow 
     totalDistance::Float32
+    totalTime::Float32
     totalCost::Float32 
-    nWalking::Int
-    nWheelchair::Int
+    numberOfWalking::Vector{Int}
+    numberOfWheelchair::Vector{Int}
 
     # Constructor
     function VehicleSchedule(vehicle::Vehicle)
         # Create route with depots
-        # TODO: set the correct start and end of service for depots (according to availableTimeWindow)
-        startDepot = ActivityAssignment(Activity(vehicle.depotId,-1,DEPOT,WALKING,vehicle.depotLocation,TimeWindow(0,0)),vehicle,0,0)
-        endDepot = ActivityAssignment(Activity(vehicle.depotId,-1,DEPOT,WALKING,vehicle.depotLocation,TimeWindow(24*60,24*60)),vehicle,24*60,24*60)
+        startDepot = ActivityAssignment(Activity(vehicle.depotId,-1,DEPOT,WALKING,vehicle.depotLocation,TimeWindow(vehicle.availableTimeWindow.startTime,vehicle.availableTimeWindow.startTime)),vehicle,vehicle.availableTimeWindow.startTime,vehicle.availableTimeWindow.startTime)
+        endDepot = ActivityAssignment(Activity(vehicle.depotId,-1,DEPOT,WALKING,vehicle.depotLocation,TimeWindow(vehicle.availableTimeWindow.endTime,vehicle.availableTimeWindow.endTime)),vehicle,vehicle.availableTimeWindow.endTime,vehicle.availableTimeWindow.endTime)
 
         # Create empty VehicleSchedule objects
-        return new(vehicle, [startDepot,endDepot], TimeWindow(0, 0), 0.0, 0.0) 
+        return new(vehicle, [startDepot,endDepot], TimeWindow(0, 0), 0.0, 0.0, 0.0, Int[0,0], Int[0,0]) 
     end
 
 end 
