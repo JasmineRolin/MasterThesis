@@ -1,11 +1,29 @@
 module alns
 
+# TODO: remove exports that are not relevant outside of module 
+
+
 #==
- Import from GenericMethod
+ Import from ALNSDomain 
 ==#
-include("GenericMethod.jl")
-using .GenericMethods
+include("ALNSDomain.jl")
+using .ALNSDomain
 export GenericMethod
+export ALNSParameters, readParameters
+export ALNSConfiguration
+export ALNSState
+
+#== 
+ Import from ALNSFunctions 
+==#
+include("ALNSFunctions.jl")
+using .ALNSFunctions
+export readALNSParameters
+export addDestroyMethod!, addRepairMethod!
+export destroy!, repair!
+export rouletteWheel
+export calculateScore, updateWeights!
+
 
 #==
  Import from DestroyMethods 
@@ -19,24 +37,13 @@ using .DestroyMethods
 include("RepairMethods.jl")
 using .RepairMethods
 
-#==
- Import from ALNSParameters 
-==#
-include("ALNSParameters.jl")
-using .ALNSParameters
-export ALNSParameter
-
-#==
- Import from ALNSConfiguration 
-==#
-include("ALNSConfiguration.jl")
-using .ALNSConfigurations
 
 #==
  Import from ALNSAlgorithm
 ==#
 include("ALNSAlgorithm.jl")
 using .ALNSAlgorithm
+export ALNS
 
 #==
  Import from ALNSRunner 

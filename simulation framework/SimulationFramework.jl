@@ -52,6 +52,9 @@ function determineCurrentState(solution::Solution,event::Request,completedState:
                 completedState.totalCost += completedState.vehicleSchedules[vehicle].totalCost
                 completedState.totalDistance += completedState.vehicleSchedules[vehicle].totalDistance
                 completedState.nTaxi += solution.nTaxi
+                
+                # TODO: add calculation of idle time 
+
                 break
             end
         end
@@ -59,8 +62,8 @@ function determineCurrentState(solution::Solution,event::Request,completedState:
     end
 
     # Update KPIs
-    currentState.totalRideTime, currentState.idleTime = currentKPIs(currentState) #Change to right function name !!!!!!!!!!
-    completedState.totalRideTime, completedState.idleTime = currentKPIs(completedState) #Change to right function name !!!!!!!!!!
+    currentState.totalRideTime, currentState.idleTime = currentKPIs(currentState) # TODO: Change to right function name !!!!!!!!!!
+    completedState.totalRideTime, completedState.idleTime = currentKPIs(completedState) # TODO: Change to right function name !!!!!!!!!!
 
     return currentState, completedState
 
@@ -87,7 +90,7 @@ function simulateScenario(scenario::Scenario)
         #currentState, completedState = determineCurrentState(solution,event,completedState,scenario)
 
         # Get solution for online problem
-        #solution = onlineAlgorithm(currentState, event, scenario) #Change to right function name !!!!!!!!!!
+        #solution = onlineAlgorithm(currentState, event, scenario) # TODO: Change to right function name !!!!!!!!!!
     end
 
     return solution

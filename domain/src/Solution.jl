@@ -18,7 +18,6 @@ mutable struct Solution
         vehicleSchedules = [VehicleSchedule(vehicle) for vehicle in scenario.vehicles]
         return new(vehicleSchedules, 0.0, 0, 0, 0, 0)
     end
-
 end
 
 
