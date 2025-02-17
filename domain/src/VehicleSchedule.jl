@@ -14,6 +14,7 @@ mutable struct VehicleSchedule
     numberOfWalking::Vector{Int}
     numberOfWheelchair::Vector{Int}
 
+
     # Constructor
     function VehicleSchedule(vehicle::Vehicle)
         # Create route with depots
@@ -22,6 +23,7 @@ mutable struct VehicleSchedule
 
         # Create empty VehicleSchedule objects
         return new(vehicle, [startDepot,endDepot], TimeWindow(0, 0), 0.0, 0.0, 0.0, Int[0,0], Int[0,0]) 
+
     end
 
 end 

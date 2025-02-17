@@ -2,7 +2,7 @@ module Activities
 
 using ..TimeWindows, ..Locations, ..Enums
 
-export Activity
+export Activity,findCorrespondingId,findLoadOfActivity
 
 struct Activity 
     id::Int 
@@ -11,6 +11,30 @@ struct Activity
     mobilityType::MobilityType
     location::Location 
     timeWindow::TimeWindow
+end
+
+#==
+ Method to find corresponding activity id for PICKUP/DROPOFF activity
+==#
+function findCorrespondingId(activity::Activity, nRequests::Int)::Int
+    if activity.activityType == PICKUP
+        return activity.id + nRequests
+    else
+        return activity.id - nRequests
+    end
+end
+
+#==
+ Method to return load of activity
+==#
+function findLoadOfActivity(activity::Activity)::Int
+    if activity.activityType == PICKUP
+        return 1
+    elseif activity.activityType == DROPOFF
+        return -1
+    end
+    
+    return 0
 end
 
 

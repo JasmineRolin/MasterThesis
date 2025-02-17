@@ -29,7 +29,7 @@ export TimeWindow, duration
 ==#
 include("Activity.jl")
 using .Activities
-export Activity
+export Activity,findCorrespondingId,findLoadOfActivity
 
 #==
  Export from Requests module 
