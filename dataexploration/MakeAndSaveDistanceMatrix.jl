@@ -19,33 +19,22 @@ function getTimeDistanceMatrix(requestFile::String, vehicleFile::String, paramet
     # Read input 
     requestsDf = CSV.read(requestFile, DataFrame)
     vehiclesDf = CSV.read(vehicleFile, DataFrame)
-    parametersDf = CSV.read(parametersFile, DataFrame)
 
     nRequests = nrow(requestsDf)
-    nVehicles = nrow(vehiclesDf)
 
-    # Get parameters 
-    planningPeriod = TimeWindow(parametersDf[1,"start_of_planning_period"],parametersDf[1,"end_of_planning_period"])
-    serviceTimes = Dict{MobilityType,Int}(WALKING => parametersDf[1,"service_time_walking"], WHEELCHAIR => parametersDf[1,"service_time_wheelchair"])
-    vehicleCostPrHour = parametersDf[1,"vehicle_cost_pr_hour"]
-    vehicleStartUpCost = parametersDf[1,"vehicle_start_up_cost"]
-    bufferTime = parametersDf[1,"buffer_time"]
-    maximumRideTimePercent = parametersDf[1,"maximum_ride_time_percent"]
-    minimumMaximumRideTime = parametersDf[1,"minimum_maximum_ride_time"]
-
+    # Locations 
+    # Collect request info 
+    pickUpLocations = [(r.pickup_latitude,r.pickup_longitude) for r in eachrow(requestsDf)]
+    dropOffLocations = [(r.dropoff_latitude,r.dropoff_longitude)  for r in eachrow(requestsDf)]
 
     # Get vehicles 
-    vehicles = readVehicles(vehiclesDf,nVehicles,nRequests)
+    _, _, depotLocations = readVehicles(vehiclesDf,nRequests)
 
-    # Get requests 
-    requests = readRequests(requestsDf,bufferTime,maximumRideTimePercent,minimumMaximumRideTime)
+    # Collect all locations
+    locations = [pickUpLocations;dropOffLocations;collect(keys(depotLocations))]
 
-    # Split into offline and online requests
-    onlineRequests, offlineRequests = splitRequests(requests)
 
-    # Get distance and time matrix
-    scenario = Scenario(requests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,zeros(Int, 0, 0),zeros(Int, 0, 0))
-    distanceMatrix, timeMatrix = getDistanceAndTimeMatrix(scenario)
+   distanceMatrix, timeMatrix = getDistanceAndTimeMatrixFromLocations(locations)
 
     open("Data/Matrices/timeMatrix_" * string(dataName) * ".txt", "w") do file
         for row in eachrow(timeMatrix)

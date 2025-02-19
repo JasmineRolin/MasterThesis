@@ -40,10 +40,10 @@ end
 ==#
 function getDistanceAndTimeMatrixFromDataFrame(requestsDf::DataFrame,depotLocations::Vector{Tuple{Float64,Float64}})::Tuple{Array{Float64, 2}, Array{Int, 2}}
     # Collect request info 
-    pickUpLocations = [(r.pickup_latitude,r.dropoff_longitude) for r in eachrow(requestsDf)]
+    pickUpLocations = [(r.pickup_latitude,r.pickup_longitude) for r in eachrow(requestsDf)]
     dropOffLocations = [(r.dropoff_latitude,r.dropoff_longitude)  for r in eachrow(requestsDf)]
 
-    # Initialize the distance matrix
+    # Collect all locations
     locations = [pickUpLocations;dropOffLocations;depotLocations]
 
     return getDistanceAndTimeMatrixFromLocations(locations)
@@ -69,7 +69,6 @@ function getDistanceAndTimeMatrixFromLocations(locations::Vector{Tuple{Float64, 
     # Compute the distances 
     for (i,loc1) in enumerate(locations)
         for (j,loc2) in enumerate(locations)
-            println(i,",",j)
             if i == j 
                 distanceMatrix[i,j] = 0
                 travelTimeMatrix[i,j] = 0
