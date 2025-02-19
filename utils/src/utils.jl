@@ -5,14 +5,14 @@ module utils
 ==#
 include("TimeUtils.jl")
 using .TimeUtils 
-export minutesSinceMidnight 
+export minutesSinceMidnight
 
 #==
  Export from TimeUtils module
 ==#
 include("DistanceUtils.jl")
 using .DistanceUtils 
-export getDistanceAndTimeMatrix
+export getDistanceAndTimeMatrix, getDistanceAndTimeMatrixFromLocations
 
 #==
  Export from InstanceReaders module

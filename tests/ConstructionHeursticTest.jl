@@ -35,6 +35,7 @@ using .ConstructionHeuristic
     # Check routes
     for schedule in solution.vehicleSchedules
         feasible, msg = checkRouteFeasibility(scenario,schedule)
+        @test feasible == true
         println(msg)
     end
 
