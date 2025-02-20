@@ -51,7 +51,7 @@ end
 #==
 #  Function to get total cost of a route
 ==#
-function getTotalCostRoute(scenario::Scenario,totalTime::Float64)
+function getTotalCostRoute(scenario::Scenario,totalTime::Int)
     return scenario.vehicleCostPrHour * totalTime + scenario.vehicleStartUpCost
 end
 
@@ -59,11 +59,11 @@ end
 # Function to get total cost and distance of solution 
 ==#
 function getTotalCostAndDistanceOfSolution(solution::Solution)
-    totalCost = 0
-    totalDistance = 0
+    totalCost = 0.0
+    totalDistance = 0.0
     for schedule in solution.vehicleSchedules
-        totalCost += Int(round(schedule.totalCost))
-        totalDistance += Int(round(schedule.totalDistance))
+        totalCost += schedule.totalCost
+        totalDistance += schedule.totalDistance
     end
     return totalCost, totalDistance
 end

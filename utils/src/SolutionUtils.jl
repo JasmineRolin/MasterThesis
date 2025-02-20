@@ -1,6 +1,8 @@
 module SolutionUtils
 
-using UnPack, ..RouteUtils
+using UnPack, domain, ..RouteUtils
+
+export checkSolutionFeasibility
 
 #==
 # Function to check feasibility of solution 
@@ -8,16 +10,23 @@ using UnPack, ..RouteUtils
 function checkSolutionFeasibility(scenario::Scenario,solution::Solution)
     @unpack vehicleSchedules, totalCost, nTaxi, totalRideTime, totalDistance, idleTime = solution
 
-    # Collect ids of all activities in scenario 
-    activityIds = vcat([req.pickUpActivity.id, req.dropOffActivity.id] for req in scenario.requests) 
+    # Collect ids of all activities in scenario - assuming activities have id 1:2*nRequests
+    nRequests = length(scenario.requests)
+    activityIds = collect(1:(2*nRequests))
     nActivities = length(activityIds)
 
-    # Keep track of serviced activities 
-    servicedActivities = zeros(Bool,nActivities)
+    # Keep track of serviced activities assuming that activity 
+    servicedActivities = Set{Int}()
+
+    # Keep track of cost, total distance and total time of solution
+    totalCostCheck = 0.0 
+    totalRideTimeCheck = 0
+    totalDistanceCheck = 0.0
+    # TODO: keep track of idle time 
 
     # Check all routes 
     for vehicleSchedule in vehicleSchedules
-        feasible, msg, servicedActivities = checkRouteFeasibility(vehicleSchedule)
+        feasible, msg, servicedActivitiesInRoute = checkRouteFeasibility(scenario,vehicleSchedule)
 
         # Return if route is not feasible 
         if !feasible
@@ -25,20 +34,42 @@ function checkSolutionFeasibility(scenario::Scenario,solution::Solution)
         end
 
         # Update serviced activities
-        for activity in servicedActivities
-            if servicedActivities[activity]
+        for activity in servicedActivitiesInRoute
+            if activity in servicedActivities
                 msg = "SOLUTION INFEASIBLE: Activity $(activity) is serviced more than once"
                 return false, msg
             end
 
-            servicedActivities[activity] = true
+            push!(servicedActivities,activity)
         end
+
+        totalCostCheck += vehicleSchedule.totalCost
+        totalRideTimeCheck += vehicleSchedule.totalTime
+        totalDistanceCheck += vehicleSchedule.totalDistance
     end
 
     # Check that all activities are serviced
+    if sum(.!servicedActivities) != 2*nTaxi
+        msg = "SOLUTION INFEASIBLE: Not all activities are serviced"
+        return false, msg
+    end
+
+    # Check cost, distance and time of solution 
+    if totalCostCheck != totalCost
+        msg = "SOLUTION INFEASIBLE: Total cost of solution is incorrect. Calculated: $(totalCostCheck), actual: $(totalCost)"
+        return false, msg
+    end
+    if totalDistanceCheck != totalDistance
+        msg = "SOLUTION INFEASIBLE: Total distance of solution is incorrect. Calculated: $(totalDistanceCheck), actual: $(totalDistance)"
+        return false, msg
+    end
+    if totalRideTimeCheck != totalRideTime
+        msg = "SOLUTION INFEASIBLE: Total ride time of solution is incorrect. Calculated: $(totalRideTimeCheck), actual: $(totalRideTime)"
+        return false, msg
+    end
 
 
-    return true 
+    return true, ""
     
 end
 

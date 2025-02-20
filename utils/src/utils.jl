@@ -43,4 +43,11 @@ include("RouteUtils.jl")
 using .RouteUtils
 export printRoute, insertRequest!, checkRouteFeasibility,checkFeasibilityOfInsertionAtPosition
 
+#==
+    Export from SolutionUtils module   
+==#
+include("SolutionUtils.jl")
+using .SolutionUtils
+export checkSolutionFeasibility
+
 end 
