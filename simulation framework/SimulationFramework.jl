@@ -22,7 +22,8 @@ function currentUpdateNotAvailableAnymore(schedule::VehicleSchedule,vehicle::Int
 
     # Update final solution
 
-    return currentSchedule, finalSolution
+
+    return currentSchedule
 end
 
 # ------
@@ -39,7 +40,7 @@ function currentUpdateStillAvailableAndFree(schedule::VehicleSchedule,vehicle::I
 
     # Update final solution
 
-    return currentSchedule, finalSolution
+    return currentSchedule
 end
 
 
@@ -83,6 +84,15 @@ function currentUpdateSplit(schedule::VehicleSchedule,vehicle::Int,currentTime::
     currentSchedule.numberOfWalking = schedule.numberOfWalking[idx+1:end]
     currentSchedule.numberOfWheelchair = schedule.numberOfWheelchair[idx+1:end]
 
+    return currentSchedule
+end
+
+
+# ------
+# Function to update final solution
+# ------
+function updateFinalSolution(finalSolution::Solution,solution::Solution,vehicle::Int,idx::Int)
+    
     # Update completed routes
     append!(finalSolution.vehicleSchedules[vehicle].route, schedule.route[1:idx])
     finalSolution.vehicleSchedules[vehicle].activeTimeWindow.endTime = currentTime
@@ -92,8 +102,9 @@ function currentUpdateSplit(schedule::VehicleSchedule,vehicle::Int,currentTime::
     finalSolution.vehicleSchedules[vehicle].numberOfWalking = schedule.numberOfWalking[1:idx]
     finalSolution.vehicleSchedules[vehicle].numberOfWheelchair = schedule.numberOfWheelchair[1:idx]
 
-    return currentSchedule, finalSolution
+    return finalSolution
 end
+
 
 
 # ------
@@ -142,28 +153,28 @@ function determineCurrentState(solution::Solution,event::Request,finalSolution::
         # Check if entire route has been served and vehicle is not available anymore
         if schedule.route[end].endOfServiceTime < currentTime 
 
-            currentSchedule, finalSolution = currentUpdateNotAvailableAnymore(schedule,vehicle,currentTime,currentState,finalSolution)
+            currentSchedule, idx = currentUpdateNotAvailableAnymore(schedule,vehicle,currentTime,currentState,finalSolution)
             println("HERE1")
             continue
 
         # Check if entire route has been served and vehicle is still available
         elseif schedule.route[end-1].endOfServiceTime < currentTime && schedule.vehicle.availableTimeWindow.endTime > currentTime
 
-            currentSchedule, finalSolution = currentUpdateStillAvailableAndFree(schedule,vehicle,currentTime,currentState,finalSolution)
+            currentSchedule, idx = currentUpdateStillAvailableAndFree(schedule,vehicle,currentTime,currentState,finalSolution)
             println("HERE2")
             continue
         
         # Check if vehicle is not available yet
         elseif schedule.route[1].startOfServiceTime > currentTime
 
-            currentSchedule = currentUpdateNotAvailableYet(schedule,vehicle,currentTime,currentState)
+            currentSchedule, idx = currentUpdateNotAvailableYet(schedule,vehicle,currentTime,currentState)
             println("HERE3")
             continue
 
         # Check if vehicle have not been assigned yet
         elseif length(schedule.route) == 2 && schedule.route[1].activity.activityType == DEPOT && schedule.route[2].endOfServiceTime >= currentTime
 
-            currentSchedule = currentUpdateNoAssignement(schedule,vehicle,currentTime,currentState)
+            currentSchedule, idx = currentUpdateNoAssignement(schedule,vehicle,currentTime,currentState)
             println("HERE4")
             continue
         
@@ -174,11 +185,14 @@ function determineCurrentState(solution::Solution,event::Request,finalSolution::
         for (idx,node) in enumerate(schedule.route)
             if node.endOfServiceTime < currentTime && schedule.route[idx+1].endOfServiceTime > currentTime
 
-                currentSchedule, finalSolution = currentUpdateSplit(schedule,vehicle,currentTime,currentState,finalSolution)
+                currentSchedule, idx  = currentUpdateSplit(schedule,vehicle,currentTime,currentState,finalSolution)
                 println("HERE5")
                 break
             end
         end
+
+        # Update final solution
+        finalSolution = updateFinalSolution(finalSolution,solution,vehicle,idx)
 
         # Update current schedule
         currentState.solution.vehicleSchedules[vehicle] = currentSchedule
