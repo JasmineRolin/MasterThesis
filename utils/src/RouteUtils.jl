@@ -112,8 +112,8 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPic
 
         # Add time between new consecutive customers
         vehicleSchedule.totalTime += (vehicleSchedule.route[idxPickUp+1].endOfServiceTime - vehicleSchedule.route[idxPickUp].endOfServiceTime)
-                                     + (vehicleSchedule.route[idxPickUp+1].endOfServiceTime - vehicleSchedule.route[idxPickUp+2].endOfServiceTime)
-                                     + (vehicleSchedule.route[idxPickUp+2].endOfServiceTime - vehicleSchedule.route[idxPickUp+3].startOfServiceTime)
+                                     + (vehicleSchedule.route[idxPickUp+2].endOfServiceTime - vehicleSchedule.route[idxPickUp+1].endOfServiceTime)
+                                     + (vehicleSchedule.route[idxPickUp+3].endOfServiceTime - vehicleSchedule.route[idxPickUp+2].startOfServiceTime)
     else
         # Remove time between previous consecutive customers 
         vehicleSchedule.totalTime -= vehicleSchedule.route[idxPickUp+2].startOfServiceTime - vehicleSchedule.route[idxPickUp].endOfServiceTime
