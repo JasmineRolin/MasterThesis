@@ -26,19 +26,21 @@ export splitRequests
 
 
 #==
- Export from costCalculator module
+ Export from CostCalculator module
 ==#
-include("costCalculator.jl")
-using .costCalculator
+include("CostCalculator.jl")
+using .CostCalculator
 export getTotalDistanceRoute
 export getTotalCostRoute
 export getTotalTimeRoute
+export getTotalCostAndDistanceOfSolution
+
 
 #==
  Export from RouteUtils module
 ==#
 include("RouteUtils.jl")
 using .RouteUtils
-export printRoute, insertRequest!, checkRouteFeasibility
+export printRoute, insertRequest!, checkRouteFeasibility,checkFeasibilityOfInsertionAtPosition
 
 end 

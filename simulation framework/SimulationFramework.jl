@@ -1,11 +1,9 @@
 
 module SimulationFramework
 
-include("../offlinesolution/src/ConstructionHeuristic.jl")
-
 using utils
 using domain
-using .ConstructionHeuristic
+using offlinesolution
 
 export simulateScenario
 
