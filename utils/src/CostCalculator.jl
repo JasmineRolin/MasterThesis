@@ -1,11 +1,16 @@
-module costCalculator
+module CostCalculator
 
 using domain
 
 export getTotalDistanceRoute
 export getTotalCostRoute
 export getTotalTimeRoute
+export getTotalCostAndDistanceOfSolution
 
+
+#==
+#  Function to get total distance of a route
+==# 
 function getTotalDistanceRoute(route::Vector{ActivityAssignment},scenario::Scenario)
     totalDistance = 0
     distanceMatrix = scenario.distance
@@ -16,6 +21,9 @@ function getTotalDistanceRoute(route::Vector{ActivityAssignment},scenario::Scena
     return totalDistance
 end
 
+#==
+#  Function to get total time of a route
+==#
 function getTotalTimeRoute(vehicleSchedules::Vector{VehicleSchedule})
     totalTime = 0
 
@@ -31,13 +39,32 @@ function getTotalTimeRoute(vehicleSchedules::Vector{VehicleSchedule})
     return totalTime
 end
 
+#==
+#  Function to get total cost of a route 
+==#
 function getTotalCostRoute(scenario::Scenario,vehicleSchedules::Vector{VehicleSchedule})
     totalTime = getTotalTimeRoute(vehicleSchedules)
     return scenario.vehicleCostPrHour * totalTime + scenario.vehicleStartUpCost
 end
 
+#==
+#  Function to get total cost of a route
+==#
 function getTotalCostRoute(scenario::Scenario,totalTime::Float64)
     return scenario.vehicleCostPrHour * totalTime + scenario.vehicleStartUpCost
+end
+
+#==
+# Function to get total cost and distance of solution 
+==#
+function getTotalCostAndDistanceOfSolution(solution::Solution)
+    totalCost = 0
+    totalDistance = 0
+    for schedule in solution.vehicleSchedules
+        totalCost += Int(round(schedule.totalCost))
+        totalDistance += Int(round(schedule.totalDistance))
+    end
+    return totalCost, totalDistance
 end
 
 end

@@ -2,9 +2,9 @@ using Test
 using utils 
 using domain 
 
-#==
- Test printVehicleSchedule
-==#
+# #==
+#  Test printVehicleSchedule
+# ==#
 @testset "printVehicleSchedule test" begin 
     requestFile = "tests/resources/Requests.csv"
     vehiclesFile = "tests/resources/Vehicles.csv"
@@ -19,7 +19,7 @@ using domain
     vehicleSchedule = VehicleSchedule(scenario.vehicles[1])
 
     # Insert request
-    insertRequest!(scenario.requests[1],vehicleSchedule,2,2,scenario)
+    insertRequest!(scenario.requests[1],vehicleSchedule,1,1,WALKING,scenario)
 
     printRoute(vehicleSchedule)
 
@@ -45,12 +45,14 @@ end
 
     #== Check feasible route ==#
     # Update start depot 
-    vehicleSchedule.route[1].startOfServiceTime = 380
-    vehicleSchedule.route[1].endOfServiceTime = 380
-    
+    startTime = 415
+    vehicleSchedule.route[1].startOfServiceTime = startTime
+    vehicleSchedule.route[1].endOfServiceTime = startTime
+
+
     # Insert request
     request = scenario.requests[1]
-    startOfServicePickUp = 380 + scenario.time[vehicle.depotId,request.pickUpActivity.id] 
+    startOfServicePickUp = startTime + scenario.time[vehicle.depotId,request.pickUpActivity.id] 
     endOfServiceTimePickUp = startOfServicePickUp + scenario.serviceTimes[request.pickUpActivity.mobilityType]
 
     startOfServiceDropOff = 16 + endOfServiceTimePickUp + scenario.time[request.pickUpActivity.id,request.dropOffActivity.id]
@@ -67,7 +69,7 @@ end
     vehicleSchedule.route[4].endOfServiceTime = endOfServiceTimeDropOff + scenario.time[request.dropOffActivity.id,vehicle.depotId]
 
     # Update vehicle schedule
-    vehicleSchedule.activeTimeWindow.startTime = 380
+    vehicleSchedule.activeTimeWindow.startTime = startTime
     vehicleSchedule.activeTimeWindow.endTime = dropOffActivity.endOfServiceTime + scenario.time[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.totalDistance = scenario.distance[vehicle.depotId,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.numberOfWalking = [0,1,0,0]
@@ -96,11 +98,12 @@ end
     vehicleSchedule = VehicleSchedule(vehicle)
 
     #== Check feasible route ==#
+    startTime = 415
     vehicleSchedule.route[1].startOfServiceTime = 0
     vehicleSchedule.route[1].endOfServiceTime = 0
 
     request = scenario.requests[1]
-    startOfServicePickUp = 380 + scenario.time[vehicle.depotId,request.pickUpActivity.id] 
+    startOfServicePickUp = startTime + scenario.time[vehicle.depotId,request.pickUpActivity.id] 
     endOfServiceTimePickUp = startOfServicePickUp + scenario.serviceTimes[request.pickUpActivity.mobilityType]
 
     startOfServiceDropOff = 16 + endOfServiceTimePickUp + scenario.time[request.pickUpActivity.id,request.dropOffActivity.id]
@@ -118,7 +121,7 @@ end
 
 
     # Update vehicle schedule
-    vehicleSchedule.activeTimeWindow.startTime = 380
+    vehicleSchedule.activeTimeWindow.startTime = startTime
     vehicleSchedule.activeTimeWindow.endTime = dropOffActivity.endOfServiceTime + scenario.time[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.totalDistance = scenario.distance[vehicle.depotId,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.numberOfWalking = [0,1,0,0]
@@ -146,12 +149,13 @@ end
 
     #== Check feasible route ==#
     # Update start depot 
-    vehicleSchedule.route[1].startOfServiceTime = 380
-    vehicleSchedule.route[1].endOfServiceTime = 380
+    startTime = 415
+    vehicleSchedule.route[1].startOfServiceTime = startTime
+    vehicleSchedule.route[1].endOfServiceTime = startTime
     
     # Insert request
     request = scenario.requests[1]
-    startOfServicePickUp = 380 + scenario.time[vehicle.depotId,request.pickUpActivity.id] 
+    startOfServicePickUp = startTime + scenario.time[vehicle.depotId,request.pickUpActivity.id] 
     endOfServiceTimePickUp = startOfServicePickUp + scenario.serviceTimes[request.pickUpActivity.mobilityType]
 
     startOfServiceDropOff =  endOfServiceTimePickUp + scenario.time[request.pickUpActivity.id,request.dropOffActivity.id]
@@ -168,7 +172,7 @@ end
     vehicleSchedule.route[4].endOfServiceTime = endOfServiceTimeDropOff + scenario.time[request.dropOffActivity.id,vehicle.depotId]
 
     # Update vehicle schedule
-    vehicleSchedule.activeTimeWindow.startTime = 380
+    vehicleSchedule.activeTimeWindow.startTime = startTime
     vehicleSchedule.activeTimeWindow.endTime = dropOffActivity.endOfServiceTime + scenario.time[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.totalDistance = scenario.distance[vehicle.depotId,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.numberOfWalking = [0,1,0,0]
@@ -177,7 +181,7 @@ end
     # Check route feasibility
     feasible, msg = checkRouteFeasibility(scenario,vehicleSchedule)
     @test feasible == false
-    @test msg == "ROUTE INFEASIBLE: Time window not respected for activity 6 on vehicle 1, Start/End of Service: (464, 466), Time Window: (480, 500)"
+    @test msg == "ROUTE INFEASIBLE: Time window not respected for activity 6 on vehicle 1, Start/End of Service: (467, 469), Time Window: (480, 500)"
    
 
 end
@@ -198,12 +202,13 @@ end
 
     #== Check feasible route ==#
     # Update start depot 
-    vehicleSchedule.route[1].startOfServiceTime = 380
-    vehicleSchedule.route[1].endOfServiceTime = 380
+    startTime = 415
+    vehicleSchedule.route[1].startOfServiceTime = startTime
+    vehicleSchedule.route[1].endOfServiceTime = startTime
     
     # Insert request
     request = scenario.requests[1]
-    startOfServicePickUp = 380 + scenario.time[vehicle.depotId,request.pickUpActivity.id] 
+    startOfServicePickUp = startTime + scenario.time[vehicle.depotId,request.pickUpActivity.id] 
     endOfServiceTimePickUp = startOfServicePickUp + scenario.serviceTimes[request.pickUpActivity.mobilityType]
 
     startOfServiceDropOff =  endOfServiceTimePickUp + scenario.time[request.pickUpActivity.id,request.dropOffActivity.id]
@@ -221,7 +226,7 @@ end
     vehicleSchedule.route[4].endOfServiceTime = endOfServiceTimeDropOff + scenario.time[request.dropOffActivity.id,vehicle.depotId]
 
     # Update vehicle schedule
-    vehicleSchedule.activeTimeWindow.startTime = 380
+    vehicleSchedule.activeTimeWindow.startTime = startTime
     vehicleSchedule.activeTimeWindow.endTime = dropOffActivity.endOfServiceTime + scenario.time[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.totalDistance = scenario.distance[vehicle.depotId,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.numberOfWalking = [0,1,0,0]
@@ -252,12 +257,13 @@ end
 
     #== Check feasible route ==#
     # Update start depot 
-    vehicleSchedule.route[1].startOfServiceTime = 380
-    vehicleSchedule.route[1].endOfServiceTime = 380
+    startTime = 415
+    vehicleSchedule.route[1].startOfServiceTime = startTime
+    vehicleSchedule.route[1].endOfServiceTime = startTime
     
     # Insert request
     request = scenario.requests[1]
-    startOfServicePickUp = 380 + scenario.time[vehicle.depotId,request.pickUpActivity.id] 
+    startOfServicePickUp = startTime + scenario.time[vehicle.depotId,request.pickUpActivity.id] 
     endOfServiceTimePickUp = startOfServicePickUp + scenario.serviceTimes[request.pickUpActivity.mobilityType]
 
     startOfServiceDropOff =  25 + endOfServiceTimePickUp + scenario.time[request.pickUpActivity.id,request.dropOffActivity.id]
@@ -275,7 +281,7 @@ end
     vehicleSchedule.route[4].endOfServiceTime = endOfServiceTimeDropOff + scenario.time[request.dropOffActivity.id,vehicle.depotId]
 
     # Update vehicle schedule
-    vehicleSchedule.activeTimeWindow.startTime = 380
+    vehicleSchedule.activeTimeWindow.startTime = startTime
     vehicleSchedule.activeTimeWindow.endTime = dropOffActivity.endOfServiceTime + scenario.time[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.totalDistance = scenario.distance[vehicle.depotId,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.numberOfWalking = [0,1,0,0]
