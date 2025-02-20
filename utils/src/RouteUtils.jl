@@ -11,6 +11,7 @@ function printRoute(schedule::VehicleSchedule)
     println("Vehicle Schedule for: ", schedule.vehicle.id)
     println("Active Time Window: ", "(",schedule.activeTimeWindow.startTime, ",", schedule.activeTimeWindow.endTime,")")
     println("Total Distance: ", schedule.totalDistance, " km")
+    println("Total time: ", schedule.totalTime, " min")
     println("Total Cost: \$", schedule.totalCost)
     println("Wheelchair capacities: ", schedule.numberOfWheelchair)
     println("Walking capacities: ", schedule.numberOfWalking)
@@ -106,19 +107,24 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPic
 
     # Update total time
     if idxDropOff == idxPickUp
-        vehicleSchedule.totalTime -= (scenario.time[vehicleSchedule.route[idxPickUp].activity.id, vehicleSchedule.route[idxPickUp+3].activity.id]) 
-        vehicleSchedule.totalTime += (scenario.time[vehicleSchedule.route[idxPickUp].activity.id, request.pickUpActivity.id] + 
-                                    scenario.time[request.pickUpActivity.id, request.dropOffActivity.id] + 
-                                    scenario.time[request.dropOffActivity.id, vehicleSchedule.route[idxPickUp+3].activity.id]) 
+        # Remove time between previous consecutive customers 
+        vehicleSchedule.totalTime -= vehicleSchedule.route[idxPickUp+3].startOfServiceTime - vehicleSchedule.route[idxPickUp].endOfServiceTime
+
+        # Add time between new consecutive customers
+        vehicleSchedule.totalTime += (vehicleSchedule.route[idxPickUp+1].endOfServiceTime - vehicleSchedule.route[idxPickUp].endOfServiceTime)
+                                     + (vehicleSchedule.route[idxPickUp+1].endOfServiceTime - vehicleSchedule.route[idxPickUp+2].endOfServiceTime)
+                                     + (vehicleSchedule.route[idxPickUp+2].endOfServiceTime - vehicleSchedule.route[idxPickUp+3].startOfServiceTime)
     else
-        # PickUp
-        vehicleSchedule.totalTime -= (scenario.time[vehicleSchedule.route[idxPickUp].activity.id, vehicleSchedule.route[idxPickUp+2].activity.id]) 
-        vehicleSchedule.totalTime += (scenario.time[vehicleSchedule.route[idxPickUp].activity.id, request.pickUpActivity.id] + 
-                                    scenario.time[request.pickUpActivity.id, vehicleSchedule.route[idxPickUp+2].activity.id])
-        # DropOff
-        vehicleSchedule.totalTime -= (scenario.time[vehicleSchedule.route[idxDropOff].activity.id, vehicleSchedule.route[idxDropOff+2].activity.id]) 
-        vehicleSchedule.totalTime += (scenario.time[vehicleSchedule.route[idxDropOff].activity.id, request.dropOffActivity.id] + 
-                                    scenario.time[request.dropOffActivity.id, vehicleSchedule.route[idxDropOff+2].activity.id])
+        # Remove time between previous consecutive customers 
+        vehicleSchedule.totalTime -= vehicleSchedule.route[idxPickUp+2].startOfServiceTime - vehicleSchedule.route[idxPickUp].endOfServiceTime
+        vehicleSchedule.totalTime -= vehicleSchedule.route[idxDropOff+2].startOfServiceTime - vehicleSchedule.route[idxDropOff].endOfServiceTime
+
+        
+        # Add time between new consecutive customers
+        vehicleSchedule.totalTime += (vehicleSchedule.route[idxPickUp+1].endOfServiceTime - vehicleSchedule.route[idxPickUp].endOfServiceTime)
+                                     + (vehicleSchedule.route[idxPickUp+2].endOfServiceTime - vehicleSchedule.route[idxPickUp+1].startOfServiceTime)
+        vehicleSchedule.totalTime += (vehicleSchedule.route[idxDropOff+1].endOfServiceTime - vehicleSchedule.route[idxDropOff].endOfServiceTime)
+                                     + (vehicleSchedule.route[idxDropOff+2].endOfServiceTime - vehicleSchedule.route[idxDropOff+1].startOfServiceTime)
     end
 
     # Update total cost
@@ -273,11 +279,11 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
 
     # Check cost and total time 
     if totalTime != durationActiveTimeWindow
-        msg = "ROUTE INFEASIBLE: Total time is incorrect. Calculated time $(durationActiveTimeWindow), actual time $(totalTime)"
+        msg = "ROUTE INFEASIBLE: Total time is incorrect for vehicle $(vehicle.id). Calculated time $(durationActiveTimeWindow), actual time $(totalTime)"
         return false, msg, Set{Int}()
     end
     if totalCost != vehicleCostPrHour * totalTime + vehicleStartUpCost
-        msg = "ROUTE INFEASIBLE: Total cost is incorrect. Calculated cost $(vehicleCostPrHour * totalTime + vehicleStartUpCost), actual cost $(totalCost)"
+        msg = "ROUTE INFEASIBLE: Total cost is incorrect for vehicle $(vehicle.id). Calculated cost $(vehicleCostPrHour * totalTime + vehicleStartUpCost), actual cost $(totalCost)"
         return false, msg, Set{Int}()
     end
     
