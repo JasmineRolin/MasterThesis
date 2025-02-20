@@ -62,11 +62,6 @@ scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFi
 
 solution = simulateScenario(scenario)
 
-# Print routes
-for schedule in solution.vehicleSchedules
-    printRoute(schedule)
-end
-
 # Check routes
 for schedule in solution.vehicleSchedules
     feasible, msg = checkRouteFeasibility(scenario,schedule)

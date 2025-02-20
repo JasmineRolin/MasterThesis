@@ -23,79 +23,177 @@ end
 
 
 # ------
+# Function to update current state if entire route has been served and vehicle is not available anymore
+# ------
+function currentUpdateNotAvailableAnymore(schedule::VehicleSchedule,vehicle::Int,currentTime::Int,currentState::state,finalSolution::Solution)
+    # Update current state
+    currentSchedule = currentState.vehicleSchedules[vehicle]
+    currentSchedule = schedule.route[idx+1:end]
+
+
+    # Update final solution
+
+    return currentSchedule, finalSchedule
+end
+
+# ------
+# Function to update current state if entire route has been served and vehicle is still available
+# ------
+function currentUpdateStillAvailableAndFree(schedule::VehicleSchedule,vehicle::Int,currentTime::Int,currentState::state,finalSolution::Solution)
+    # Update current state
+    waitingDepot = ActivityAssignment(Activity(node.activity.id,-1,WAITING,WALKING,node.activity.location,TimeWindow(node.endOfServiceTime,currentTime)),schedule.vehicle,currentTime,schedule.vehicle.availableTimeWindow.endTime)
+    endDepot = schedule.route[end]
+    currentSchedule = currentState.vehicleSchedules[vehicle] 
+    currentSchedule.route = [waitingDepot,endDepot]
+    currentSchedule.activeTimeWindow.endTime = currentTime
+    currentSchedule.activeTimeWindow.startTime = currentTime
+
+
+    # Update final solution
+
+    return currentSchedule, finalSchedule
+end
+
+
+# ------
+# Function to update current state if vehicle is not available yet
+# ------
+function currentUpdateNotAvailableYet(schedule::VehicleSchedule,vehicle::Int,currentTime::Int,currentState::state,finalSolution::Solution)
+    # Update current state
+    currentSchedule = currentState.vehicleSchedules[vehicle]
+    currentSchedule = schedule
+    # Update final solution
+
+    return currentSchedule, finalSchedule
+end
+
+
+# ------
+# Function to update current state if vehicle have not been assigned yet
+# ------
+function currentUpdateNoAssignement(schedule::VehicleSchedule,vehicle::Int,currentTime::Int,currentState::state,finalSolution::Solution)
+    # Update current state
+    currentSchedule = currentState.vehicleSchedules[vehicle]
+    currentSchedule.activeTimeWindow.endTime = currentTime
+    currentSchedule.route[1].endOfServiceTime = currentTime
+
+    # Update final solution
+
+    return currentSchedule, finalSchedule
+end
+
+
+# ------
+# Function to update current state if vehicle have visited some
+# ------
+function currentUpdateSplit(schedule::VehicleSchedule,vehicle::Int,currentTime::Int,currentState::state,finalSolution::Solution)
+    currentSchedule = currentState.vehicleSchedules[vehicle]
+        
+    # Update vehicle schedule for current state
+    currentSchedule.route = schedule.route[idx+1:end]
+    println("currentRouteLength",length(currentSchedule.route))
+    currentSchedule.activeTimeWindow = TimeWindow(currentTime,currentTime) ## TODO
+    currentSchedule.totalDistance = getTotalDistanceRoute(currentSchedule.route,scenario)
+    currentSchedule.totalTime = getTotalTimeRoute(currentSchedule)
+    currentSchedule.totalCost = getTotalCostRoute(scenario,currentSchedule.totalTime)
+    currentSchedule.numberOfWalking = schedule.numberOfWalking[idx+1:end]
+    currentSchedule.numberOfWheelchair = schedule.numberOfWheelchair[idx+1:end]
+
+    # Update current state
+    currentState.totalCost += currentSchedule.totalCost
+    currentState.totalDistance += currentSchedule.totalDistance
+    currentState.nTaxi = 0
+
+    # Update completed routes
+    append!(completedState.vehicleSchedules[vehicle].route, schedule.route[1:idx])
+    println("completedRouteLength",length(schedule.route[1:idx]))
+    completedState.vehicleSchedules[vehicle].activeTimeWindow.endTime = currentTime
+    completedState.vehicleSchedules[vehicle].totalDistance += getTotalDistanceRoute(completedState.vehicleSchedules[vehicle].route,scenario)
+    completedState.vehicleSchedules[vehicle].totalTime += getTotalTimeRoute(completedState.vehicleSchedules[vehicle])
+    completedState.vehicleSchedules[vehicle].totalCost += getTotalCostRoute(scenario,completedState.vehicleSchedules[vehicle])
+    completedState.vehicleSchedules[vehicle].numberOfWalking = schedule.numberOfWalking[1:idx]
+    completedState.vehicleSchedules[vehicle].numberOfWheelchair = schedule.numberOfWheelchair[1:idx]
+
+    # Update completed state
+    completedState.totalCost += completedState.vehicleSchedules[vehicle].totalCost
+    completedState.totalDistance += completedState.vehicleSchedules[vehicle].totalDistance
+    completedState.nTaxi += solution.nTaxi
+    
+    # TODO: add calculation of idle time 
+
+    return currentSchedule, finalSchedule
+end
+
+
+
+# ------
 # Function to determine current state
 # ------
-function determineCurrentState(solution::Solution,event::Request,completedState::State,scenario::Scenario)
+function determineCurrentState(solution::Solution,event::Request,finalSolution::Solution,scenario::Scenario)
 
     # Initialize current state
-    currentState = State(scenario)
+    currentState = State(scenario,event)
 
     # Get current time
     currentTime = event.callTime
 
     # Update vehicle schedule
     for (vehicle,schedule) in enumerate(solution.vehicleSchedules)
+
+
+        # Check if entire route has been served and vehicle is not available anymore
+        if schedule.route[end].endOfServiceTime < currentTime 
+
+            currentSchedule, finalSolution = currentUpdateNotAvailableAnymore(schedule,vehicle,currentTime,currentState,finalSolution)
+            println("HERE1")
+            continue
+
+        # Check if entire route has been served and vehicle is still available
+        elseif schedule.route[end-1].endOfServiceTime < currentTime && schedule.vehicle.availableTimeWindow.endTime > currentTime
+
+            currentSchedule, finalSolution = currentUpdateStillAvailableAndFree(schedule,vehicle,currentTime,currentState,finalSolution)
+            println("HERE2")
+            continue
+        
+        # Check if vehicle is not available yet
+        elseif schedule.route[1].startOfServiceTime > currentTime
+
+            currentSchedule, finalSolution = currentUpdateNotAvailableYet(schedule,vehicle,currentTime,currentState,finalSolution)
+            println("HERE3")
+            continue
+
+        # Check if vehicle have not been assigned yet
+        elseif length(schedule.route) == 2 && schedule.route[1].activity.activityType == DEPOT && schedule.route[2].endOfServiceTime >= currentTime
+
+            currentSchedule, finalSolution = currentUpdateNoAssignement(schedule,vehicle,currentTime,currentState,finalSolution)
+            println("HERE4")
+            continue
+        
+        end
+
+
+        # Determine index to split
         for (idx,node) in enumerate(schedule.route)
-            if node.endOfServiceTime < currentTime
-                currentSchedule = currentState.vehicleSchedules[vehicle]
+            if node.endOfServiceTime < currentTime && schedule.route[idx+1].endOfServiceTime > currentTime
 
-                # Update vehicle schedule for current state
-                currentSchedule.route = schedule.route[idx:end]
-                currentSchedule.activeTimeWindow = TimeWindow(currentTime,currentTime) ## TODO
-                currentSchedule.totalDistance = getTotalDistanceRoute(currentSchedule.route,scenario)
-                currentSchedule.totalTime = getTotalTimeRoute(currentSchedule)
-                currentSchedule.totalCost = getTotalCostRoute(scenario,currentSchedule.totalTime)
-                currentSchedule.numberOfWalking = schedule.numberOfWalking[idx:end]
-                currentSchedule.numberOfWheelchair = schedule.numberOfWheelchair[idx:end]
-
-                # Update current state
-                currentState.totalCost += currentSchedule.totalCost
-                currentState.totalDistance += currentSchedule.totalDistance
-                currentState.nTaxi = 0
-
-                # Update completed routes
-                append!(completedState.vehicleSchedules[vehicle].route, schedule.route[1:idx-1])
-                completedState.vehicleSchedules[vehicle].activeTimeWindow.endTime = currentTime
-                completedState.vehicleSchedules[vehicle].totalDistance += getTotalDistanceRoute(completedState.vehicleSchedules[vehicle].route,scenario)
-                completedState.vehicleSchedules[vehicle].totalTime += getTotalTimeRoute(completedState.vehicleSchedules[vehicle])
-                completedState.vehicleSchedules[vehicle].totalCost += getTotalCostRoute(scenario,completedState.vehicleSchedules[vehicle])
-                completedState.vehicleSchedules[vehicle].numberOfWalking = schedule.numberOfWalking[1:idx-1]
-                completedState.vehicleSchedules[vehicle].numberOfWheelchair = schedule.numberOfWheelchair[1:idx-1]
-
-                # Update completed state
-                completedState.totalCost += completedState.vehicleSchedules[vehicle].totalCost
-                completedState.totalDistance += completedState.vehicleSchedules[vehicle].totalDistance
-                completedState.nTaxi += solution.nTaxi
-                
-                # TODO: add calculation of idle time 
-
+                currentSchedule, finalSolution = currentUpdateSplit(schedule,vehicle,currentTime,currentState,finalSolution)
+                println("HERE5")
                 break
             end
         end
         
     end
 
-    # Update KPIs
-    currentState.totalRideTime, currentState.idleTime = currentKPIs(currentState) # TODO: Change to right function name !!!!!!!!!!
-    completedState.totalRideTime, completedState.idleTime = currentKPIs(completedState) # TODO: Change to right function name !!!!!!!!!!
 
-    return currentState, completedState
+    return currentState, finalSolution
 
 
 end
 
-function initializeRightCompletedState(completedState::State,solution::Solution)
+function initializeRightCompletedState(finalSolution::Solution,solution::Solution)
 
-    
-    for (vehicle,schedule) in enumerate(completedState.vehicleSchedules)
-        # Remove last element in completedState
-        completedState.vehicleSchedules[vehicle].route = schedule.route[1:end-1]
-
-        # Set right start of active time
-        completedState.vehicleSchedules[vehicle].activeTimeWindow.startTime = solution.vehicleSchedules[vehicle].route[1].endOfServiceTime
-    end
-
-    return completedState
+    #TODO
+    return finalSolution
 
 end
 
@@ -112,6 +210,13 @@ function simulateScenario(scenario::Scenario)
     #solution = offlineAlgorithm(scenario) #Change to right function name !!!!!!!!!!
     solution = Solution(scenario)
     solution = simpleConstruction(scenario)
+    # Print routes
+    println("----------------")
+    println("Intitial")
+    println("----------------")
+    for schedule in solution.vehicleSchedules
+        printRoute(schedule)
+    end
 
     # Fix initial complete state
     completedState = initializeRightCompletedState(completedState,solution)

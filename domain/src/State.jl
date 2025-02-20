@@ -6,17 +6,13 @@ using ..Scenarios
 export State 
 
 mutable struct State 
-    vehicleSchedules::Vector{VehicleSchedule}
-    totalCost::Float64 
-    nTaxi::Int 
-    totalRideTime::Int 
-    totalDistance::Int 
-    idleTime::Int 
+    solution::Solution
+    event::Request
+
 
     # Constructor
-    function State(scenario::Scenario)
-        vehicle_schedules = [VehicleSchedule(vehicle) for vehicle in scenario.vehicles]
-        return new(vehicle_schedules, 0.0, 0, 0, 0, 0)
+    function State(scenario::Scenario, event::Request)
+        return new(Solution(scenario), event)
     end
 end
 
