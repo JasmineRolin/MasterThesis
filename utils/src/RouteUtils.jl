@@ -55,7 +55,7 @@ end
  Method to check feasibility of route  
 ==#
 function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedule)
-    @unpack vehicle, route, activeTimeWindow, totalDistance, totalCost, numberOfWalking, numberOfWheelchair = vehicleSchedule
+    @unpack vehicle, route, activeTimeWindow, totalDistance, totalCost,totalTime, numberOfWalking, numberOfWheelchair = vehicleSchedule
     nRequests = length(scenario.requests)
 
     if length(route) == 2
@@ -65,25 +65,31 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
     # Check that active time window of vehicle is correct 
     if activeTimeWindow.startTime != route[1].startOfServiceTime || activeTimeWindow.endTime != route[end].endOfServiceTime
         msg = "ROUTE INFEASIBLE: Active time window of vehicle $(vehicle.id) is incorrect"
-        return false, msg
+        return false, msg, Set{Int}()
     end
 
     # Check available time window of vehicle 
     if activeTimeWindow.startTime < vehicle.availableTimeWindow.startTime || activeTimeWindow.endTime > vehicle.availableTimeWindow.endTime
         msg = "ROUTE INFEASIBLE: Vehicle $(vehicle.id) is not available during the route"
-        return false, msg 
+        return false, msg, Set{Int}() 
     end
     
     # Check maximum route duration 
-    if activeTimeWindow.endTime - activeTimeWindow.startTime > vehicle.maximumRideTime
+    if activeTimeWindow.endTime - activeTimeWindow.startTime > vehicle.maximumRideTime 
         msg = "ROUTE INFEASIBLE: Vehicle $(vehicle.id) exceeds maximum ride time"
-        return false, msg
+        return false, msg, Set{Int}()
+    end
+
+    # Check cost and total time 
+    if totalTime != activeTimeWindow.endTime - activeTimeWindow.startTime || totalCost != scenario.vehicleCostPrHour * totalTime + scenario.vehicleStartUpCost
+        msg = "ROUTE INFEASIBLE: Total cost or total time is incorrect"
+        return false, msg, Set{Int}()
     end
     
     # Check all activities on route 
     totalDistanceCheck = 0.0
     currentCapacities = Dict{MobilityType,Int}(WALKING => 0, WHEELCHAIR => 0)
-    hasBeenServiced = Set{Int}()
+    hasBeenServiced = Set{Int}() # TODO: Check if this still works with waiting activities
     endOfServiceTimePickUps = Dict{Int,Int}() # Keep track of end of service time for pick-ups
     for (idx,activityAssignment) in zip(2:length(route)-1, route[2:end-1]) # Do not check depots
         @unpack activity, startOfServiceTime, endOfServiceTime = activityAssignment
@@ -91,13 +97,13 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
         # Check vehicle compatibility with the request
         if activity.mobilityType == WHEELCHAIR && vehicle.capacities[WHEELCHAIR] == 0
             msg = "ROUTE INFEASIBLE: Activity $(activity.id) is not compatible with vehicle $(vehicle.id)"
-            return false, msg
+            return false, msg, Set{Int}()
         end
 
         # Check that activity is not visited more than once
         if activity.id in hasBeenServiced
             msg = "ROUTE INFEASIBLE: Activity $(activity.id) visited more than once on vehicle $(vehicle.id)"
-            return false, msg
+            return false, msg, Set{Int}()
         else
             push!(hasBeenServiced,activity.id)
         end
@@ -109,13 +115,13 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
             pickUpId = findCorrespondingId(activity,nRequests)
             if !(pickUpId in hasBeenServiced)
                 msg = "ROUTE INFEASIBLE: Drop-off $(activity.id) before pick-up, vehicle: $(vehicle.id)"
-                return false, msg
+                return false, msg, Set{Int}()
             end
 
             rideTime = endOfServiceTime - endOfServiceTimePickUps[pickUpId]
             if rideTime > scenario.requests[activity.requestId].maximumRideTime || rideTime < scenario.requests[activity.requestId].directDriveTime
                 msg = "ROUTE INFEASIBLE: Maximum ride time exceeded for drop-off $(activity.id) on vehicle $(vehicle.id)"
-                return false, msg
+                return false, msg, Set{Int}()
             end
 
         end
@@ -124,17 +130,17 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
         # Check that time windows are respected
         if startOfServiceTime < activity.timeWindow.startTime || endOfServiceTime > activity.timeWindow.endTime
             msg = "ROUTE INFEASIBLE: Time window not respected for activity $(activity.id) on vehicle $(vehicle.id), Start/End of Service: ($startOfServiceTime, $endOfServiceTime), Time Window: ($(activity.timeWindow.startTime), $(activity.timeWindow.endTime))"
-            return false, msg
+            return false, msg, Set{Int}()
         end
 
         # Check that start of service and end of service are feasible 
         if startOfServiceTime < route[idx-1].endOfServiceTime + scenario.time[route[idx-1].activity.id,activity.id]
             msg = "ROUTE INFEASIBLE: Start of service time $(startOfServiceTime) of activity $(activity.id) is not correct"
-            return false, msg 
+            return false, msg, Set{Int}()
         end
         if endOfServiceTime != startOfServiceTime + scenario.serviceTimes[activity.mobilityType]
             msg = "ROUTE INFEASIBLE: End of service time $(endOfServiceTime) of activity $(activity.id) is not correct"
-            return false, msg
+            return false, msg, Set{Int}()
         end
 
         # Update and check current capacities
@@ -143,7 +149,7 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
 
             if currentCapacities[WHEELCHAIR] > vehicle.capacities[WHEELCHAIR] || currentCapacities[WHEELCHAIR] < 0
                 msg = "ROUTE INFEASIBLE: Capacities exceeded for vehicle $(vehicle.id)"
-                return false, msg
+                return false, msg, Set{Int}()
             end
         else
             # Walking customers can take wheelchair space if no walking space is available
@@ -155,14 +161,14 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
 
             if currentCapacities[WHEELCHAIR] > vehicle.capacities[WHEELCHAIR] || currentCapacities[WHEELCHAIR] < 0 || currentCapacities[WALKING] > vehicle.capacities[WALKING] || currentCapacities[WALKING] < 0
                 msg = "ROUTE INFEASIBLE: Capacities exceeded for vehicle $(vehicle.id)"
-                return false, msg 
+                return false, msg, Set{Int}() 
             end
 
         end
 
         if currentCapacities[WHEELCHAIR] != numberOfWheelchair[idx] || currentCapacities[WALKING] != numberOfWalking[idx]
             msg = "ROUTE INFEASIBLE: Capacities not updated correctly for vehicle $(vehicle.id)"
-            return false, msg 
+            return false, msg, Set{Int}() 
         end
         
         # Keep track of total distance and total time 
@@ -175,12 +181,11 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
     # Check that total distance is correct
     if totalDistanceCheck != totalDistance
         msg = "ROUTE INFEASIBLE: Total distance $(totalDistance) is incorrect"
-        return false, msg 
+        return false, msg, Set{Int}() 
     end
     
-    # TODO: add cost check when we calculate cost 
-
-    return true, ""
+   
+    return true, "", hasBeenServiced
     
 end
 
