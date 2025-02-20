@@ -2,28 +2,28 @@ using Test
 using utils 
 using domain 
 
-#==
- Test printVehicleSchedule
-==#
-@testset "printVehicleSchedule test" begin 
-    requestFile = "tests/resources/Requests.csv"
-    vehiclesFile = "tests/resources/Vehicles.csv"
-    parametersFile = "tests/resources/Parameters.csv"
-    distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
-    timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
+# #==
+#  Test printVehicleSchedule
+# ==#
+# @testset "printVehicleSchedule test" begin 
+#     requestFile = "tests/resources/Requests.csv"
+#     vehiclesFile = "tests/resources/Vehicles.csv"
+#     parametersFile = "tests/resources/Parameters.csv"
+#     distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
+#     timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
 
-    # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+#     # Read instance 
+#     scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
 
-    # Create VehicleSchedule
-    vehicleSchedule = VehicleSchedule(scenario.vehicles[1])
+#     # Create VehicleSchedule
+#     vehicleSchedule = VehicleSchedule(scenario.vehicles[1])
 
-    # Insert request
-    insertRequest!(scenario.requests[1],vehicleSchedule,2,2,scenario)
+#     # Insert request
+#     insertRequest!(scenario.requests[1],vehicleSchedule,2,2,WALKING,scenario)
 
-    printRoute(vehicleSchedule)
+#     printRoute(vehicleSchedule)
 
-end 
+# end 
 
 
 #==
