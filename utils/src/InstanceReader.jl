@@ -168,7 +168,7 @@ function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maxim
         mobilityType = row.mobility_type == "Walking" ? WALKING : WHEELCHAIR
 
         # Read call time 
-        callTime = floor(row.call_time)
+        callTime = Int(floor(row.call_time))
 
         # Read request time 
         requestTime = row.request_time 

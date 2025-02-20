@@ -26,6 +26,15 @@ struct Request
     dropOffActivity::Activity 
     directDriveTime::Int # Direct drive time in minutes 
     maximumRideTime::Int # Maximum ride time in minutes 
+
+    # Empty constructor
+    function Request()
+        new(0, PICKUP_REQUEST, WALKING, 0, Activity(), Activity(), 0, 0)
+    end
+
+    function Request(id::Int, requestType::RequestType, mobilityType::MobilityType, callTime::Int, pickUpActivity::Activity, dropOffActivity::Activity, directDriveTime::Int, maximumRideTime::Int)
+        new(id, requestType, mobilityType, callTime, pickUpActivity, dropOffActivity, directDriveTime, maximumRideTime)
+    end
 end
 
 

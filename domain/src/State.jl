@@ -2,6 +2,8 @@ module States
 
 using ..VehicleSchedules 
 using ..Scenarios
+using ..Solutions
+using ..Requests
 
 export State 
 
