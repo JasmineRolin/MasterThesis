@@ -2,7 +2,7 @@
 
 julia_version = "1.11.2"
 manifest_format = "2.0"
-project_hash = "f0dd88ef32196b5dc84abd796994cf24d648fb3f"
+project_hash = "b8f2332da21472a63831483f6fa016b9bdc33b61"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -1873,6 +1873,12 @@ version = "1.1.6+0"
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
 version = "1.59.0+0"
+
+[[deps.offlinesolution]]
+deps = ["domain", "utils"]
+path = "offlinesolution"
+uuid = "a9fb1b74-13ee-4d8c-9e56-7a41bc88c15d"
+version = "0.1.0"
 
 [[deps.oneTBB_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]

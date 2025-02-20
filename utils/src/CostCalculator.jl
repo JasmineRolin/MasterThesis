@@ -58,11 +58,11 @@ end
 # Function to get total cost and distance of solution 
 ==#
 function getTotalCostAndDistanceOfSolution(solution::Solution)
-    solution.totalCost = 0
-    solution.totalDistance = 0
+    totalCost = 0
+    totalDistance = 0
     for schedule in solution.vehicleSchedules
-        solution.totalCost += Int(round(schedule.totalCost))
-        solution.totalDistance += Int(round(schedule.totalDistance))
+        totalCost += Int(round(schedule.totalCost))
+        totalDistance += Int(round(schedule.totalDistance))
     end
     return totalCost, totalDistance
 end
