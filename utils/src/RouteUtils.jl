@@ -1,6 +1,6 @@
 module RouteUtils 
 
-using UnPack, domain 
+using UnPack, domain, ..CostCalculator
 
 export printRoute,insertRequest!,checkRouteFeasibility
 
@@ -121,8 +121,6 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idx_pi
 
     # Update total cost
     vehicleSchedule.totalCost = getTotalCostRoute(scenario, vehicleSchedule.totalTime)
-
-    return vehicleSchedule
 end
 
 
