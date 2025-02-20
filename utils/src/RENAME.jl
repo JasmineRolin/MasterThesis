@@ -5,6 +5,8 @@ using domain
 export getTotalDistanceRoute
 export getTotalCostRoute
 export getTotalTimeRoute
+export getTotalCostAndDistanceOfSolution
+
 
 #==
 #  Function to get total distance of a route
@@ -50,6 +52,19 @@ end
 ==#
 function getTotalCostRoute(scenario::Scenario,totalTime::Float64)
     return scenario.vehicleCostPrHour * totalTime + scenario.vehicleStartUpCost
+end
+
+#==
+# Function to get total cost and distance of solution 
+==#
+function getTotalCostAndDistanceOfSolution(solution::Solution)
+    solution.totalCost = 0
+    solution.totalDistance = 0
+    for schedule in solution.vehicleSchedules
+        solution.totalCost += Int(round(schedule.totalCost))
+        solution.totalDistance += Int(round(schedule.totalDistance))
+    end
+    return totalCost, totalDistance
 end
 
 end
