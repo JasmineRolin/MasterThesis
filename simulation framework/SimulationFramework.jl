@@ -10,66 +10,102 @@ export simulateScenario
 # ------
 # Function to update current state if entire route has been served and vehicle is not available anymore
 # ------
-function currentUpdateNotAvailableAnymore(schedule::VehicleSchedule,vehicle::Int,currentTime::Int,currentState::State,finalSolution::Solution)
-    # Update current state
+function updateCurrentScheduleNotAvailableAnymore!(currentState::State,schedule::VehicleSchedule,vehicle::Int,currentTime::Int)
+   
+    # Retrieve empty schedule and update it 
     currentSchedule = currentState.solution.vehicleSchedules[vehicle]
+
+    # Update schedule with only end  depot for unavailable vehicle 
     currentSchedule.route = [schedule.route[end]]
-    currentSchedule.activeTimeWindow = TimeWindow(schedule.route[end].endOfServiceTime, schedule.route[end].endOfServiceTime)
+    currentSchedule.activeTimeWindow.startTime = schedule.route[end].endOfServiceTime
+    currentSchedule.activeTimeWindow.endTime = schedule.route[end].endOfServiceTime
     currentSchedule.numberOfWalking = [0]
     currentSchedule.numberOfWheelchair = [0]
-    idx = length(schedule.route)-1
 
-    return currentSchedule, idx
+    # Index to split route into current and completed route 
+    idx = length(schedule.route) - 1 # TODO: jas - det giver 0?
+
+    return idx
 end
 
 # ------
 # Function to update current state if entire route has been served and vehicle is still available
 # ------
-function currentUpdateStillAvailableAndFree(schedule::VehicleSchedule,vehicle::Int,currentTime::Int,currentState::State,finalSolution::Solution)
-    # Update current state
-    waitingDepot = ActivityAssignment(Activity(schedule.route[end-1].activity.id,-1,WAITING,WALKING,schedule.route[end-1].activity.location,TimeWindow(schedule.route[end-1].endOfServiceTime,currentTime)),schedule.vehicle,currentTime,schedule.vehicle.availableTimeWindow.endTime)
-    endDepot = schedule.route[end]
-    currentSchedule = currentState.solution.vehicleSchedules[vehicle] 
-    currentSchedule.route = [waitingDepot,endDepot]
-    currentSchedule.activeTimeWindow.endTime = currentTime
-    currentSchedule.activeTimeWindow.startTime = currentTime
-    idx = length(schedule.route)-1
+# We wait as long as possible at the last activity until we have to drive to the depot
+function updateCurrentScheduleStillAvailableAndFree!(scenario::Scenario,schedule::VehicleSchedule,vehicle::Int,currentTime::Int)
+   
+    # Create waiting activity at location of last activity 
+    availableTimeWindowEnd = schedule.vehicle.availableTimeWindow.endTime
+    endOfServiceTimeWaiting = availableTimeWindowEnd - scenario.time[schedule.route[end-1].activity.id,schedule.route[end].activity.id]
+    # TODO: jas - do we need to consider if this can be before current time ? 
 
-    return currentSchedule, idx
+    waitingActivity = Activity(schedule.route[end-1].activity.id,-1,WAITING,WALKING,schedule.route[end-1].activity.location,TimeWindow(schedule.route[end-1].endOfServiceTime,currentTime))
+    waitingAssignment = ActivityAssignment(waitingActivity,schedule.vehicle,currentTime,endOfServiceTimeWaiting) 
+
+    # Update times of depot 
+    depot = schedule.route[end]
+    depot.endOfServiceTime = availableTimeWindowEnd
+    depot.startOfServiceTime = availableTimeWindowEnd
+    depot.timeWindow.startTime = availableTimeWindowEnd
+    depot.timeWindow.endTime = availableTimeWindowEnd
+
+    # Retrieve empty schedule and update it 
+    currentSchedule = currentState.solution.vehicleSchedules[vehicle]
+
+    currentSchedule.route = [waitingAssignment,depot]
+    currentSchedule.activeTimeWindow.startTime = currentTime
+    currentSchedule.activeTimeWindow.endTime = availableTimeWindowEnd
+    currentSchedule.totalDistance = scenario.distance[waitingActivity,schedule.route[end].activity.id]
+    currentSchedule.totalTime = availableTimeWindowEnd - currentTime
+    currentSchedule.totalCost = getTotalCostRoute(scenario,currentSchedule.totalTime)
+    currentSchedule.numberOfWalking = [0,0]
+    currentSchedule.numberOfWheelchair = [0,0]
+
+    # Index to split route into current and completed route 
+    idx = length(schedule.route) - 1
+
+    return idx
 end
 
 
 # ------
 # Function to update current state if vehicle is not available yet
 # ------
-function currentUpdateNotAvailableYet(schedule::VehicleSchedule,vehicle::Int,currentTime::Int,currentState::State)
-    # Update current state
-    currentSchedule = currentState.solution.vehicleSchedules[vehicle]
-    currentSchedule = schedule
+function updateCurrentScheduleNotAvailableYet(schedule::VehicleSchedule,vehicle::Int)
+
+    # TODO: jas - should we update depots times? 
+
+    # index to split route into current and completed route
     idx = 0
 
-    return currentSchedule, idx
+    return idx
 end
 
 
 # ------
 # Function to update current state if vehicle have not been assigned yet
 # ------
-function currentUpdateNoAssignement(schedule::VehicleSchedule,vehicle::Int,currentTime::Int,currentState::State)
-    # Update current state
+function updateCurrentScheduleNoAssignement!(schedule::VehicleSchedule,vehicle::Int,currentTime::Int,currentState::State)
+    # Retrieve empty schedule and update it
     currentSchedule = currentState.solution.vehicleSchedules[vehicle]
+
     currentSchedule.activeTimeWindow.endTime = currentTime
+    currentSchedule.activeTimeWindow.startTime = currentTime
+
+    currentSchedule.route[1].startOfServiceTime = currentTime
     currentSchedule.route[1].endOfServiceTime = currentTime
+
+    # index to split route into current and completed route
     idx = 0
 
-    return currentSchedule, idx
+    return idx
 end
 
 
 # ------
 # Function to update current state if vehicle have visited some
 # ------
-function currentUpdateSplit(schedule::VehicleSchedule,vehicle::Int,currentTime::Int,currentState::State,finalSolution::Solution,idx::Int,scenario::Scenario)
+function updateCurrentScheduleAtSplit!(schedule::VehicleSchedule,vehicle::Int,currentTime::Int,currentState::State,finalSolution::Solution,idx::Int,scenario::Scenario)
     currentSchedule = currentState.solution.vehicleSchedules[vehicle]
         
     # Update vehicle schedule for current state with waiting
@@ -95,7 +131,7 @@ function currentUpdateSplit(schedule::VehicleSchedule,vehicle::Int,currentTime::
 
     end
 
-    return currentSchedule,idx
+    return idx
 end
 
 
@@ -106,10 +142,12 @@ function updateFinalSolution!(finalSolution::Solution,solution::Solution,vehicle
     
     # Update completed routes
     append!(finalSolution.vehicleSchedules[vehicle].route, solution.vehicleSchedules[vehicle].route[1:idx])
+
     finalSolution.vehicleSchedules[vehicle].activeTimeWindow.endTime = currentTime
     finalSolution.vehicleSchedules[vehicle].totalDistance += getTotalDistanceRoute(finalSolution.vehicleSchedules[vehicle].route,scenario)
     finalSolution.vehicleSchedules[vehicle].totalTime += getTotalTimeRoute(finalSolution.vehicleSchedules[vehicle])
     finalSolution.vehicleSchedules[vehicle].totalCost += getTotalCostRoute(scenario,finalSolution.vehicleSchedules[vehicle])
+
     append!(finalSolution.vehicleSchedules[vehicle].numberOfWalking,solution.vehicleSchedules[vehicle].numberOfWalking[1:idx])
     append!(finalSolution.vehicleSchedules[vehicle].numberOfWheelchair, solution.vehicleSchedules[vehicle].numberOfWheelchair[1:idx])
 
@@ -174,7 +212,6 @@ function determineCurrentState(solution::Solution,event::Request,finalSolution::
     # Update vehicle schedule
     for (vehicle,schedule) in enumerate(solution.vehicleSchedules)
 
-        
         # Check if vehicle have not been assigned yet
         if length(schedule.route) == 2 && schedule.route[1].activity.activityType == DEPOT && schedule.route[2].endOfServiceTime >= currentTime
 

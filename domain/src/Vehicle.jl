@@ -12,6 +12,7 @@ struct Vehicle
     maximumRideTime::Int # Minutes 
     capacities::Dict 
     totalCapacity::Int
+    
 end
 
 
