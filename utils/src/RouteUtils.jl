@@ -2,7 +2,7 @@ module RouteUtils
 
 using UnPack, domain, ..CostCalculator
 
-export printRoute,insertRequest!,checkRouteFeasibility,checkFeasibilityOfInsertionAtPosition
+export printRoute,printSimpleRoute,insertRequest!,checkRouteFeasibility,checkFeasibilityOfInsertionAtPosition
 
 #==
  Method to print vehicle schedule 
@@ -28,6 +28,15 @@ function printRoute(schedule::VehicleSchedule)
     end
     println("\n--------------------------------------")
 end
+
+function printSimpleRoute(schedule::VehicleSchedule)
+    print("Route ",schedule.vehicle.id,": ")
+    
+    route_ids = [assignment.activity.location.name for assignment in schedule.route]
+    
+    println(join(route_ids, " -> "))
+end
+
 
 # ----------
 # Function to insert a request in a vehicle schedule

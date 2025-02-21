@@ -5,7 +5,7 @@ using domain
 export getTotalDistanceRoute
 export getTotalCostRoute
 export getTotalTimeRoute
-export getTotalCostAndDistanceOfSolution
+export getTotalCostDistanceTimeOfSolution
 
 
 #==
@@ -58,14 +58,16 @@ end
 #==
 # Function to get total cost and distance of solution 
 ==#
-function getTotalCostAndDistanceOfSolution(solution::Solution)
+function getTotalCostDistanceTimeOfSolution(solution::Solution)
     totalCost = 0.0
     totalDistance = 0.0
+    totalTime = 0
     for schedule in solution.vehicleSchedules
         totalCost += schedule.totalCost
         totalDistance += schedule.totalDistance
+        totalTime += schedule.totalTime
     end
-    return totalCost, totalDistance
+    return totalCost, totalDistance, totalTime
 end
 
 end

@@ -49,7 +49,7 @@ function checkSolutionFeasibility(scenario::Scenario,solution::Solution)
     end
 
     # Check that all activities are serviced
-    if sum(.!servicedActivities) != 2*nTaxi
+    if (nActivities-length(servicedActivities)) != 2*nTaxi # TODO: add check if we add list of activities serviced by taxi 
         msg = "SOLUTION INFEASIBLE: Not all activities are serviced"
         return false, msg
     end

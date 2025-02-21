@@ -33,7 +33,7 @@ using .CostCalculator
 export getTotalDistanceRoute
 export getTotalCostRoute
 export getTotalTimeRoute
-export getTotalCostAndDistanceOfSolution
+export getTotalCostDistanceTimeOfSolution
 
 
 #==
@@ -41,7 +41,7 @@ export getTotalCostAndDistanceOfSolution
 ==#
 include("RouteUtils.jl")
 using .RouteUtils
-export printRoute, insertRequest!, checkRouteFeasibility,checkFeasibilityOfInsertionAtPosition
+export printRoute,printSimpleRoute, insertRequest!, checkRouteFeasibility,checkFeasibilityOfInsertionAtPosition
 
 #==
     Export from SolutionUtils module   
