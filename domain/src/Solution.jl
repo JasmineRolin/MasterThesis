@@ -10,7 +10,7 @@ mutable struct Solution
     totalCost::Float64
     nTaxi::Int
     totalRideTime::Int
-    totalDistance::Int
+    totalDistance::Float64
     idleTime::Int
 
     # Constructor

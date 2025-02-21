@@ -25,12 +25,7 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     if !isfile(parametersFile)
         error("Error: Parameters file $parametersFile does not exist.")
     end
-    if distanceMatrixFile != "" && !isfile(distanceMatrixFile)
-        error("Error: distanceMatrixFile file $distanceMatrixFile does not exist.")
-    end
-    if timeMatrixFile != "" && !isfile(timeMatrixFile)
-        error("Error: timeMatrixFile file $timeMatrixFile does not exist.")
-    end 
+   
 
     # Read request, vehicle and parameters dataframes from input
     requestsDf = CSV.read(requestFile, DataFrame)
@@ -49,23 +44,11 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     
 
     # Get vehicles 
-    vehicles,nDepots = readVehicles(vehiclesDf,nRequests)
+    vehicles,depots, depotLocations = readVehicles(vehiclesDf,nRequests)
+    nDepots = length(depots)
 
-    # Read time and distance matrices from input 
-    if timeMatrixFile != "" && distanceMatrixFile != ""
-        lines = readlines(distanceMatrixFile)
-        distance = [parse.(Int, split(line)) for line in lines]
-        distance = convert(Matrix{Int}, hcat(distance...)')
-    
-        lines = readlines(timeMatrixFile)
-        time = [parse.(Int, split(line)) for line in lines]
-        time = convert(Matrix{Int}, hcat(time...)')
-    else
-        # Initialize empty matrices if not given 
-        time = zeros(Int,2*nRequests+nDepots,2*nRequests+nDepots)
-        distance = zeros(Int,2*nRequests+nDepots,2*nRequests+nDepots)
-        # TODO: add calculations of actual distance and time matrices
-    end 
+    # Read time and distance matrices from input or initialize empty matrices
+    distance, time = getDistanceAndTimeMatrix(distanceMatrixFile,timeMatrixFile,requestFile,collect(keys(depotLocations)))
 
     # Get requests 
     requests = readRequests(requestsDf,nRequests,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time)
@@ -73,32 +56,11 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     # Split into offline and online requests
     onlineRequests, offlineRequests = splitRequests(requests)
 
-    # Get depots
-    depots = dictDepots(vehicles)
-
     # Get distance and time matrix
     scenario = Scenario(requests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots,depots)
 
     return scenario
 
-end
-
-#==
- Function to create dictionary of depots
-==#
-function dictDepots(vehicles)
-    depots = Dict{Int, Vector{Int}}()  # Dictionary where keys are depot IDs and values are vectors of vehicle IDs
-    
-    for vehicle in vehicles
-        depotId = vehicle.depotId
-        if haskey(depots, depotId)
-            push!(depots[depotId], vehicle.id)  # Append vehicle ID to existing vector
-        else
-            depots[depotId] = [vehicle.id]  # Create new vector with the first vehicle ID
-        end
-    end
-    
-    return depots    
 end
 
 
@@ -108,7 +70,8 @@ end
 function readVehicles(vehiclesDf::DataFrame, nRequests::Int)
     # Get vehicles
     vehicles = Vector{Vehicle}()
-    depots = Dict{Tuple{Float64,Float64},Int}() # Keep track of depots to give them an Id 
+    depotLocations = Dict{Tuple{Float64,Float64},Int}() # Keep track of depots to give them an Id 
+    depotDictionary = Dict{Int, Vector{Int}}()
 
     currentDepotId = 2*nRequests + 1
     nDepots = 0
@@ -129,10 +92,17 @@ function readVehicles(vehiclesDf::DataFrame, nRequests::Int)
         depotLatitude = row.depot_latitude 
         depotLongitude = row.depot_longitude 
 
-        depotId = get!(depots, (depotLatitude, depotLongitude), currentDepotId) # Get or default
+        depotId = get!(depotLocations, (depotLatitude, depotLongitude), currentDepotId) # Get or default
         if depotId == currentDepotId  
             currentDepotId += 1
             nDepots += 1
+        end
+
+        # Add depot to dictionary
+        if haskey(depotDictionary, depotId)
+            push!(depotDictionary[depotId], id)  # Append vehicle ID to existing vector
+        else
+            depotDictionary[depotId] = [id]  # Create new vector with the first vehicle ID
         end
 
         depotLocation = Location(string("Depot ",depotId),depotLatitude,depotLongitude)
@@ -143,7 +113,7 @@ function readVehicles(vehiclesDf::DataFrame, nRequests::Int)
         
     end
 
-    return vehicles, nDepots 
+    return vehicles, depotDictionary, depotLocations 
 end
 
 
@@ -230,14 +200,6 @@ function splitRequests(requests::Vector{Request})
     return onlineRequests, offlineRequests
 
 end
-
-#==
- Method to find distance and time matrices 
-==#
-function getDistanceAndTimeMatrix()::Tuple{Matrix{Float64},Matrix{Float64}}
-    
-end
-
 
 
 end

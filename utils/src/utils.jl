@@ -5,14 +5,14 @@ module utils
 ==#
 include("TimeUtils.jl")
 using .TimeUtils 
-export minutesSinceMidnight 
+export minutesSinceMidnight
 
 #==
  Export from TimeUtils module
 ==#
 include("DistanceUtils.jl")
 using .DistanceUtils 
-export getDistanceAndTimeMatrix
+export getDistanceAndTimeMatrix, getDistanceAndTimeMatrixFromLocations
 
 #==
  Export from InstanceReaders module
@@ -26,19 +26,28 @@ export splitRequests
 
 
 #==
- Export from costCalculator module
+ Export from CostCalculator module
 ==#
-include("costCalculator.jl")
-using .costCalculator
+include("CostCalculator.jl")
+using .CostCalculator
 export getTotalDistanceRoute
 export getTotalCostRoute
 export getTotalTimeRoute
+export getTotalCostDistanceTimeOfSolution
+
 
 #==
  Export from RouteUtils module
 ==#
 include("RouteUtils.jl")
 using .RouteUtils
-export printRoute, insertRequest!, checkRouteFeasibility
+export printRoute,printSimpleRoute, insertRequest!, checkRouteFeasibility,checkFeasibilityOfInsertionAtPosition
+
+#==
+    Export from SolutionUtils module   
+==#
+include("SolutionUtils.jl")
+using .SolutionUtils
+export checkSolutionFeasibility
 
 end 
