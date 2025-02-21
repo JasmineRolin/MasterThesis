@@ -27,7 +27,7 @@ mutable struct VehicleSchedule
     end
 
     function VehicleSchedule(vehicle::Vehicle, route::Vector{ActivityAssignment} )
-        return new(vehicle, route, TimeWindow(0, 0), 0.0, 0.0, 0.0, Int[0,0], Int[0,0]) 
+        return new(vehicle, route, TimeWindow(0, 0), 0.0, 0.0, 0.0, Int[], Int[]) 
     end
 
 end 
