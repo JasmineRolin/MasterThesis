@@ -16,7 +16,7 @@ using utils, domain, offlinesolution
     # Read instance 
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
 
-    solution = Solution(scenario)
+    # Constuct solution 
     solution = simpleConstruction(scenario)
 
     # Print routes
@@ -27,6 +27,7 @@ using utils, domain, offlinesolution
     # Check routes
     for schedule in solution.vehicleSchedules
         feasible, msg = checkRouteFeasibility(scenario,schedule)
+        println(msg)
         @test feasible == true
     end
 

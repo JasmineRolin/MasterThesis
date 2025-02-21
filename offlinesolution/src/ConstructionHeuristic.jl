@@ -48,7 +48,7 @@ function simpleConstruction(scenario::Scenario)
     end
 
     # Update solution
-    solution.totalCost, solution.totalDistance = getTotalCostAndDistanceOfSolution(solution)
+    solution.totalCost, solution.totalDistance, solution.totalRideTime = getTotalCostDistanceTimeOfSolution(solution)
     
     return solution
     

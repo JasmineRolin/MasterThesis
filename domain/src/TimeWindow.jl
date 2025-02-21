@@ -19,7 +19,7 @@ end
 #==
  Duration of time window in seconds
 ==#
-function duration(tw::TimeWindow)::Integer
+function duration(tw::TimeWindow)::Int
     return tw.endTime - tw.startTime
 end
 

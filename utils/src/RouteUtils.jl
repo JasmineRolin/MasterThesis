@@ -2,7 +2,7 @@ module RouteUtils
 
 using UnPack, domain, ..CostCalculator
 
-export printRoute,insertRequest!,checkRouteFeasibility,checkFeasibilityOfInsertionAtPosition
+export printRoute,printSimpleRoute,insertRequest!,checkRouteFeasibility,checkFeasibilityOfInsertionAtPosition
 
 #==
  Method to print vehicle schedule 
@@ -11,6 +11,7 @@ function printRoute(schedule::VehicleSchedule)
     println("Vehicle Schedule for: ", schedule.vehicle.id)
     println("Active Time Window: ", "(",schedule.activeTimeWindow.startTime, ",", schedule.activeTimeWindow.endTime,")")
     println("Total Distance: ", schedule.totalDistance, " km")
+    println("Total time: ", schedule.totalTime, " min")
     println("Total Cost: \$", schedule.totalCost)
     println("Wheelchair capacities: ", schedule.numberOfWheelchair)
     println("Walking capacities: ", schedule.numberOfWalking)
@@ -28,6 +29,15 @@ function printRoute(schedule::VehicleSchedule)
     println("\n--------------------------------------")
 end
 
+function printSimpleRoute(schedule::VehicleSchedule)
+    print("Route ",schedule.vehicle.id,": ")
+    
+    route_ids = [assignment.activity.location.name for assignment in schedule.route]
+    
+    println(join(route_ids, " -> "))
+end
+
+
 # ----------
 # Function to insert a request in a vehicle schedule
 # ----------
@@ -35,38 +45,83 @@ end
 # idxDropOff: index of link where dropoff should be inserted 
 function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPickUp::Int,idxDropOff::Int,typeOfSeat::MobilityType,scenario::Scenario)
 
+    # Update route
+    updateRoute!(scenario.time,scenario.serviceTimes,vehicleSchedule,request,idxPickUp,idxDropOff)
+
+    # Update depots
+    updateDepots!(scenario.time,vehicleSchedule,request,idxPickUp,idxDropOff)
+   
+    # Update capacities
+    updateCapacities!(vehicleSchedule,idxPickUp,idxDropOff,typeOfSeat)
+
+    # Update total distance
+    updateDistance!(scenario.distance,vehicleSchedule,request,idxDropOff,idxPickUp)
+
+    # Update total time 
+    vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
+
+    # Update total cost
+    vehicleSchedule.totalCost = getTotalCostRoute(scenario, vehicleSchedule.totalTime)
+end
+
+
+#==
+Method to ipdate route in vehicle schedule after insertion of request
+==#
+function updateRoute!(time::Array{Int,2},serviceTimes::Dict{MobilityType,Int},vehicleSchedule::VehicleSchedule,request::Request,idxPickUp::Int,idxDropOff::Int)
     # Update routes
     if idxPickUp == idxDropOff
-        earliestStartOfServicePick = vehicleSchedule.route[idxPickUp].endOfServiceTime + scenario.time[vehicleSchedule.route[idxPickUp].activity.id,request.pickUpActivity.id] 
+        earliestStartOfServicePick = vehicleSchedule.route[idxPickUp].endOfServiceTime + time[vehicleSchedule.route[idxPickUp].activity.id,request.pickUpActivity.id] 
         startOfServicePick = max(earliestStartOfServicePick,request.pickUpActivity.timeWindow.startTime)
-        earliestStartOfServiceDrop = startOfServicePick + scenario.serviceTimes[request.pickUpActivity.mobilityType] + scenario.time[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.serviceTimes[request.dropOffActivity.mobilityType]
+
+        earliestStartOfServiceDrop = startOfServicePick + serviceTimes[request.pickUpActivity.mobilityType] + time[request.pickUpActivity.id,request.dropOffActivity.id] + serviceTimes[request.dropOffActivity.mobilityType]
         startOfServiceDrop = max(earliestStartOfServiceDrop,request.dropOffActivity.timeWindow.startTime)
     else
-        earliestStartOfServicePick = vehicleSchedule.route[idxPickUp].endOfServiceTime + scenario.time[vehicleSchedule.route[idxPickUp].activity.id,request.pickUpActivity.id] 
+        earliestStartOfServicePick = vehicleSchedule.route[idxPickUp].endOfServiceTime + time[vehicleSchedule.route[idxPickUp].activity.id,request.pickUpActivity.id] 
         startOfServicePick = max(earliestStartOfServicePick,request.pickUpActivity.timeWindow.startTime)
-        earliestStartOfServiceDrop = vehicleSchedule.route[idxDropOff].endOfServiceTime + scenario.time[vehicleSchedule.route[idxDropOff].activity.id,request.dropOffActivity.id] 
+
+        earliestStartOfServiceDrop = vehicleSchedule.route[idxDropOff].endOfServiceTime + time[vehicleSchedule.route[idxDropOff].activity.id,request.dropOffActivity.id] 
         startOfServiceDrop = max(earliestStartOfServiceDrop,request.dropOffActivity.timeWindow.startTime)
     end
 
-    pickUpActivity = ActivityAssignment(request.pickUpActivity, vehicleSchedule.vehicle, startOfServicePick, startOfServicePick+scenario.serviceTimes[request.pickUpActivity.mobilityType])
-    dropOffActivity = ActivityAssignment(request.dropOffActivity, vehicleSchedule.vehicle, startOfServiceDrop, startOfServiceDrop+scenario.serviceTimes[request.dropOffActivity.mobilityType])
+    # Insert request
+    pickUpActivity = ActivityAssignment(request.pickUpActivity, vehicleSchedule.vehicle, startOfServicePick, startOfServicePick + serviceTimes[request.pickUpActivity.mobilityType])
+    dropOffActivity = ActivityAssignment(request.dropOffActivity, vehicleSchedule.vehicle, startOfServiceDrop, startOfServiceDrop + serviceTimes[request.dropOffActivity.mobilityType])
     insert!(vehicleSchedule.route,idxPickUp+1,pickUpActivity)
     insert!(vehicleSchedule.route,idxDropOff+2,dropOffActivity)
+end
 
-    # Update active time windows
-    if idxPickUp == 1
-        vehicleSchedule.activeTimeWindow.startTime = startOfServicePick - scenario.time[vehicleSchedule.route[idxPickUp].activity.id,request.pickUpActivity.id]
-        vehicleSchedule.route[1].startOfServiceTime = vehicleSchedule.activeTimeWindow.startTime
-        vehicleSchedule.route[1].endOfServiceTime = vehicleSchedule.activeTimeWindow.startTime
-    end
-    if idxDropOff == length(vehicleSchedule.route)-3 
-        vehicleSchedule.activeTimeWindow.endTime = startOfServiceDrop + scenario.time[request.dropOffActivity.id,vehicleSchedule.route[idxDropOff+3].activity.id] + scenario.serviceTimes[request.dropOffActivity.mobilityType]
-        vehicleSchedule.route[end].startOfServiceTime = vehicleSchedule.activeTimeWindow.endTime
-        vehicleSchedule.route[end].endOfServiceTime = vehicleSchedule.activeTimeWindow.endTime
-    end
+#==
+# Method to update depots in vehicle schedule after insertion of request
+==#
+function updateDepots!(time::Array{Int,2}, vehicleSchedule::VehicleSchedule,request::Request,idxPickUp::Int,idxDropOff::Int)
+     # Update active time windows
+     if idxPickUp == 1
+        newActiveTimeWindowStart = vehicleSchedule.route[idxPickUp+1].startOfServiceTime - time[vehicleSchedule.route[idxPickUp].activity.id,request.pickUpActivity.id]
 
-    # Update capacities
-    if typeOfSeat == WHEELCHAIR
+        vehicleSchedule.activeTimeWindow.startTime = newActiveTimeWindowStart
+        vehicleSchedule.route[1].activity.timeWindow.startTime =  newActiveTimeWindowStart
+        vehicleSchedule.route[1].activity.timeWindow.endTime =  newActiveTimeWindowStart
+        vehicleSchedule.route[1].startOfServiceTime = newActiveTimeWindowStart
+        vehicleSchedule.route[1].endOfServiceTime = newActiveTimeWindowStart
+    end
+    if idxDropOff == length(vehicleSchedule.route) - 3
+        newActiveTimeWindowEnd = vehicleSchedule.route[idxDropOff+2].endOfServiceTime + time[request.dropOffActivity.id,vehicleSchedule.route[idxDropOff+3].activity.id]
+
+        vehicleSchedule.activeTimeWindow.endTime = newActiveTimeWindowEnd
+        vehicleSchedule.route[end].activity.timeWindow.startTime = newActiveTimeWindowEnd
+        vehicleSchedule.route[end].activity.timeWindow.endTime = newActiveTimeWindowEnd
+        vehicleSchedule.route[end].startOfServiceTime = newActiveTimeWindowEnd
+        vehicleSchedule.route[end].endOfServiceTime = newActiveTimeWindowEnd
+    end
+end
+
+#==
+# Method to update capacities of vehicle schedule after insertion of request
+==#
+function updateCapacities!(vehicleSchedule::VehicleSchedule,idxPickUp::Int,idxDropOff::Int,typeOfSeat::MobilityType)
+     # Update capacities
+     if typeOfSeat == WHEELCHAIR
         # Wheelchair
         insert!(vehicleSchedule.numberOfWheelchair,idxPickUp+1,vehicleSchedule.numberOfWheelchair[idxPickUp]+1)
         insert!(vehicleSchedule.numberOfWheelchair,idxDropOff+2,vehicleSchedule.numberOfWheelchair[idxDropOff+2])
@@ -90,39 +145,24 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPic
         insert!(vehicleSchedule.numberOfWheelchair,idxPickUp+1,vehicleSchedule.numberOfWheelchair[idxPickUp])
         insert!(vehicleSchedule.numberOfWheelchair,idxDropOff+2,vehicleSchedule.numberOfWheelchair[idxDropOff+2])
     end
+end
 
-    # Update total distance
-    if idxDropOff == idxPickUp
-        vehicleSchedule.totalDistance -= (scenario.distance[vehicleSchedule.route[idxPickUp].activity.id,vehicleSchedule.route[idxPickUp+3].activity.id])
-        vehicleSchedule.totalDistance += (scenario.distance[vehicleSchedule.route[idxPickUp].activity.id,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicleSchedule.route[idxPickUp+3].activity.id])
+#==
+# Method to update total distance of vehicle schedule after insertion of request
+==#
+function updateDistance!(distance::Array{Float64,2},vehicleSchedule::VehicleSchedule,request::Request,idxDropOff::Int,idxPickUp)
+     # Update total distance
+     if idxDropOff == idxPickUp
+        vehicleSchedule.totalDistance -= (distance[vehicleSchedule.route[idxPickUp].activity.id,vehicleSchedule.route[idxPickUp+3].activity.id])
+        vehicleSchedule.totalDistance += (distance[vehicleSchedule.route[idxPickUp].activity.id,request.pickUpActivity.id] + distance[request.pickUpActivity.id,request.dropOffActivity.id] + distance[request.dropOffActivity.id,vehicleSchedule.route[idxPickUp+3].activity.id])
     else
         # PickUp
-        vehicleSchedule.totalDistance -= (scenario.distance[vehicleSchedule.route[idxPickUp].activity.id,vehicleSchedule.route[idxPickUp+2].activity.id])
-        vehicleSchedule.totalDistance += (scenario.distance[vehicleSchedule.route[idxPickUp].activity.id,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,vehicleSchedule.route[idxPickUp+2].activity.id])
+        vehicleSchedule.totalDistance -= (distance[vehicleSchedule.route[idxPickUp].activity.id,vehicleSchedule.route[idxPickUp+2].activity.id])
+        vehicleSchedule.totalDistance += (distance[vehicleSchedule.route[idxPickUp].activity.id,request.pickUpActivity.id] + distance[request.pickUpActivity.id,vehicleSchedule.route[idxPickUp+2].activity.id])
         # DropOff
-        vehicleSchedule.totalDistance -= (scenario.distance[vehicleSchedule.route[idxDropOff].activity.id,vehicleSchedule.route[idxDropOff+2].activity.id])
-        vehicleSchedule.totalDistance += (scenario.distance[vehicleSchedule.route[idxDropOff].activity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicleSchedule.route[idxDropOff+2].activity.id])
+        vehicleSchedule.totalDistance -= (distance[vehicleSchedule.route[idxDropOff].activity.id,vehicleSchedule.route[idxDropOff+2].activity.id])
+        vehicleSchedule.totalDistance += (distance[vehicleSchedule.route[idxDropOff].activity.id,request.dropOffActivity.id] + distance[request.dropOffActivity.id,vehicleSchedule.route[idxDropOff+2].activity.id])
     end
-
-    # Update total time
-    if idxDropOff == idxPickUp
-        vehicleSchedule.totalTime -= (scenario.distance[vehicleSchedule.route[idxPickUp].activity.id, vehicleSchedule.route[idxPickUp+3].activity.id]) 
-        vehicleSchedule.totalTime += (scenario.distance[vehicleSchedule.route[idxPickUp].activity.id, request.pickUpActivity.id] + 
-                                    scenario.distance[request.pickUpActivity.id, request.dropOffActivity.id] + 
-                                    scenario.distance[request.dropOffActivity.id, vehicleSchedule.route[idxPickUp+3].activity.id]) 
-    else
-        # PickUp
-        vehicleSchedule.totalTime -= (scenario.distance[vehicleSchedule.route[idxPickUp].activity.id, vehicleSchedule.route[idxPickUp+2].activity.id]) 
-        vehicleSchedule.totalTime += (scenario.distance[vehicleSchedule.route[idxPickUp].activity.id, request.pickUpActivity.id] + 
-                                    scenario.distance[request.pickUpActivity.id, vehicleSchedule.route[idxPickUp+2].activity.id])
-        # DropOff
-        vehicleSchedule.totalTime -= (scenario.distance[vehicleSchedule.route[idxDropOff].activity.id, vehicleSchedule.route[idxDropOff+2].activity.id]) 
-        vehicleSchedule.totalTime += (scenario.distance[vehicleSchedule.route[idxDropOff].activity.id, request.dropOffActivity.id] + 
-                                    scenario.distance[request.dropOffActivity.id, vehicleSchedule.route[idxDropOff+2].activity.id])
-    end
-
-    # Update total cost
-    vehicleSchedule.totalCost = getTotalCostRoute(scenario, vehicleSchedule.totalTime)
 end
 
 
@@ -244,35 +284,48 @@ end
  Method to check feasibility of route  
 ==#
 function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedule)
-    @unpack vehicle, route, activeTimeWindow, totalDistance, totalCost, numberOfWalking, numberOfWheelchair = vehicleSchedule
-    nRequests = length(scenario.requests)
+    @unpack vehicle, route, activeTimeWindow, totalDistance, totalCost,totalTime, numberOfWalking, numberOfWheelchair = vehicleSchedule
+    @unpack requests, distance, time, serviceTimes, vehicleCostPrHour,vehicleStartUpCost  = scenario
+    nRequests = length(requests)
 
     if length(route) == 2
-        return true, ""
+        return true, "", Set{Int}()
     end
 
     # Check that active time window of vehicle is correct 
     if activeTimeWindow.startTime != route[1].startOfServiceTime || activeTimeWindow.endTime != route[end].endOfServiceTime
         msg = "ROUTE INFEASIBLE: Active time window of vehicle $(vehicle.id) is incorrect"
-        return false, msg
+        return false, msg, Set{Int}()
     end
 
     # Check available time window of vehicle 
     if activeTimeWindow.startTime < vehicle.availableTimeWindow.startTime || activeTimeWindow.endTime > vehicle.availableTimeWindow.endTime
         msg = "ROUTE INFEASIBLE: Vehicle $(vehicle.id) is not available during the route"
-        return false, msg 
+        return false, msg, Set{Int}() 
     end
     
     # Check maximum route duration 
-    if activeTimeWindow.endTime - activeTimeWindow.startTime > vehicle.maximumRideTime
+    durationActiveTimeWindow = duration(activeTimeWindow)
+    if durationActiveTimeWindow > vehicle.maximumRideTime 
         msg = "ROUTE INFEASIBLE: Vehicle $(vehicle.id) exceeds maximum ride time"
-        return false, msg
+        return false, msg, Set{Int}()
     end
+
+    # Check cost and total time 
+    if totalTime != durationActiveTimeWindow
+        msg = "ROUTE INFEASIBLE: Total time is incorrect for vehicle $(vehicle.id). Calculated time $(durationActiveTimeWindow), actual time $(totalTime)"
+        return false, msg, Set{Int}()
+    end
+    if totalCost != vehicleCostPrHour * totalTime + vehicleStartUpCost
+        msg = "ROUTE INFEASIBLE: Total cost is incorrect for vehicle $(vehicle.id). Calculated cost $(vehicleCostPrHour * totalTime + vehicleStartUpCost), actual cost $(totalCost)"
+        return false, msg, Set{Int}()
+    end
+    
     
     # Check all activities on route 
     totalDistanceCheck = 0.0
     currentCapacities = Dict{MobilityType,Int}(WALKING => 0, WHEELCHAIR => 0)
-    hasBeenServiced = Set{Int}()
+    hasBeenServiced = Set{Int}() # TODO: Check if this still works with waiting activities
     endOfServiceTimePickUps = Dict{Int,Int}() # Keep track of end of service time for pick-ups
     for (idx,activityAssignment) in zip(2:length(route)-1, route[2:end-1]) # Do not check depots
         @unpack activity, startOfServiceTime, endOfServiceTime = activityAssignment
@@ -280,13 +333,13 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
         # Check vehicle compatibility with the request
         if activity.mobilityType == WHEELCHAIR && vehicle.capacities[WHEELCHAIR] == 0
             msg = "ROUTE INFEASIBLE: Activity $(activity.id) is not compatible with vehicle $(vehicle.id)"
-            return false, msg
+            return false, msg, Set{Int}()
         end
 
         # Check that activity is not visited more than once
         if activity.id in hasBeenServiced
             msg = "ROUTE INFEASIBLE: Activity $(activity.id) visited more than once on vehicle $(vehicle.id)"
-            return false, msg
+            return false, msg, Set{Int}()
         else
             push!(hasBeenServiced,activity.id)
         end
@@ -298,13 +351,13 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
             pickUpId = findCorrespondingId(activity,nRequests)
             if !(pickUpId in hasBeenServiced)
                 msg = "ROUTE INFEASIBLE: Drop-off $(activity.id) before pick-up, vehicle: $(vehicle.id)"
-                return false, msg
+                return false, msg, Set{Int}()
             end
 
             rideTime = endOfServiceTime - endOfServiceTimePickUps[pickUpId]
-            if rideTime > scenario.requests[activity.requestId].maximumRideTime || rideTime < scenario.requests[activity.requestId].directDriveTime
+            if rideTime > requests[activity.requestId].maximumRideTime || rideTime < requests[activity.requestId].directDriveTime
                 msg = "ROUTE INFEASIBLE: Maximum ride time exceeded for drop-off $(activity.id) on vehicle $(vehicle.id)"
-                return false, msg
+                return false, msg, Set{Int}()
             end
 
         end
@@ -313,17 +366,17 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
         # Check that time windows are respected
         if startOfServiceTime < activity.timeWindow.startTime || endOfServiceTime > activity.timeWindow.endTime
             msg = "ROUTE INFEASIBLE: Time window not respected for activity $(activity.id) on vehicle $(vehicle.id), Start/End of Service: ($startOfServiceTime, $endOfServiceTime), Time Window: ($(activity.timeWindow.startTime), $(activity.timeWindow.endTime))"
-            return false, msg
+            return false, msg, Set{Int}()
         end
 
         # Check that start of service and end of service are feasible 
-        if startOfServiceTime < route[idx-1].endOfServiceTime + scenario.time[route[idx-1].activity.id,activity.id]
+        if startOfServiceTime < route[idx-1].endOfServiceTime + time[route[idx-1].activity.id,activity.id]
             msg = "ROUTE INFEASIBLE: Start of service time $(startOfServiceTime) of activity $(activity.id) is not correct"
-            return false, msg 
+            return false, msg, Set{Int}()
         end
-        if endOfServiceTime != startOfServiceTime + scenario.serviceTimes[activity.mobilityType]
+        if endOfServiceTime != startOfServiceTime + serviceTimes[activity.mobilityType]
             msg = "ROUTE INFEASIBLE: End of service time $(endOfServiceTime) of activity $(activity.id) is not correct"
-            return false, msg
+            return false, msg, Set{Int}()
         end
 
         # Update and check current capacities
@@ -332,7 +385,7 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
 
             if currentCapacities[WHEELCHAIR] > vehicle.capacities[WHEELCHAIR] || currentCapacities[WHEELCHAIR] < 0
                 msg = "ROUTE INFEASIBLE: Capacities exceeded for vehicle $(vehicle.id)"
-                return false, msg
+                return false, msg, Set{Int}()
             end
         else
             # Walking customers can take wheelchair space if no walking space is available
@@ -344,32 +397,31 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
 
             if currentCapacities[WHEELCHAIR] > vehicle.capacities[WHEELCHAIR] || currentCapacities[WHEELCHAIR] < 0 || currentCapacities[WALKING] > vehicle.capacities[WALKING] || currentCapacities[WALKING] < 0
                 msg = "ROUTE INFEASIBLE: Capacities exceeded for vehicle $(vehicle.id)"
-                return false, msg 
+                return false, msg, Set{Int}() 
             end
 
         end
 
         if currentCapacities[WHEELCHAIR] != numberOfWheelchair[idx] || currentCapacities[WALKING] != numberOfWalking[idx]
             msg = "ROUTE INFEASIBLE: Capacities not updated correctly for vehicle $(vehicle.id)"
-            return false, msg 
+            return false, msg, Set{Int}() 
         end
         
         # Keep track of total distance and total time 
-        totalDistanceCheck += scenario.distance[route[idx-1].activity.id,activity.id]
+        totalDistanceCheck += distance[route[idx-1].activity.id,activity.id]
     end
 
     # Add end depot to total distance 
-    totalDistanceCheck += scenario.distance[route[end-1].activity.id,route[end].activity.id]
+    totalDistanceCheck += distance[route[end-1].activity.id,route[end].activity.id]
 
     # Check that total distance is correct
     if totalDistanceCheck != totalDistance
         msg = "ROUTE INFEASIBLE: Total distance $(totalDistance) is incorrect"
-        return false, msg 
+        return false, msg, Set{Int}() 
     end
     
-    # TODO: add cost check when we calculate cost 
-
-    return true, ""
+   
+    return true, "", hasBeenServiced
     
 end
 
