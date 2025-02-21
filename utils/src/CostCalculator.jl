@@ -28,13 +28,7 @@ function getTotalTimeRoute(vehicleSchedules::Vector{VehicleSchedule})
     totalTime = 0
 
     for schedule in vehicleSchedules
-        totalTime += schedule.activeTimeWindow.endTime - schedule.activeTimeWindow.startTime
-        for node in schedule.route
-            # TODO: hvorfor bliver waiting trukket fra?
-            if node.activity == "WAITING"
-                totalTime -= node.endOfServiceTime - node.startOfServiceTime
-            end
-        end
+        totalTime += duration(schedule.activeTimeWindow)
     end
 
     return totalTime
