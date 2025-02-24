@@ -1,8 +1,8 @@
 module RouteUtils 
 
-using UnPack, domain, ..CostCalculator
+using UnPack, domain, Printf, ..CostCalculator
 
-export printRoute,printSimpleRoute,insertRequest!,checkRouteFeasibility,checkFeasibilityOfInsertionAtPosition
+export printRoute,printSimpleRoute,insertRequest!,checkRouteFeasibility,checkFeasibilityOfInsertionAtPosition,printRouteHorizontal
 
 #==
  Method to print vehicle schedule 
@@ -28,6 +28,41 @@ function printRoute(schedule::VehicleSchedule)
     end
     println("\n--------------------------------------")
 end
+
+function printRouteHorizontal(schedule::VehicleSchedule)
+    println("Vehicle Schedule for: ", schedule.vehicle.id)
+    println("Available Time Window: ($(schedule.vehicle.availableTimeWindow.startTime), $(schedule.vehicle.availableTimeWindow.endTime)), Active Time Window: ($(schedule.activeTimeWindow.startTime), $(schedule.activeTimeWindow.endTime))")
+    println("Total Distance: $(schedule.totalDistance) km, Total Time: $(schedule.totalTime) min, Total Cost: \$$(schedule.totalCost)")
+    println("Wheelchair Capacities: $(schedule.numberOfWheelchair), Walking Capacities: $(schedule.numberOfWalking)")
+    
+    println("------------------------------------------------------------------------------------------------------------")
+    println("| Step | Mobility Type | Activity Type |  Location  | Start/End Service | Time Window | (Walking, Wheelchair) |")
+    println("------------------------------------------------------------------------------------------------------------")
+
+    for (i, assignment) in enumerate(schedule.route)
+        start_service = assignment.startOfServiceTime
+        end_service = assignment.endOfServiceTime
+        activity = assignment.activity
+        location = activity.location
+        time_window = activity.timeWindow
+        
+        # Extract load details safely
+        walking_load = i <= length(schedule.numberOfWalking) ? schedule.numberOfWalking[i] : "N/A"
+        wheelchair_load = i <= length(schedule.numberOfWheelchair) ? schedule.numberOfWheelchair[i] : "N/A"
+        
+        # Print each route step in a single horizontal line
+        @printf("| %-4d | %-13s | %-13s | %-10s | (%5d, %5d) | (%5d, %5d) | (%3s, %3s) |\n",
+                i,
+                activity.mobilityType,
+                activity.activityType,
+                location.name, 
+                start_service, end_service,
+                time_window.startTime, time_window.endTime,
+                walking_load, wheelchair_load)
+    end
+    println("------------------------------------------------------------------------------------------------------------\n")
+end
+
 
 function printSimpleRoute(schedule::VehicleSchedule)
     print("Route ",schedule.vehicle.id,": ")

@@ -2,7 +2,7 @@
 
 julia_version = "1.11.2"
 manifest_format = "2.0"
-project_hash = "d87ae6070ce4f052a389babcc0598a1e9542d7b2"
+project_hash = "8970c789bf3b32154a69187a1e9020176dd9e677"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -174,9 +174,9 @@ uuid = "d25df0c9-e2be-5dd7-82c8-3ad0b3e990b9"
 version = "0.1.5"
 
 [[deps.InlineStrings]]
-git-tree-sha1 = "45521d31238e87ee9f9732561bfee12d4eebd52d"
+git-tree-sha1 = "6a9fde685a7ac1eb3495f8e812c5a7c3711c2d5e"
 uuid = "842dd82b-1e85-43dc-bf29-5d0ee9dffc48"
-version = "1.4.2"
+version = "1.4.3"
 
     [deps.InlineStrings.extensions]
     ArrowTypesExt = "ArrowTypes"
@@ -617,7 +617,24 @@ deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
 version = "1.59.0+0"
 
+[[deps.offlinesolution]]
+deps = ["domain", "utils"]
+path = "../offlinesolution"
+uuid = "a9fb1b74-13ee-4d8c-9e56-7a41bc88c15d"
+version = "0.1.0"
+
+[[deps.onlinesolution]]
+path = "../onlinesolution"
+uuid = "8da48cfb-8db1-429c-aa5b-1e7864c4ef49"
+version = "0.1.0"
+
 [[deps.p7zip_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 version = "17.4.0+2"
+
+[[deps.utils]]
+deps = ["CSV", "Conda", "DataFrames", "Dates", "OpenStreetMapX", "Printf", "PyCall", "Revise", "UnPack", "domain"]
+path = "../utils"
+uuid = "d9eeeeb4-94be-4641-9ce8-3b648504a7dd"
+version = "0.1.0"
