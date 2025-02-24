@@ -24,22 +24,23 @@ function getTotalDistanceRoute(route::Vector{ActivityAssignment},scenario::Scena
 end
 
 #==
-#  Function to get total time of a route
+#  Function to get total time of a route - WITHOUT start up cost 
 ==#
 function getTotalTimeRoute(schedule::VehicleSchedule)
     return duration(schedule.activeTimeWindow)
 end
 
-function getTotalCostRoute(scenario::Scenario,vehicleSchedule::VehicleSchedule)
-    totalTime = getTotalTimeRoute(vehicleSchedule)
-    return scenario.vehicleCostPrHour * totalTime + scenario.vehicleStartUpCost
-end
+
 
 #==
-#  Function to get total cost of a route
+#  Function to get total cost of a route  -  WITHOUT start up cost 
 ==#
 function getTotalCostRoute(scenario::Scenario,totalTime::Int)
-    return scenario.vehicleCostPrHour * totalTime + scenario.vehicleStartUpCost
+    return scenario.vehicleCostPrHour * totalTime
+end
+function getTotalCostRoute(scenario::Scenario,vehicleSchedule::VehicleSchedule)
+    totalTime = getTotalTimeRoute(vehicleSchedule)
+    return scenario.vehicleCostPrHour * totalTime
 end
 
 #==

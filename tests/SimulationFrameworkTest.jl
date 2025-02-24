@@ -14,6 +14,6 @@ timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
 scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
 
 solution = simulateScenario(scenario)
-solution.nTaxi += length(scenario.onlineRequests) # Remove when online request are implemented
+solution.nTaxi += 2*length(scenario.onlineRequests) # Remove when online request are implemented
 
 checkSolutionFeasibility(scenario,solution)

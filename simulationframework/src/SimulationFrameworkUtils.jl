@@ -161,9 +161,15 @@ function updateFinalSolution!(finalSolution::Solution,solution::Solution,vehicle
 
     # Update completed routes
     newCompletedRoute =  solution.vehicleSchedules[vehicle].route[1:idx]
-    append!(finalSolution.vehicleSchedules[vehicle].route, newCompletedRoute)
 
-    finalSolution.vehicleSchedules[vehicle].activeTimeWindow.endTime = currentTime
+    if length(finalSolution.vehicleSchedules[vehicle].route) == 0
+        finalSolution.vehicleSchedules[vehicle].activeTimeWindow.startTime = solution.vehicleSchedules[vehicle].activeTimeWindow.startTime
+    end
+
+    newCompletedRoute =  solution.vehicleSchedules[vehicle].route[1:idx]
+    append!(finalSolution.vehicleSchedules[vehicle].route, newCompletedRoute)
+   
+    finalSolution.vehicleSchedules[vehicle].activeTimeWindow.endTime = newCompletedRoute[end].endOfServiceTime
 
     append!(finalSolution.vehicleSchedules[vehicle].numberOfWalking,solution.vehicleSchedules[vehicle].numberOfWalking[1:idx])
     append!(finalSolution.vehicleSchedules[vehicle].numberOfWheelchair, solution.vehicleSchedules[vehicle].numberOfWheelchair[1:idx])
@@ -171,8 +177,8 @@ function updateFinalSolution!(finalSolution::Solution,solution::Solution,vehicle
     # Update KPIs
     totalTimeOfNewCompletedRoute = currentTime - newCompletedRoute[1].startOfServiceTime
     finalSolution.vehicleSchedules[vehicle].totalTime += totalTimeOfNewCompletedRoute
-    finalSolution.vehicleSchedules[vehicle].totalDistance += getTotalDistanceRoute(newCompletedRoute,scenario)
-    finalSolution.vehicleSchedules[vehicle].totalCost += getTotalCostRoute(scenario,totalTimeOfNewCompletedRoute)
+    finalSolution.vehicleSchedules[vehicle].totalDistance += getTotalDistanceRoute(solution.vehicleSchedules[vehicle].route[1:idx+1],scenario)
+    finalSolution.vehicleSchedules[vehicle].totalCost += getTotalCostRoute(scenario,totalTimeOfNewCompletedRoute) # Do not add start up cost
     finalSolution.vehicleSchedules[vehicle].totalIdleTime += getTotalIdleTimeRoute(newCompletedRoute)
 end
 
@@ -180,16 +186,19 @@ end
 # ------
 # Function to merge current State and final solution in last iteration
 # ------
-function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,currentState::State)
+function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,currentState::State,scenario::Scenario)
     # Loop through all schedules and add to final solution 
     for (vehicle,schedule) in enumerate(currentState.solution.vehicleSchedules)
+        if length(finalSolution.vehicleSchedules[vehicle].route) == 0
+            finalSolution.vehicleSchedules[vehicle].activeTimeWindow.startTime = schedule.activeTimeWindow.startTime
+        end
 
         finalSolution.vehicleSchedules[vehicle].route = append!(finalSolution.vehicleSchedules[vehicle].route,schedule.route)
-
-        finalSolution.vehicleSchedules[vehicle].activeTimeWindow = schedule.activeTimeWindow
+     
+        finalSolution.vehicleSchedules[vehicle].activeTimeWindow.endTime = schedule.activeTimeWindow.endTime
         finalSolution.vehicleSchedules[vehicle].totalDistance += schedule.totalDistance
-        finalSolution.vehicleSchedules[vehicle].totalTime += schedule.totalTime
-        finalSolution.vehicleSchedules[vehicle].totalCost += schedule.totalCost
+        finalSolution.vehicleSchedules[vehicle].totalTime = duration(finalSolution.vehicleSchedules[vehicle].activeTimeWindow)
+        finalSolution.vehicleSchedules[vehicle].totalCost += schedule.totalCost + scenario.vehicleStartUpCost
         finalSolution.vehicleSchedules[vehicle].totalIdleTime += schedule.totalIdleTime
 
         finalSolution.vehicleSchedules[vehicle].numberOfWalking = append!(finalSolution.vehicleSchedules[vehicle].numberOfWalking,schedule.numberOfWalking)
@@ -291,12 +300,12 @@ function simulateScenario(scenario::Scenario)
         # Determine current state
         currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario)
 
-        printSolution(solution,printRouteHorizontal)
+        printSolution(currentState.solution,printRouteHorizontal)
 
         println("----------------")
         println("Final solution: ")
         println("----------------")
-        printSolution(solution,printRouteHorizontal)
+        printSolution(finalSolution,printRouteHorizontal)
 
         # Get solution for online problem
         # solution = onlineAlgorithm(currentState, event, scenario) # TODO: Change to right function name !!!!!!!!!!
@@ -304,14 +313,14 @@ function simulateScenario(scenario::Scenario)
     end
 
     # Update final solution with last state 
-    mergeCurrentStateIntoFinalSolution!(finalSolution,currentState)
+    mergeCurrentStateIntoFinalSolution!(finalSolution,currentState,scenario)
 
     println("----------------")
     println("Final solution after merge: ")
     println("----------------")
     printSolution(finalSolution,printRouteHorizontal)
 
-    return solution
+    return finalSolution
 
 end
 
