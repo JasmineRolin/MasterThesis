@@ -9,6 +9,12 @@ export printRoute,printSimpleRoute,insertRequest!,checkFeasibilityOfInsertionAtP
 # Method to print solution 
 ==#
 function printSolution(solution::Solution,printRouteFunc::Function)
+    println("Solution")
+    println("Total Distance: ", solution.totalDistance, " km")
+    println("Total time: ", solution.totalRideTime, " min")
+    println("Total Cost: \$", solution.totalCost)
+    println("Total Idle time: \$", solution.idleTime)
+
     for schedule in solution.vehicleSchedules
         printRouteFunc(schedule)
     end
@@ -43,7 +49,6 @@ function printRouteHorizontal(schedule::VehicleSchedule)
     println("Vehicle Schedule for: ", schedule.vehicle.id)
     println("Available Time Window: ($(schedule.vehicle.availableTimeWindow.startTime), $(schedule.vehicle.availableTimeWindow.endTime)), Active Time Window: ($(schedule.activeTimeWindow.startTime), $(schedule.activeTimeWindow.endTime))")
     println("Total Distance: $(schedule.totalDistance) km, Total Time: $(schedule.totalTime) min, Total Cost: \$$(schedule.totalCost)")
-    println("Wheelchair Capacities: $(schedule.numberOfWheelchair), Walking Capacities: $(schedule.numberOfWalking)")
     
     println("------------------------------------------------------------------------------------------------------------")
     println("| Step | Mobility Type | Activity Type |  Location  | Start/End Service | Time Window | (Walking, Wheelchair) |")

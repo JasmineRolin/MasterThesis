@@ -130,9 +130,25 @@ function updateCurrentScheduleAtSplit!(schedule::VehicleSchedule,vehicle::Int,cu
         currentSchedule.totalTime = getTotalTimeRoute(currentSchedule)
         currentSchedule.totalCost = getTotalCostRoute(scenario,currentSchedule.totalTime)
         currentSchedule.totalIdleTime = getTotalIdleTimeRoute(currentSchedule.route)
-        currentSchedule.numberOfWalking = [schedule.numberOfWalking[idx+1]; schedule.numberOfWalking[idx+1:end]] 
-        currentSchedule.numberOfWheelchair = [schedule.numberOfWheelchair[idx+1]; schedule.numberOfWheelchair[idx+1:end]]
-        
+        currentSchedule.numberOfWalking = [schedule.numberOfWalking[idx+1]; schedule.numberOfWalking[idx+1:end]] # TODO: jas - skal det ikke bare være idx ? 
+        currentSchedule.numberOfWheelchair = [schedule.numberOfWheelchair[idx+1]; schedule.numberOfWheelchair[idx+1:end]] #  TODO: jas - skal det ikke bare være idx ? 
+    # If there is no time to wait at previous location - waiting is inserted at next location 
+    elseif schedule.route[idx].endOfServiceTime + scenario.time[schedule.route[idx].activity.id,schedule.route[idx+1].activity.id] < schedule.route[idx+1].startOfServiceTime 
+         # Create waiting activity at location of next activity 
+         waitingActivity = Activity(schedule.route[idx+1].activity.id,-1,WAITING,WALKING,schedule.route[idx+1].activity.location,TimeWindow(currentTime,schedule.route[idx+1].startOfServiceTime))
+         waitingAssignment = ActivityAssignment(waitingActivity,schedule.vehicle,currentTime,schedule.route[idx+1].startOfServiceTime)
+ 
+         # Update schedule 
+         currentSchedule.route = [waitingAssignment; schedule.route[idx+1:end]]
+         currentSchedule.activeTimeWindow.startTime = currentTime 
+         currentSchedule.activeTimeWindow.endTime = currentSchedule.route[end].endOfServiceTime
+         currentSchedule.totalDistance = getTotalDistanceRoute(currentSchedule.route,scenario)
+         currentSchedule.totalTime = getTotalTimeRoute(currentSchedule)
+         currentSchedule.totalCost = getTotalCostRoute(scenario,currentSchedule.totalTime)
+         currentSchedule.totalIdleTime = getTotalIdleTimeRoute(currentSchedule.route)
+         currentSchedule.numberOfWalking = [schedule.numberOfWalking[idx+1]; schedule.numberOfWalking[idx+1:end]] 
+         currentSchedule.numberOfWheelchair = [schedule.numberOfWheelchair[idx+1]; schedule.numberOfWheelchair[idx+1:end]]
+
     # Update vehicle schedule for current state with no waiting
     else
         currentSchedule.route = schedule.route[idx+1:end]
@@ -174,12 +190,19 @@ function updateFinalSolution!(finalSolution::Solution,solution::Solution,vehicle
     append!(finalSolution.vehicleSchedules[vehicle].numberOfWalking,solution.vehicleSchedules[vehicle].numberOfWalking[1:idx])
     append!(finalSolution.vehicleSchedules[vehicle].numberOfWheelchair, solution.vehicleSchedules[vehicle].numberOfWheelchair[1:idx])
 
-    # Update KPIs
+    # Update KPIs of route
     totalTimeOfNewCompletedRoute = currentTime - newCompletedRoute[1].startOfServiceTime
+
     finalSolution.vehicleSchedules[vehicle].totalTime += totalTimeOfNewCompletedRoute
     finalSolution.vehicleSchedules[vehicle].totalDistance += getTotalDistanceRoute(solution.vehicleSchedules[vehicle].route[1:idx+1],scenario)
     finalSolution.vehicleSchedules[vehicle].totalCost += getTotalCostRoute(scenario,totalTimeOfNewCompletedRoute) # Do not add start up cost
     finalSolution.vehicleSchedules[vehicle].totalIdleTime += getTotalIdleTimeRoute(newCompletedRoute)
+
+    # Update KPIs of solution
+    finalSolution.totalRideTime += totalTimeOfNewCompletedRoute
+    finalSolution.totalDistance += getTotalDistanceRoute(solution.vehicleSchedules[vehicle].route[1:idx+1],scenario)
+    finalSolution.totalCost += getTotalCostRoute(scenario,totalTimeOfNewCompletedRoute) # Do not add start up cost
+    finalSolution.idleTime += getTotalIdleTimeRoute(newCompletedRoute)
 end
 
 
@@ -198,11 +221,17 @@ function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,currentStat
         finalSolution.vehicleSchedules[vehicle].activeTimeWindow.endTime = schedule.activeTimeWindow.endTime
         finalSolution.vehicleSchedules[vehicle].totalDistance += schedule.totalDistance
         finalSolution.vehicleSchedules[vehicle].totalTime = duration(finalSolution.vehicleSchedules[vehicle].activeTimeWindow)
-        finalSolution.vehicleSchedules[vehicle].totalCost += schedule.totalCost + scenario.vehicleStartUpCost
+        finalSolution.vehicleSchedules[vehicle].totalCost += schedule.totalCost
         finalSolution.vehicleSchedules[vehicle].totalIdleTime += schedule.totalIdleTime
 
         finalSolution.vehicleSchedules[vehicle].numberOfWalking = append!(finalSolution.vehicleSchedules[vehicle].numberOfWalking,schedule.numberOfWalking)
         finalSolution.vehicleSchedules[vehicle].numberOfWheelchair = append!(finalSolution.vehicleSchedules[vehicle].numberOfWheelchair,schedule.numberOfWheelchair)
+
+         # Update KPIs of solution
+        finalSolution.totalRideTime += duration(finalSolution.vehicleSchedules[vehicle].activeTimeWindow)
+        finalSolution.totalDistance += schedule.totalDistance
+        finalSolution.totalCost += schedule.totalCost + scenario.vehicleStartUpCost 
+        finalSolution.idleTime += schedule.totalIdleTime
 
     end
 end
@@ -294,7 +323,7 @@ function simulateScenario(scenario::Scenario)
     # Get solution for online problem
     for (itr,event) in enumerate(scenario.onlineRequests)
         println("----------------")
-        println("Event: id:", itr, ", time: ", event.callTime)
+        println("Event: id: ", itr, ", time: ", event.callTime)
         println("----------------")
 
         # Determine current state

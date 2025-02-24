@@ -103,8 +103,9 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
         msg = "ROUTE INFEASIBLE: Total time is incorrect for vehicle $(vehicle.id). Calculated time $(duration(activeTimeWindow)), actual time $(totalTime)"
         return false, msg, Set{Int}()
     end
-    if totalCost != getTotalCostRoute(scenario,totalTime)
-        msg = "ROUTE INFEASIBLE: Total cost is incorrect for vehicle $(vehicle.id). Calculated cost $(vehicleCostPrHour * totalTime + vehicleStartUpCost), actual cost $(totalCost)"
+    if !isapprox(totalCost, getTotalCostRoute(scenario,totalTime))
+        println("diff: ",totalCost - getTotalCostRoute(scenario,totalTime))
+        msg = "ROUTE INFEASIBLE: Total cost is incorrect for vehicle $(vehicle.id). Calculated cost $(getTotalCostRoute(scenario,totalTime)), actual cost $(totalCost)"
         return false, msg, Set{Int}()
     end
     
@@ -205,7 +206,6 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
 
     # Check that total distance is correct
     if !isapprox(totalDistanceCheck,totalDistance)
-        println(totalDistance-totalDistanceCheck)
         msg = "ROUTE INFEASIBLE: Total distance $(totalDistance) is incorrect for vehicle $(vehicle.id). Calculated distance $(totalDistanceCheck)"
         return false, msg, Set{Int}() 
     end
