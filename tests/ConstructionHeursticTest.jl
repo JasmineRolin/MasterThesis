@@ -33,4 +33,3 @@ using utils, domain, offlinesolution
 
     @test solution.nTaxi == 0
 end
-
