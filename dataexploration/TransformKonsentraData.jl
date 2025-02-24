@@ -20,19 +20,30 @@ callBuffer = 2*60 # 2 hours buffer
 # Function to determine pre-known requests
 # ------
 function preKnownRequests(df, DoD, serviceWindow, callBuffer)
-    geo_dist = Geometric(DoD)
-    known_requests = Array{Bool,1}(undef, nrow(df))
-
+    totalNumberKnown = Int(round(DoD * nrow(df)))
+    numberKnownDueToTime = 0
+    known_requests = Array{Bool,1}(undef, totalNumberKnown)
+    
+    # Known due to time
     for i in 1:nrow(df)
-        # Ensure request can satisfy call time constraint
         request_time = df[!,:request_time][i]
         if request_time < serviceWindow[1] + callBuffer
             known_requests[i] = true  # Known by default if request too early
-        else
-            # Randomly decide if pre-known using geometric distribution
-            known_requests[i] = (rand(geo_dist) == 1)
+            numberKnownDueToTime += 1
         end
     end
+
+    # Known due to probabilty and degree of dynamism
+    findNumberKnown = totalNumberKnown - numberKnownDueToTime
+    if findNumberKnown < 0
+        throw(ArgumentError("Degree of dynamism too high"))
+    end
+
+    for i in 1:findNumberKnown
+        knownRequests[totalNumberKnown-findNumberKnown+i] = splice!(A, rand(eachindex(A)))
+    end
+
+
 
     return known_requests
 end
