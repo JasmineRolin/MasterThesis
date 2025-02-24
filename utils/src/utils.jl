@@ -42,7 +42,7 @@ export getTotalCostDistanceTimeOfSolution
 ==#
 include("RouteUtils.jl")
 using .RouteUtils
-export printRoute,printSimpleRoute, insertRequest!, checkRouteFeasibility,checkFeasibilityOfInsertionAtPosition,printRouteHorizontal
+export printRoute,printSimpleRoute, insertRequest!, checkRouteFeasibility,checkFeasibilityOfInsertionAtPosition,printRouteHorizontal,printSolution
 
 #==
     Export from SolutionUtils module   

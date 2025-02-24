@@ -2,7 +2,17 @@ module RouteUtils
 
 using UnPack, domain, Printf, ..CostCalculator
 
-export printRoute,printSimpleRoute,insertRequest!,checkRouteFeasibility,checkFeasibilityOfInsertionAtPosition,printRouteHorizontal
+export printRoute,printSimpleRoute,insertRequest!,checkRouteFeasibility,checkFeasibilityOfInsertionAtPosition,printRouteHorizontal,printSolution
+
+
+#==
+# Method to print solution 
+==#
+function printSolution(solution::Solution,printRouteFunc::Function)
+    for schedule in solution.vehicleSchedules
+        printRouteFunc(schedule)
+    end
+end
 
 #==
  Method to print vehicle schedule 
