@@ -14,9 +14,6 @@ timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
 scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
 
 solution = simulateScenario(scenario)
+solution.nTaxi += length(scenario.onlineRequests) # Remove when online request are implemented
 
-# Check routes
-for schedule in solution.vehicleSchedules
-    feasible, msg = checkRouteFeasibility(scenario,schedule)
-    println(msg)
-end
+checkSolutionFeasibility(scenario,solution)

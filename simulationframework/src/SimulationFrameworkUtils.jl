@@ -304,12 +304,12 @@ function simulateScenario(scenario::Scenario)
     end
 
     # Update final solution with last state 
-    mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,currentState::State)
+    mergeCurrentStateIntoFinalSolution!(finalSolution,currentState)
 
     println("----------------")
     println("Final solution after merge: ")
     println("----------------")
-    printSolution(solution,printRouteHorizontal)
+    printSolution(finalSolution,printRouteHorizontal)
 
     return solution
 
