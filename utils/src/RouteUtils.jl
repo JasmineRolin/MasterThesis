@@ -80,10 +80,10 @@ function updateRoute!(time::Array{Int,2},serviceTimes::Dict{MobilityType,Int},ve
 
     # Insert as late as possible in the route to minimize active time for vehicle
     elseif idxPickUp == 1 && idxPickUp == idxDropOff
-        endOfServiceDrop = min(request.dropOffActivity.timeWindow.endTime,vehicleSchedule.route[idxPickUp+1].startOfServiceTime-time[request.dropOffActivity.id,vehicleSchedule.route[idxPickUp+1].activity.id])
+        endOfServiceDrop = min(request.dropOffActivity.timeWindow.endTime + serviceTimes[request.dropOffActivity.mobilityType],vehicleSchedule.route[idxPickUp+1].startOfServiceTime-time[request.dropOffActivity.id,vehicleSchedule.route[idxPickUp+1].activity.id])
         startOfServiceDrop = endOfServiceDrop - serviceTimes[request.dropOffActivity.mobilityType]
 
-        endOfServicePick = min(startOfServiceDrop-time[request.pickUpActivity.id,request.dropOffActivity.id],request.pickUpActivity.timeWindow.endTime)
+        endOfServicePick = min(startOfServiceDrop-time[request.pickUpActivity.id,request.dropOffActivity.id],request.pickUpActivity.timeWindow.endTime+serviceTimes[request.pickUpActivity.mobilityType])
         startOfServicePick = endOfServicePick - serviceTimes[request.pickUpActivity.mobilityType]
 
     # Same pick-up and drop-off index. Insert as early as possible
@@ -376,7 +376,7 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
 
 
         # Check that time windows are respected
-        if startOfServiceTime < activity.timeWindow.startTime || endOfServiceTime > activity.timeWindow.endTime
+        if startOfServiceTime < activity.timeWindow.startTime || startOfServiceTime > activity.timeWindow.endTime
             msg = "ROUTE INFEASIBLE: Time window not respected for activity $(activity.id) on vehicle $(vehicle.id), Start/End of Service: ($startOfServiceTime, $endOfServiceTime), Time Window: ($(activity.timeWindow.startTime), $(activity.timeWindow.endTime))"
             return false, msg, Set{Int}()
         end
