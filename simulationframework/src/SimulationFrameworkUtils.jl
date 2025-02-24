@@ -85,7 +85,7 @@ end
 # ------
 # Function to update current state if vehicle has not started service yet
 # ------
-function updateCurrentScheduleNotAvailableYet(schedule::Schedule,currentState::State,vehicle::Int)
+function updateCurrentScheduleNotAvailableYet(schedule::VehicleSchedule,currentState::State,vehicle::Int)
     # update current schedule 
     currentState.solution.vehicleSchedules[vehicle] = schedule
     
