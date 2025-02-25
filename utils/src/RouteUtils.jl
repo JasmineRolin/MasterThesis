@@ -547,6 +547,31 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
             msg = "ROUTE INFEASIBLE: Activity $(activity.id) is not compatible with vehicle $(vehicle.id)"
             return false, msg, Set{Int}()
         end
+        
+        # Check that pickup is serviced before drop-off and that maximum ride time is satisfied 
+        if activity.activityType == PICKUP
+            endOfServiceTimePickUps[activity.id] = endOfServiceTime
+        elseif activity.activityType == DROPOFF 
+            pickUpId = findCorrespondingId(activity,nRequests)
+            if !(pickUpId in hasBeenServiced)
+                msg = "ROUTE INFEASIBLE: Drop-off $(activity.id) before pick-up, vehicle: $(vehicle.id)"
+                return false, msg, Set{Int}()
+            end
+
+            rideTime = endOfServiceTime - endOfServiceTimePickUps[pickUpId]
+            if rideTime > requests[activity.requestId].maximumRideTime || rideTime < requests[activity.requestId].directDriveTime
+                msg = "ROUTE INFEASIBLE: Maximum ride time exceeded for drop-off $(activity.id) on vehicle $(vehicle.id)"
+                return false, msg, Set{Int}()
+            end
+
+        end
+
+
+        # Check that time windows are respected
+        if startOfServiceTime < activity.timeWindow.startTime || startOfServiceTime > activity.timeWindow.endTime
+            msg = "ROUTE INFEASIBLE: Time window not respected for activity $(activity.id) on vehicle $(vehicle.id), Start/End of Service: ($startOfServiceTime, $endOfServiceTime), Time Window: ($(activity.timeWindow.startTime), $(activity.timeWindow.endTime))"
+            return false, msg, Set{Int}()
+        end
 
         # Checks only relevant for non-waiting nodes
         if activity.activityType != WAITING
@@ -597,31 +622,6 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
             end
 
 
-        end
-        
-        # Check that pickup is serviced before drop-off and that maximum ride time is satisfied 
-        if activity.activityType == PICKUP
-            endOfServiceTimePickUps[activity.id] = endOfServiceTime
-        elseif activity.activityType == DROPOFF 
-            pickUpId = findCorrespondingId(activity,nRequests)
-            if !(pickUpId in hasBeenServiced)
-                msg = "ROUTE INFEASIBLE: Drop-off $(activity.id) before pick-up, vehicle: $(vehicle.id)"
-                return false, msg, Set{Int}()
-            end
-
-            rideTime = endOfServiceTime - endOfServiceTimePickUps[pickUpId]
-            if rideTime > requests[activity.requestId].maximumRideTime || rideTime < requests[activity.requestId].directDriveTime
-                msg = "ROUTE INFEASIBLE: Maximum ride time exceeded for drop-off $(activity.id) on vehicle $(vehicle.id)"
-                return false, msg, Set{Int}()
-            end
-
-        end
-
-
-        # Check that time windows are respected
-        if startOfServiceTime < activity.timeWindow.startTime || startOfServiceTime > activity.timeWindow.endTime
-            msg = "ROUTE INFEASIBLE: Time window not respected for activity $(activity.id) on vehicle $(vehicle.id), Start/End of Service: ($startOfServiceTime, $endOfServiceTime), Time Window: ($(activity.timeWindow.startTime), $(activity.timeWindow.endTime))"
-            return false, msg, Set{Int}()
         end
 
         

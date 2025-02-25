@@ -2,9 +2,9 @@ using Test
 using utils 
 using domain 
 
-# #==
+#==
 #  Test printVehicleSchedule
-# ==#
+==#
 @testset "printVehicleSchedule test" begin 
     requestFile = "tests/resources/Requests.csv"
     vehiclesFile = "tests/resources/Vehicles.csv"
@@ -24,6 +24,7 @@ using domain
     printRoute(vehicleSchedule)
 
 end 
+
 
 
 #==
@@ -64,18 +65,26 @@ end
     insert!(vehicleSchedule.route,2,pickUpActivity)
     insert!(vehicleSchedule.route,3,dropOffActivity)
 
-    # Update end depot 
-    vehicleSchedule.route[4].startOfServiceTime = endOfServiceTimeDropOff + scenario.time[request.dropOffActivity.id,vehicle.depotId]
-    vehicleSchedule.route[4].endOfServiceTime = endOfServiceTimeDropOff + scenario.time[request.dropOffActivity.id,vehicle.depotId]
+    # Insert waiting nodes
+    route = vehicleSchedule.route
+    startOfServiceWaiting = route[3].endOfServiceTime 
+    endOfServiceWaiting = route[4].startOfServiceTime - scenario.time[route[3].activity.id,route[4].activity.id]
+    waitingActivity = ActivityAssignment(Activity(route[3].activity.id,-1,WAITING,WALKING,route[3].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting)
+    insert!(vehicleSchedule.route,4,waitingActivity)
+
+    startOfServiceWaiting = route[2].endOfServiceTime 
+    endOfServiceWaiting = route[3].startOfServiceTime - scenario.time[route[2].activity.id,route[3].activity.id]
+    waitingActivity = ActivityAssignment(Activity(route[2].activity.id,-1,WAITING,WALKING,route[2].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting)
+    insert!(vehicleSchedule.route,3,waitingActivity)
 
     # Update vehicle schedule
     vehicleSchedule.activeTimeWindow.startTime = startTime
-    vehicleSchedule.activeTimeWindow.endTime = dropOffActivity.endOfServiceTime + scenario.time[request.dropOffActivity.id,vehicle.depotId]
+    vehicleSchedule.activeTimeWindow.endTime = route[end-1].endOfServiceTime + scenario.time[route[end-1].activity.id,vehicle.depotId]
     vehicleSchedule.totalDistance = scenario.distance[vehicle.depotId,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
     vehicleSchedule.totalCost = vehicleSchedule.totalTime*scenario.vehicleCostPrHour + scenario.vehicleStartUpCost
-    vehicleSchedule.numberOfWalking = [0,1,0,0]
-    vehicleSchedule.numberOfWheelchair = [0,0,0,0]
+    vehicleSchedule.numberOfWalking = [0,1,1,0,0,0]
+    vehicleSchedule.numberOfWheelchair = [0,0,0,0,0,0]
 
     # Check route feasibility
     feasible, msg = checkRouteFeasibility(scenario,vehicleSchedule)
@@ -117,19 +126,26 @@ end
     insert!(vehicleSchedule.route,2,pickUpActivity)
     insert!(vehicleSchedule.route,3,dropOffActivity)
 
-    # Update end depot 
-    vehicleSchedule.route[4].startOfServiceTime = endOfServiceTimeDropOff + scenario.time[request.dropOffActivity.id,vehicle.depotId]
-    vehicleSchedule.route[4].endOfServiceTime = endOfServiceTimeDropOff + scenario.time[request.dropOffActivity.id,vehicle.depotId]
-
+    # Insert waiting nodes
+    route = vehicleSchedule.route
+    startOfServiceWaiting = route[3].endOfServiceTime 
+    endOfServiceWaiting = route[4].startOfServiceTime - scenario.time[route[3].activity.id,route[4].activity.id]
+    waitingActivity = ActivityAssignment(Activity(route[3].activity.id,-1,WAITING,WALKING,route[3].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting)
+    insert!(vehicleSchedule.route,4,waitingActivity)
+    
+    startOfServiceWaiting = route[2].endOfServiceTime 
+    endOfServiceWaiting = route[3].startOfServiceTime - scenario.time[route[2].activity.id,route[3].activity.id]
+    waitingActivity = ActivityAssignment(Activity(route[2].activity.id,-1,WAITING,WALKING,route[2].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting)
+    insert!(vehicleSchedule.route,3,waitingActivity)
 
     # Update vehicle schedule
     vehicleSchedule.activeTimeWindow.startTime = startTime
-    vehicleSchedule.activeTimeWindow.endTime = dropOffActivity.endOfServiceTime + scenario.time[request.dropOffActivity.id,vehicle.depotId]
+    vehicleSchedule.activeTimeWindow.endTime = route[end-1].endOfServiceTime + scenario.time[route[end-1].activity.id,vehicle.depotId]
     vehicleSchedule.totalDistance = scenario.distance[vehicle.depotId,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
     vehicleSchedule.totalCost = vehicleSchedule.totalTime*scenario.vehicleCostPrHour + scenario.vehicleStartUpCost
-    vehicleSchedule.numberOfWalking = [0,1,0,0]
-    vehicleSchedule.numberOfWheelchair = [0,0,0,0]
+    vehicleSchedule.numberOfWalking = [0,1,1,0,0,0]
+    vehicleSchedule.numberOfWheelchair = [0,0,0,0,0,0]
 
     feasible, msg = checkRouteFeasibility(scenario, vehicleSchedule)
     @test feasible == false
@@ -171,18 +187,21 @@ end
     insert!(vehicleSchedule.route,2,pickUpActivity)
     insert!(vehicleSchedule.route,3,dropOffActivity)
 
-    # Update end depot 
-    vehicleSchedule.route[4].startOfServiceTime = endOfServiceTimeDropOff + scenario.time[request.dropOffActivity.id,vehicle.depotId]
-    vehicleSchedule.route[4].endOfServiceTime = endOfServiceTimeDropOff + scenario.time[request.dropOffActivity.id,vehicle.depotId]
+    # Insert waiting nodes
+    route = vehicleSchedule.route
+    startOfServiceWaiting = route[3].endOfServiceTime 
+    endOfServiceWaiting = route[4].startOfServiceTime - scenario.time[route[3].activity.id,route[4].activity.id]
+    waitingActivity = ActivityAssignment(Activity(route[3].activity.id,-1,WAITING,WALKING,route[3].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting)
+    insert!(vehicleSchedule.route,4,waitingActivity)
 
     # Update vehicle schedule
     vehicleSchedule.activeTimeWindow.startTime = startTime
-    vehicleSchedule.activeTimeWindow.endTime = dropOffActivity.endOfServiceTime + scenario.time[request.dropOffActivity.id,vehicle.depotId]
+    vehicleSchedule.activeTimeWindow.endTime = route[end-1].endOfServiceTime + scenario.time[route[end-1].activity.id,vehicle.depotId]
     vehicleSchedule.totalDistance = scenario.distance[vehicle.depotId,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
     vehicleSchedule.totalCost = vehicleSchedule.totalTime*scenario.vehicleCostPrHour + scenario.vehicleStartUpCost
-    vehicleSchedule.numberOfWalking = [0,1,0,0]
-    vehicleSchedule.numberOfWheelchair = [0,0,0,0]
+    vehicleSchedule.numberOfWalking = [0,1,0,0,0]
+    vehicleSchedule.numberOfWheelchair = [0,0,0,0,0]
 
     # Check route feasibility
     feasible, msg = checkRouteFeasibility(scenario,vehicleSchedule)
@@ -237,7 +256,7 @@ end
     vehicleSchedule.totalDistance = scenario.distance[vehicle.depotId,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
     vehicleSchedule.totalCost = vehicleSchedule.totalTime*scenario.vehicleCostPrHour + scenario.vehicleStartUpCost
-    vehicleSchedule.numberOfWalking = [0,1,0,0]
+    vehicleSchedule.numberOfWalking = [0,0,1,0]
     vehicleSchedule.numberOfWheelchair = [0,0,0,0]
 
     # Check route feasibility
@@ -284,18 +303,26 @@ end
     insert!(vehicleSchedule.route,3,dropOffActivity)
     
 
-    # Update end depot 
-    vehicleSchedule.route[4].startOfServiceTime = endOfServiceTimeDropOff + scenario.time[request.dropOffActivity.id,vehicle.depotId]
-    vehicleSchedule.route[4].endOfServiceTime = endOfServiceTimeDropOff + scenario.time[request.dropOffActivity.id,vehicle.depotId]
+    # Insert waiting nodes
+    route = vehicleSchedule.route
+    startOfServiceWaiting = route[3].endOfServiceTime 
+    endOfServiceWaiting = route[4].startOfServiceTime - scenario.time[route[3].activity.id,route[4].activity.id]
+    waitingActivity = ActivityAssignment(Activity(route[3].activity.id,-1,WAITING,WALKING,route[3].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting)
+    insert!(vehicleSchedule.route,4,waitingActivity)
+
+    startOfServiceWaiting = route[2].endOfServiceTime 
+    endOfServiceWaiting = route[3].startOfServiceTime - scenario.time[route[2].activity.id,route[3].activity.id]
+    waitingActivity = ActivityAssignment(Activity(route[2].activity.id,-1,WAITING,WALKING,route[2].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting)
+    insert!(vehicleSchedule.route,3,waitingActivity)
 
     # Update vehicle schedule
     vehicleSchedule.activeTimeWindow.startTime = startTime
-    vehicleSchedule.activeTimeWindow.endTime = dropOffActivity.endOfServiceTime + scenario.time[request.dropOffActivity.id,vehicle.depotId]
+    vehicleSchedule.activeTimeWindow.endTime = route[end-1].endOfServiceTime + scenario.time[route[end-1].activity.id,vehicle.depotId]
     vehicleSchedule.totalDistance = scenario.distance[vehicle.depotId,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
     vehicleSchedule.totalCost = vehicleSchedule.totalTime*scenario.vehicleCostPrHour + scenario.vehicleStartUpCost
-    vehicleSchedule.numberOfWalking = [0,1,0,0]
-    vehicleSchedule.numberOfWheelchair = [0,0,0,0]
+    vehicleSchedule.numberOfWalking = [0,1,0,0,0]
+    vehicleSchedule.numberOfWheelchair = [0,0,0,0,0]
 
     # Check route feasibility
     feasible, msg = checkRouteFeasibility(scenario,vehicleSchedule)
