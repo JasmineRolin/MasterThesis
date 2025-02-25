@@ -2,10 +2,9 @@ using Test
 
 using utils, domain, offlinesolution
 
-
 #==
  Test ConstructionHeuristicTest 
-==# 
+==#
 @testset "ConstructionHeuristicTest test" begin 
     requestFile = "tests/resources/Requests.csv"
     vehiclesFile = "tests/resources/Vehicles.csv"
