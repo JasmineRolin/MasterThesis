@@ -258,7 +258,7 @@ function updateFinalSolution!(finalSolution::Solution,solution::Solution,vehicle
     finalSolution.vehicleSchedules[vehicle].totalCost += getTotalCostRoute(scenario,totalTimeOfNewCompletedRoute) # Do not add start up cost
     finalSolution.vehicleSchedules[vehicle].totalIdleTime += getTotalIdleTimeRoute(newCompletedRoute)
 
-    # Update KPIs of solution
+    # # Update KPIs of solution
     finalSolution.totalRideTime += totalTimeOfNewCompletedRoute
     finalSolution.totalDistance += getTotalDistanceRoute(solution.vehicleSchedules[vehicle].route[1:idx+1],scenario)
     finalSolution.totalCost += getTotalCostRoute(scenario,totalTimeOfNewCompletedRoute) # Do not add start up cost
@@ -270,8 +270,11 @@ end
 # Function to merge current State and final solution in last iteration
 # ------
 function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,currentState::State,scenario::Scenario)
+
     # Loop through all schedules and add to final solution 
     for (vehicle,schedule) in enumerate(currentState.solution.vehicleSchedules)
+
+        # Set start time of time window if necesarry 
         if length(finalSolution.vehicleSchedules[vehicle].route) == 0
             finalSolution.vehicleSchedules[vehicle].activeTimeWindow.startTime = schedule.activeTimeWindow.startTime
         end
@@ -281,7 +284,7 @@ function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,currentStat
         finalSolution.vehicleSchedules[vehicle].activeTimeWindow.endTime = schedule.activeTimeWindow.endTime
 
         finalSolution.vehicleSchedules[vehicle].totalDistance += schedule.totalDistance
-        finalSolution.vehicleSchedules[vehicle].totalTime = duration(finalSolution.vehicleSchedules[vehicle].activeTimeWindow)
+        finalSolution.vehicleSchedules[vehicle].totalTime += duration(schedule.activeTimeWindow)
         finalSolution.vehicleSchedules[vehicle].totalCost += schedule.totalCost
         finalSolution.vehicleSchedules[vehicle].totalIdleTime += schedule.totalIdleTime
 
@@ -289,9 +292,9 @@ function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,currentStat
         finalSolution.vehicleSchedules[vehicle].numberOfWheelchair = append!(finalSolution.vehicleSchedules[vehicle].numberOfWheelchair,schedule.numberOfWheelchair)
 
          # Update KPIs of solution
-        finalSolution.totalRideTime += duration(finalSolution.vehicleSchedules[vehicle].activeTimeWindow)
+        finalSolution.totalRideTime += duration(schedule.activeTimeWindow)
         finalSolution.totalDistance += schedule.totalDistance
-        finalSolution.totalCost += schedule.totalCost + scenario.vehicleStartUpCost 
+        finalSolution.totalCost += schedule.totalCost + scenario.vehicleStartUpCost # TODO: should start up cost only be for active vehicles?
         finalSolution.idleTime += schedule.totalIdleTime
 
     end

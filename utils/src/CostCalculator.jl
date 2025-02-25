@@ -38,6 +38,7 @@ end
 function getTotalCostRoute(scenario::Scenario,totalTime::Int)
     return scenario.vehicleCostPrHour * totalTime
 end
+
 function getTotalCostRoute(scenario::Scenario,vehicleSchedule::VehicleSchedule)
     totalTime = getTotalTimeRoute(vehicleSchedule)
     return scenario.vehicleCostPrHour * totalTime
