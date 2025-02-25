@@ -69,13 +69,23 @@ function callTime(df, serviceWindow, callBuffer, preKnown)
             df[i, "call_time"] = serviceWindow[1]
         
         else
-            # Determine call window
-            call_window = [serviceWindow[1], df[i, :request_time] - callBuffer]
+            # Determine latest call time 
+            if df[i,:request_type] == 1 # Pick up 
+                call_window = [serviceWindow[1], df[i, :request_time] - callBuffer]
+            else # Drop off 
+                pick_up_location = (Float64(df[i,:pickup_latitude]), Float64(df[i,:pickup_longitude]))
+                drop_off_location = (Float64(df[i,:dropoff_latitude]), Float64(df[i,:dropoff_longitude]))
+                _, time = getDistanceAndTimeMatrixFromLocations([pick_up_location, drop_off_location])
+                df[i,"direct_drive_time"] = time[1,2]
+
+                direct_pick_up_time = df[i, :request_time] - time[1,2]
+
+                call_window = [serviceWindow[1],direct_pick_up_time - callBuffer]
+            end
 
             # Generate call time from a uniform distribution
-            call_time = rand(Uniform(call_window[1], call_window[2]))
+            call_time = floor(rand(Uniform(call_window[1], call_window[2])))
             df[i, "call_time"] = call_time
-            
         end  
     end
 end
@@ -141,7 +151,8 @@ function transformData(sheet_name, filename)
         request_type = dfFilter[!,"ReqType"],
         request_time = dfFilter[!,"ReqTime"],
         mobility_type = dfFilter[!,"SpaceType"],
-        call_time = zeros(Float64, nrow(dfFilter))
+        call_time = zeros(Float64, nrow(dfFilter)),
+        direct_drive_time = zeros(Int, nrow(dfFilter))
     )
     
     # Transform request type
@@ -166,10 +177,10 @@ end
 # ------
 # Process all sheets from both Excel files
 # ------
-for sheet in sheets_5days
-    dfTransformed = transformData(sheet, "Data/Konsentra/Data5DaysMarch2018.xlsx")
-    CSV.write("Data/Konsentra/TransformedData_$sheet.csv", dfTransformed)
-end
+# for sheet in sheets_5days
+#     dfTransformed = transformData(sheet, "Data/Konsentra/Data5DaysMarch2018.xlsx")
+#     CSV.write("Data/Konsentra/TransformedData_$sheet.csv", dfTransformed)
+# end
 
 for sheet in sheets_data
     dfTransformed = transformData(sheet, "Data/Konsentra/Data.xlsx")
