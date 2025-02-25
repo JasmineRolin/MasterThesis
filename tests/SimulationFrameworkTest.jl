@@ -16,4 +16,4 @@ scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFi
 solution = simulateScenario(scenario)
 solution.nTaxi += length(scenario.onlineRequests) # Remove when online request are implemented
 
-checkSolutionFeasibility(scenario,solution)
+feasible, msg = checkSolutionFeasibility(scenario,solution)
