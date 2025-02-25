@@ -82,7 +82,7 @@ end
     vehicleSchedule.activeTimeWindow.endTime = route[end-1].endOfServiceTime + scenario.time[route[end-1].activity.id,vehicle.depotId]
     vehicleSchedule.totalDistance = scenario.distance[vehicle.depotId,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
-    vehicleSchedule.totalCost = vehicleSchedule.totalTime*scenario.vehicleCostPrHour + scenario.vehicleStartUpCost
+    vehicleSchedule.totalCost = vehicleSchedule.totalTime*scenario.vehicleCostPrHour
     vehicleSchedule.numberOfWalking = [0,1,1,0,0,0]
     vehicleSchedule.numberOfWheelchair = [0,0,0,0,0,0]
 
@@ -143,7 +143,7 @@ end
     vehicleSchedule.activeTimeWindow.endTime = route[end-1].endOfServiceTime + scenario.time[route[end-1].activity.id,vehicle.depotId]
     vehicleSchedule.totalDistance = scenario.distance[vehicle.depotId,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
-    vehicleSchedule.totalCost = vehicleSchedule.totalTime*scenario.vehicleCostPrHour + scenario.vehicleStartUpCost
+    vehicleSchedule.totalCost = vehicleSchedule.totalTime*scenario.vehicleCostPrHour 
     vehicleSchedule.numberOfWalking = [0,1,1,0,0,0]
     vehicleSchedule.numberOfWheelchair = [0,0,0,0,0,0]
 
@@ -199,7 +199,7 @@ end
     vehicleSchedule.activeTimeWindow.endTime = route[end-1].endOfServiceTime + scenario.time[route[end-1].activity.id,vehicle.depotId]
     vehicleSchedule.totalDistance = scenario.distance[vehicle.depotId,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
-    vehicleSchedule.totalCost = vehicleSchedule.totalTime*scenario.vehicleCostPrHour + scenario.vehicleStartUpCost
+    vehicleSchedule.totalCost = vehicleSchedule.totalTime*scenario.vehicleCostPrHour
     vehicleSchedule.numberOfWalking = [0,1,0,0,0]
     vehicleSchedule.numberOfWheelchair = [0,0,0,0,0]
 
@@ -255,7 +255,7 @@ end
     vehicleSchedule.activeTimeWindow.endTime = dropOffActivity.endOfServiceTime + scenario.time[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.totalDistance = scenario.distance[vehicle.depotId,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
-    vehicleSchedule.totalCost = vehicleSchedule.totalTime*scenario.vehicleCostPrHour + scenario.vehicleStartUpCost
+    vehicleSchedule.totalCost = vehicleSchedule.totalTime*scenario.vehicleCostPrHour 
     vehicleSchedule.numberOfWalking = [0,0,1,0]
     vehicleSchedule.numberOfWheelchair = [0,0,0,0]
 
@@ -320,7 +320,7 @@ end
     vehicleSchedule.activeTimeWindow.endTime = route[end-1].endOfServiceTime + scenario.time[route[end-1].activity.id,vehicle.depotId]
     vehicleSchedule.totalDistance = scenario.distance[vehicle.depotId,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
-    vehicleSchedule.totalCost = vehicleSchedule.totalTime*scenario.vehicleCostPrHour + scenario.vehicleStartUpCost
+    vehicleSchedule.totalCost = vehicleSchedule.totalTime*scenario.vehicleCostPrHour 
     vehicleSchedule.numberOfWalking = [0,1,0,0,0]
     vehicleSchedule.numberOfWheelchair = [0,0,0,0,0]
 

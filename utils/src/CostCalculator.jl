@@ -62,12 +62,12 @@ end
 #==
 # Function to get total cost and distance of solution 
 ==#
-function getTotalCostDistanceTimeOfSolution(solution::Solution)
+function getTotalCostDistanceTimeOfSolution(scenario::Scenario,solution::Solution)
     totalCost = 0.0
     totalDistance = 0.0
     totalTime = 0
     for schedule in solution.vehicleSchedules
-        totalCost += schedule.totalCost
+        totalCost += schedule.totalCost + scenario.vehicleStartUpCost # TODO: should it be added for inactive vehicles?
         totalDistance += schedule.totalDistance
         totalTime += schedule.totalTime
     end

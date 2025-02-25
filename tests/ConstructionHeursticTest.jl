@@ -33,7 +33,8 @@ using utils, domain, offlinesolution
     @test solution.nTaxi == 0
 
     # Check solution
-    solution.nTaxi += 2*length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+    solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
     feasible, msg = checkSolutionFeasibility(scenario,solution)
+    println(msg)
     @test feasible == true
 end
