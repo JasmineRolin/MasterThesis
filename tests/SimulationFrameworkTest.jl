@@ -4,7 +4,7 @@ using utils
 using simulationframework
 
 
-requestFile = "tests/resources/Requests.csv"
+requestFile = "tests/resources/RequestsToTestSimulation.csv"
 vehiclesFile = "tests/resources/Vehicles.csv"
 parametersFile = "tests/resources/Parameters.csv"
 distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"

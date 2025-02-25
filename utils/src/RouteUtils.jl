@@ -51,7 +51,7 @@ function printRouteHorizontal(schedule::VehicleSchedule)
     println("Total Distance: $(schedule.totalDistance) km, Total Time: $(schedule.totalTime) min, Total Cost: \$$(schedule.totalCost)")
     
     println("------------------------------------------------------------------------------------------------------------")
-    println("| Step | Mobility Type | Activity Type |  Location  | Start/End Service | Time Window | (Walking, Wheelchair) |")
+    println("| Step | Mobility Type | Activity Type |  Id |  Location  | Start/End Service | Time Window | (Walking, Wheelchair) |")
     println("------------------------------------------------------------------------------------------------------------")
 
     for (i, assignment) in enumerate(schedule.route)
@@ -66,10 +66,11 @@ function printRouteHorizontal(schedule::VehicleSchedule)
         wheelchair_load = i <= length(schedule.numberOfWheelchair) ? schedule.numberOfWheelchair[i] : "N/A"
         
         # Print each route step in a single horizontal line
-        @printf("| %-4d | %-13s | %-13s | %-10s | (%5d, %5d) | (%5d, %5d) | (%3s, %3s) |\n",
+        @printf("| %-4d | %-13s | %-13s | %-4d| %-10s | (%5d, %5d) | (%5d, %5d) | (%3s, %3s) |\n",
                 i,
                 activity.mobilityType,
                 activity.activityType,
+                activity.id,
                 location.name, 
                 start_service, end_service,
                 time_window.startTime, time_window.endTime,
