@@ -3,6 +3,7 @@
 # -----
 
 using Distributions, DataFrames, CSV, XLSX, Dates, utils
+using StatsBase
 
 
 # ------
@@ -10,7 +11,7 @@ using Distributions, DataFrames, CSV, XLSX, Dates, utils
 # ------
 sheets_5days = ["30.01", "06.02", "23.01", "16.01", "09.01"]
 sheets_data = ["Data"]
-DoD = 0.3 # Degree of dynamism
+DoD = 0.4 # Degree of dynamism
 ageLimit = 18
 serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 callBuffer = 2*60 # 2 hours buffer
@@ -20,18 +21,36 @@ callBuffer = 2*60 # 2 hours buffer
 # Function to determine pre-known requests
 # ------
 function preKnownRequests(df, DoD, serviceWindow, callBuffer)
-    geo_dist = Geometric(DoD)
-    known_requests = Array{Bool,1}(undef, nrow(df))
-
+    totalNumberKnown = round(Int, DoD * nrow(df))
+    numberKnownDueToTime = 0
+    known_requests = fill(false, nrow(df))
+    requestWithLaterTime = Int[]
+    probabiltyRequest = Float64[]
+    
+    # Known due to time
     for i in 1:nrow(df)
-        # Ensure request can satisfy call time constraint
         request_time = df[!,:request_time][i]
-        if request_time < serviceWindow[1] + callBuffer
+        if  request_time < serviceWindow[1] + callBuffer
             known_requests[i] = true  # Known by default if request too early
+            numberKnownDueToTime += 1
         else
-            # Randomly decide if pre-known using geometric distribution
-            known_requests[i] = (rand(geo_dist) == 1)
+            push!(requestWithLaterTime, i)
+            push!(probabiltyRequest, serviceWindow[2]-request_time)
         end
+    end
+
+    # Known due to probabilty and degree of dynamism
+    findNumberKnown = totalNumberKnown - numberKnownDueToTime
+    if findNumberKnown < 0
+        throw(ArgumentError("Degree of dynamism too low. Could be: " * string(numberKnownDueToTime / nrow(df))))
+    end
+
+    # Select indices based on weighted probability
+    probabilityRequest = probabiltyRequest ./ sum(probabiltyRequest)
+    selectedIndices = sample(requestWithLaterTime, Weights(probabilityRequest), findNumberKnown; replace=false)
+    
+    for idx in selectedIndices
+        known_requests[idx] = true
     end
 
     return known_requests
@@ -41,23 +60,34 @@ end
 # ------
 # Function to determine call times
 # ------
-function callTime(df, serviceWindow, callBuffer,preKnown)
-
+function callTime(df, serviceWindow, callBuffer, preKnown)
     for i in 1:nrow(df)
         if preKnown[i]
-            df[i,"call_time"] = 0
-        else
-            # Determine call window
-            call_window = [serviceWindow[1], df[i,:request_time] - callBuffer]
+            df[i, "call_time"] = 0
 
-            # Determine call time from normal distribution
-            mean = (call_window[2]-call_window[1])/2 + call_window[1]
-            call_time_dist = Normal(mean, mean-call_window[1])
-            call_time = rand(call_time_dist)
-            df[i,"call_time"] = clamp(call_time, call_window[1], call_window[2])
+        elseif df[i, :request_time] == serviceWindow[1] + callBuffer
+            df[i, "call_time"] = serviceWindow[1]
+        
+        else
+            # Determine latest call time 
+            if df[i,:request_type] == 1 # Pick up 
+                call_window = [serviceWindow[1], df[i, :request_time] - callBuffer]
+            else # Drop off 
+                pick_up_location = (Float64(df[i,:pickup_latitude]), Float64(df[i,:pickup_longitude]))
+                drop_off_location = (Float64(df[i,:dropoff_latitude]), Float64(df[i,:dropoff_longitude]))
+                _, time = getDistanceAndTimeMatrixFromLocations([pick_up_location, drop_off_location])
+                df[i,"direct_drive_time"] = time[1,2]
+
+                direct_pick_up_time = df[i, :request_time] - time[1,2]
+
+                call_window = [serviceWindow[1],direct_pick_up_time - callBuffer]
+            end
+
+            # Generate call time from a uniform distribution
+            call_time = floor(rand(Uniform(call_window[1], call_window[2])))
+            df[i, "call_time"] = call_time
         end  
     end
-
 end
 
 # ------
@@ -81,6 +111,19 @@ function filterData(df, ageLimit, serviceWindow)
     dfFilter = filter(row -> row[:ReqTime] >= serviceWindow[1] && row[:ReqTime] <= serviceWindow[2], dfFilter)
 
     return dfFilter
+end
+
+# ------
+# Function to save key numbers
+# ------
+function saveKeyNumbers(df,callBuffer,serviceWindow)
+    key_numbers = DataFrame(
+        n_requests = nrow(df),
+        n_offline = sum(df[!,:call_time] .== 0),
+        naturalDOD = sum(df[!,:request_time] .< serviceWindow[1]+callBuffer) / nrow(df),
+        forcedDOD = sum(df[!,:call_time] .== 0) / nrow(df),
+    )
+    return key_numbers
 end
 
 # ------
@@ -108,7 +151,8 @@ function transformData(sheet_name, filename)
         request_type = dfFilter[!,"ReqType"],
         request_time = dfFilter[!,"ReqTime"],
         mobility_type = dfFilter[!,"SpaceType"],
-        call_time = zeros(Float64, nrow(dfFilter))
+        call_time = zeros(Float64, nrow(dfFilter)),
+        direct_drive_time = zeros(Int, nrow(dfFilter))
     )
     
     # Transform request type
@@ -119,6 +163,10 @@ function transformData(sheet_name, filename)
 
     # Determine call time
     callTime(dfTransformed, serviceWindow, callBuffer, preKnown)
+
+    # Save key numbers
+    key_numbers = saveKeyNumbers(dfTransformed,callBuffer,serviceWindow)
+    println(key_numbers)
 
     return dfTransformed
 
