@@ -87,7 +87,7 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
     # Update KPIs
     currentSchedule.totalDistance = getTotalDistanceRoute(currentSchedule.route,scenario)
     currentSchedule.totalTime = getTotalTimeRoute(currentSchedule)
-    currentSchedule.totalCost = getTotalCostRoute(scenario,currentSchedule.totalTime)
+    currentSchedule.totalCost = getTotalCostRoute(scenario,currentSchedule.route)
     currentSchedule.totalIdleTime = getTotalIdleTimeRoute(currentSchedule.route)    
     currentSchedule.numberOfWalking = schedule.numberOfWalking[idx+1:end]
     currentSchedule.numberOfWheelchair = schedule.numberOfWheelchair[idx+1:end]
@@ -134,7 +134,7 @@ function updateFinalSolution!(scenario::Scenario,finalSolution::Solution,solutio
     totalTimeOfNewCompletedRoute = splitTime - newCompletedRoute[1].startOfServiceTime
     finalSolution.vehicleSchedules[vehicle].totalTime += totalTimeOfNewCompletedRoute
     finalSolution.vehicleSchedules[vehicle].totalDistance += getTotalDistanceRoute(solution.vehicleSchedules[vehicle].route[1:idx+1],scenario)
-    finalSolution.vehicleSchedules[vehicle].totalCost += getTotalCostRoute(scenario,totalTimeOfNewCompletedRoute) 
+    finalSolution.vehicleSchedules[vehicle].totalCost += getTotalCostRoute(scenario,solution.vehicleSchedules[vehicle].route[1:idx+1]) 
     finalSolution.vehicleSchedules[vehicle].totalIdleTime += getTotalIdleTimeRoute(newCompletedRoute)
     append!(finalSolution.vehicleSchedules[vehicle].numberOfWalking,solution.vehicleSchedules[vehicle].numberOfWalking[1:idx])
     append!(finalSolution.vehicleSchedules[vehicle].numberOfWheelchair, solution.vehicleSchedules[vehicle].numberOfWheelchair[1:idx])
@@ -142,7 +142,7 @@ function updateFinalSolution!(scenario::Scenario,finalSolution::Solution,solutio
     # # Update KPIs of solution
     finalSolution.totalRideTime += totalTimeOfNewCompletedRoute
     finalSolution.totalDistance += getTotalDistanceRoute(solution.vehicleSchedules[vehicle].route[1:idx+1],scenario)
-    finalSolution.totalCost += getTotalCostRoute(scenario,totalTimeOfNewCompletedRoute)
+    finalSolution.totalCost += getTotalCostRoute(scenario,solution.vehicleSchedules[vehicle].route[1:idx+1])
     finalSolution.idleTime += getTotalIdleTimeRoute(newCompletedRoute)
 end
 
@@ -185,11 +185,7 @@ function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,currentStat
         finalSolution.totalRideTime += newDuration
         finalSolution.totalDistance += newDistance
         finalSolution.idleTime += newIdleTime
-        if length(finalSolution.vehicleSchedules[vehicle].route) == 2 && finalSolution.vehicleSchedules[vehicle].route[1].activity.activityType == DEPOT && finalSolution.vehicleSchedules[vehicle].route[2].activity.activityType == DEPOT
-            finalSolution.totalCost += newCost 
-        else
-            finalSolution.totalCost += newCost + scenario.vehicleStartUpCost 
-        end
+        finalSolution.totalCost += newCost 
     end
 end
 

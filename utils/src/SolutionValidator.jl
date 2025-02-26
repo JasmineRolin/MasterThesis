@@ -46,11 +46,7 @@ function checkSolutionFeasibility(scenario::Scenario,solution::Solution)
         # Count KPIs
         totalRideTimeCheck += vehicleSchedule.totalTime
         totalDistanceCheck += vehicleSchedule.totalDistance
-        if length(vehicleSchedule.route) == 2 && vehicleSchedule.route[1].activity.activityType == DEPOT && vehicleSchedule.route[2].activity.activityType == DEPOT
-            totalCostCheck += vehicleSchedule.totalCost
-        else
-            totalCostCheck += vehicleSchedule.totalCost + scenario.vehicleStartUpCost
-        end
+        totalCostCheck += vehicleSchedule.totalCost
     end
 
     # Check that all activities are serviced
@@ -112,8 +108,8 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
         msg = "ROUTE INFEASIBLE: Total time is incorrect for vehicle $(vehicle.id). Calculated time $(durationActiveTimeWindow), actual time $(totalTime)"
         return false, msg, Set{Int}()
     end
-    if totalCost != getTotalCostRoute(scenario,durationActiveTimeWindow)
-        msg = "ROUTE INFEASIBLE: Total cost is incorrect for vehicle $(vehicle.id). Calculated cost $(getTotalCostRoute(scenario,durationActiveTimeWindow)), actual cost $(totalCost)"
+    if totalCost != getTotalCostRoute(scenario,route)
+        msg = "ROUTE INFEASIBLE: Total cost is incorrect for vehicle $(vehicle.id). Calculated cost $(getTotalCostRoute(scenario,route)), actual cost $(totalCost)"
         return false, msg, Set{Int}()
     end
     
