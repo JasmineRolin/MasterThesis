@@ -115,7 +115,7 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPic
     vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
 
     # Update total cost
-    vehicleSchedule.totalCost = getTotalCostRoute(scenario, vehicleSchedule.totalTime)
+    vehicleSchedule.totalCost = getTotalCostRoute(scenario, vehicleSchedule.route)
 end
 
 
