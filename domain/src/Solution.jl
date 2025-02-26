@@ -3,7 +3,7 @@ module Solutions
 using ..VehicleSchedules 
 using ..Scenarios
 
-export Solution 
+export Solution
 
 mutable struct Solution 
     vehicleSchedules::Vector{VehicleSchedule}
@@ -24,6 +24,5 @@ mutable struct Solution
         new(vehicleSchedules, totalCost, nTaxi, totalRideTime, totalDistance, idleTime)
     end
 end
-
 
 end

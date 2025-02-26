@@ -1,6 +1,6 @@
 module DestroyMethods
 
-using Random, ..ALNSDomain
+using Random, UnPack, ..ALNSDomain
 
 export randomDestroy, worstRemoval, shawRemoval, findNumberOfRequestToRemove
 
@@ -18,8 +18,27 @@ end
 #==
  Random removal 
 ==#
-function randomDestroy()
+function randomDestroy!(currentState::ALNSState,parameters::ALNSParameters)
+    @unpack currentSolution, assignedRequests, requestBank = currentState
     
+    # Find number of requests currently in solution 
+    nRequests = length(assignedRequests)
+
+    # Find number of requests to remove 
+    nRequestsToRemove = findNumberOfRequestToRemove(parameters.minPercentToDestroy,parameters.maxPercentToDestroy,nRequests)
+    
+    # Collect customers to remove
+    customersToRemove = Set{Int}()
+
+    # Choose requests to remove  
+    for _ in 1:nRequestsToRemove
+        idx = rand(1:length(assignedRequests))
+        push!(customersToRemove,assignedRequests[idx])
+        deleteat!(assignedRequests,idx)
+    end
+
+    # Remove requests from solution
+    removeCustomers!(solution,customersToRemove)
 end
 
 #==
@@ -46,6 +65,13 @@ function findNumberOfRequestToRemove(minPercentToDestroy::Float64,maxPercentToDe
     return rand(1:maximumNumberToRemove)
 end
 
+
+#==
+ Method to remove customer
+==#
+function removeCustomers!(solution::Solution,customersToRemove::Set{Int})   
+    
+end
 
 
 

@@ -71,6 +71,7 @@ mutable struct ALNSState
     bestSolution::Solution 
     currentSolution::Solution
     requestBank::Vector{Request}
+    assignedRequests::Set{Int}
 end
 
 
