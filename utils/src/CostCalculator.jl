@@ -5,6 +5,7 @@ using domain
 export getTotalDistanceRoute
 export getTotalCostRoute
 export getTotalTimeRoute
+export getTotalIdleTimeRoute
 export getTotalCostDistanceTimeOfSolution
 
 
@@ -18,37 +19,59 @@ function getTotalDistanceRoute(route::Vector{ActivityAssignment},scenario::Scena
     for i in 1:length(route)-1
         totalDistance += distanceMatrix[route[i].activity.id, route[i+1].activity.id]
     end
+
     return totalDistance
 end
 
 #==
-#  Function to get total time of a route
+#  Function to get total time of a route 
 ==#
 function getTotalTimeRoute(schedule::VehicleSchedule)
-    return schedule.activeTimeWindow.endTime - schedule.activeTimeWindow.startTime
+    return duration(schedule.activeTimeWindow)
+end
+
+
+
+#==
+#  Function to get total cost of a route  -  WITHOUT start up cost 
+==#
+function getTotalCostRoute(scenario::Scenario,totalTime::Int)
+    return scenario.vehicleCostPrHour * totalTime
 end
 
 function getTotalCostRoute(scenario::Scenario,vehicleSchedule::VehicleSchedule)
     totalTime = getTotalTimeRoute(vehicleSchedule)
-    return scenario.vehicleCostPrHour * totalTime + scenario.vehicleStartUpCost
+    return scenario.vehicleCostPrHour * totalTime
 end
 
 #==
-#  Function to get total cost of a route
+# Function to get total idle time of route 
 ==#
-function getTotalCostRoute(scenario::Scenario,totalTime::Int)
-    return scenario.vehicleCostPrHour * totalTime + scenario.vehicleStartUpCost
+function getTotalIdleTimeRoute(route::Vector{ActivityAssignment})
+    totalIdleTime = 0
+    for activityAssignment in route
+        if activityAssignment.activity.activityType == WAITING
+            totalIdleTime += activityAssignment.endOfServiceTime - activityAssignment.startOfServiceTime
+        end
+    end
+
+    return totalIdleTime
 end
+
 
 #==
 # Function to get total cost and distance of solution 
 ==#
-function getTotalCostDistanceTimeOfSolution(solution::Solution)
+function getTotalCostDistanceTimeOfSolution(scenario::Scenario,solution::Solution)
     totalCost = 0.0
     totalDistance = 0.0
     totalTime = 0
     for schedule in solution.vehicleSchedules
-        totalCost += schedule.totalCost
+        if length(schedule.route) == 2 && schedule.route[1].activity.activityType == DEPOT && schedule.route[2].activity.activityType == DEPOT
+            continue
+        end
+
+        totalCost += schedule.totalCost + scenario.vehicleStartUpCost 
         totalDistance += schedule.totalDistance
         totalTime += schedule.totalTime
     end

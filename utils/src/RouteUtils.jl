@@ -1,8 +1,24 @@
 module RouteUtils 
 
-using UnPack, domain, ..CostCalculator
+using UnPack, domain, Printf, ..CostCalculator
 
-export printRoute,printSimpleRoute,insertRequest!,checkRouteFeasibility,checkFeasibilityOfInsertionAtPosition
+export printRoute,printSimpleRoute,insertRequest!,checkFeasibilityOfInsertionAtPosition,printRouteHorizontal,printSolution
+
+
+#==
+# Method to print solution 
+==#
+function printSolution(solution::Solution,printRouteFunc::Function)
+    println("Solution")
+    println("Total Distance: ", solution.totalDistance, " km")
+    println("Total time: ", solution.totalRideTime, " min")
+    println("Total Cost: \$", solution.totalCost)
+    println("Total Idle time: \$", solution.idleTime)
+
+    for schedule in solution.vehicleSchedules
+        printRouteFunc(schedule)
+    end
+end
 
 #==
  Method to print vehicle schedule 
@@ -28,6 +44,41 @@ function printRoute(schedule::VehicleSchedule)
     end
     println("\n--------------------------------------")
 end
+
+function printRouteHorizontal(schedule::VehicleSchedule)
+    println("Vehicle Schedule for: ", schedule.vehicle.id)
+    println("Available Time Window: ($(schedule.vehicle.availableTimeWindow.startTime), $(schedule.vehicle.availableTimeWindow.endTime)), Active Time Window: ($(schedule.activeTimeWindow.startTime), $(schedule.activeTimeWindow.endTime))")
+    println("Total Distance: $(schedule.totalDistance) km, Total Time: $(schedule.totalTime) min, Total Cost: \$$(schedule.totalCost)")
+    
+    println("------------------------------------------------------------------------------------------------------------")
+    println("| Step | Mobility Type | Activity Type |  Id |  Location  | Start/End Service | Time Window | (Walking, Wheelchair) |")
+    println("------------------------------------------------------------------------------------------------------------")
+
+    for (i, assignment) in enumerate(schedule.route)
+        start_service = assignment.startOfServiceTime
+        end_service = assignment.endOfServiceTime
+        activity = assignment.activity
+        location = activity.location
+        time_window = activity.timeWindow
+        
+        # Extract load details safely
+        walking_load = i <= length(schedule.numberOfWalking) ? schedule.numberOfWalking[i] : "N/A"
+        wheelchair_load = i <= length(schedule.numberOfWheelchair) ? schedule.numberOfWheelchair[i] : "N/A"
+        
+        # Print each route step in a single horizontal line
+        @printf("| %-4d | %-13s | %-13s | %-4d| %-10s | (%5d, %5d) | (%5d, %5d) | (%3s, %3s) |\n",
+                i,
+                activity.mobilityType,
+                activity.activityType,
+                activity.id,
+                location.name, 
+                start_service, end_service,
+                time_window.startTime, time_window.endTime,
+                walking_load, wheelchair_load)
+    end
+    println("------------------------------------------------------------------------------------------------------------\n")
+end
+
 
 function printSimpleRoute(schedule::VehicleSchedule)
     print("Route ",schedule.vehicle.id,": ")
@@ -498,168 +549,6 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
 end
 
 
-#==
- Method to check feasibility of route  
-==#
-function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedule)
-    @unpack vehicle, route, activeTimeWindow, totalDistance, totalCost,totalTime, numberOfWalking, numberOfWheelchair = vehicleSchedule
-    @unpack requests, distance, time, serviceTimes, vehicleCostPrHour,vehicleStartUpCost  = scenario
-    nRequests = length(requests)
-
-    if length(route) == 2
-        return true, "", Set{Int}()
-    end
-
-    # Check that active time window of vehicle is correct 
-    if activeTimeWindow.startTime != route[1].startOfServiceTime || activeTimeWindow.endTime != route[end].endOfServiceTime
-        msg = "ROUTE INFEASIBLE: Active time window of vehicle $(vehicle.id) is incorrect"
-        return false, msg, Set{Int}()
-    end
-
-    # Check available time window of vehicle 
-    if activeTimeWindow.startTime < vehicle.availableTimeWindow.startTime || activeTimeWindow.endTime > vehicle.availableTimeWindow.endTime
-        msg = "ROUTE INFEASIBLE: Vehicle $(vehicle.id) is not available during the route"
-        return false, msg, Set{Int}() 
-    end
-    
-    # Check cost and total time 
-    durationActiveTimeWindow = duration(activeTimeWindow)
-    if totalTime != durationActiveTimeWindow
-        msg = "ROUTE INFEASIBLE: Total time is incorrect for vehicle $(vehicle.id). Calculated time $(durationActiveTimeWindow), actual time $(totalTime)"
-        return false, msg, Set{Int}()
-    end
-    if totalCost != vehicleCostPrHour * totalTime + vehicleStartUpCost
-        msg = "ROUTE INFEASIBLE: Total cost is incorrect for vehicle $(vehicle.id). Calculated cost $(vehicleCostPrHour * totalTime + vehicleStartUpCost), actual cost $(totalCost)"
-        return false, msg, Set{Int}()
-    end
-    
-    
-    # Check all activities on route 
-    totalDistanceCheck = 0.0
-    currentCapacities = Dict{MobilityType,Int}(WALKING => 0, WHEELCHAIR => 0)
-    hasBeenServiced = Set{Int}() # TODO: Check if this still works with waiting activities
-    endOfServiceTimePickUps = Dict{Int,Int}() # Keep track of end of service time for pick-ups
-    for (idx,activityAssignment) in zip(2:length(route)-1, route[2:end-1]) # Do not check depots
-        @unpack activity, startOfServiceTime, endOfServiceTime = activityAssignment
-
-        # Check vehicle compatibility with the request
-        if activity.mobilityType == WHEELCHAIR && vehicle.capacities[WHEELCHAIR] == 0
-            msg = "ROUTE INFEASIBLE: Activity $(activity.id) is not compatible with vehicle $(vehicle.id)"
-            return false, msg, Set{Int}()
-        end
-        
-        # Check that pickup is serviced before drop-off and that maximum ride time is satisfied 
-        if activity.activityType == PICKUP
-            endOfServiceTimePickUps[activity.id] = endOfServiceTime
-        elseif activity.activityType == DROPOFF 
-            pickUpId = findCorrespondingId(activity,nRequests)
-            if !(pickUpId in hasBeenServiced)
-                msg = "ROUTE INFEASIBLE: Drop-off $(activity.id) before pick-up, vehicle: $(vehicle.id)"
-                return false, msg, Set{Int}()
-            end
-
-            rideTime = endOfServiceTime - endOfServiceTimePickUps[pickUpId]
-            if rideTime > requests[activity.requestId].maximumRideTime || rideTime < requests[activity.requestId].directDriveTime
-                msg = "ROUTE INFEASIBLE: Maximum ride time exceeded for drop-off $(activity.id) on vehicle $(vehicle.id)"
-                return false, msg, Set{Int}()
-            end
-
-        end
-
-
-        # Check that time windows are respected
-        if startOfServiceTime < activity.timeWindow.startTime || startOfServiceTime > activity.timeWindow.endTime
-            msg = "ROUTE INFEASIBLE: Time window not respected for activity $(activity.id) on vehicle $(vehicle.id), Start/End of Service: ($startOfServiceTime, $endOfServiceTime), Time Window: ($(activity.timeWindow.startTime), $(activity.timeWindow.endTime))"
-            return false, msg, Set{Int}()
-        end
-
-        # Checks only relevant for non-waiting nodes
-        if activity.activityType != WAITING
-            # Check that activity is not visited more than once
-            if activity.id in hasBeenServiced
-                msg = "ROUTE INFEASIBLE: Activity $(activity.id) visited more than once on vehicle $(vehicle.id)"
-                return false, msg, Set{Int}()
-            else
-                push!(hasBeenServiced,activity.id)
-            end
-
-            # Check that start of service and end of service are feasible 
-            if startOfServiceTime < route[idx-1].endOfServiceTime + time[route[idx-1].activity.id,activity.id]
-                msg = "ROUTE INFEASIBLE: Start of service time $(startOfServiceTime) of activity $(activity.id) is not correct"
-                return false, msg, Set{Int}()
-            end
-            if (endOfServiceTime != startOfServiceTime + serviceTimes[activity.mobilityType])
-                msg = "ROUTE INFEASIBLE: End of service time $(endOfServiceTime) of activity $(activity.id) is not correct"
-                return false, msg, Set{Int}()
-            end
-
-            # Update and check current capacities
-            if activity.mobilityType == WHEELCHAIR
-                currentCapacities[WHEELCHAIR] += findLoadOfActivity(activity)
-
-                if currentCapacities[WHEELCHAIR] > vehicle.capacities[WHEELCHAIR] || currentCapacities[WHEELCHAIR] < 0
-                    msg = "ROUTE INFEASIBLE: Capacities exceeded for vehicle $(vehicle.id)"
-                    return false, msg, Set{Int}()
-                end
-            else
-                # Walking customers can take wheelchair space if no walking space is available
-                if currentCapacities[WALKING] == vehicle.capacities[WALKING] 
-                    currentCapacities[WHEELCHAIR] += findLoadOfActivity(activity)
-                else
-                    currentCapacities[WALKING] += findLoadOfActivity(activity)
-                end
-
-                if currentCapacities[WHEELCHAIR] > vehicle.capacities[WHEELCHAIR] || currentCapacities[WHEELCHAIR] < 0 || currentCapacities[WALKING] > vehicle.capacities[WALKING] || currentCapacities[WALKING] < 0
-                    msg = "ROUTE INFEASIBLE: Capacities exceeded for vehicle $(vehicle.id)"
-                    return false, msg, Set{Int}() 
-                end
-
-            end
-
-            if currentCapacities[WHEELCHAIR] != numberOfWheelchair[idx] || currentCapacities[WALKING] != numberOfWalking[idx]
-                msg = "ROUTE INFEASIBLE: Capacities not updated correctly for vehicle $(vehicle.id)"
-                return false, msg, Set{Int}() 
-            end
-
-
-        end
-
-        
-        # Keep track of total distance and total time 
-        totalDistanceCheck += distance[route[idx-1].activity.id,activity.id]
-    end
-
-    # Add end depot to total distance 
-    totalDistanceCheck += distance[route[end-1].activity.id,route[end].activity.id]
-
-    # Check that total distance is correct
-    if totalDistanceCheck != totalDistance
-        msg = "ROUTE INFEASIBLE: Total distance $(totalDistance) is incorrect"
-        return false, msg, Set{Int}() 
-    end
-
-    # Check that waiting nodes are inserted correctly with respect to time
-    activeTime = vehicleSchedule.activeTimeWindow.endTime - vehicleSchedule.activeTimeWindow.startTime
-    totalTime = 0
-    for idx in 1:length(route)-1
-        if route[idx].activity.activityType == WAITING
-            totalTime += route[idx].endOfServiceTime - route[idx].startOfServiceTime
-        elseif (route[idx].activity.activityType == PICKUP) || (route[idx].activity.activityType == DROPOFF)
-            totalTime += serviceTimes[route[idx].activity.mobilityType]
-        end
-
-        totalTime += time[route[idx].activity.id,route[idx+1].activity.id]
-    end
-
-    if totalTime != activeTime
-        msg = "ROUTE INFEASIBLE: Total time based on waiting nodes $(totalTime) is incorrect compared to active time $(activeTime)"
-        return false, msg, Set{Int}()
-    end
-    
-   
-    return true, "", hasBeenServiced
-    
-end
 
 
 end
