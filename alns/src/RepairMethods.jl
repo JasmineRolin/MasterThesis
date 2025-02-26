@@ -1,7 +1,9 @@
 module RepairMethods 
 
-using RouteUtils
+using utils, UnPack, domain
+using ..ALNSDomain
 
+export greedyInsertion
 
 #==
  Module that containts repair methods 
@@ -11,7 +13,7 @@ using RouteUtils
 
 
 
-function greedyInsertion(state::ALNSState, parameters::ALNSParameters)
+function greedyInsertion(state::ALNSState)
     @unpack destroyWeights, repairWeights, destroyNumberOfUses, repairNumberOfUses, bestSolution, currentSolution, requestBank = state
 
     for request in requestBank
@@ -49,9 +51,9 @@ function findBestInsertionRouteGreedy(request::Request, vehicleSchedule::Vehicle
 
     for i in 1:length(route)-1
         for j in i:length(route)-1
-            feasible, typeOfSeat = checkFeasibilityOfInsertionAtPosition(request, vehicleSchedule,i,j,scenario)
+            feasible, typeOfSeat = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,i,j,scenario)
             if feasible
-                delta = calculateInsertionCost(request, route, i, j, scenario)
+                delta = calculateInsertionCost(request, vehicleSchedule, i, j, scenario)
                 if delta < bestDelta
                     bestDelta = delta
                     bestPickUp = i
@@ -64,6 +66,15 @@ function findBestInsertionRouteGreedy(request::Request, vehicleSchedule::Vehicle
 
     return bestDelta < typemax(Float64), bestDelta, bestPickUp, bestDropOff, typeOfSeat
 
+end
+
+
+function calculateInsertionCost(request::Request, vehicleSchedule::VehicleSchedule, i::Int, j::Int, scenario::Scenario)
+    # Calculate cost of inserting request at position i,j in route
+    newVehicleSchedule = copy(vehicleSchedule)
+    updateRoute!(scenario.time,scenario.serviceTimes,newVehicleSchedule,request,i,j)
+    newTotalCost = getTotalCostRoute(scenario,newVehicleSchedule.route)
+    return newTotalCost - vehicleSchedule.totalCost
 end
 
 
