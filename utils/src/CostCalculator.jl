@@ -31,17 +31,27 @@ function getTotalTimeRoute(schedule::VehicleSchedule)
 end
 
 
-
 #==
-#  Function to get total cost of a route  -  WITHOUT start up cost 
+#  Function to get total cost/excees ridetime of route
 ==#
-function getTotalCostRoute(scenario::Scenario,totalTime::Int)
-    return scenario.vehicleCostPrHour * totalTime
-end
-
-function getTotalCostRoute(scenario::Scenario,vehicleSchedule::VehicleSchedule)
-    totalTime = getTotalTimeRoute(vehicleSchedule)
-    return scenario.vehicleCostPrHour * totalTime
+function getTotalCostRoute(scenario::Scenario,route::Vector{ActivityAssignment})
+    time = scenario.time
+    excessTime = 0
+    pickupTimes = Dict{Int, Int}()
+    
+    for assignment in route
+        activity = assignment.activity
+        if activity.activityType == PICKUP
+            pickupTimes[activity.requestId] = assignment.endOfServiceTime
+        elseif activity.activityType == DROPOFF && haskey(pickupTimes, activity.requestId)
+            pickupTime = pickupTimes[activity.requestId]
+            dropoffTime = assignment.startOfServiceTime
+            directTime = time[activity.requestId, activity.id] 
+            excessTime += (dropoffTime - pickupTime) - directTime
+        end
+    end
+    
+    return excessTime
 end
 
 #==
@@ -71,7 +81,7 @@ function getTotalCostDistanceTimeOfSolution(scenario::Scenario,solution::Solutio
             continue
         end
 
-        totalCost += schedule.totalCost + scenario.vehicleStartUpCost 
+        totalCost += schedule.totalCost
         totalDistance += schedule.totalDistance
         totalTime += schedule.totalTime
     end
