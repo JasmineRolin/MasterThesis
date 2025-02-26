@@ -2,7 +2,7 @@ module VehicleSchedules
 
 using ..Vehicles, ..ActivityAssignments, ..TimeWindows, ..Activities, ..Enums
 
-export VehicleSchedule 
+export VehicleSchedule, findPositionOfRequest
 
 mutable struct VehicleSchedule 
     vehicle::Vehicle 
@@ -37,6 +37,22 @@ mutable struct VehicleSchedule
 
 end 
 
+#==
+ Method to determine whether vehicle schedule contains request 
+==#
+function findPositionOfRequest(vehicleSchedule::VehicleSchedule, requestId::Int)::Tuple{Int,Int}
+    pos = (-1,-1)
+    for (idx,activityAssignment) in enumerate(vehicleSchedule.route)
+        if activityAssignment.activity.requestId == requestId && activityAssignment.activity.activityType == PICKUP
+            pos[1] = idx
+        elseif activityAssignment.activity.requestId == requestId && activityAssignment.activity.activityType == DROPOFF
+            pos[2] = idx
+            return idx
+        end
+    end
+
+    return pos
+end
 
 
 end

@@ -34,6 +34,7 @@ function randomDestroy!(currentState::ALNSState,parameters::ALNSParameters)
     for _ in 1:nRequestsToRemove
         idx = rand(1:length(assignedRequests))
         push!(customersToRemove,assignedRequests[idx])
+        push!(requestBank,assignedRequests[idx])
         deleteat!(assignedRequests,idx)
     end
 
@@ -67,12 +68,51 @@ end
 
 
 #==
- Method to remove customer
+ Method to remove requests
 ==#
-function removeCustomers!(solution::Solution,customersToRemove::Set{Int})   
+function removeRequests!(solution::Solution,customersToRemove::Set{Int})   
     
+    # Loop through routes and remove customers
+    for schedule in solution.vehicleSchedule
+        requestsToRemove = findall(activityAssignment -> activityAssignment.activity.requestId in customersToRemove, schedule)
+
+        # Remove requests from schedule 
+        [removeRequestFromSchedule!(schedule,id) for id in requestsToRemove]
+
+    end
 end
 
+#==
+ Method to remove activity at idx from route
+==#
+function removeRequestsFromSchedule!(time::Array{Int,Int},schedule::Vector{ActivityAssignment},requestsToRemove::Vector{Int})
+
+    # Remove requests from schedule
+    for requestsToRemove in requestsToRemove
+        pickUpPosition,dropOffPosition = findPositionOfRequest(schedule,requestId)
+
+        # Remove pickup activity 
+        # Extend waiting activity before pick up 
+        if schedule[pickUpPosition-1].activity.activityType == WAITING
+            schedule[pickUpPosition-1].endOfServiceTime = schedule[pickUpPosition+1].startOfServiceTime - time[schedule[pickUpPosition-1].activity.id,schedule[pickUpPosition+1].activity.id]
+            # TODO: update KPIs
+            deleteat!(schedule,pickUpPosition)
+        # Extend waiting activity after pick up
+        elseif schedule[dropOffPosition+1].activity.activityType == WAITING
+            schedule[pickUpPosition+1].startOfServiceTime = schedule[pickUpPosition-1].startOfServiceTime + time[schedule[pickUpPosition-1].activity.id,schedule[pickUpPosition+1].activity.id]
+            # TODO: update KPIs
+            deleteat!(schedule,pickUpPosition)
+        # Insert waiting activity 
+        else
+            
+        end
+
+        # Remove drop off activity 
+
+    end
+
+
+end
 
 
 end
