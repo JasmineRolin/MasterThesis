@@ -51,7 +51,7 @@ function getTotalIdleTimeRoute(route::Vector{ActivityAssignment})
     totalIdleTime = 0
     for activityAssignment in route
         if activityAssignment.activity.activityType == WAITING
-            totalIdleTime += activityAssignment.startOfServiceTime - activityAssignment.endOfServiceTime
+            totalIdleTime += activityAssignment.endOfServiceTime - activityAssignment.startOfServiceTime
         end
     end
 
@@ -67,7 +67,11 @@ function getTotalCostDistanceTimeOfSolution(scenario::Scenario,solution::Solutio
     totalDistance = 0.0
     totalTime = 0
     for schedule in solution.vehicleSchedules
-        totalCost += schedule.totalCost + scenario.vehicleStartUpCost # TODO: should it be added for inactive vehicles?
+        if length(schedule.route) == 2 && schedule.route[1].activity.activityType == DEPOT && schedule.route[2].activity.activityType == DEPOT
+            continue
+        end
+
+        totalCost += schedule.totalCost + scenario.vehicleStartUpCost 
         totalDistance += schedule.totalDistance
         totalTime += schedule.totalTime
     end

@@ -43,9 +43,14 @@ function checkSolutionFeasibility(scenario::Scenario,solution::Solution)
             push!(servicedActivities,activity)
         end
 
-        totalCostCheck += vehicleSchedule.totalCost + scenario.vehicleStartUpCost
+        # Count KPIs
         totalRideTimeCheck += vehicleSchedule.totalTime
         totalDistanceCheck += vehicleSchedule.totalDistance
+        if length(vehicleSchedule.route) == 2 && vehicleSchedule.route[1].activity.activityType == DEPOT && vehicleSchedule.route[2].activity.activityType == DEPOT
+            totalCostCheck += vehicleSchedule.totalCost
+        else
+            totalCostCheck += vehicleSchedule.totalCost + scenario.vehicleStartUpCost
+        end
     end
 
     # Check that all activities are serviced
