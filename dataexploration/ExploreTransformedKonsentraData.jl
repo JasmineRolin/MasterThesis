@@ -9,13 +9,13 @@ sheets_data = ["Data"]
 # ------
 # Plot grid of histograms for call time
 # ------
-function plotHistogramsCallTime(df_list)
+function plotHistogramsCallTime(df_list,sheet_names)
     # Create an array to store the plots
     plots = []
 
-    for df in df_list
+    for (idx,df) in enumerate(df_list)
         # Create a histogram for call time and append to plots list
-        p = histogram(df[!,:call_time]/60, bins=24, title="Call Time Histogram", xlabel="Call Time (hours)", ylabel="Frequency")
+        p = histogram(df[!,:call_time]/60, bins=24, title=string("Call Time Histogram: ",sheet_names[idx]), xlabel="Call Time (hours)", ylabel="Frequency")
         push!(plots, p)
     end
 
@@ -26,13 +26,13 @@ end
 # ------
 # Plot grid of histograms for request time
 # ------
-function plotHistogramsRequestTime(df_list)
+function plotHistogramsRequestTime(df_list,sheet_names)
     # Create an array to store the plots
     plots = []
 
-    for df in df_list
+    for (idx,df) in enumerate(df_list)
         # Create a histogram for call time and append to plots list
-        p = histogram(df[!,:request_time]/60, bins=24, title="Request Time Histogram", xlabel="Request Time (hours)", ylabel="Frequency")
+        p = histogram(df[!,:request_time]/60, bins=24, title=string("Request Time Histogram: ",sheet_names[idx]), xlabel="Request Time (hours)", ylabel="Frequency")
         push!(plots, p)
     end
 
@@ -43,49 +43,87 @@ end
 # ------
 # Plot gant chart of time between request time and call time for each request 
 # ------
-function plotGanttChart(df_list)
+function plotGanttChart(df_list, sheet_names)
     plots = []
 
-    for df in df_list
+    for (idx, df) in enumerate(df_list)
         # Ensure data has valid columns
         dfsorted = sort(df, [:request_time])
-        dfsorted.duration = dfsorted[!,:request_time] .- dfsorted[!,:call_time]
-        
-        # Create rectangles for each activity
+
+        # Determine durations
+        durations = []
+        for i in 1:nrow(dfsorted)
+            if dfsorted[i, :request_type] == 1  # Pick up
+                push!(durations, dfsorted[i, :request_time] - dfsorted[i, :call_time])
+            else  # Drop off
+                direct_drive_time = dfsorted[i, :direct_drive_time]
+                direct_pick_up_time = dfsorted[i, :request_time] - direct_drive_time
+                push!(durations, direct_pick_up_time - dfsorted[i, :call_time])
+            end
+        end
+
+        dfsorted.duration = durations
+
+        # Create rectangles with different colors based on request_type
         rect(w, h, x, y) = Shape(x .+ [0, w, w, 0], y .+ [0, 0, h, h])
-        rectangles = [rect(t[1], 1, t[2], t[3]) for t in zip(dfsorted.duration, dfsorted[!,:call_time], 1:nrow(dfsorted))]
+
+        rectangles_pickup = [
+            rect(t[1], 1, t[2], t[3]) 
+            for t in zip(dfsorted.duration[dfsorted.request_type .== 1], 
+                         dfsorted[!,:call_time][dfsorted.request_type .== 1], 
+                         findall(dfsorted.request_type .== 1))
+        ]
+
+        rectangles_dropoff = [
+            rect(t[1], 1, t[2], t[3]) 
+            for t in zip(dfsorted.duration[dfsorted.request_type .== 0], 
+                         dfsorted[!,:call_time][dfsorted.request_type .== 0], 
+                         findall(dfsorted.request_type .== 0))
+        ]
 
         # Get every 5th label for yticks
         yticks_labels = string.(1:nrow(dfsorted))
         yticks_labels = yticks_labels[1:5:nrow(dfsorted)]  # Select every 5th label
         yticks_pos = 1:5:nrow(dfsorted)  # Corresponding positions for every 5th label
 
+        # Extract request times and corresponding y-values
+        request_times = dfsorted[!,:request_time]
+        y_positions = 1:nrow(dfsorted)  # Same y-values as the rectangles
+
         # Plot Gantt chart
         p = plot(
-            rectangles,
-            c=:blue,
             yticks=(yticks_pos, yticks_labels),
             xlabel="Time (minutes)",
-            title="Gantt Chart: Call Time to Request Time",
+            title=string("Gantt Chart: Call Time to Request Time:", sheet_names[idx]),
             legend=false
         )
+
+        # Plot different colors for different request types
+        plot!(p, rectangles_pickup, c=:blue, label="Pick Up")  # Blue for Pick Up
+        plot!(p, rectangles_dropoff, c=:green, label="Drop Off")  # Green for Drop Off
+
+        # Add red dots at request times
+        scatter!(p, request_times, y_positions, color=:red, markersize=4, label=false)
+
         push!(plots, p)
     end
 
     # Create grid layout for the plots
     plot(plots..., layout=(length(df_list), 2), size=(1000, 1500))
 end
+
+
 # ------
 # Plot Geographical data
 # ------
-function plotGeographicalData(df_list)
+function plotGeographicalData(df_list,sheet_names)
     # Create an array to store the plots
     plots = []
 
     # All requests
-    for df in df_list
+    for (idx,df) in enumerate(df_list)
         # Create a scatter plot for geographical data
-        p = scatter(df[!,:pickup_longitude], df[!,:pickup_latitude], label="Pickup", color=:blue, xlabel="Longitude", ylabel="Latitude", title="Pickup and Dropoff Locations")
+        p = scatter(df[!,:pickup_longitude], df[!,:pickup_latitude], label="Pickup", color=:blue, xlabel="Longitude", ylabel="Latitude", title=string("Pickup and Dropoff Locations: ",sheet_names[idx]))
         scatter!(p, df[!,:dropoff_longitude], df[!,:dropoff_latitude], label="Dropoff", color=:red)
         push!(plots, p)
 
@@ -139,8 +177,8 @@ end
 # ------
 # Plots
 # ------
-display(plotHistogramsCallTime(df_list))
-display(plotHistogramsRequestTime(df_list))
-display(plotGeographicalData(df_list))
-display(plotGanttChart(df_list))
-println(getKeyNumbers(df_list, sheet_names))
+#display(plotHistogramsCallTime(df_list,sheet_names))
+#display(plotHistogramsRequestTime(df_list,sheet_names))
+#display(plotGeographicalData(df_list,sheet_names))
+display(plotGanttChart(df_list,sheet_names))
+#println(getKeyNumbers(df_list, sheet_names))
