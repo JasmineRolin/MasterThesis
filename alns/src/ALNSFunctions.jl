@@ -44,7 +44,7 @@ end
 #==
  Method to Destroy 
 ==#
-function destroy!(configuration::ALNSConfiguration,parameters::ALNSParameters,state::ALNSState,solution::Solution)::Int
+function destroy!(nRequests::Int,configuration::ALNSConfiguration,parameters::ALNSParameters,state::ALNSState)::Int
     # Select method 
     destroyIdx = rouletteWheel(state.destroyWeights)
 
@@ -52,7 +52,7 @@ function destroy!(configuration::ALNSConfiguration,parameters::ALNSParameters,st
     state.destroyNumberOfUses[destroyIdx] += 1
 
     # Use method 
-    configuration.destroyMethods[destroyIdx].method(solution,parameters)
+    configuration.destroyMethods[destroyIdx].method(nRequests,state,parameters)
 
     return destroyIdx
 end

@@ -5,5 +5,7 @@
     "solCostEps": 0.0,
     "scoreAccepted": 2.0,
     "scoreImproved": 4.0,
-    "scoreNewBest": 10.0
+    "scoreNewBest": 10.0,
+    "minPercentToDestroy": 0.1,
+    "maxPercentToDestroy": 0.3
 }

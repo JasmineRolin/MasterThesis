@@ -27,6 +27,9 @@ struct ALNSParameters
     scoreAccepted::Float64 # Score given for an accepted solution
 	scoreImproved::Float64 # Score given for a solution that is better than the current solution
 	scoreNewBest::Float64 # Score given for a new global best solution
+    minPercentToDestroy::Float64 # Minimum percentage of requests to destroy
+    maxPercentToDestroy::Float64 # Maximum percentage of requests to destroy
+
     # TODO: add parameters for different destroy/repair methods 
 
     function ALNSParameters( 
@@ -36,9 +39,11 @@ struct ALNSParameters
         solCostEps=0.0, 
         scoreAccepted=2.0, 
         scoreImproved=4.0, 
-        scoreNewBest=10.0
+        scoreNewBest=10.0,
+        minPercentToDestroy=0.1,
+        maxPercentToDestroy=0.3,
     )
-        return new(timeLimit, reactionFactor, startThreshold, solCostEps, scoreAccepted, scoreImproved, scoreNewBest)
+        return new(timeLimit, reactionFactor, startThreshold, solCostEps, scoreAccepted, scoreImproved, scoreNewBest,minPercentToDestroy,maxPercentToDestroy)
     end
 end
 
@@ -65,6 +70,7 @@ mutable struct ALNSState
     repairNumberOfUses::Vector{Int} # Number of times method has been used in current segment 
     bestSolution::Solution 
     currentSolution::Solution
+    requestBank::Vector{Request}
 end
 
 
