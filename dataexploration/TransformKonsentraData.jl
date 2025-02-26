@@ -35,7 +35,7 @@ function preKnownRequests(df, DoD, serviceWindow, callBuffer)
             numberKnownDueToTime += 1
         else
             push!(requestWithLaterTime, i)
-            push!(probabiltyRequest, request_time)
+            push!(probabiltyRequest, serviceWindow[2]-request_time)
         end
     end
 
