@@ -1,6 +1,6 @@
 module DestroyMethods
 
-using Random, UnPack, ..ALNSDomain
+using Random, UnPack, domain, ..ALNSDomain
 
 export randomDestroy, worstRemoval, shawRemoval, findNumberOfRequestToRemove
 
@@ -85,17 +85,30 @@ end
 #==
  Method to remove activity at idx from route
 ==#
-function removeRequestsFromSchedule!(time::Array{Int,Int},schedule::VehicleSchedule,requestsToRemove::Vector{Int})
+function removeRequestsFromSchedule!(time::Array{Int,Int},distance::Array{Float64,Float64},schedule::VehicleSchedule,requestsToRemove::Vector{Int})
 
     # Remove requests from schedule
     for requestsToRemove in requestsToRemove
+        # Find positions of pick up and drop off activity   
         pickUpPosition,dropOffPosition = findPositionOfRequest(schedule,requestId)
 
+        # Save ride time of request 
+        rideTime = schedule.route[dropOffPosition].endOfServiceTime - schedule.route[pickUpPosition].startOfServiceTime
+
         # Remove pickup activity 
-        removeActivityFromRoute(time,schedule,pickUpPosition,dropOffPosition)
+        distanceDeltaPickUp, idleTimeDeltaPickup = removeActivityFromRoute!(time,distance,schedule,pickUpPosition)
 
         # Remove drop off activity 
-        removeActivityFromRoute(time,schedule,dropOffPosition-1,-1)
+        distanceDeltaDropOff, idleTimeDeltaDropOff = removeActivityFromRoute!(time,distance,schedule,dropOffPosition-1)
+
+        # Update KPIs
+        schedule.totalDistance += distanceDeltaPickUp + distanceDeltaDropOff
+        schedule.totalIdleTime += idleTimeDeltaPickup + idleTimeDeltaDropOff
+        schedule.totalTime -= rideTime
+
+        # TODO: correct
+        schedule.numberOfWalking[pickUpPosition:dropOffPosition] .-= 1
+        schedule.numberOfWalking[pickUpPosition:dropOffPosition] .-= 1 
     end
 
 
@@ -104,7 +117,7 @@ end
 #==
  Method to remove activity from route 
 ==#
-function removeActivityFromRoute(time::Array{Int,Int},distance::Array{Float64,Float64},schedule::VehicleSchedule,idx::Int)
+function removeActivityFromRoute!(time::Array{Int,Int},distance::Array{Float64,Float64},schedule::VehicleSchedule,idx::Int)
 
     # Retrieve activities before and after activity to remove
     route = schedule.route
@@ -114,9 +127,7 @@ function removeActivityFromRoute(time::Array{Int,Int},distance::Array{Float64,Fl
 
     # Remove activity 
     distanceDelta = 0.0
-    timeDelta = 0
     idleTimeDelta = 0
-    costDelta = 0.0
     # Extend waiting activity before activity to remove
     if activityAssignmentBefore.activityType == WAITING
 
@@ -134,25 +145,36 @@ function removeActivityFromRoute(time::Array{Int,Int},distance::Array{Float64,Fl
        
     # Extend waiting activity after activity to remove
     elseif activityAssignmentAfter.activity.activityType == WAITING
+
+        # Update waiting activity
+        oldIdleTime = activityAssignmentAfter.endOfServiceTime - activityAssignmentAfter.startOfServiceTime
         activityAssignmentAfter.startOfServiceTime = activityAssignmentBefore.startOfServiceTime + time[activityAssignmentBefore.activity.id,activityAssignmentAfter.activity.id]
        
+        # Update deltas 
+        deltaDistance = distance[activityAssignmentBefore.activity.id,activityAssignmentAfter.activity.id] - distance[activityAssignmentBefore.activity.id,activityToRemove.activity.id] - distance[activityToRemove.activity.id,activityAssignmentAfter.activity.id]
+        deltaIdleTime = (activityAssignmentAfter.endOfServiceTime - activityAssignmentAfter.startOfServiceTime) - oldIdleTime
+
+        # Delete activity 
         deleteat!(route,pickUpPosition)
-
-
-
-        # TODO: update KPIs
 
     # Insert waiting activity before activity to remove
     else
+        # Create waiting activity 
         startOfWaitingActivity = activityAssignmentBefore.endOfServiceTime
         endOfWaitingActivity = activityAssignmentBefore.startOfServiceTime - time[activityAssignmentBefore.activity.id,activityAssignmentAfter.activity.id]
 
         waitingActivity = Activity(activityAssignmentBefore.id,-1,WAITING,WALKING,activityAssignmentBefore.location,TimeWindow(startOfWaitingActivity,endOfWaitingActivity))
         waitingActivityAssignment = ActivityAssignment(waitingActivity,activityAssignmentBefore.vehicle,startOfWaitingActivity,endOfWaitingActivity)
         
+        # Update deltas
+        deltaDistance = distance[waitingActivityAssignment.activity.id,activityAssignmentAfter.activity.id] - distance[activityAssignmentBefore.activity.id,activityToRemove.activity.id] - distance[activityToRemove.activity.id,activityAssignmentAfter.activity.id]
+        deltaIdleTime = (endOfWaitingActivity - startOfWaitingActivity)
+
+        # Update route 
         route[idx] = waitingActivityAssignment
-        # TODO: update KPIs
     end
+
+    return distanceDelta,idleTimeDelta
 
 end
 

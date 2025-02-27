@@ -83,9 +83,10 @@ end
     location = Location("PU",10.0,10.0)
     timeWindow = TimeWindow(90,100)
     activity = Activity(1,0,PICKUP,WALKING,location,timeWindow)
+    mobilityAssignment = WALKING
 
     # RequestAssignment
-    activityAssignment = ActivityAssignment(activity,vehicle,8,7)
+    activityAssignment = ActivityAssignment(activity,vehicle,8,7,mobilityAssignment)
 
     # Tests
     @test typeof(activityAssignment) == ActivityAssignment
