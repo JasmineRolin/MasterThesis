@@ -92,7 +92,6 @@ function removeRequestsFromSchedule!(time::Array{Int,Int},schedule::VehicleSched
         pickUpPosition,dropOffPosition = findPositionOfRequest(schedule,requestId)
 
         # Remove pickup activity 
-            schedule[pickUpPosition-1].endOfServiceTime = schedule[pickUpPosition+1].startOfServiceTime - time[schedule[pickUpPosition-1].activity.id,schedule[pickUpPosition+1].activity.id]
         removeActivityFromRoute(time,schedule,pickUpPosition,dropOffPosition)
 
         # Remove drop off activity 
