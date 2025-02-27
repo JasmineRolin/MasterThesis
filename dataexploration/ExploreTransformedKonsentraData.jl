@@ -178,7 +178,7 @@ end
 # Plots
 # ------
 display(plotHistogramsCallTime(df_list,sheet_names))
-#display(plotHistogramsRequestTime(df_list,sheet_names))
+display(plotHistogramsRequestTime(df_list,sheet_names))
 display(plotGeographicalData(df_list,sheet_names))
 display(plotGanttChart(df_list,sheet_names))
 #println(getKeyNumbers(df_list, sheet_names))

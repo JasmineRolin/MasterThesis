@@ -1,5 +1,5 @@
 using Test 
-using alns, domain
+using alns, domain, utils
 
 #==
 Test ALNSFunctions
@@ -193,44 +193,44 @@ end
     parameters = ALNSParameters()
     configuration = ALNSConfiguration(parameters)
 
-    # Create state 
-    # Vehicle 
-    depotLocation = Location("depot",10,10)
-    timeWindow = TimeWindow(900,980)
 
-    capacities = Dict{MobilityType, Int}(WALKING => 3, WHEELCHAIR => 5)
+    # Create route
+    requestFile = "tests/resources/Requests.csv"
+    vehiclesFile = "tests/resources/Vehicles.csv"
+    parametersFile = "tests/resources/Parameters.csv"
+    distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
+    timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
 
-    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,capacities,8)
+    # Read instance 
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
 
-    # Activitys 
-    location = Location("PU",10.0,10.0)
-    timeWindow = TimeWindow(90,100)
-    activity = Activity(1,0,PICKUP,WALKING,location,timeWindow)
+    # Create VehicleSchedule
+    vehicleSchedule = VehicleSchedule(scenario.vehicles[1])
 
-    # RequestAssignment
-    activityAssignment = ActivityAssignment(activity,vehicle,8,7)
+    # Insert request
+    insertRequest!(scenario.requests[1],vehicleSchedule,1,1,WALKING,scenario)
 
-    # VehicleSchedule
-    route = [activityAssignment]
-    vehicleSchedule = VehicleSchedule(vehicle)
+    # Create requestBank
+    nextRequest = scenario.requests[2]
+    nextRequest.pickUpActivity.timeWindow = TimeWindow(100,498)
+    nextRequest.dropOffActivity.timeWindow = TimeWindow(500,1300)
+    requestBank = [nextRequest]
+    println(nextRequest)
 
-    # Request bank
-    location = Location("PU",10.0,10.0)
-    timeWindow = TimeWindow(90,100)
-    pickUpActivity = Activity(2,2,PICKUP,WALKING,location,timeWindow)
-    location = Location("DO",12.0,12.0)
-    timeWindow = TimeWindow(90,100)
-    dropOffActivity = Activity(2,2,DROPOFF,WALKING,location,timeWindow)
-    requestBank = [Request(2,PICKUP_REQUEST,WALKING,50,pickUpActivity,dropOffActivity,2,10)]
 
     # Solution 
     solution = Solution([vehicleSchedule],70.0,4,5,2,4)
-    
-    state = ALNSState(Float64[2.0],Float64[3.0],[1],[2],solution,solution,[])
+    printRoute(solution.vehicleSchedules[1])
+
+    # Make ALNS state
+    state = ALNSState(Float64[2.0],Float64[3.0],[1],[2],solution,solution,requestBank)
 
     # Greedy repair 
-    newSolution = greedyInsertion(state)
-    println(newSolution)
+    newSolution = greedyInsertion(state,scenario)
+    printRoute(newSolution.vehicleSchedules[1])
+
+    feasible, msg = checkRouteFeasibility(scenario, newSolution.vehicleSchedules[1])
+    @test feasible == true
 
 
 end

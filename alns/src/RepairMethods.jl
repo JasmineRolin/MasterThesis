@@ -13,33 +13,33 @@ export greedyInsertion
 
 
 
-function greedyInsertion(state::ALNSState)
+function greedyInsertion(state::ALNSState,scenario::Scenario)
     @unpack destroyWeights, repairWeights, destroyNumberOfUses, repairNumberOfUses, bestSolution, currentSolution, requestBank = state
 
     for request in requestBank
         bestDelta = typemax(Float64)
-        bestVehicle = -1
+        bestSchedule = VehicleSchedule()
         bestPickUp = -1
         bestDropOff = -1
-        typeOfSeat = nothing
+        bestTypeOfSeat = nothing
 
         for schedule in currentSolution.vehicleSchedules
-            status, delta, pickUp, dropOff, typeOfSeat = findBestInsertionRouteGreedy(request, schedule, scenario)
+            status, delta, pickUp, dropOff, bestTypeOfSeat = findBestInsertionRouteGreedy(request, schedule, scenario)
             if status && delta < bestDelta
                 bestDelta = delta
-                bestVehicle = schedule.vehicle
+                bestSchedule = schedule
                 bestPickUp = pickUp
                 bestDropOff = dropOff
             end
         end
-        if bestVehicle != -1
-            insertRequest!(request, currentSolution.vehicleSchedules[bestVehicle], bestPickUp, bestDropOff, typeOfSeat, scenario)
+        if bestTypeOfSeat != -1
+            insertRequest!(request, bestSchedule, bestPickUp, bestDropOff, bestTypeOfSeat, scenario)
         else
             currentSolution.nTaxi += 1
         end
     end
 
-    return solution
+    return currentSolution
 end
 
 
@@ -48,12 +48,17 @@ function findBestInsertionRouteGreedy(request::Request, vehicleSchedule::Vehicle
     bestPickUp = -1
     bestDropOff = -1
     bestTypeOfSeat = nothing
+    route = vehicleSchedule.route
 
     for i in 1:length(route)-1
         for j in i:length(route)-1
             feasible, typeOfSeat = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,i,j,scenario)
             if feasible
                 delta = calculateInsertionCost(request, vehicleSchedule, i, j, scenario)
+                println("--------")
+                println(i)
+                println(j)
+                println(delta)
                 if delta < bestDelta
                     bestDelta = delta
                     bestPickUp = i
@@ -64,14 +69,14 @@ function findBestInsertionRouteGreedy(request::Request, vehicleSchedule::Vehicle
         end
     end
 
-    return bestDelta < typemax(Float64), bestDelta, bestPickUp, bestDropOff, typeOfSeat
+    return bestDelta < typemax(Float64), bestDelta, bestPickUp, bestDropOff, bestTypeOfSeat
 
 end
 
 
 function calculateInsertionCost(request::Request, vehicleSchedule::VehicleSchedule, i::Int, j::Int, scenario::Scenario)
     # Calculate cost of inserting request at position i,j in route
-    newVehicleSchedule = copy(vehicleSchedule)
+    newVehicleSchedule = copyVehicleSchedule(vehicleSchedule)
     updateRoute!(scenario.time,scenario.serviceTimes,newVehicleSchedule,request,i,j)
     newTotalCost = getTotalCostRoute(scenario,newVehicleSchedule.route)
     return newTotalCost - vehicleSchedule.totalCost
