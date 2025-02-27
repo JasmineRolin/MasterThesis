@@ -2,7 +2,9 @@ module VehicleSchedules
 
 using ..Vehicles, ..ActivityAssignments, ..TimeWindows, ..Activities, ..Enums
 
-export VehicleSchedule 
+export VehicleSchedule
+export copyVehicleSchedule 
+
 
 mutable struct VehicleSchedule 
     vehicle::Vehicle 
@@ -35,8 +37,26 @@ mutable struct VehicleSchedule
         return new(Vehicle(), [], TimeWindow(0, 0), 0.0, 0, 0.0,0, Int[], Int[])
     end 
 
+    function VehicleSchedule(vehicle::Vehicle, route::Vector{ActivityAssignment}, activeTimeWindow::TimeWindow, totalDistance::Float64, totalTime::Int, totalCost::Float64, totalIdleTime::Int, numberOfWalking::Vector{Int}, numberOfWheelchair::Vector{Int})
+        return new(vehicle, route, activeTimeWindow, totalDistance, totalTime, totalCost, totalIdleTime, numberOfWalking, numberOfWheelchair)
+    end
+
 end 
 
+function copyVehicleSchedule(original::VehicleSchedule)
+    return VehicleSchedule(
+        original.vehicle,  # Assuming Vehicle is immutable or already deeply copied
+        deepcopy(original.route),
+        deepcopy(original.activeTimeWindow),
+        original.totalDistance,
+        original.totalTime,
+        original.totalCost,
+        original.totalIdleTime,
+        deepcopy(original.numberOfWalking),
+        deepcopy(original.numberOfWheelchair)
+    )
+end
 
 
 end
+

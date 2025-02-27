@@ -2,7 +2,7 @@ module RouteUtils
 
 using UnPack, domain, Printf, ..CostCalculator
 
-export printRoute,printSimpleRoute,insertRequest!,checkFeasibilityOfInsertionAtPosition,printRouteHorizontal,printSolution
+export printRoute,printSimpleRoute,insertRequest!,checkFeasibilityOfInsertionAtPosition,printRouteHorizontal,printSolution,updateRoute!
 
 
 #==
@@ -120,7 +120,7 @@ end
 
 
 #==
-Method to update route in vehicle schedule after insertion of request
+Method to update route in vehicle schedule after insertion of request. Will do it so minimize excess drive time and secondly as early as possible
 ==#
 function updateRoute!(time::Array{Int,2},serviceTimes::Dict{MobilityType,Int},vehicleSchedule::VehicleSchedule,request::Request,idxPickUp::Int,idxDropOff::Int)
 
@@ -172,6 +172,7 @@ function updateRoute!(time::Array{Int,2},serviceTimes::Dict{MobilityType,Int},ve
     insert!(vehicleSchedule.route,idxDropOff+2,dropOffActivity)
 
 end
+
 
 #==
 # Method to update capacities of vehicle schedule after insertion of request
@@ -487,6 +488,15 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
             return false, typeOfSeat 
         end
 
+        # Check time window
+        if startOfServicePick > request.pickUpActivity.timeWindow.endTime || startOfServicePick < request.pickUpActivity.timeWindow.startTime
+            println("Infeasible: Time window pick-up")
+            return false, typeOfSeat
+        elseif startOfServiceDrop > request.dropOffActivity.timeWindow.endTime || startOfServiceDrop < request.dropOffActivity.timeWindow.startTime
+            println("Infeasible: Time window drop-off")
+            return false, typeOfSeat
+        end
+        
         # Check drive time: First node
         if startOfServicePick > request.pickUpActivity.timeWindow.endTime
             println("Infeasible: Drive time from first node")
@@ -521,6 +531,12 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
                 arrivalNextNode = endOfActivity + scenario.time[request.dropOffActivity.id, route[idx+1].activity.id]
             else
                 return false, typeOfSeat 
+            end
+
+            # Check time window
+            if startOfServiceActivity > activity.timeWindow.endTime || startOfServiceActivity < activity.timeWindow.startTime
+                println("Infeasible: Time window")
+                return false, typeOfSeat
             end
 
             # Check drive time: First node
