@@ -11,7 +11,7 @@ mutable struct Solution
     nTaxi::Int
     totalRideTime::Int
     totalDistance::Float64
-    idleTime::Int
+    totalIdleTime::Int
 
     # Constructor
     function Solution(scenario::Scenario)
@@ -20,8 +20,8 @@ mutable struct Solution
     end
 
     # All-argument constructor
-    function Solution(vehicleSchedules::Vector{VehicleSchedule}, totalCost::Float64, nTaxi::Int, totalRideTime::Int, totalDistance::Int, idleTime::Int)
-        new(vehicleSchedules, totalCost, nTaxi, totalRideTime, totalDistance, idleTime)
+    function Solution(vehicleSchedules::Vector{VehicleSchedule}, totalCost::Float64, nTaxi::Int, totalRideTime::Int, totalDistance::Int, totalIdleTime::Int)
+        new(vehicleSchedules, totalCost, nTaxi, totalRideTime, totalDistance, totalIdleTime)
     end
 end
 

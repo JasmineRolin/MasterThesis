@@ -13,7 +13,7 @@ function printSolution(solution::Solution,printRouteFunc::Function)
     println("Total Distance: ", solution.totalDistance, " km")
     println("Total time: ", solution.totalRideTime, " min")
     println("Total Cost: \$", solution.totalCost)
-    println("Total Idle time: \$", solution.idleTime)
+    println("Total Idle time: \$", solution.totalIdleTime)
 
     for schedule in solution.vehicleSchedules
         printRouteFunc(schedule)

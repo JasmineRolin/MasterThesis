@@ -70,8 +70,23 @@ mutable struct ALNSState
     repairNumberOfUses::Vector{Int} # Number of times method has been used in current segment 
     bestSolution::Solution 
     currentSolution::Solution
-    requestBank::Vector{Request}
-    assignedRequests::Set{Int}
+    requestBank::Vector{Int}
+    assignedRequests::Vector{Int}
+
+    function ALNSState(currentSolution::Solution,nDestroy::Int,nRepair::Int)
+        assignedRequestsSet = Vector{Int}()
+        for schedule in currentSolution.vehicleSchedules
+            for activityAssignment in schedule.route
+                if activityAssignment.activity.activityType == PICKUP
+                    push!(assignedRequestsSet,activityAssignment.activity.requestId)
+                end
+            end
+        end
+
+        assignedRequests = collect(assignedRequestsSet)
+
+        return new(zeros(nDestroy),zeros(nRepair),zeros(Int,nDestroy),zeros(Int,nRepair),currentSolution,currentSolution,Vector{Int}(),assignedRequests)
+    end
 end
 
 

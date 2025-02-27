@@ -7,6 +7,7 @@ export getTotalCostRoute
 export getTotalTimeRoute
 export getTotalIdleTimeRoute
 export getTotalCostDistanceTimeOfSolution
+export getCostOfRequest
 
 
 #==
@@ -52,6 +53,13 @@ function getTotalCostRoute(scenario::Scenario,route::Vector{ActivityAssignment})
     end
     
     return excessTime
+end
+
+#==
+# Function to get cost of request 
+=#
+function getCostOfRequest(time::Array{Int,2},pickUpActivity::ActivityAssignment,dropOffActivity::ActivityAssignment)
+    return (dropOffActivity.startOfServiceTime - pickUpActivity.endOfServiceTime) - time[pickUpActivity.activity.id,dropOffActivity.activity.id] 
 end
 
 #==

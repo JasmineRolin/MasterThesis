@@ -2,7 +2,7 @@ module VehicleSchedules
 
 using ..Vehicles, ..ActivityAssignments, ..TimeWindows, ..Activities, ..Enums
 
-export VehicleSchedule, findPositionOfRequest
+export VehicleSchedule, findPositionOfRequest,isVehicleScheduleEmpty
 
 mutable struct VehicleSchedule 
     vehicle::Vehicle 
@@ -41,18 +41,35 @@ end
  Method to determine whether vehicle schedule contains request 
 ==#
 function findPositionOfRequest(vehicleSchedule::VehicleSchedule, requestId::Int)::Tuple{Int,Int}
-    pos = (-1,-1)
-    for (idx,activityAssignment) in enumerate(vehicleSchedule.route)
-        if activityAssignment.activity.requestId == requestId && activityAssignment.activity.activityType == PICKUP
-            pos[1] = idx
-        elseif activityAssignment.activity.requestId == requestId && activityAssignment.activity.activityType == DROPOFF
-            pos[2] = idx
-            return idx
+    pickupIdx, dropoffIdx = -1, -1
+
+    for (idx, assignment) in enumerate(vehicleSchedule.route)
+        activity = assignment.activity
+        if activity.requestId == requestId
+            if activity.activityType == PICKUP
+                pickupIdx = idx
+            elseif activity.activityType == DROPOFF
+                return (pickupIdx, idx)  # Early return once both are found
+            end
         end
     end
 
-    return pos
+    return (pickupIdx, dropoffIdx)
 end
 
+#==
+ Method to check if vehicle schedule is empty 
+==#
+function isVehicleScheduleEmpty(vehicleSchedule::VehicleSchedule)
+    if length(vehicleSchedule.route) == 2 && vehicleSchedule.route[1].activity.activityType == DEPOT && vehicleSchedule.route[2].activity.activityType == DEPOT
+       return true 
+    end
+
+    if all(a -> a.activity.activityType == WAITING, vehicleSchedule.route[2:end-1])
+        return true
+    end
+
+    return false
+end
 
 end

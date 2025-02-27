@@ -30,7 +30,7 @@ export calculateScore, updateWeights!
 ==#
 include("DestroyMethods.jl")
 using .DestroyMethods
-export randomDestroy, worstRemoval, shawRemoval, findNumberOfRequestToRemove
+export randomDestroy!, worstRemoval!, shawRemoval!, findNumberOfRequestToRemove
 
 #==
  Import from RepairMethods 

@@ -143,7 +143,7 @@ function updateFinalSolution!(scenario::Scenario,finalSolution::Solution,solutio
     finalSolution.totalRideTime += totalTimeOfNewCompletedRoute
     finalSolution.totalDistance += getTotalDistanceRoute(solution.vehicleSchedules[vehicle].route[1:idx+1],scenario)
     finalSolution.totalCost += getTotalCostRoute(scenario,solution.vehicleSchedules[vehicle].route[1:idx+1])
-    finalSolution.idleTime += getTotalIdleTimeRoute(newCompletedRoute)
+    finalSolution.totalIdleTime += getTotalIdleTimeRoute(newCompletedRoute)
 end
 
 
@@ -184,7 +184,7 @@ function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,currentStat
         # Update KPIs of solution
         finalSolution.totalRideTime += newDuration
         finalSolution.totalDistance += newDistance
-        finalSolution.idleTime += newIdleTime
+        finalSolution.totalIdleTime += newIdleTime
         finalSolution.totalCost += newCost 
     end
 end
