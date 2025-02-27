@@ -113,10 +113,10 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
         cost = getCostOfRequest(time,schedule.route[pickUpPosition],schedule.route[dropOffPosition])
 
         # Remove pickup activity 
-        distanceDeltaPickUp, idleTimeDeltaPickup = removeActivityFromRoute!(time,distance,schedule,pickUpPosition)
+        distanceDeltaPickUp, idleTimeDeltaPickup, routeReductionPickUp = removeActivityFromRoute!(time,distance,schedule,pickUpPosition)
 
         # Remove drop off activity 
-        distanceDeltaDropOff, idleTimeDeltaDropOff = removeActivityFromRoute!(time,distance,schedule,dropOffPosition-1)
+        distanceDeltaDropOff, idleTimeDeltaDropOff, routeReductionDropOff = removeActivityFromRoute!(time,distance,schedule,dropOffPosition-routeReductionPickUp)
 
         # Check if vehicle schedule is empty 
         if isVehicleScheduleEmpty(schedule)
@@ -155,14 +155,18 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
             costDelta -= cost
 
             if mobilityType == WALKING
-                schedule.numberOfWalking[pickUpPosition:dropOffPosition] .-= 1
+                schedule.numberOfWalking[pickUpPosition:dropOffPosition-1] .-= 1
             else
-                schedule.numberOfWheelchair[pickUpPosition:dropOffPosition] .-= 1
+                schedule.numberOfWheelchair[pickUpPosition:dropOffPosition-1] .-= 1
             end
-            deleteat!(schedule.numberOfWalking,pickUpPosition)
-            deleteat!(schedule.numberOfWalking,dropOffPosition-1)
-            deleteat!(schedule.numberOfWheelchair,pickUpPosition)
-            deleteat!(schedule.numberOfWheelchair,dropOffPosition-1)
+            if routeReductionPickUp == 1
+                deleteat!(schedule.numberOfWalking,pickUpPosition)
+                deleteat!(schedule.numberOfWheelchair,pickUpPosition)
+            end
+            if routeReductionDropOff == 1
+                deleteat!(schedule.numberOfWalking,dropOffPosition-routeReductionPickUp)
+                deleteat!(schedule.numberOfWheelchair,dropOffPosition-routeReductionPickUp)
+            end 
 
         end
     end
@@ -176,13 +180,16 @@ end
 function removeActivityFromRoute!(time::Array{Int,2},distance::Array{Float64,2},schedule::VehicleSchedule,idx::Int)
 
     # TODO: needs to be updated when waiting strategies are implemented 
-    # TODO: add check of whether route is empty ? 
+    # TODO: jas - remove double waiting activities 
 
     # Retrieve activities before and after activity to remove
     route = schedule.route
     activityToRemove = route[idx]
     activityAssignmentBefore = route[idx-1]
     activityAssignmentAfter = route[idx+1]
+
+    # How much did the route length reduce 
+    routeReduction = 0
 
     # Remove activity 
     distanceDelta = 0.0
@@ -202,6 +209,8 @@ function removeActivityFromRoute!(time::Array{Int,2},distance::Array{Float64,2},
         # Delete activity
         deleteat!(route,idx)
 
+        routeReduction = 1
+
     # Extend waiting activity after activity to remove
     elseif activityAssignmentAfter.activity.activityType == WAITING
 
@@ -216,6 +225,8 @@ function removeActivityFromRoute!(time::Array{Int,2},distance::Array{Float64,2},
 
         # Delete activity 
         deleteat!(route,idx)
+
+        routeReduction = 1
 
     # Insert waiting activity before activity to remove
     else
@@ -234,7 +245,7 @@ function removeActivityFromRoute!(time::Array{Int,2},distance::Array{Float64,2},
         route[idx] = waitingActivityAssignment
     end
 
-    return distanceDelta,idleTimeDelta
+    return distanceDelta,idleTimeDelta, routeReduction
 
 end
 

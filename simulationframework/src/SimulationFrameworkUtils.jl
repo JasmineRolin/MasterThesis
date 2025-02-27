@@ -58,7 +58,6 @@ function updateCurrentScheduleNoAssignement!(vehicle::Int,currentTime::Int,curre
     currentSchedule.activeTimeWindow.startTime = currentTime
 
     # Update depots (start and end)
-    currentSchedule.route[1].activity.timeWindow.startTime = currentTime
     currentSchedule.route[1].startOfServiceTime = currentTime
     currentSchedule.route[1].endOfServiceTime = currentTime
 

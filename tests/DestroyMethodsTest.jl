@@ -8,7 +8,50 @@ using offlinesolution
 #==
  Test randomDestroy
 ==#
-#@testset "randomDestroy test" begin 
+# @testset "randomDestroy test" begin 
+#     requestFile = "tests/resources/Requests.csv"
+#     vehiclesFile = "tests/resources/Vehicles.csv"
+#     parametersFile = "tests/resources/Parameters.csv"
+#     distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
+#     timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
+
+#     # Read instance 
+#     scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+
+#     # Constuct solution 
+#     solution = simpleConstruction(scenario)
+#     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+#     printSolution(solution,printRouteHorizontal)
+
+
+#     # Construct ALNS state
+#     currentState = ALNSState(solution,1,0)
+
+#     # Construct ALNS parameters
+#     parameters = ALNSParameters()
+
+#     # Destroy 
+#     randomDestroy!(scenario,currentState,parameters)
+#     solution.nTaxi += 1
+#     feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
+#     println(msg)
+#     printSolution(solution,printRouteHorizontal)
+
+#     randomDestroy!(scenario,currentState,parameters)
+#     solution.nTaxi += 1
+#     feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
+#     println(msg)
+#     printSolution(solution,printRouteHorizontal)
+
+#     randomDestroy!(scenario,currentState,parameters)
+#     solution.nTaxi += 1
+#     feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
+#     println(msg)
+#     # TODO: add tests 
+#     printSolution(solution,printRouteHorizontal)
+# end
+
+
     requestFile = "tests/resources/Requests.csv"
     vehiclesFile = "tests/resources/Vehicles.csv"
     parametersFile = "tests/resources/Parameters.csv"
@@ -21,6 +64,33 @@ using offlinesolution
     # Constuct solution 
     solution = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+
+    # Put two requests in same schedule 
+    solution.totalDistance -= solution.vehicleSchedules[3].totalDistance + solution.vehicleSchedules[4].totalDistance
+    solution.totalCost -= solution.vehicleSchedules[3].totalCost + solution.vehicleSchedules[4].totalCost
+    solution.totalRideTime -= solution.vehicleSchedules[3].totalTime + solution.vehicleSchedules[4].totalTime
+    solution.totalIdleTime -= solution.vehicleSchedules[3].totalIdleTime + solution.vehicleSchedules[4].totalIdleTime
+
+    solution.vehicleSchedules[3].numberOfWalking = [solution.vehicleSchedules[3].numberOfWalking[1:5];solution.vehicleSchedules[4].numberOfWalking[2:5];solution.vehicleSchedules[3].numberOfWalking[end]]
+    solution.vehicleSchedules[3].numberOfWheelchair = [solution.vehicleSchedules[3].numberOfWheelchair[1:5];solution.vehicleSchedules[4].numberOfWheelchair[2:5];solution.vehicleSchedules[3].numberOfWheelchair[end]]
+
+    solution.vehicleSchedules[3].route = [solution.vehicleSchedules[3].route[1:5];solution.vehicleSchedules[4].route[2:5];solution.vehicleSchedules[3].route[end]]
+    solution.vehicleSchedules[3].route[5].endOfServiceTime = 483
+    solution.vehicleSchedules[3].route[9].endOfServiceTime = 1252
+
+    solution.vehicleSchedules[3].totalCost = getTotalCostRoute(scenario,solution.vehicleSchedules[3].route)
+    solution.vehicleSchedules[3].totalDistance = getTotalDistanceRoute(solution.vehicleSchedules[3].route,scenario)
+    solution.vehicleSchedules[3].totalTime = getTotalTimeRoute(solution.vehicleSchedules[3])
+    solution.vehicleSchedules[3].totalIdleTime = getTotalIdleTimeRoute(solution.vehicleSchedules[3].route)
+    
+
+    solution.vehicleSchedules[4] = VehicleSchedule(solution.vehicleSchedules[4].vehicle)
+
+    solution.totalDistance += solution.vehicleSchedules[3].totalDistance 
+    solution.totalCost += solution.vehicleSchedules[3].totalCost 
+    solution.totalRideTime += solution.vehicleSchedules[3].totalTime 
+    solution.totalIdleTime += solution.vehicleSchedules[3].totalIdleTime 
+
     printSolution(solution,printRouteHorizontal)
 
 
@@ -33,17 +103,22 @@ using offlinesolution
     # Destroy 
     randomDestroy!(scenario,currentState,parameters)
     solution.nTaxi += 1
-    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    feasible1, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution)
     println(msg)
     printSolution(solution,printRouteHorizontal)
 
     randomDestroy!(scenario,currentState,parameters)
     solution.nTaxi += 1
-    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    feasible2, msg2 = checkSolutionFeasibility(scenario,currentState.currentSolution)
     println(msg)
     printSolution(solution,printRouteHorizontal)
-#end
+
+    randomDestroy!(scenario,currentState,parameters)
+    solution.nTaxi += 1
+    feasible3, msg3 = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    println(msg)
+    printSolution(solution,printRouteHorizontal)
 
 
 
-
+# TODO: add test with mixed drop/pick 

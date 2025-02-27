@@ -383,7 +383,6 @@ function updateDepots!(time::Array{Int,2}, vehicleSchedule::VehicleSchedule,requ
         newActiveTimeWindowStart = route[2].startOfServiceTime - time[route[1].activity.id,route[2].activity.id]
 
         vehicleSchedule.activeTimeWindow.startTime = newActiveTimeWindowStart
-        route[1].activity.timeWindow.endTime =  newActiveTimeWindowStart
         route[1].startOfServiceTime = newActiveTimeWindowStart
         route[1].endOfServiceTime = newActiveTimeWindowStart
     end
@@ -392,7 +391,6 @@ function updateDepots!(time::Array{Int,2}, vehicleSchedule::VehicleSchedule,requ
         newActiveTimeWindowEnd = route[end-1].endOfServiceTime + time[route[end-1].activity.id,route[end].activity.id]
 
         vehicleSchedule.activeTimeWindow.endTime = newActiveTimeWindowEnd
-        route[end].activity.timeWindow.startTime = newActiveTimeWindowEnd
         route[end].startOfServiceTime = newActiveTimeWindowEnd
         route[end].endOfServiceTime = newActiveTimeWindowEnd
     end
