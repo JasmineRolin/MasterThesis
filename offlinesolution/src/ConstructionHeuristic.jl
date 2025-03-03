@@ -33,8 +33,8 @@ function simpleConstruction(scenario::Scenario)
                 feasible, idxPickUp, idxDropOff, typeOfSeat = findFeasibleInsertionInSchedule(request,solution.vehicleSchedules[vehicle],scenario)
                 if !feasible
                     push!(triedDepots, closestDepot)
-                # else
-                #     break
+                else
+                    break
                 end
             end
             getTaxi = length(triedDepots) == scenario.nDepots
