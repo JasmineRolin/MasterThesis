@@ -37,6 +37,8 @@ export randomDestroy!, worstRemoval!, shawRemoval!, findNumberOfRequestToRemove
 ==#
 include("RepairMethods.jl")
 using .RepairMethods
+export greedyInsertion
+export regretInsertion
 
 
 #==

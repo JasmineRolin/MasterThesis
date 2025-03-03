@@ -3,6 +3,8 @@ module VehicleSchedules
 using ..Vehicles, ..ActivityAssignments, ..TimeWindows, ..Activities, ..Enums
 
 export VehicleSchedule, findPositionOfRequest,isVehicleScheduleEmpty
+export copyVehicleSchedule 
+
 
 mutable struct VehicleSchedule 
     vehicle::Vehicle 
@@ -23,8 +25,7 @@ mutable struct VehicleSchedule
         endDepot = ActivityAssignment(Activity(vehicle.depotId,-1,DEPOT,WALKING,vehicle.depotLocation,TimeWindow(vehicle.availableTimeWindow.startTime,vehicle.availableTimeWindow.endTime)),vehicle,vehicle.availableTimeWindow.endTime,vehicle.availableTimeWindow.endTime,WALKING)
 
         # Create empty VehicleSchedule objects
-        return new(vehicle, [startDepot,endDepot], vehicle.availableTimeWindow, 0.0, 0, 0.0,0, Int[0,0], Int[0,0]) 
-
+        return new(vehicle, [startDepot,endDepot], TimeWindow(vehicle.availableTimeWindow.startTime,vehicle.availableTimeWindow.endTime), 0.0, 0, 0.0,0, Int[0,0], Int[0,0]) 
     end
 
     function VehicleSchedule(vehicle::Vehicle, route::Vector{ActivityAssignment} )
@@ -34,6 +35,10 @@ mutable struct VehicleSchedule
     function VehicleSchedule()
         return new(Vehicle(), [], TimeWindow(0, 0), 0.0, 0, 0.0,0, Int[], Int[])
     end 
+
+    function VehicleSchedule(vehicle::Vehicle, route::Vector{ActivityAssignment}, activeTimeWindow::TimeWindow, totalDistance::Float64, totalTime::Int, totalCost::Float64, totalIdleTime::Int, numberOfWalking::Vector{Int}, numberOfWheelchair::Vector{Int})
+        return new(vehicle, route, activeTimeWindow, totalDistance, totalTime, totalCost, totalIdleTime, numberOfWalking, numberOfWheelchair)
+    end
 
 end 
 
@@ -73,3 +78,4 @@ function isVehicleScheduleEmpty(vehicleSchedule::VehicleSchedule)
 end
 
 end
+

@@ -43,7 +43,7 @@ export getCostOfRequest
 ==#
 include("RouteUtils.jl")
 using .RouteUtils
-export printRoute,printSimpleRoute, insertRequest!,checkFeasibilityOfInsertionAtPosition,printRouteHorizontal,printSolution
+export printRoute,printSimpleRoute, insertRequest!,checkFeasibilityOfInsertionAtPosition,printRouteHorizontal,printSolution,updateRoute!
 
 #==
     Export from SolutionUtils module   

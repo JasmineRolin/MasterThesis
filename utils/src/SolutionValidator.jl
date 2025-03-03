@@ -165,7 +165,7 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
 
             # Check that start of service and end of service are feasible 
             if startOfServiceTime < route[idx-1].endOfServiceTime + time[route[idx-1].activity.id,activity.id]
-                msg = "ROUTE INFEASIBLE: Start of service time $(startOfServiceTime) of activity $(activity.id) is not correct"
+                msg = "ROUTE INFEASIBLE: Start of service time $(startOfServiceTime) of activity $(activity.id) is not correct on vehicle $(vehicle.id)"
                 return false, msg, Set{Int}()
             end
             if (endOfServiceTime != startOfServiceTime + serviceTimes[activity.mobilityType])
