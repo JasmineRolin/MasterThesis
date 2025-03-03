@@ -17,20 +17,10 @@ using utils, domain, offlinesolution
 
     # Constuct solution 
     solution = simpleConstruction(scenario)
-
-    # Print routes
-    for schedule in solution.vehicleSchedules
-        printRoute(schedule)
-    end
-
-    # Check routes
-    for schedule in solution.vehicleSchedules
-        feasible, msg = checkRouteFeasibility(scenario,schedule)
-        println(msg)
-        @test feasible == true
-    end
-
     @test solution.nTaxi == 0
+
+    # Print solution
+    printSolution(solution,printRouteHorizontal)
 
     # Check solution
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
@@ -38,3 +28,24 @@ using utils, domain, offlinesolution
     println(msg)
     @test feasible == true
 end
+
+@testset "ConstructionHeurstic test - Konsentra" begin 
+    requestFile = "Data/Konsentra/TransformedData_Data.csv"
+    vehiclesFile = "tests/resources/Vehicles.csv"
+    parametersFile = "tests/resources/Parameters.csv"
+    distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
+    timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
+
+    # Read instance 
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+
+    # Constuct solution 
+    solution = simpleConstruction(scenario)
+    solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+    feasible, msg = checkSolutionFeasibility(scenario,solution)
+    @test feasible == true
+    @test msg == ""
+    
+    printSolution(solution,printRouteHorizontal)
+end
+

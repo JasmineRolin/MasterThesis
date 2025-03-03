@@ -102,14 +102,17 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPic
     # Update capacities
     updateCapacities!(vehicleSchedule,idxPickUp,idxDropOff,typeOfSeat)
 
-    # Update waiting
-    updatedIdxPickUp, updatedIdxDropOff = updateWaiting!(scenario.time,vehicleSchedule,idxPickUp,idxDropOff)
-
     # Update depots
     updateDepots!(scenario.time,vehicleSchedule,request,idxPickUp,idxDropOff)
 
+    # Update waiting
+    updatedIdxPickUp, updatedIdxDropOff = updateWaiting!(scenario.time,vehicleSchedule,idxPickUp,idxDropOff)
+
     # Update total distance
     updateDistance!(scenario.distance,vehicleSchedule,request,updatedIdxDropOff,updatedIdxPickUp)
+
+    # Update idle time 
+    vehicleSchedule.totalIdleTime = getTotalIdleTimeRoute(vehicleSchedule.route)
 
     # Update total time 
     vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
@@ -280,90 +283,48 @@ Update or insert Waiting nodes
 ==#
 function updateWaiting!(time::Array{Int,2},vehicleSchedule::VehicleSchedule,idxPickUp::Int,idxDropOff::Int)
     route = vehicleSchedule.route
-    updatedIdxDropOff = idxDropOff+2
-    updatedIdxPickUp = idxPickUp+1
 
+    # Keep track of updated index 
+    updatedIdxPickUp = idxPickUp+1
+    updatedIdxDropOff = idxDropOff+2
+
+    # If empty route 
     if length(vehicleSchedule.route) == 2 && vehicleSchedule.route[1].activity.activityType == DEPOT && vehicleSchedule.route[2].activity.activityType == DEPOT
         return updatedIdxPickUp, updatedIdxDropOff
-    elseif idxPickUp == 1 && idxPickUp == idxDropOff
-        # After drop-off
-        if route[idxPickUp+3].activity.activityType != WAITING
-            insertWaitingAfterNode!(time,vehicleSchedule,idxPickUp+2)
-        else
-            updateWaitingAfterNode!(time,vehicleSchedule,idxPickUp+2)
-        end
-        # Potentially after pick up
-        inserted = insertWaitingAfterNode!(time,vehicleSchedule,idxPickUp+1)
-        updatedIdxDropOff += inserted
-    elseif idxPickUp == idxDropOff
-        # After drop-off
-        if route[idxPickUp+3].activity.activityType != WAITING
-            insertWaitingAfterNode!(time,vehicleSchedule,idxPickUp+2)
-        else
-            updateWaitingAfterNode!(time,vehicleSchedule,idxPickUp+2)
-        end
-        # Before pick up
-        if route[idxPickUp].activity.activityType != WAITING
-            inserted = insertWaitingBeforeNode!(time,vehicleSchedule,idxPickUp+1)
-            updatedIdxDropOff += inserted
-            updatedIdxPickUp += inserted
-        else
-            updateWaitingBeforeNode!(time,vehicleSchedule,idxPickUp+1)
-        end
-        # Potentially after pick up
-        inserted = insertWaitingAfterNode!(time,vehicleSchedule,idxPickUp+1)
-        updatedIdxDropOff += inserted
-        
-    elseif idxPickUp == 1
-        # After pick up
-        if route[idxPickUp+2].activity.activityType != WAITING
-            inserted = insertWaitingAfterNode!(time,vehicleSchedule,idxPickUp+1)
-            updatedIdxDropOff += inserted
-        else
-            updateWaitingAfterNode!(time,vehicleSchedule,idxPickUp+1)
-        end
-        # Before drop-off
-        if route[idxDropOff+1].activity.activityType != WAITING
-            inserted = insertWaitingBeforeNode!(time,vehicleSchedule,idxDropOff+2)
-            updatedIdxDropOff += inserted
-        else
-            updateWaitingBeforeNode!(time,vehicleSchedule,idxDropOff+2)
-        end
-        # After drop-off
-        if route[idxDropOff+3].activity.activityType != WAITING
-            insertWaitingAfterNode!(time,vehicleSchedule,idxDropOff+2)
-        else
-            updateWaitingAfterNode!(time,vehicleSchedule,idxDropOff+2)
-        end
+    # If pick-up and drop-off are inserted 
     else
-        # Before pick up
-        if route[idxPickUp].activity.activityType != WAITING
-            inserted = insertWaitingBeforeNode!(time,vehicleSchedule,idxPickUp+1)
+        # Update or insert waiting before pick up
+        if route[updatedIdxPickUp-1].activity.activityType != WAITING && route[updatedIdxPickUp-1].activity.activityType != DEPOT
+            inserted = insertWaitingBeforeNode!(time,vehicleSchedule,updatedIdxPickUp)
             updatedIdxDropOff += inserted
             updatedIdxPickUp += inserted
-        else
-            updateWaitingBeforeNode!(time,vehicleSchedule,idxPickUp+1)
+        elseif route[updatedIdxPickUp-1].activity.activityType != DEPOT
+            updateWaitingBeforeNode!(time,vehicleSchedule,updatedIdxPickUp)
         end
-        # After pick up
-        if route[idxPickUp+2].activity.activityType != WAITING
-            inserted = insertWaitingAfterNode!(time,vehicleSchedule,idxPickUp+1)
+
+        # Update or insert waiting after pick up 
+        if route[updatedIdxPickUp+1].activity.activityType != WAITING
+            inserted = insertWaitingAfterNode!(time,vehicleSchedule,updatedIdxPickUp)
             updatedIdxDropOff += inserted
         else
-            updateWaitingAfterNode!(time,vehicleSchedule,idxPickUp+1)
+            updateWaitingAfterNode!(time,vehicleSchedule,updatedIdxPickUp)
         end
-        # Before drop-off
-        if route[idxDropOff+1].activity.activityType != WAITING
-            inserted = insertWaitingBeforeNode!(time,vehicleSchedule,idxDropOff+2)
+
+        # Update or insert waiting before drop-off
+        if route[updatedIdxDropOff+1].activity.activityType != WAITING
+            inserted = insertWaitingBeforeNode!(time,vehicleSchedule,updatedIdxDropOff)
             updatedIdxDropOff += inserted
         else
-            updateWaitingBeforeNode!(time,vehicleSchedule,idxDropOff+2)
+            updateWaitingBeforeNode!(time,vehicleSchedule,updatedIdxDropOff)
         end
-        # After drop-off
-        if route[idxDropOff+3].activity.activityType != WAITING
-            insertWaitingAfterNode!(time,vehicleSchedule,idxDropOff+2)
+
+        #  Update or insert waiting after pick up 
+        if route[updatedIdxDropOff+1].activity.activityType != WAITING 
+            insertWaitingAfterNode!(time,vehicleSchedule,updatedIdxDropOff)
         else
-            updateWaitingAfterNode!(time,vehicleSchedule,idxDropOff+2)
+            updateWaitingAfterNode!(time,vehicleSchedule,updatedIdxDropOff)
         end
+
     end
 
     return updatedIdxPickUp, updatedIdxDropOff
@@ -374,26 +335,14 @@ end
 # Method to update depots in vehicle schedule after insertion of request
 ==#
 function updateDepots!(time::Array{Int,2}, vehicleSchedule::VehicleSchedule,request::Request,idxPickUp::Int,idxDropOff::Int)
-    
-    # Update active time windows
     route = vehicleSchedule.route
-    if idxPickUp == 1
-        
-        newActiveTimeWindowStart = route[2].startOfServiceTime - time[route[1].activity.id,route[2].activity.id]
 
+    # Update start depot 
+    if idxPickUp == 1
+        newActiveTimeWindowStart = route[2].startOfServiceTime - time[route[1].activity.id,route[2].activity.id]
         vehicleSchedule.activeTimeWindow.startTime = newActiveTimeWindowStart
-        route[1].activity.timeWindow.endTime =  newActiveTimeWindowStart
         route[1].startOfServiceTime = newActiveTimeWindowStart
         route[1].endOfServiceTime = newActiveTimeWindowStart
-    end
-    if (route[end-1].activity.activityType == WAITING && route[end-2].activity == request.dropOffActivity)||(route[end-1].activity == request.dropOffActivity)
-        route = vehicleSchedule.route
-        newActiveTimeWindowEnd = route[end-1].endOfServiceTime + time[route[end-1].activity.id,route[end].activity.id]
-
-        vehicleSchedule.activeTimeWindow.endTime = newActiveTimeWindowEnd
-        route[end].activity.timeWindow.startTime = newActiveTimeWindowEnd
-        route[end].startOfServiceTime = newActiveTimeWindowEnd
-        route[end].endOfServiceTime = newActiveTimeWindowEnd
     end
 end
 
@@ -523,8 +472,10 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
 
             # Determine arrival times for different cases
             if (idx == 1 && route[1].activity.activityType == DEPOT) || (route[idx].activity.activityType == WAITING)
+
                 earliestStartOfServiceActivity = route[idx].startOfServiceTime + scenario.time[route[idx].activity.id, activity.id]
                 startOfServiceActivity = max(earliestStartOfServiceActivity,activity.timeWindow.startTime)
+                
                 endOfActivity = startOfServiceActivity + scenario.serviceTimes[activity.mobilityType]
                 arrivalNextNode = endOfActivity + scenario.time[request.dropOffActivity.id, route[idx+1].activity.id]
             else
