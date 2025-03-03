@@ -231,7 +231,8 @@ end
 end
 
 
-#==
+
+
 @testset "Regret Repair test" begin
 
     # Create configuration 
@@ -248,7 +249,8 @@ end
     timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    scenario2 = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    scenario = Scenario(scenario2.requests,scenario2.onlineRequests,scenario2.offlineRequests,scenario2.serviceTimes,[scenario2.vehicles[1]],scenario2.vehicleCostPrHour,scenario2.vehicleStartUpCost,scenario2.planningPeriod,scenario2.bufferTime,scenario2.maximumDriveTimePercent,scenario2.minimumMaximumDriveTime,scenario2.distance,scenario2.time,scenario2.nDepots,scenario2.depots)
 
     # Create VehicleSchedule
     vehicleSchedule = VehicleSchedule(scenario.vehicles[1])
@@ -277,4 +279,4 @@ end
 
 
 end
-==#
+

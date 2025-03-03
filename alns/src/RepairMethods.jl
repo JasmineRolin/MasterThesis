@@ -52,24 +52,27 @@ function regretInsertion(state::ALNSState,scenario::Scenario)
                 println("regretInsertion: No feasible vehicle for request. This should not happen")
             end
             if (secondBestInsertion - bestInsertion) > bestRegret
-                bestRegret = secondBestInsert - bestInsertion
+                bestRegret = secondBestInsertion - bestInsertion
                 bestRequest = r
                 overallBestVehicle = bestVehicleForRequest
             end
         end
 
         # Find best insertion position
-        status, delta, pickUp, dropOff, bestTypeOfSeat = findBestFeasibleInsertionRoute(request, schedule, scenario)
+        status, delta, pickUp, dropOff, bestTypeOfSeat = findBestFeasibleInsertionRoute(requests[bestRequest], currentSolution.vehicleSchedules[overallBestVehicle], scenario)
 
         # Insert request
         insertRequest!(requests[bestRequest], currentSolution.vehicleSchedules[overallBestVehicle], pickUp, dropOff, bestTypeOfSeat, scenario)
 
         # Remove request from requestBank
-        deleteat!(requestBank, findfirst(requestBank, bestRequest))
+        deleteat!(requestBank, findfirst(==(bestRequest), requestBank))
 
         # Recalculate insertion cost matrix
-        reCalcCostMatrix!(overallBestRoute, scenario, currentSolution, requestBank, insCostMatrix, matPossible)
+        reCalcCostMatrix!(overallBestVehicle, scenario, currentSolution, requestBank, insCostMatrix, matPossible)
+
     end
+
+    return currentSolution
 
 
 end
