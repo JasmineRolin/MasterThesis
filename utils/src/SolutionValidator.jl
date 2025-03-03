@@ -213,7 +213,7 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
     totalDistanceCheck += distance[route[end-1].activity.id,route[end].activity.id]
 
     # Check that total distance is correct
-    if totalDistanceCheck != totalDistance
+    if !isapprox(totalDistanceCheck,totalDistance)  
         msg = "ROUTE INFEASIBLE: Total distance $(totalDistance) is incorrect"
         return false, msg, Set{Int}() 
     end

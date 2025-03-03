@@ -65,7 +65,7 @@ mutable struct ALNSState
     repairNumberOfUses::Vector{Int} # Number of times method has been used in current segment 
     bestSolution::Solution 
     currentSolution::Solution
-    requestBank::Vector{Request}
+    requestBank::Vector{Int}
 end
 
 

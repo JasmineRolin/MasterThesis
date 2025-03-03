@@ -37,6 +37,7 @@ using .DestroyMethods
 include("RepairMethods.jl")
 using .RepairMethods
 export greedyInsertion
+export regretInsertion
 
 
 #==

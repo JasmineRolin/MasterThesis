@@ -151,7 +151,7 @@ function updateRoute!(time::Array{Int,2},serviceTimes::Dict{MobilityType,Int},ve
     earliestStartOfServicePickUp = max(endOfServiceBeforePick + time[route[idxPickUp].activity.id,request.pickUpActivity.id],request.pickUpActivity.timeWindow.startTime)
     latestStartOfServicePickUp = min(startOfServiceAfterPick - time[route[idxPickUp].activity.id,route[idxPickUp+1].activity.id] - serviceTimes[request.pickUpActivity.mobilityType],request.pickUpActivity.timeWindow.endTime)
     earliestStartOfServiceDropOff = max(endOfServiceBeforeDrop + time[route[idxDropOff].activity.id,request.dropOffActivity.id],request.dropOffActivity.timeWindow.startTime)
-    latestStartOfServiceDropOff = min(startOfServiceAfterDrop - time[route[idxDropOff].activity.id,route[idxDropOff+1].activity.id] - serviceTimes[request.dropOffActivity.mobilityType],request.dropOffActivity.timeWindow.endTime)
+    latestStartOfServiceDropOff = min(startOfServiceAfterDrop - time[route[idxDropOff].activity.id,route[idxDropOff+1].activity.id] - serviceTimes[request.dropOffActivity.mobilityType],request.dropOffActivity.timeWindow.endTime)  
 
     # Get available service time window for pick up considering minimized excess drive time
     earliestStartOfServicePickUpMinimization = earliestStartOfServiceDropOff - max(earliestStartOfServiceDropOff - latestStartOfServicePickUp, time[request.pickUpActivity.id,request.dropOffActivity.id] + serviceTimes[request.pickUpActivity.mobilityType])
@@ -259,15 +259,15 @@ function updateWaitingAfterNode!(time::Array{Int,2},vehicleSchedule::VehicleSche
 end
 
 #==
-Update waiting before node
+Update waiting before node at index idx
 ==#
 function updateWaitingBeforeNode!(time::Array{Int,2},vehicleSchedule::VehicleSchedule,idx::Int)
 
     route = vehicleSchedule.route
     if route[idx-2].endOfServiceTime + time[route[idx-2].activity.id,route[idx].activity.id] < route[idx].startOfServiceTime
         # Update waiting before node
-        route[idx-1].endOfServiceTime = route[idx].startOfServiceTime
-        route[idx-1].activity.timeWindow.endTime = route[idx].startOfServiceTime
+        route[idx-1].endOfServiceTime = route[idx].startOfServiceTime - time[route[idx-2].activity.id,route[idx].activity.id]
+        route[idx-1].activity.timeWindow.endTime = route[idx].startOfServiceTime - time[route[idx-2].activity.id,route[idx].activity.id]
     else
         # Remove waiting before node
         deleteat!(route,idx-1)
