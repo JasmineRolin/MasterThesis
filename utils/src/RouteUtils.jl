@@ -124,46 +124,44 @@ Method to update route in vehicle schedule after insertion of request. Will do i
 ==#
 function updateRoute!(time::Array{Int,2},serviceTimes::Dict{MobilityType,Int},vehicleSchedule::VehicleSchedule,request::Request,idxPickUp::Int,idxDropOff::Int)
 
-    # Special case when only two depots due to how initial time windows are. Insert as early as possible
-    if length(vehicleSchedule.route) == 2 && vehicleSchedule.route[1].activity.activityType == DEPOT && vehicleSchedule.route[2].activity.activityType == DEPOT
-        startOfServicePick = max(vehicleSchedule.route[1].activity.timeWindow.startTime + time[vehicleSchedule.route[1].activity.id,request.pickUpActivity.id],request.pickUpActivity.timeWindow.startTime)
-        endOfServicePick = startOfServicePick + serviceTimes[request.pickUpActivity.mobilityType]
+    route = vehicleSchedule.route
 
-        startOfServiceDrop = max(endOfServicePick + time[request.pickUpActivity.id,request.dropOffActivity.id],request.dropOffActivity.timeWindow.startTime)
-        endOfServiceDrop = startOfServiceDrop + serviceTimes[request.dropOffActivity.mobilityType]
-
-    # Insert as late as possible in the route to minimize active time for vehicle
-    elseif idxPickUp == 1 && idxPickUp == idxDropOff
-        endOfServiceDrop = min(request.dropOffActivity.timeWindow.endTime + serviceTimes[request.dropOffActivity.mobilityType],vehicleSchedule.route[idxPickUp+1].startOfServiceTime-time[request.dropOffActivity.id,vehicleSchedule.route[idxPickUp+1].activity.id])
-        startOfServiceDrop = endOfServiceDrop - serviceTimes[request.dropOffActivity.mobilityType]
-
-        endOfServicePick = min(startOfServiceDrop-time[request.pickUpActivity.id,request.dropOffActivity.id],request.pickUpActivity.timeWindow.endTime+serviceTimes[request.pickUpActivity.mobilityType])
-        startOfServicePick = endOfServicePick - serviceTimes[request.pickUpActivity.mobilityType]
-
-    # Same pick-up and drop-off index. Insert as early as possible
-    elseif idxPickUp == idxDropOff
-        earliestStartOfServicePick = vehicleSchedule.route[idxPickUp].endOfServiceTime + time[vehicleSchedule.route[idxPickUp].activity.id,request.pickUpActivity.id] 
-        startOfServicePick = max(earliestStartOfServicePick,request.pickUpActivity.timeWindow.startTime)
-
-        earliestStartOfServiceDrop = startOfServicePick + serviceTimes[request.pickUpActivity.mobilityType] + time[request.pickUpActivity.id,request.dropOffActivity.id] + serviceTimes[request.dropOffActivity.mobilityType]
-        startOfServiceDrop = max(earliestStartOfServiceDrop,request.dropOffActivity.timeWindow.startTime)
-
-    # Pick-up is first activity in route. Insert pick up as late as possible and drop-off as early as possible
-    elseif idxPickUp == 1
-        latestStartOfServicePick = vehicleSchedule.route[idxPickUp+1].activity.timeWindow.startTime - time[request.pickUpActivity.id,vehicleSchedule.route[idxPickUp+1].activity.id] 
-        startOfServicePick = max(latestStartOfServicePick,request.pickUpActivity.timeWindow.startTime)
-
-        earliestStartOfServiceDrop = vehicleSchedule.route[idxDropOff].endOfServiceTime + time[vehicleSchedule.route[idxDropOff].activity.id,request.dropOffActivity.id] 
-        startOfServiceDrop = max(earliestStartOfServiceDrop,request.dropOffActivity.timeWindow.startTime)
-    
-    # Insert as early as possible 
+    # Get time when cend of service is for node before pick up
+    if route[idxPickUp].activity.activityType == WAITING || route[idxPickUp].activity.activityType == DEPOT
+        endOfServiceBeforePick = route[idxPickUp].activity.timeWindow.startTime
     else
-        earliestStartOfServicePick = vehicleSchedule.route[idxPickUp].endOfServiceTime + time[vehicleSchedule.route[idxPickUp].activity.id,request.pickUpActivity.id] 
-        startOfServicePick = max(earliestStartOfServicePick,request.pickUpActivity.timeWindow.startTime)
-
-        earliestStartOfServiceDrop = vehicleSchedule.route[idxDropOff].endOfServiceTime + time[vehicleSchedule.route[idxDropOff].activity.id,request.dropOffActivity.id] 
-        startOfServiceDrop = max(earliestStartOfServiceDrop,request.dropOffActivity.timeWindow.startTime)
+        endOfServiceBeforePick = route[idxPickUp].endOfServiceTime
     end
+
+    # Get time when cend of service is for node before drop off
+    if route[idxDropOff].activity.activityType == WAITING || route[idxDropOff].activity.activityType == DEPOT
+        endOfServiceBeforeDrop = route[idxDropOff].activity.timeWindow.startTime
+    else
+        endOfServiceBeforeDrop = route[idxDropOff].endOfServiceTime
+    end
+
+    # Get time when arriving at node after pick up
+    startOfServiceAfterPick = route[idxPickUp+1].startOfServiceTime
+
+    # Get time when arriving at node after drop off
+    startOfServiceAfterDrop = route[idxDropOff+1].startOfServiceTime
+
+
+    #Get available service time windows
+    earliestStartOfServicePickUp = max(endOfServiceBeforePick + time[route[idxPickUp].activity.id,request.pickUpActivity.id],request.pickUpActivity.timeWindow.startTime)
+    latestStartOfServicePickUp = min(startOfServiceAfterPick - time[route[idxPickUp].activity.id,route[idxPickUp+1].activity.id] - serviceTimes[request.pickUpActivity.mobilityType],request.pickUpActivity.timeWindow.endTime)
+    earliestStartOfServiceDropOff = max(endOfServiceBeforeDrop + time[route[idxDropOff].activity.id,request.dropOffActivity.id],request.dropOffActivity.timeWindow.startTime)
+    latestStartOfServiceDropOff = min(startOfServiceAfterDrop - time[route[idxDropOff].activity.id,route[idxDropOff+1].activity.id] - serviceTimes[request.dropOffActivity.mobilityType],request.dropOffActivity.timeWindow.endTime)
+
+    # Get available service time window for pick up considering minimized excess drive time
+    earliestStartOfServicePickUpMinimization = earliestStartOfServiceDropOff - max(earliestStartOfServiceDropOff - latestStartOfServicePickUp, time[request.pickUpActivity.id,request.dropOffActivity.id] + serviceTimes[request.pickUpActivity.mobilityType])
+    latestStartOfServicePickUpMinimization = min(latestStartOfServicePickUp,latestStartOfServiceDropOff-max(earliestStartOfServiceDropOff - latestStartOfServicePickUp, time[request.pickUpActivity.id,request.dropOffActivity.id] + serviceTimes[request.pickUpActivity.mobilityType]))
+
+    # Choose the best time for pick up (Here the latest time is chosen)
+    startOfServicePick = latestStartOfServicePickUpMinimization
+
+    # Determine the time for drop off
+    startOfServiceDrop = startOfServicePick + max(earliestStartOfServiceDropOff - startOfServicePick, time[request.pickUpActivity.id,request.dropOffActivity.id]+serviceTimes[request.pickUpActivity.mobilityType])
 
     # Insert request
     pickUpActivity = ActivityAssignment(request.pickUpActivity, vehicleSchedule.vehicle, startOfServicePick, startOfServicePick + serviceTimes[request.pickUpActivity.mobilityType])
