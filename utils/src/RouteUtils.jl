@@ -123,7 +123,7 @@ end
 
 
 #==
-Method to update route in vehicle schedule after insertion of request. Will do it so minimize excess drive time and secondly as early as possible
+Method to update route in vehicle schedule after insertion of request. Will do it so minimize excess drive time and secondly as late as possible
 ==#
 function updateRoute!(time::Array{Int,2},serviceTimes::Dict{MobilityType,Int},vehicleSchedule::VehicleSchedule,request::Request,idxPickUp::Int,idxDropOff::Int)
 
@@ -136,7 +136,7 @@ function updateRoute!(time::Array{Int,2},serviceTimes::Dict{MobilityType,Int},ve
         endOfServiceBeforePick = route[idxPickUp].endOfServiceTime
     end
 
-    # Get time when cend of service is for node before drop off
+    # Get time when end of service is for node before drop off
     if route[idxDropOff].activity.activityType == WAITING || route[idxDropOff].activity.activityType == DEPOT
         endOfServiceBeforeDrop = route[idxDropOff].activity.timeWindow.startTime
     else
@@ -152,19 +152,19 @@ function updateRoute!(time::Array{Int,2},serviceTimes::Dict{MobilityType,Int},ve
 
     #Get available service time windows
     earliestStartOfServicePickUp = max(endOfServiceBeforePick + time[route[idxPickUp].activity.id,request.pickUpActivity.id],request.pickUpActivity.timeWindow.startTime)
-    latestStartOfServicePickUp = min(startOfServiceAfterPick - time[route[idxPickUp].activity.id,route[idxPickUp+1].activity.id] - serviceTimes[request.pickUpActivity.mobilityType],request.pickUpActivity.timeWindow.endTime)
+    latestStartOfServicePickUp = min(startOfServiceAfterPick - time[request.pickUpActivity.id,route[idxPickUp+1].activity.id] - serviceTimes[request.pickUpActivity.mobilityType],request.pickUpActivity.timeWindow.endTime)
     earliestStartOfServiceDropOff = max(endOfServiceBeforeDrop + time[route[idxDropOff].activity.id,request.dropOffActivity.id],request.dropOffActivity.timeWindow.startTime)
-    latestStartOfServiceDropOff = min(startOfServiceAfterDrop - time[route[idxDropOff].activity.id,route[idxDropOff+1].activity.id] - serviceTimes[request.dropOffActivity.mobilityType],request.dropOffActivity.timeWindow.endTime)  
+    latestStartOfServiceDropOff = min(startOfServiceAfterDrop - time[request.dropOffActivity,route[idxDropOff+1].activity.id] - serviceTimes[request.dropOffActivity.mobilityType],request.dropOffActivity.timeWindow.endTime)  
 
     # Get available service time window for pick up considering minimized excess drive time
-    earliestStartOfServicePickUpMinimization = earliestStartOfServiceDropOff - max(earliestStartOfServiceDropOff - latestStartOfServicePickUp, time[request.pickUpActivity.id,request.dropOffActivity.id] + serviceTimes[request.pickUpActivity.mobilityType])
+    earliestStartOfServicePickUpMinimization = max(earliestStartOfServicePickUp,earliestStartOfServiceDropOff - max(earliestStartOfServiceDropOff - latestStartOfServicePickUp, time[request.pickUpActivity.id,request.dropOffActivity.id] + serviceTimes[request.pickUpActivity.mobilityType]))
     latestStartOfServicePickUpMinimization = min(latestStartOfServicePickUp,latestStartOfServiceDropOff-max(earliestStartOfServiceDropOff - latestStartOfServicePickUp, time[request.pickUpActivity.id,request.dropOffActivity.id] + serviceTimes[request.pickUpActivity.mobilityType]))
 
     # Choose the best time for pick up (Here the latest time is chosen)
     startOfServicePick = latestStartOfServicePickUpMinimization
 
     # Determine the time for drop off
-    startOfServiceDrop = startOfServicePick + max(earliestStartOfServiceDropOff - startOfServicePick, time[request.pickUpActivity.id,request.dropOffActivity.id]+serviceTimes[request.pickUpActivity.mobilityType])
+    startOfServiceDrop = startOfServicePick + max(earliestStartOfServiceDropOff - latestStartOfServicePick, time[request.pickUpActivity.id,request.dropOffActivity.id]+serviceTimes[request.pickUpActivity.mobilityType])
 
     # Insert request
     pickUpActivity = ActivityAssignment(request.pickUpActivity, vehicleSchedule.vehicle, startOfServicePick, startOfServicePick + serviceTimes[request.pickUpActivity.mobilityType])

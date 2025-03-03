@@ -29,26 +29,24 @@ using utils, domain, offlinesolution
     @test feasible == true
 end
 
-#@testset "ConstructionHeurstic test - Konsentra" begin 
+@testset "ConstructionHeurstic test - Konsentra" begin 
+    requestFile = "Data/Konsentra/TransformedData_Data.csv"
+    vehiclesFile = "tests/resources/Vehicles.csv"
+    parametersFile = "tests/resources/Parameters.csv"
+    distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
+    timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
     
-#end
+    # Read instance 
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    
+    # Constuct solution 
+    solution = simpleConstruction(scenario)
+    solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+    feasible, msg = checkSolutionFeasibility(scenario,solution)
+    @test feasible == true
+    @test msg == ""
+      
+end
 
-requestFile = "Data/Konsentra/TransformedData_Data.csv"
-vehiclesFile = "tests/resources/Vehicles.csv"
-parametersFile = "tests/resources/Parameters.csv"
-distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
-timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
-
-# Read instance 
-scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
-
-# Constuct solution 
-solution = simpleConstruction(scenario)
-solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
-feasible, msg = checkSolutionFeasibility(scenario,solution)
-@test feasible == true
-@test msg == ""
-
-printSolution(solution,printRouteHorizontal)
 
 
