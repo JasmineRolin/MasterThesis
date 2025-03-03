@@ -1,5 +1,5 @@
 using Test 
-using alns, domain
+using alns, domain, utils
 
 #==
 Test ALNSFunctions
@@ -116,7 +116,7 @@ end
     # Solution 
     solution = Solution([vehicleSchedule],70.0,4,5,2,4)
     
-    state = ALNSState(Float64[2.0,3.5],Float64[1.0,3.0],[1,2],[2,0],solution,solution)
+    state = ALNSState(Float64[2.0,3.5],Float64[1.0,3.0],[1,2],[2,0],solution,solution,[])
 
     # Update weights 
     updateWeights!(state,configuration,2,1,true,true,false)
@@ -170,7 +170,7 @@ end
     # Solution 
     solution = Solution([vehicleSchedule],70.0,4,5,2,4)
     
-    state = ALNSState(Float64[2.0],Float64[3.0],[1],[2],solution,solution)
+    state = ALNSState(Float64[2.0],Float64[3.0],[1],[2],solution,solution,[])
 
     # Destroy 
     destroyIdx = destroy!(configuration,parameters,state,solution)
@@ -178,10 +178,103 @@ end
     @test state.destroyNumberOfUses[1] == 2
     @test solution.totalCost == 900 
 
-    # Destroy 
+    # Repair 
     repairIdx = repair!(configuration,parameters,state,solution)
     @test repairIdx == 1
     @test state.repairNumberOfUses[1] == 3
     @test solution.totalCost == 500 
 
 end
+
+
+@testset "Greedy Repair test" begin
+
+    # Create configuration 
+    # Parameters 
+    parameters = ALNSParameters()
+    configuration = ALNSConfiguration(parameters)
+
+
+    # Create route
+    requestFile = "tests/resources/RequestsRepair.csv"
+    vehiclesFile = "tests/resources/Vehicles.csv"
+    parametersFile = "tests/resources/Parameters.csv"
+    distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
+    timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
+
+    # Read instance 
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+
+    # Create VehicleSchedule
+    vehicleSchedule = VehicleSchedule(scenario.vehicles[1])
+
+    # Insert request
+    insertRequest!(scenario.requests[1],vehicleSchedule,1,1,WALKING,scenario)
+
+    # Create requestBank
+    requestBank = [2]
+
+
+    # Solution 
+    solution = Solution([vehicleSchedule],70.0,4,5,2,4)
+
+    # Make ALNS state
+    state = ALNSState(Float64[2.0],Float64[3.0],[1],[2],solution,solution,requestBank)
+
+    # Greedy repair 
+    newSolution = greedyInsertion(state,scenario)
+
+    feasible, msg = checkRouteFeasibility(scenario, newSolution.vehicleSchedules[1])
+    @test feasible == true
+
+
+end
+
+
+#==
+@testset "Regret Repair test" begin
+
+    # Create configuration 
+    # Parameters 
+    parameters = ALNSParameters()
+    configuration = ALNSConfiguration(parameters)
+
+
+    # Create route
+    requestFile = "tests/resources/RequestsRepair.csv"
+    vehiclesFile = "tests/resources/Vehicles.csv"
+    parametersFile = "tests/resources/Parameters.csv"
+    distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
+    timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
+
+    # Read instance 
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+
+    # Create VehicleSchedule
+    vehicleSchedule = VehicleSchedule(scenario.vehicles[1])
+
+    # Insert request
+    insertRequest!(scenario.requests[1],vehicleSchedule,1,1,WALKING,scenario)
+
+    # Create requestBank
+    requestBank = [2]
+
+
+
+    # Solution 
+    solution = Solution([vehicleSchedule],70.0,4,5,2,4)
+    printRoute(solution.vehicleSchedules[1])
+
+    # Make ALNS state
+    state = ALNSState(Float64[2.0],Float64[3.0],[1],[2],solution,solution,requestBank)
+
+    # Greedy repair 
+    newSolution = regretInsertion(state,scenario)
+    printRoute(newSolution.vehicleSchedules[1])
+
+    feasible, msg = checkRouteFeasibility(scenario, newSolution.vehicleSchedules[1])
+    @test feasible == true
+
+
+end
+==#

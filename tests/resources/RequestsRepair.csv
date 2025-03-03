@@ -1,0 +1,6 @@
+id,pickup_latitude,pickup_longitude,dropoff_latitude,dropoff_longitude,request_type,request_time,mobility_type,call_time
+1,59.635075,10.672229,59.632538,10.67247,0,495,Walking,375.0
+2,59.672538,10.65247,59.635075,10.672229,1,500,Walking,0.0
+3,59.632427,10.69418,59.604056,10.749636,0,530,Walking,0.0
+4,59.569626,10.840697,59.604056,10.749636,0,425,Walking,0.0
+5,59.604056,10.749636,59.569626,10.840697,1,990,Walking,870.0
