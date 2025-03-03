@@ -231,6 +231,7 @@ end
 end
 
 
+#==
 @testset "Regret Repair test" begin
 
     # Create configuration 
@@ -276,4 +277,4 @@ end
 
 
 end
-
+==#

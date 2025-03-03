@@ -477,7 +477,7 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
                 startOfServiceActivity = max(earliestStartOfServiceActivity,activity.timeWindow.startTime)
                 
                 endOfActivity = startOfServiceActivity + scenario.serviceTimes[activity.mobilityType]
-                arrivalNextNode = endOfActivity + scenario.time[request.dropOffActivity.id, route[idx+1].activity.id]
+                arrivalNextNode = endOfActivity + scenario.time[activity.id, route[idx+1].activity.id]
             else
                 return false, typeOfSeat 
             end
