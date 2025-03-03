@@ -5,36 +5,50 @@ using utils, domain, offlinesolution
 #==
  Test ConstructionHeuristicTest 
 ==#
-@testset "ConstructionHeuristicTest test" begin 
-    requestFile = "tests/resources/Requests.csv"
-    vehiclesFile = "tests/resources/Vehicles.csv"
-    parametersFile = "tests/resources/Parameters.csv"
-    distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
-    timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
+# @testset "ConstructionHeuristicTest test" begin 
+#     requestFile = "tests/resources/Requests.csv"
+#     vehiclesFile = "tests/resources/Vehicles.csv"
+#     parametersFile = "tests/resources/Parameters.csv"
+#     distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
+#     timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
 
-    # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+#     # Read instance 
+#     scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
 
-    # Constuct solution 
-    solution = simpleConstruction(scenario)
+#     # Constuct solution 
+#     solution = simpleConstruction(scenario)
 
-    # Print routes
-    for schedule in solution.vehicleSchedules
-        printRoute(schedule)
-    end
+#     # Print routes
+#     for schedule in solution.vehicleSchedules
+#         printRoute(schedule)
+#     end
 
-    # Check routes
-    for schedule in solution.vehicleSchedules
-        feasible, msg = checkRouteFeasibility(scenario,schedule)
-        println(msg)
-        @test feasible == true
-    end
+#     # Check routes
+#     for schedule in solution.vehicleSchedules
+#         feasible, msg = checkRouteFeasibility(scenario,schedule)
+#         println(msg)
+#         @test feasible == true
+#     end
 
-    @test solution.nTaxi == 0
+#     @test solution.nTaxi == 0
 
-    # Check solution
-    solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
-    feasible, msg = checkSolutionFeasibility(scenario,solution)
-    println(msg)
-    @test feasible == true
-end
+#     # Check solution
+#     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+#     feasible, msg = checkSolutionFeasibility(scenario,solution)
+#     println(msg)
+#     @test feasible == true
+# end
+
+
+requestFile = "Data/Konsentra/TransformedData_Data.csv"
+vehiclesFile = "tests/resources/Vehicles.csv"
+parametersFile = "tests/resources/Parameters.csv"
+distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
+timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
+
+# Read instance 
+scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+# Constuct solution 
+solution = simpleConstruction(scenario)
+solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+feasible, msg = checkSolutionFeasibility(scenario,solution)

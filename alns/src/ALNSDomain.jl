@@ -29,6 +29,7 @@ struct ALNSParameters
 	scoreNewBest::Float64 # Score given for a new global best solution
     minPercentToDestroy::Float64 # Minimum percentage of requests to destroy
     maxPercentToDestroy::Float64 # Maximum percentage of requests to destroy
+    worstRemovalP::Float64 # Probability of removing worst request
 
     # TODO: add parameters for different destroy/repair methods 
 
@@ -42,8 +43,9 @@ struct ALNSParameters
         scoreNewBest=10.0,
         minPercentToDestroy=0.1,
         maxPercentToDestroy=0.3,
+        worstRemovalP=6.0
     )
-        return new(timeLimit, reactionFactor, startThreshold, solCostEps, scoreAccepted, scoreImproved, scoreNewBest,minPercentToDestroy,maxPercentToDestroy)
+        return new(timeLimit, reactionFactor, startThreshold, solCostEps, scoreAccepted, scoreImproved, scoreNewBest,minPercentToDestroy,maxPercentToDestroy,worstRemovalP)
     end
 end
 

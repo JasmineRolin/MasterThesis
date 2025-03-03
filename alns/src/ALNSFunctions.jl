@@ -22,7 +22,10 @@ export calculateScore, updateWeights!
         Float64(jsonData["solCostEps"]),
         Float64(jsonData["scoreAccepted"]),
         Float64(jsonData["scoreImproved"]),
-        Float64(jsonData["scoreNewBest"])
+        Float64(jsonData["scoreNewBest"]),
+        Float64(jsonData["minPercentToDestroy"]),
+        Float64(jsonData["maxPercentToDestroy"]),
+        Float64(jsonData["worstRemovalP"])
     )
     
 end

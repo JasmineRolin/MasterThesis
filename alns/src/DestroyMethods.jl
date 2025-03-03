@@ -21,24 +21,28 @@ end
 function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::ALNSParameters)
     @unpack currentSolution, assignedRequests, requestBank = currentState
     @unpack time, distance = scenario
+    @unpack minPercentToDestroy, maxPercentToDestroy = parameters
+
+    nRequests = length(assignedRequests)
+    if nRequests == 0
+        println("Warning: No requests available to remove.")
+        return
+    end
     
     # Find number of requests currently in solution 
     nRequests = length(assignedRequests)
 
     # Find number of requests to remove 
-    nRequestsToRemove = findNumberOfRequestToRemove(parameters.minPercentToDestroy,parameters.maxPercentToDestroy,nRequests)
+    nRequestsToRemove = findNumberOfRequestToRemove(minPercentToDestroy,maxPercentToDestroy,nRequests)
     
     # Collect customers to remove
     requestsToRemove = Set{Int}()
 
-
     # Choose requests to remove  
-    for _ in 1:nRequestsToRemove
-        idx = rand(1:length(assignedRequests))
-        push!(requestsToRemove,assignedRequests[idx])
-        push!(requestBank,assignedRequests[idx])
-        deleteat!(assignedRequests,idx)
-    end
+    selectedIdx = randperm(nRequests)[1:nRequestsToRemove]
+    requestsToRemove = Set(assignedRequests[selectedIdx])
+    append!(requestBank,assignedRequests[selectedIdx])
+    deleteat!(assignedRequests,selectedIdx)
 
     println("==========> Removing requests: ",requestsToRemove)
 
@@ -49,9 +53,53 @@ end
 #==
  Worst removal
 ==#
-function worstRemoval!()
+# TODO: check how often it is not idx == 1
+function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::ALNSParameters)
+    @unpack currentSolution, assignedRequests, requestBank = currentState
+    @unpack time, distance = scenario
+    @unpack worstRemovalP, minPercentToDestroy, maxPercentToDestroy = parameters
     
+    # Find number of requests currently in solution
+    nRequests = length(assignedRequests)
+    
+    # Find number of requests to remove
+    nRequestsToRemove = findNumberOfRequestToRemove(minPercentToDestroy, maxPercentToDestroy, nRequests)
+    
+    # Compute cost impact for each request
+    costImpacts = Dict()
+    for schedule in currentSolution.vehicleSchedules
+        for activityAssignment in schedule.route
+            if activityAssignment.activity.activityType == PICKUP
+                pickUpPosition, dropOffPosition = findPositionOfRequest(schedule, activityAssignment.activity.requestId)
+                costImpacts[activityAssignment.activity.requestId] = getCostOfRequest(time, schedule.route[pickUpPosition], schedule.route[dropOffPosition])   
+            end
+        end
+    end
+    
+    # Sort requests by descending cost
+    sortedRequests = sort(collect(costImpacts), by=x -> -x[2])  # Sort by cost, highest first
+    
+    # Remove requests probabilistically
+    requestsToRemove = Set{Int}()
+    for _ in 1:nRequestsToRemove
+        y = rand()  # Random number in [0,1]
+        idx = round(Int, y^worstRemovalP * length(sortedRequests))  # Skewed selection
+        idx = clamp(idx, 1, length(sortedRequests))  # Ensure valid index
+        request, _ = sortedRequests[idx]
+        
+        push!(requestsToRemove, request)
+        push!(requestBank, request)
+        deleteat!(assignedRequests, findfirst(x -> x == request, assignedRequests))
+        deleteat!(sortedRequests, idx)
+    end
+    
+    println("==========> Removing requests: ", requestsToRemove)
+    
+    # Remove requests from solution
+    removeRequestsFromSolution!(time, distance, currentSolution, requestsToRemove)
 end
+
+
 
 #==
  Shaw removal
@@ -67,7 +115,7 @@ function findNumberOfRequestToRemove(minPercentToDestroy::Float64,maxPercentToDe
     minimumNumberToRemove = max(1,round(Int,minPercentToDestroy*nRequests))
     maximumNumberToRemove = max(minimumNumberToRemove,round(Int,maxPercentToDestroy*nRequests))
 
-    return rand(1:maximumNumberToRemove)
+    return rand(minimumNumberToRemove:maximumNumberToRemove)
 end
 
 
@@ -109,7 +157,7 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
         pickUpPosition,dropOffPosition = findPositionOfRequest(schedule,requestToRemove)
         mobilityType = schedule.route[pickUpPosition].mobilityAssignment
 
-        # Save ride time and cost of request 
+        # Save cost of request 
         cost = getCostOfRequest(time,schedule.route[pickUpPosition],schedule.route[dropOffPosition])
 
         # Remove pickup activity 
