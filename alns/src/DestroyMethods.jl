@@ -95,7 +95,7 @@ function removeRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,
 end
 
 #==
- Method to remove activity at idx from route
+ Method to remove list of requests from schedule
 ==#
 function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,2},schedule::VehicleSchedule,requestsToRemove::Vector{Int})
 

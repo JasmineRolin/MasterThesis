@@ -123,6 +123,9 @@ end
 Method to update route in vehicle schedule after insertion of request
 ==#
 function updateRoute!(time::Array{Int,2},serviceTimes::Dict{MobilityType,Int},vehicleSchedule::VehicleSchedule,request::Request,typeOfSeat::MobilityType,idxPickUp::Int,idxDropOff::Int)
+    # Initialize 
+    startOfServicePick = 0
+    startOfServiceDrop = 0
 
     # Special case when only two depots due to how initial time windows are. Insert as early as possible
     if length(vehicleSchedule.route) == 2 && vehicleSchedule.route[1].activity.activityType == DEPOT && vehicleSchedule.route[2].activity.activityType == DEPOT
