@@ -154,7 +154,7 @@ function updateRoute!(time::Array{Int,2},serviceTimes::Dict{MobilityType,Int},ve
     earliestStartOfServicePickUp = max(endOfServiceBeforePick + time[route[idxPickUp].activity.id,request.pickUpActivity.id],request.pickUpActivity.timeWindow.startTime)
     latestStartOfServicePickUp = min(startOfServiceAfterPick - time[request.pickUpActivity.id,route[idxPickUp+1].activity.id] - serviceTimes[request.pickUpActivity.mobilityType],request.pickUpActivity.timeWindow.endTime)
     earliestStartOfServiceDropOff = max(endOfServiceBeforeDrop + time[route[idxDropOff].activity.id,request.dropOffActivity.id],request.dropOffActivity.timeWindow.startTime)
-    latestStartOfServiceDropOff = min(startOfServiceAfterDrop - time[request.dropOffActivity,route[idxDropOff+1].activity.id] - serviceTimes[request.dropOffActivity.mobilityType],request.dropOffActivity.timeWindow.endTime)  
+    latestStartOfServiceDropOff = min(startOfServiceAfterDrop - time[request.dropOffActivity.id,route[idxDropOff+1].activity.id] - serviceTimes[request.dropOffActivity.mobilityType],request.dropOffActivity.timeWindow.endTime)  
 
     # Get available service time window for pick up considering minimized excess drive time
     earliestStartOfServicePickUpMinimization = max(earliestStartOfServicePickUp,earliestStartOfServiceDropOff - max(earliestStartOfServiceDropOff - latestStartOfServicePickUp, time[request.pickUpActivity.id,request.dropOffActivity.id] + serviceTimes[request.pickUpActivity.mobilityType]))
@@ -164,7 +164,7 @@ function updateRoute!(time::Array{Int,2},serviceTimes::Dict{MobilityType,Int},ve
     startOfServicePick = latestStartOfServicePickUpMinimization
 
     # Determine the time for drop off
-    startOfServiceDrop = startOfServicePick + max(earliestStartOfServiceDropOff - latestStartOfServicePick, time[request.pickUpActivity.id,request.dropOffActivity.id]+serviceTimes[request.pickUpActivity.mobilityType])
+    startOfServiceDrop = startOfServicePick + max(earliestStartOfServiceDropOff - latestStartOfServicePickUp, time[request.pickUpActivity.id,request.dropOffActivity.id]+serviceTimes[request.pickUpActivity.mobilityType])
 
     # Insert request
     pickUpActivity = ActivityAssignment(request.pickUpActivity, vehicleSchedule.vehicle, startOfServicePick, startOfServicePick + serviceTimes[request.pickUpActivity.mobilityType])
