@@ -240,8 +240,8 @@ function removeActivityFromRoute!(time::Array{Int,2},distance::Array{Float64,2},
     routeReduction = 0
 
     # Remove activity 
-    distanceDelta = 0.0
-    idleTimeDelta = 0
+    deltaDistance = 0.0
+    deltaIdleTime = 0
     # Extend waiting activity before activity to remove
     if activityAssignmentBefore.activity.activityType == WAITING
 
@@ -293,7 +293,7 @@ function removeActivityFromRoute!(time::Array{Int,2},distance::Array{Float64,2},
         route[idx] = waitingActivityAssignment
     end
 
-    return distanceDelta,idleTimeDelta, routeReduction
+    return deltaDistance,deltaIdleTime, routeReduction
 
 end
 

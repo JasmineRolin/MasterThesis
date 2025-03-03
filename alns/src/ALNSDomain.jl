@@ -89,6 +89,22 @@ mutable struct ALNSState
 
         return new(zeros(nDestroy),zeros(nRepair),zeros(Int,nDestroy),zeros(Int,nRepair),currentSolution,currentSolution,Vector{Int}(),assignedRequests)
     end
+
+    # All-argument constructor
+    function ALNSState(
+        destroyWeights::Vector{Float64}, 
+        repairWeights::Vector{Float64}, 
+        destroyNumberOfUses::Vector{Int}, 
+        repairNumberOfUses::Vector{Int}, 
+        bestSolution::Solution, 
+        currentSolution::Solution, 
+        requestBank::Vector{Int}, 
+        assignedRequests::Vector{Int}
+    )
+        return new(destroyWeights, repairWeights, destroyNumberOfUses, repairNumberOfUses, bestSolution, currentSolution, requestBank, assignedRequests)
+    end
+
+
 end
 
 

@@ -29,7 +29,7 @@ mutable struct VehicleSchedule
     end
 
     function VehicleSchedule(vehicle::Vehicle, route::Vector{ActivityAssignment} )
-        return new(vehicle, route, vehicle.availableTimeWindow, 0.0, 0, 0.0,0, Int[], Int[]) 
+        return new(vehicle, route, TimeWindow(route[1].startOfServiceTime,vehicle.availableTimeWindow.endTime), 0.0, 0, 0.0,0, Int[], Int[]) 
     end
 
     function VehicleSchedule()
@@ -75,6 +75,23 @@ function isVehicleScheduleEmpty(vehicleSchedule::VehicleSchedule)
     end
 
     return false
+end
+
+#==
+ Method to copy vehicle schedule
+==#
+function copyVehicleSchedule(original::VehicleSchedule)
+    return VehicleSchedule(
+        original.vehicle,  # Assuming Vehicle is immutable or already deeply copied
+        deepcopy(original.route),
+        deepcopy(original.activeTimeWindow),
+        original.totalDistance,
+        original.totalTime,
+        original.totalCost,
+        original.totalIdleTime,
+        deepcopy(original.numberOfWalking),
+        deepcopy(original.numberOfWheelchair)
+    )
 end
 
 end

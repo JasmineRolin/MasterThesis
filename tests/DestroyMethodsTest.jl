@@ -29,12 +29,13 @@ using offlinesolution
     solution.totalRideTime -= solution.vehicleSchedules[3].totalTime + solution.vehicleSchedules[4].totalTime
     solution.totalIdleTime -= solution.vehicleSchedules[3].totalIdleTime + solution.vehicleSchedules[4].totalIdleTime
 
-    solution.vehicleSchedules[3].numberOfWalking = [solution.vehicleSchedules[3].numberOfWalking[1:5];solution.vehicleSchedules[4].numberOfWalking[2:5];solution.vehicleSchedules[3].numberOfWalking[end]]
-    solution.vehicleSchedules[3].numberOfWheelchair = [solution.vehicleSchedules[3].numberOfWheelchair[1:5];solution.vehicleSchedules[4].numberOfWheelchair[2:5];solution.vehicleSchedules[3].numberOfWheelchair[end]]
+    solution.vehicleSchedules[3].numberOfWalking = [solution.vehicleSchedules[3].numberOfWalking[1:4];solution.vehicleSchedules[4].numberOfWalking[2:4];solution.vehicleSchedules[3].numberOfWalking[end]]
+    solution.vehicleSchedules[3].numberOfWheelchair = [solution.vehicleSchedules[3].numberOfWheelchair[1:4];solution.vehicleSchedules[4].numberOfWheelchair[2:4];solution.vehicleSchedules[3].numberOfWheelchair[end]]
 
-    solution.vehicleSchedules[3].route = [solution.vehicleSchedules[3].route[1:5];solution.vehicleSchedules[4].route[2:5];solution.vehicleSchedules[3].route[end]]
-    solution.vehicleSchedules[3].route[5].endOfServiceTime = 483
-    solution.vehicleSchedules[3].route[9].endOfServiceTime = 1252
+    solution.vehicleSchedules[3].route = [solution.vehicleSchedules[3].route[1:4];solution.vehicleSchedules[4].route[2:4];solution.vehicleSchedules[3].route[end]]
+    solution.vehicleSchedules[3].route[4].endOfServiceTime = 517
+    solution.vehicleSchedules[3].route[end-1].endOfServiceTime = 1252
+
 
     solution.vehicleSchedules[3].totalCost = getTotalCostRoute(scenario,solution.vehicleSchedules[3].route)
     solution.vehicleSchedules[3].totalDistance = getTotalDistanceRoute(solution.vehicleSchedules[3].route,scenario)
@@ -48,6 +49,9 @@ using offlinesolution
     solution.totalCost += solution.vehicleSchedules[3].totalCost 
     solution.totalRideTime += solution.vehicleSchedules[3].totalTime 
     solution.totalIdleTime += solution.vehicleSchedules[3].totalIdleTime 
+
+    feasible, msg = checkSolutionFeasibility(scenario,solution)
+    @test feasible == true
 
     printSolution(solution,printRouteHorizontal)
 
@@ -108,7 +112,7 @@ end
 
     feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
     @test feasible == true
-    @test length(currentState.assignedRequests) == 2
+    @test length(currentState.assignedRequests) == 3
 
     # Destroy 
     randomDestroy!(scenario,currentState,parameters)
@@ -117,7 +121,7 @@ end
     @test msg1 == ""
     @test feasible1 == true
     @test length(currentState.requestBank) == 1
-    @test length(currentState.assignedRequests) == 1
+    @test length(currentState.assignedRequests) == 2
 end
 
 
@@ -145,12 +149,13 @@ end
     solution.totalRideTime -= solution.vehicleSchedules[3].totalTime + solution.vehicleSchedules[4].totalTime
     solution.totalIdleTime -= solution.vehicleSchedules[3].totalIdleTime + solution.vehicleSchedules[4].totalIdleTime
 
-    solution.vehicleSchedules[3].numberOfWalking = [solution.vehicleSchedules[3].numberOfWalking[1:5];solution.vehicleSchedules[4].numberOfWalking[2:5];solution.vehicleSchedules[3].numberOfWalking[end]]
-    solution.vehicleSchedules[3].numberOfWheelchair = [solution.vehicleSchedules[3].numberOfWheelchair[1:5];solution.vehicleSchedules[4].numberOfWheelchair[2:5];solution.vehicleSchedules[3].numberOfWheelchair[end]]
+    solution.vehicleSchedules[3].numberOfWalking = [solution.vehicleSchedules[3].numberOfWalking[1:4];solution.vehicleSchedules[4].numberOfWalking[2:4];solution.vehicleSchedules[3].numberOfWalking[end]]
+    solution.vehicleSchedules[3].numberOfWheelchair = [solution.vehicleSchedules[3].numberOfWheelchair[1:4];solution.vehicleSchedules[4].numberOfWheelchair[2:4];solution.vehicleSchedules[3].numberOfWheelchair[end]]
 
-    solution.vehicleSchedules[3].route = [solution.vehicleSchedules[3].route[1:5];solution.vehicleSchedules[4].route[2:5];solution.vehicleSchedules[3].route[end]]
-    solution.vehicleSchedules[3].route[5].endOfServiceTime = 483
-    solution.vehicleSchedules[3].route[9].endOfServiceTime = 1252
+    solution.vehicleSchedules[3].route = [solution.vehicleSchedules[3].route[1:4];solution.vehicleSchedules[4].route[2:4];solution.vehicleSchedules[3].route[end]]
+    solution.vehicleSchedules[3].route[4].endOfServiceTime = 517
+    solution.vehicleSchedules[3].route[end-1].endOfServiceTime = 1252
+
 
     solution.vehicleSchedules[3].totalCost = getTotalCostRoute(scenario,solution.vehicleSchedules[3].route)
     solution.vehicleSchedules[3].totalDistance = getTotalDistanceRoute(solution.vehicleSchedules[3].route,scenario)
@@ -165,7 +170,8 @@ end
     solution.totalRideTime += solution.vehicleSchedules[3].totalTime 
     solution.totalIdleTime += solution.vehicleSchedules[3].totalIdleTime 
 
-    printSolution(solution,printRouteHorizontal)
+    feasible, msg = checkSolutionFeasibility(scenario,solution)
+    @test feasible == true
 
 
     # Construct ALNS state
@@ -225,7 +231,7 @@ end
 
     feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
     @test feasible == true
-    @test length(currentState.assignedRequests) == 2
+    @test length(currentState.assignedRequests) == 3
 
     # Destroy 
     worstRemoval!(scenario,currentState,parameters)
@@ -234,5 +240,5 @@ end
     @test msg1 == ""
     @test feasible1 == true
     @test length(currentState.requestBank) == 1
-    @test length(currentState.assignedRequests) == 1
+    @test length(currentState.assignedRequests) == 2
 end
