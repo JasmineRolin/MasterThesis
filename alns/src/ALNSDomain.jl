@@ -50,11 +50,11 @@ mutable struct ALNSParameters
         scoreNewBest=10.0,
         minPercentToDestroy=0.1,
         maxPercentToDestroy=0.3,
-        worstRemovalP=6.0,
+        p=6.0,
         shawRemovalPhi=9.0,
         shawRemovalXi=3.0
         )
-        return new(timeLimit, reactionFactor, startThreshold, solCostEps, scoreAccepted, scoreImproved, scoreNewBest,minPercentToDestroy,maxPercentToDestroy,worstRemovalP,shawRemovalPhi,shawRemovalXi,0.0,0.0,0.0,0.0,0.0,0.0)
+        return new(timeLimit, reactionFactor, startThreshold, solCostEps, scoreAccepted, scoreImproved, scoreNewBest,minPercentToDestroy,maxPercentToDestroy,p,shawRemovalPhi,shawRemovalXi,0.0,0.0,0.0,0.0,0.0,0.0)
     end
 end
 
