@@ -30,7 +30,7 @@ mutable struct VehicleSchedule
 
     function VehicleSchedule(vehicle::Vehicle,emptyRoute::Bool)
         if emptyRoute
-            return new(vehicle, [], TimeWindow(vehicle.availableTimeWindow.startTime,vehicle.availableTimeWindow.endTime), 0.0, 0, 0.0,0, Int[0,0], Int[0,0]) 
+            return new(vehicle, [], TimeWindow(vehicle.availableTimeWindow.startTime,vehicle.availableTimeWindow.endTime), 0.0, 0, 0.0,0, Vector{Int}(), Vector{Int}()) 
         end
         
         # Create route with depots
