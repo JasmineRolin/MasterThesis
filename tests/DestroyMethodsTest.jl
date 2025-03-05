@@ -53,9 +53,6 @@ using offlinesolution
     feasible, msg = checkSolutionFeasibility(scenario,solution)
     @test feasible == true
 
-    printSolution(solution,printRouteHorizontal)
-
-
     # Construct ALNS state
     currentState = ALNSState(solution,1,0)
 
@@ -296,8 +293,6 @@ end
 
     feasible, msg = checkSolutionFeasibility(scenario,solution)
     @test feasible == true
-
-    printSolution(solution,printRouteHorizontal)
 
 
     # Construct ALNS state
