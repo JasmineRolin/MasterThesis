@@ -36,8 +36,8 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     # Get parameters 
     planningPeriod = TimeWindow(parametersDf[1,"start_of_planning_period"],parametersDf[1,"end_of_planning_period"])
     serviceTimes = Dict{MobilityType,Int}(WALKING => parametersDf[1,"service_time_walking"], WHEELCHAIR => parametersDf[1,"service_time_wheelchair"])
-    vehicleCostPrHour = parametersDf[1,"vehicle_cost_pr_hour"]
-    vehicleStartUpCost = parametersDf[1,"vehicle_start_up_cost"]
+    vehicleCostPrHour = Float64(parametersDf[1,"vehicle_cost_pr_hour"])
+    vehicleStartUpCost = Float64(parametersDf[1,"vehicle_start_up_cost"])
     bufferTime = parametersDf[1,"buffer_time"]
     maximumRideTimePercent = parametersDf[1,"maximum_ride_time_percent"]
     minimumMaximumRideTime = parametersDf[1,"minimum_maximum_ride_time"]
@@ -120,9 +120,9 @@ end
 #==
  Function to read requests 
 ==#
-function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maximumRideTimePercent::Int, minimumMaximumRideTime::Int,time::Array{Int,2})::Vector{Request}
+function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maximumRideTimePercent::Int, minimumMaximumRideTime::Int,time::Array{Int,2})
     requests = Vector{Request}()
-   
+
     for row in eachrow(requestDf)
         id = row.id 
         dropOffId = nRequests + id
@@ -170,8 +170,8 @@ function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maxim
         pickUpActivity = Activity(id,id,PICKUP,mobilityType,pickUpLocation,pickUpTimeWindow)
         dropOffActivity = Activity(dropOffId,id,DROPOFF,mobilityType,dropOffLocation,dropOffTimeWindow)
         request = Request(id,requestType,mobilityType,callTime,pickUpActivity,dropOffActivity,directDriveTime,maximumRideTime)
+
         push!(requests,request)
-        
     end
 
 

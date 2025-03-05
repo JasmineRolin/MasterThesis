@@ -13,7 +13,7 @@ function printSolution(solution::Solution,printRouteFunc::Function)
     println("Total Distance: ", solution.totalDistance, " km")
     println("Total time: ", solution.totalRideTime, " min")
     println("Total Cost: \$", solution.totalCost)
-    println("Total Idle time: \$", solution.idleTime)
+    println("Total Idle time: \$", solution.totalIdleTime)
 
     for schedule in solution.vehicleSchedules
         printRouteFunc(schedule)
@@ -97,7 +97,7 @@ end
 function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPickUp::Int,idxDropOff::Int,typeOfSeat::MobilityType,scenario::Scenario)
 
     # Update route
-    updateRoute!(scenario.time,scenario.serviceTimes,vehicleSchedule,request,idxPickUp,idxDropOff)
+    updateRoute!(scenario.time,scenario.serviceTimes,vehicleSchedule,request,typeOfSeat,idxPickUp,idxDropOff)
 
     # Update capacities
     updateCapacities!(vehicleSchedule,idxPickUp,idxDropOff,typeOfSeat)
@@ -125,7 +125,7 @@ end
 #==
 Method to update route in vehicle schedule after insertion of request. Will do it so minimize excess drive time and secondly as late as possible
 ==#
-function updateRoute!(time::Array{Int,2},serviceTimes::Dict{MobilityType,Int},vehicleSchedule::VehicleSchedule,request::Request,idxPickUp::Int,idxDropOff::Int)
+function updateRoute!(time::Array{Int,2},serviceTimes::Dict{MobilityType,Int},vehicleSchedule::VehicleSchedule,request::Request,typeOfSeat::MobilityType,idxPickUp::Int,idxDropOff::Int)
 
     route = vehicleSchedule.route
 
@@ -167,8 +167,8 @@ function updateRoute!(time::Array{Int,2},serviceTimes::Dict{MobilityType,Int},ve
     startOfServiceDrop = startOfServicePick + max(earliestStartOfServiceDropOff - latestStartOfServicePickUp, time[request.pickUpActivity.id,request.dropOffActivity.id]+serviceTimes[request.pickUpActivity.mobilityType])
 
     # Insert request
-    pickUpActivity = ActivityAssignment(request.pickUpActivity, vehicleSchedule.vehicle, startOfServicePick, startOfServicePick + serviceTimes[request.pickUpActivity.mobilityType])
-    dropOffActivity = ActivityAssignment(request.dropOffActivity, vehicleSchedule.vehicle, startOfServiceDrop, startOfServiceDrop + serviceTimes[request.dropOffActivity.mobilityType])
+    pickUpActivity = ActivityAssignment(request.pickUpActivity, vehicleSchedule.vehicle, startOfServicePick, startOfServicePick + serviceTimes[request.pickUpActivity.mobilityType],typeOfSeat)
+    dropOffActivity = ActivityAssignment(request.dropOffActivity, vehicleSchedule.vehicle, startOfServiceDrop, startOfServiceDrop + serviceTimes[request.dropOffActivity.mobilityType],typeOfSeat)
     insert!(vehicleSchedule.route,idxPickUp+1,pickUpActivity)
     insert!(vehicleSchedule.route,idxDropOff+2,dropOffActivity)
 
@@ -216,7 +216,7 @@ function insertWaitingBeforeNode!(time::Array{Int,2},vehicleSchedule::VehicleSch
     if route[idx-1].endOfServiceTime + time[route[idx-1].activity.id,route[idx].activity.id] < route[idx].startOfServiceTime
         startOfServiceWaiting = route[idx-1].endOfServiceTime 
         endOfServiceWaiting = route[idx].startOfServiceTime - time[route[idx-1].activity.id,route[idx].activity.id]
-        waitingActivity = ActivityAssignment(Activity(route[idx-1].activity.id,-1,WAITING,WALKING,route[idx].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting)
+        waitingActivity = ActivityAssignment(Activity(route[idx-1].activity.id,-1,WAITING,WALKING,route[idx].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting,WALKING)
         insert!(route,idx,waitingActivity)
         insert!(vehicleSchedule.numberOfWalking,idx,vehicleSchedule.numberOfWalking[idx-1])
         insert!(vehicleSchedule.numberOfWheelchair,idx,vehicleSchedule.numberOfWheelchair[idx-1])
@@ -235,7 +235,7 @@ function insertWaitingAfterNode!(time::Array{Int,2},vehicleSchedule::VehicleSche
     if route[idx].endOfServiceTime + time[route[idx].activity.id,route[idx+1].activity.id] < route[idx+1].startOfServiceTime
         startOfServiceWaiting = route[idx].endOfServiceTime 
         endOfServiceWaiting = route[idx+1].startOfServiceTime - time[route[idx].activity.id,route[idx+1].activity.id]
-        waitingActivity = ActivityAssignment(Activity(route[idx].activity.id,-1,WAITING,WALKING,route[idx].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting)
+        waitingActivity = ActivityAssignment(Activity(route[idx].activity.id,-1,WAITING,WALKING,route[idx].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting,WALKING)
         insert!(route,idx+1,waitingActivity)
         insert!(vehicleSchedule.numberOfWalking,idx+1,vehicleSchedule.numberOfWalking[idx])
         insert!(vehicleSchedule.numberOfWheelchair,idx+1,vehicleSchedule.numberOfWheelchair[idx])

@@ -58,7 +58,6 @@ function updateCurrentScheduleNoAssignement!(vehicle::Int,currentTime::Int,curre
     currentSchedule.activeTimeWindow.startTime = currentTime
 
     # Update depots (start and end)
-    currentSchedule.route[1].activity.timeWindow.startTime = currentTime
     currentSchedule.route[1].startOfServiceTime = currentTime
     currentSchedule.route[1].endOfServiceTime = currentTime
 
@@ -143,7 +142,7 @@ function updateFinalSolution!(scenario::Scenario,finalSolution::Solution,solutio
     finalSolution.totalRideTime += totalTimeOfNewCompletedRoute
     finalSolution.totalDistance += getTotalDistanceRoute(solution.vehicleSchedules[vehicle].route[1:idx+1],scenario)
     finalSolution.totalCost += getTotalCostRoute(scenario,solution.vehicleSchedules[vehicle].route[1:idx+1])
-    finalSolution.idleTime += getTotalIdleTimeRoute(newCompletedRoute)
+    finalSolution.totalIdleTime += getTotalIdleTimeRoute(newCompletedRoute)
 end
 
 
@@ -184,7 +183,7 @@ function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,currentStat
         # Update KPIs of solution
         finalSolution.totalRideTime += newDuration
         finalSolution.totalDistance += newDistance
-        finalSolution.idleTime += newIdleTime
+        finalSolution.totalIdleTime += newIdleTime
         finalSolution.totalCost += newCost 
     end
 end
@@ -254,7 +253,7 @@ end
 function simulateScenario(scenario::Scenario)
 
     # Initialize current state 
-    initialVehicleSchedules = [VehicleSchedule(vehicle,ActivityAssignment[]) for vehicle in scenario.vehicles] # TODO change constructor
+    initialVehicleSchedules = [VehicleSchedule(vehicle,true) for vehicle in scenario.vehicles] # TODO change constructor
     finalSolution = Solution(initialVehicleSchedules, 0.0, 0, 0, 0, 0) # TODO change constructor
     currentState = State(scenario,Request())
 
