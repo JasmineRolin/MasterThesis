@@ -50,5 +50,30 @@ end
       
 end
 
+@testset "ConstructionHeurstic test - Big Test" begin 
+    requestFile = "tests/resources/RequestsBig.csv"
+    vehiclesFile = "tests/resources/VehiclesBig.csv"
+    parametersFile = "tests/resources/Parameters.csv"
+    distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
+    timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
+    
+    # Read instance 
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    
+    # Constuct solution 
+    solution, requestBank = simpleConstruction(scenario)
+    solution.nTaxi += length(requestBank)
+    solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+
+    # Print solution
+    for vehicle in solution.vehicleSchedules
+        printRouteHorizontal(vehicle)
+    end
+
+    feasible, msg = checkSolutionFeasibility(scenario,solution)
+    @test feasible == true
+    @test msg == ""
+      
+end
 
 

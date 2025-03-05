@@ -255,9 +255,13 @@ function updateWaitingAfterNode!(time::Array{Int,2},vehicleSchedule::VehicleSche
         # Update waiting after node
         route[idx+1].startOfServiceTime = route[idx].endOfServiceTime
         route[idx+1].activity.timeWindow.startTime = route[idx].endOfServiceTime
+        return 0
     else
         # Remove waiting after node
         deleteat!(route,idx+1)
+        deleteat!(vehicleSchedule.numberOfWalking,idx+1)
+        deleteat!(vehicleSchedule.numberOfWheelchair,idx+1)
+        return -1
     end
 end
 
@@ -271,9 +275,13 @@ function updateWaitingBeforeNode!(time::Array{Int,2},vehicleSchedule::VehicleSch
         # Update waiting before node
         route[idx-1].endOfServiceTime = route[idx].startOfServiceTime - time[route[idx-2].activity.id,route[idx].activity.id]
         route[idx-1].activity.timeWindow.endTime = route[idx].startOfServiceTime - time[route[idx-2].activity.id,route[idx].activity.id]
+        return 0
     else
         # Remove waiting before node
         deleteat!(route,idx-1)
+        deleteat!(vehicleSchedule.numberOfWalking,idx-1)
+        deleteat!(vehicleSchedule.numberOfWheelchair,idx-1)
+        return -1
     end
 end
 
@@ -299,7 +307,9 @@ function updateWaiting!(time::Array{Int,2},vehicleSchedule::VehicleSchedule,idxP
             updatedIdxDropOff += inserted
             updatedIdxPickUp += inserted
         elseif route[updatedIdxPickUp-1].activity.activityType != DEPOT
-            updateWaitingBeforeNode!(time,vehicleSchedule,updatedIdxPickUp)
+            inserted = updateWaitingBeforeNode!(time,vehicleSchedule,updatedIdxPickUp)
+            updatedIdxDropOff += inserted
+            updatedIdxPickUp += inserted
         end
 
         # Update or insert waiting after pick up 
@@ -307,18 +317,20 @@ function updateWaiting!(time::Array{Int,2},vehicleSchedule::VehicleSchedule,idxP
             inserted = insertWaitingAfterNode!(time,vehicleSchedule,updatedIdxPickUp)
             updatedIdxDropOff += inserted
         else
-            updateWaitingAfterNode!(time,vehicleSchedule,updatedIdxPickUp)
+            inserted = updateWaitingAfterNode!(time,vehicleSchedule,updatedIdxPickUp)
+            updatedIdxDropOff += inserted
         end
 
         # Update or insert waiting before drop-off
-        if route[updatedIdxDropOff+1].activity.activityType != WAITING
+        if route[updatedIdxDropOff-1].activity.activityType != WAITING
             inserted = insertWaitingBeforeNode!(time,vehicleSchedule,updatedIdxDropOff)
             updatedIdxDropOff += inserted
         else
-            updateWaitingBeforeNode!(time,vehicleSchedule,updatedIdxDropOff)
+            inserted = updateWaitingBeforeNode!(time,vehicleSchedule,updatedIdxDropOff)
+            updatedIdxDropOff += inserted
         end
 
-        #  Update or insert waiting after pick up 
+        #  Update or insert waiting after drop-off 
         if route[updatedIdxDropOff+1].activity.activityType != WAITING 
             insertWaitingAfterNode!(time,vehicleSchedule,updatedIdxDropOff)
         else
@@ -411,7 +423,7 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
     elseif request.mobilityType == WALKING && all(vehicleSchedule.numberOfWheelchair[(pickUpIdx + 1):dropOffIdx] .< vehicleSchedule.vehicle.capacities[WHEELCHAIR])
         typeOfSeat = WHEELCHAIR
     else
-        println("Infeasible: Not enough capacity")
+        #println("Infeasible: Not enough capacity")
         return false, typeOfSeat
     end
 
@@ -437,25 +449,25 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
 
         # Check time window
         if startOfServicePick > request.pickUpActivity.timeWindow.endTime || startOfServicePick < request.pickUpActivity.timeWindow.startTime
-            println("Infeasible: Time window pick-up")
+            #println("Infeasible: Time window pick-up")
             return false, typeOfSeat
         elseif startOfServiceDrop > request.dropOffActivity.timeWindow.endTime || startOfServiceDrop < request.dropOffActivity.timeWindow.startTime
-            println("Infeasible: Time window drop-off")
+            #println("Infeasible: Time window drop-off")
             return false, typeOfSeat
         end
         
         # Check drive time: First node
         if startOfServicePick > request.pickUpActivity.timeWindow.endTime
-            println("Infeasible: Drive time from first node")
+            #println("Infeasible: Drive time from first node")
             return false, typeOfSeat
         end
         
         # Check drive time:Next node
         if idx == length(vehicleSchedule.route)-1 && arrivalNextNode > vehicleSchedule.vehicle.availableTimeWindow.endTime
-            println("Infeasible: Drive time to next node")
+            #println("Infeasible: Drive time to next node")
             return false, typeOfSeat
         elseif idx < length(vehicleSchedule.route)-1 && arrivalNextNode > vehicleSchedule.route[idx+1].startOfServiceTime
-            println("Infeasible: Drive time to next node")
+            #println("Infeasible: Drive time to next node")
             return false, typeOfSeat
         end
 
@@ -484,22 +496,22 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
 
             # Check time window
             if startOfServiceActivity > activity.timeWindow.endTime || startOfServiceActivity < activity.timeWindow.startTime
-                println("Infeasible: Time window")
+                #println("Infeasible: Time window")
                 return false, typeOfSeat
             end
 
             # Check drive time: First node
             if startOfServiceActivity > activity.timeWindow.endTime
-                println("Infeasible: Drive time from first node")
+                #println("Infeasible: Drive time from first node")
                 return false, typeOfSeat
             end
             
             # Check drive time:Next node
             if idx == length(route)-1 && arrivalNextNode > vehicleSchedule.vehicle.availableTimeWindow.endTime
-                println("Infeasible: Drive time to next node")
+                #println("Infeasible: Drive time to next node")
                 return false, typeOfSeat
             elseif idx < length(route)-1 && arrivalNextNode > route[idx+1].startOfServiceTime
-                println("Infeasible: Drive time to next node")
+                #println("Infeasible: Drive time to next node")
                 return false, typeOfSeat
             end
     
@@ -509,7 +521,7 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
     
         
     # If all checks pass, the activity is feasible
-    println("FEASIBLE")
+    #println("FEASIBLE")
     return true, typeOfSeat
 end
 
