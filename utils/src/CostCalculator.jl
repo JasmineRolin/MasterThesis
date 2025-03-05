@@ -59,7 +59,9 @@ end
 # Function to get cost of request 
 =#
 function getCostOfRequest(time::Array{Int,2},pickUpActivity::ActivityAssignment,dropOffActivity::ActivityAssignment)
-    return (dropOffActivity.startOfServiceTime - pickUpActivity.endOfServiceTime) - time[pickUpActivity.activity.id,dropOffActivity.activity.id] 
+    directTime = time[pickUpActivity.activity.id,dropOffActivity.activity.id]
+    excessTime = (dropOffActivity.startOfServiceTime - pickUpActivity.endOfServiceTime) - directTime
+    return excessTime/directTime
 end
 
 #==

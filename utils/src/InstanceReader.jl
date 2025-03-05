@@ -51,13 +51,13 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     distance, time = getDistanceAndTimeMatrix(distanceMatrixFile,timeMatrixFile,requestFile,collect(keys(depotLocations)))
 
     # Get requests 
-    requests, requestDict = readRequests(requestsDf,nRequests,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time)
+    requests = readRequests(requestsDf,nRequests,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time)
 
     # Split into offline and online requests
     onlineRequests, offlineRequests = splitRequests(requests)
 
     # Get distance and time matrix
-    scenario = Scenario(requests,requestDict,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots,depots)
+    scenario = Scenario(requests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots,depots)
 
     return scenario
 
@@ -122,8 +122,7 @@ end
 ==#
 function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maximumRideTimePercent::Int, minimumMaximumRideTime::Int,time::Array{Int,2})
     requests = Vector{Request}()
-    requestDict = Dict{Int,Request}()
-   
+
     for row in eachrow(requestDf)
         id = row.id 
         dropOffId = nRequests + id
@@ -173,11 +172,10 @@ function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maxim
         request = Request(id,requestType,mobilityType,callTime,pickUpActivity,dropOffActivity,directDriveTime,maximumRideTime)
 
         push!(requests,request)
-        requestDict[id] = request
     end
 
 
-    return requests, requestDict
+    return requests
 end
 
 

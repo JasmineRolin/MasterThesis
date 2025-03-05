@@ -92,6 +92,7 @@ mutable struct ALNSState
     currentSolution::Solution
     requestBank::Vector{Int}
     assignedRequests::Vector{Int}
+    nAssignedRequests::Int
 
     function ALNSState(currentSolution::Solution,nDestroy::Int,nRepair::Int)
         assignedRequestsSet = Vector{Int}()
@@ -105,7 +106,7 @@ mutable struct ALNSState
 
         assignedRequests = collect(assignedRequestsSet)
 
-        return new(zeros(nDestroy),zeros(nRepair),zeros(Int,nDestroy),zeros(Int,nRepair),currentSolution,currentSolution,Vector{Int}(),assignedRequests)
+        return new(zeros(nDestroy),zeros(nRepair),zeros(Int,nDestroy),zeros(Int,nRepair),currentSolution,currentSolution,Vector{Int}(),assignedRequests,length(assignedRequests))
     end
 
     # All-argument constructor
@@ -117,9 +118,10 @@ mutable struct ALNSState
         bestSolution::Solution, 
         currentSolution::Solution, 
         requestBank::Vector{Int}, 
-        assignedRequests::Vector{Int}
+        assignedRequests::Vector{Int},
+        nAssignedRequests::Int
     )
-        return new(destroyWeights, repairWeights, destroyNumberOfUses, repairNumberOfUses, bestSolution, currentSolution, requestBank, assignedRequests)
+        return new(destroyWeights, repairWeights, destroyNumberOfUses, repairNumberOfUses, bestSolution, currentSolution, requestBank, assignedRequests, nAssignedRequests)
     end
 
 

@@ -116,7 +116,7 @@ end
     # Solution 
     solution = Solution([vehicleSchedule],70.0,4,5,2,4)
     
-    state = ALNSState(Float64[2.0,3.5],Float64[1.0,3.0],[1,2],[2,0],solution,solution,Vector{Int}(),Vector{Int}())
+    state = ALNSState(Float64[2.0,3.5],Float64[1.0,3.0],[1,2],[2,0],solution,solution,Vector{Int}(),Vector{Int}(),0)
 
     # Update weights 
     updateWeights!(state,configuration,2,1,true,true,false)
@@ -170,7 +170,7 @@ end
     # Solution 
     solution = Solution([vehicleSchedule],70.0,4,5,2,4)
     
-    state = ALNSState(Float64[2.0],Float64[3.0],[1],[2],solution,solution,Vector{Int}(),Vector{Int}())
+    state = ALNSState(Float64[2.0],Float64[3.0],[1],[2],solution,solution,Vector{Int}(),Vector{Int}(),0)
 
     # Destroy 
     destroyIdx = destroy!(Scenario(),state,parameters,configuration)
