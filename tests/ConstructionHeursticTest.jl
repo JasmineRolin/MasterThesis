@@ -16,7 +16,7 @@ using utils, domain, offlinesolution
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
 
     # Constuct solution 
-    solution = simpleConstruction(scenario)
+    solution, requestBank = simpleConstruction(scenario)
     @test solution.nTaxi == 0
 
     # Print solution
@@ -40,7 +40,7 @@ end
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
     
     # Constuct solution 
-    solution = simpleConstruction(scenario)
+    solution, requestBank = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
     feasible, msg = checkSolutionFeasibility(scenario,solution)
     @test feasible == true

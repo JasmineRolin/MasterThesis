@@ -14,6 +14,7 @@ function simpleConstruction(scenario::Scenario)
    
     # Initialize solution
     solution = Solution(scenario)
+    requestBank = Int[]
 
     for request in scenario.offlineRequests
         # Initialize variables
@@ -23,7 +24,7 @@ function simpleConstruction(scenario::Scenario)
         triedVehicles = Set{Int}()
         idxPickUp, idxDropOff = -1, -1
         closestVehicleIdx = -1
-        
+
         # Determine closest feasible vehicle
         while !feasible && !getTaxi
             closestVehicleIdx = getClosestVehicle(request,triedVehicles,solution,scenario)
@@ -46,15 +47,17 @@ function simpleConstruction(scenario::Scenario)
         if feasible
             insertRequest!(request,solution.vehicleSchedules[closestVehicleIdx],idxPickUp,idxDropOff,typeOfSeat,scenario)
         else
-            solution.nTaxi += getTaxi
+            solution.nTaxi += 1
+            append!(requestBank,request.id)
         end
+        println(solution.nTaxi)
 
     end
 
     # Update solution
     solution.totalCost, solution.totalDistance, solution.totalRideTime = getTotalCostDistanceTimeOfSolution(scenario,solution)
     
-    return solution
+    return solution, requestBank
     
 end
 
