@@ -222,7 +222,7 @@ end
     state = ALNSState(Float64[2.0],Float64[3.0],[1],[2],solution,solution,requestBank)
 
     # Greedy repair 
-    newSolution = greedyInsertion(state,scenario)
+    newSolution, newRequestBank = greedyInsertion(state,scenario)
 
     feasible, msg = checkRouteFeasibility(scenario, newSolution.vehicleSchedules[1])
     @test feasible == true
@@ -271,7 +271,7 @@ end
     state = ALNSState(Float64[2.0],Float64[3.0],[1],[2],solution,solution,requestBank)
 
     # Greedy repair 
-    newSolution = regretInsertion(state,scenario)
+    newSolution, newRequestBank = regretInsertion(state,scenario)
     printRoute(newSolution.vehicleSchedules[1])
 
     feasible, msg = checkRouteFeasibility(scenario, newSolution.vehicleSchedules[1])

@@ -17,9 +17,9 @@ export regretInsertion
     Method that performs regret insertion of requests
 ==#
 function regretInsertion(state::ALNSState,scenario::Scenario)
-    #TODO should we always ensure there is an empty route?
     #TODO should we implement noise?
     @unpack destroyWeights, repairWeights, destroyNumberOfUses, repairNumberOfUses, bestSolution, currentSolution, requestBank = state
+    newRequestBank = Int[]
     requests = scenario.requests
 
     # Define insertion matrix
@@ -49,7 +49,8 @@ function regretInsertion(state::ALNSState,scenario::Scenario)
                 end
             end
             if bestVehicleForRequest == -1
-                println("regretInsertion: No feasible vehicle for request. This should not happen")
+                append!(newRequestBank, r)
+                continue
             end
             if (secondBestInsertion - bestInsertion) > bestRegret
                 bestRegret = secondBestInsertion - bestInsertion
@@ -72,7 +73,7 @@ function regretInsertion(state::ALNSState,scenario::Scenario)
 
     end
 
-    return currentSolution
+    return currentSolution, requestBank
 
 
 end
@@ -116,6 +117,7 @@ end
 ==#
 function greedyInsertion(state::ALNSState,scenario::Scenario)
     @unpack destroyWeights, repairWeights, destroyNumberOfUses, repairNumberOfUses, bestSolution, currentSolution, requestBank = state
+    newRequestBank = Int[]
 
     for r in requestBank
         request = scenario.requests[r]
@@ -137,12 +139,11 @@ function greedyInsertion(state::ALNSState,scenario::Scenario)
         if !isnothing(bestTypeOfSeat)
             insertRequest!(request, bestSchedule, bestPickUp, bestDropOff, bestTypeOfSeat, scenario)
         else
-            currentSolution.nTaxi += 1
-            println("greedyInsertion: No feasible vehicle for request. This should not happen")
+            append!(newRequestBank, r)
         end
     end
 
-    return currentSolution
+    return currentSolution, newRequestBank
 end
 
 

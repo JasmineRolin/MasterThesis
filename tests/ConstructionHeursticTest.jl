@@ -23,6 +23,7 @@ using utils, domain, offlinesolution
     printSolution(solution,printRouteHorizontal)
 
     # Check solution
+    solution.nTaxi += length(requestBank)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
     feasible, msg = checkSolutionFeasibility(scenario,solution)
     println(msg)
@@ -41,6 +42,7 @@ end
     
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
+    solution.nTaxi += length(requestBank)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
     feasible, msg = checkSolutionFeasibility(scenario,solution)
     @test feasible == true

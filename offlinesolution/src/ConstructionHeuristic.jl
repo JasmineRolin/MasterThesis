@@ -47,10 +47,8 @@ function simpleConstruction(scenario::Scenario)
         if feasible
             insertRequest!(request,solution.vehicleSchedules[closestVehicleIdx],idxPickUp,idxDropOff,typeOfSeat,scenario)
         else
-            solution.nTaxi += 1
             append!(requestBank,request.id)
         end
-        println(solution.nTaxi)
 
     end
 

@@ -7,13 +7,17 @@ using utils
 #==
  Test InstanceReader 
 ==# 
+
+
 @testset "InstanceReader test" begin 
     requestFile = "tests/resources/Requests.csv"
     vehiclesFile = "tests/resources/Vehicles.csv"
     parametersFile = "tests/resources/Parameters.csv"
+    distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
+    timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
 
     # Check vehicles
     @test length(scenario.vehicles) == 4
@@ -78,6 +82,8 @@ using utils
 
 
 end
+
+
 
 @testset "Test InstanceReader on Konsentra" begin 
     requestFile = "Data/Konsentra/TransformedData_Data.csv"
