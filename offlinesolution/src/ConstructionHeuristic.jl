@@ -20,29 +20,31 @@ function simpleConstruction(scenario::Scenario)
         feasible = false
         getTaxi = false
         typeOfSeat = nothing
-        triedDepots = Set{Int}()
+        triedVehicles = Set{Int}()
         idxPickUp, idxDropOff = -1, -1
-        vehicle = -1
-        closestDepot = -1
+        closestVehicleIdx = -1
         
         # Determine closest feasible vehicle
         while !feasible && !getTaxi
-            closestDepot = getClosestDepot(request,triedDepots,scenario)
-            for vehicleIdx in scenario.depots[closestDepot]
-                vehicle = vehicleIdx
-                feasible, idxPickUp, idxDropOff, typeOfSeat = findFeasibleInsertionInSchedule(request,solution.vehicleSchedules[vehicle],scenario)
-                if !feasible
-                    push!(triedDepots, closestDepot)
-                else
-                    break
-                end
+            closestVehicleIdx = getClosestVehicle(request,triedVehicles,solution,scenario)
+
+            if closestVehicleIdx == -1 
+                feasible = false
+                break
+            else
+                feasible, idxPickUp, idxDropOff, typeOfSeat = findFeasibleInsertionInSchedule(request,solution.vehicleSchedules[closestVehicleIdx],scenario)
+                    if !feasible
+                        push!(triedVehicles, closestVehicleIdx)
+                    else
+                        break
+                    end
             end
-            getTaxi = length(triedDepots) == scenario.nDepots
+            getTaxi = length(triedVehicles) == length(scenario.vehicles)
         end
 
         # Insert request
         if feasible
-            insertRequest!(request,solution.vehicleSchedules[vehicle],idxPickUp,idxDropOff,typeOfSeat,scenario)
+            insertRequest!(request,solution.vehicleSchedules[closestVehicleIdx],idxPickUp,idxDropOff,typeOfSeat,scenario)
         else
             solution.nTaxi += getTaxi
         end
@@ -76,6 +78,55 @@ function getClosestDepot(request::Request, triedDepots::Set{Int},scenario::Scena
 
     return closest_depot
 end
+
+# ----------
+# Function to find the closest vehicle
+# ----------
+function getClosestVehicle(request::Request,triedVehicles::Set{Int}, solution::Solution, scenario::Scenario)
+    closest_vehicle = nothing
+    min_travel_time = Inf
+    closest_vehicle_idx = -1
+    request_pickup_id = request.pickUpActivity.id
+    request_time = request.pickUpActivity.timeWindow.startTime
+
+    allVehiclesIdx = collect(1:length(scenario.vehicles))
+    considerVehicles = setdiff(allVehiclesIdx,triedVehicles)
+
+    for vehicleIdx in considerVehicles
+        vehicle = scenario.vehicles[vehicleIdx]
+        vehicle_schedule = solution.vehicleSchedules[vehicle.id]
+        
+        # Ensure the vehicle is available within the time window
+        if vehicle.availableTimeWindow.startTime > request_time || vehicle.availableTimeWindow.endTime < request_time
+            continue
+        end
+        
+        # Find the vehicle's activity at the request pickup time
+        vehicle_location_id = nothing
+        for (idx,activity) in enumerate(vehicle_schedule.route)
+            if idx == length(vehicle_schedule.route)
+                vehicle_location_id = vehicle_schedule.route[end].activity.id
+                break
+            elseif vehicle_schedule.route[idx+1].startOfServiceTime >= request_time
+                vehicle_location_id = activity.activity.id
+                break
+            end
+        end
+        
+        # Compute travel time from the determined vehicle location to the pickup location
+        travel_time = scenario.time[vehicle_location_id, request_pickup_id]
+
+        # Update closest vehicle if a shorter travel time is found
+        if travel_time < min_travel_time
+            min_travel_time = travel_time
+            closest_vehicle = vehicle
+            closest_vehicle_idx = vehicleIdx
+        end
+    end
+    
+    return closest_vehicle_idx
+end
+
 
 # ----------
 # Function to check feasibility of inserting a request in a vehicle schedule and returning feasible position
