@@ -253,7 +253,7 @@ end
 function simulateScenario(scenario::Scenario)
 
     # Initialize current state 
-    initialVehicleSchedules = [VehicleSchedule(vehicle,ActivityAssignment[]) for vehicle in scenario.vehicles] # TODO change constructor
+    initialVehicleSchedules = [VehicleSchedule(vehicle,true) for vehicle in scenario.vehicles] # TODO change constructor
     finalSolution = Solution(initialVehicleSchedules, 0.0, 0, 0, 0, 0) # TODO change constructor
     currentState = State(scenario,Request())
 

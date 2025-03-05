@@ -25,9 +25,10 @@ export calculateScore, updateWeights!
         Float64(jsonData["scoreNewBest"]),
         Float64(jsonData["minPercentToDestroy"]),
         Float64(jsonData["maxPercentToDestroy"]),
-        Float64(jsonData["worstRemovalP"])
-    )
-    
+        Float64(jsonData["p"]),
+        Float64(jsonData["shawRemovalPhi"]),
+        Float64(jsonData["shawRemovalXi"])
+        )
 end
 
 #==
@@ -47,7 +48,7 @@ end
 #==
  Method to Destroy 
 ==#
-function destroy!(nRequests::Int,configuration::ALNSConfiguration,parameters::ALNSParameters,state::ALNSState)::Int
+function destroy!(scenario::Scenario,state::ALNSState,parameters::ALNSParameters, configuration::ALNSConfiguration)::Int
     # Select method 
     destroyIdx = rouletteWheel(state.destroyWeights)
 
@@ -55,7 +56,7 @@ function destroy!(nRequests::Int,configuration::ALNSConfiguration,parameters::AL
     state.destroyNumberOfUses[destroyIdx] += 1
 
     # Use method 
-    configuration.destroyMethods[destroyIdx].method(nRequests,state,parameters)
+    configuration.destroyMethods[destroyIdx].method(scenario,state,parameters)
 
     return destroyIdx
 end

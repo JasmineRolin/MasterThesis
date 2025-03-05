@@ -8,5 +8,7 @@
     "scoreNewBest": 10.0,
     "minPercentToDestroy": 0.1,
     "maxPercentToDestroy": 0.3,
-    "worstRemovalP": 6
+    "p": 6,
+    "shawRemovalPhi": 9.0,
+    "shawRemovalXi": 3.0
 }

@@ -1,11 +1,12 @@
 module ALNSDomain 
 
-using domain 
+using LinearAlgebra, domain 
 
 export GenericMethod
 export ALNSParameters
 export ALNSConfiguration
 export ALNSState
+export setMinMaxValuesALNSParameters
 
 #==
  Struct to describe destroy or repair method 
@@ -19,7 +20,7 @@ end
 #==
  Struct that contains ALNS parameters 
 ==#
-struct ALNSParameters
+mutable struct ALNSParameters
     timeLimit::Float64 
     reactionFactor::Float64 # How quickly to react to new score -  new_weight = old_weight*(1-reactionFactor) + score *reactionFactor;
     startThreshold::Float64 # Start threshold for simulated annealing - (cost(trialSol) - cost(bestSol)) / cost(bestSol) < startThreshold*(1-elapsedSeconds/timeLimit)
@@ -29,9 +30,15 @@ struct ALNSParameters
 	scoreNewBest::Float64 # Score given for a new global best solution
     minPercentToDestroy::Float64 # Minimum percentage of requests to destroy
     maxPercentToDestroy::Float64 # Maximum percentage of requests to destroy
-    worstRemovalP::Float64 # Probability of removing worst request
-
-    # TODO: add parameters for different destroy/repair methods 
+    p::Float64 # weight to adjust probability of removing worst request. Low value of p corresponds to much randomness
+    shawRemovalPhi::Float64 # weight for drive time relatedness 
+    shawRemovalXi::Float64 # weight for time window relatedness
+    maxDriveTime::Float64 # Minimum drive time in scenario 
+    minDriveTime::Float64 # Maximum drive time in scenario 
+    minStartOfTimeWindowPickUp::Float64 # Minimum start of time window for pick-up in scenario
+    maxStartOfTimeWindowPickUp::Float64 # Maximum start of time window for pick-up in scenario
+    minStartOfTimeWindowDropOff::Float64 # Minimum start of time window for drop-off in scenario
+    maxStartOfTimeWindowDropOff::Float64 # Maximum start of time window for drop-off in scenario
 
     function ALNSParameters( 
         timeLimit=10.0, 
@@ -43,10 +50,21 @@ struct ALNSParameters
         scoreNewBest=10.0,
         minPercentToDestroy=0.1,
         maxPercentToDestroy=0.3,
-        worstRemovalP=6.0
-    )
-        return new(timeLimit, reactionFactor, startThreshold, solCostEps, scoreAccepted, scoreImproved, scoreNewBest,minPercentToDestroy,maxPercentToDestroy,worstRemovalP)
+        worstRemovalP=6.0,
+        shawRemovalPhi=9.0,
+        shawRemovalXi=3.0
+        )
+        return new(timeLimit, reactionFactor, startThreshold, solCostEps, scoreAccepted, scoreImproved, scoreNewBest,minPercentToDestroy,maxPercentToDestroy,worstRemovalP,shawRemovalPhi,shawRemovalXi,0.0,0.0,0.0,0.0,0.0,0.0)
     end
+end
+
+function setMinMaxValuesALNSParameters(parameters::ALNSParameters,time,requests)
+    parameters.maxDriveTime = Float64(maximum(time))
+    parameters.minDriveTime = Float64(minimum(time + I*typemax(Int)))
+    parameters.maxStartOfTimeWindowPickUp = Float64(maximum([request.pickUpActivity.timeWindow.startTime for request in requests]))
+    parameters.minStartOfTimeWindowPickUp = Float64(minimum([request.pickUpActivity.timeWindow.startTime for request in requests]))
+    parameters.maxStartOfTimeWindowDropOff = Float64(maximum([request.dropOffActivity.timeWindow.startTime for request in requests]))
+    parameters.minStartOfTimeWindowDropOff = Float64(minimum([request.dropOffActivity.timeWindow.startTime for request in requests]))
 end
 
 #==

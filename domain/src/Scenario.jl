@@ -6,6 +6,7 @@ export Scenario
 
 struct Scenario 
     requests::Vector{Request}
+    requestDict::Dict{Int, Request}
     onlineRequests::Vector{Request}
     offlineRequests::Vector{Request}
     serviceTimes::Dict # Minutes 
@@ -20,6 +21,21 @@ struct Scenario
     time::Array{Int, 2}
     nDepots::Int
     depots::Dict
+
+    # All-args constructor
+    function Scenario(requests::Vector{Request},requestDict::Dict{Int, Request}, onlineRequests::Vector{Request}, offlineRequests::Vector{Request}, 
+        serviceTimes::Dict, vehicles::Vector{Vehicle}, vehicleCostPrHour::Float64, vehicleStartUpCost::Float64, planningPeriod::TimeWindow, 
+        bufferTime::Int, maximumDriveTimePercent::Int, minimumMaximumDriveTime::Int, distance::Array{Float64, 2}, time::Array{Int, 2}, 
+        nDepots::Int, depots::Dict)
+    return new(requests, requestDict, onlineRequests, offlineRequests, serviceTimes, vehicles, vehicleCostPrHour, vehicleStartUpCost, 
+        planningPeriod, bufferTime, maximumDriveTimePercent, minimumMaximumDriveTime, distance, time, nDepots, depots)
+    end
+
+    # No-args constructor
+    function Scenario()
+        return Scenario(Vector{Request}(), Dict{Int, Request}(), Vector{Request}(), Vector{Request}(), Dict(), Vector{Vehicle}(), 0.0, 0.0, TimeWindow(0, 0), 0, 0, 0,zeros(Float64,0,0),zeros(Int,0,0), 0, Dict())
+    end
+
 end 
 
 

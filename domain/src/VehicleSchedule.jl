@@ -28,6 +28,19 @@ mutable struct VehicleSchedule
         return new(vehicle, [startDepot,endDepot], TimeWindow(vehicle.availableTimeWindow.startTime,vehicle.availableTimeWindow.endTime), 0.0, 0, 0.0,0, Int[0,0], Int[0,0]) 
     end
 
+    function VehicleSchedule(vehicle::Vehicle,emptyRoute::Bool)
+        if emptyRoute
+            return new(vehicle, [], TimeWindow(vehicle.availableTimeWindow.startTime,vehicle.availableTimeWindow.endTime), 0.0, 0, 0.0,0, Int[0,0], Int[0,0]) 
+        end
+        
+        # Create route with depots
+        startDepot = ActivityAssignment(Activity(vehicle.depotId,-1,DEPOT,WALKING,vehicle.depotLocation,TimeWindow(vehicle.availableTimeWindow.startTime,vehicle.availableTimeWindow.endTime)),vehicle,vehicle.availableTimeWindow.startTime,vehicle.availableTimeWindow.startTime,WALKING)
+        endDepot = ActivityAssignment(Activity(vehicle.depotId,-1,DEPOT,WALKING,vehicle.depotLocation,TimeWindow(vehicle.availableTimeWindow.startTime,vehicle.availableTimeWindow.endTime)),vehicle,vehicle.availableTimeWindow.endTime,vehicle.availableTimeWindow.endTime,WALKING)
+
+        # Create empty VehicleSchedule objects
+        return new(vehicle, [startDepot,endDepot], TimeWindow(vehicle.availableTimeWindow.startTime,vehicle.availableTimeWindow.endTime), 0.0, 0, 0.0,0, Int[0,0], Int[0,0]) 
+    end
+
     function VehicleSchedule(vehicle::Vehicle, route::Vector{ActivityAssignment} )
         return new(vehicle, route, TimeWindow(route[1].startOfServiceTime,vehicle.availableTimeWindow.endTime), 0.0, 0, 0.0,0, Int[], Int[]) 
     end

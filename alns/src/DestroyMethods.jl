@@ -1,6 +1,6 @@
 module DestroyMethods
 
-using Random, UnPack, domain, utils, ..ALNSDomain
+using Random, UnPack, LinearAlgebra, domain, utils, ..ALNSDomain
 
 export randomDestroy!, worstRemoval!, shawRemoval!, findNumberOfRequestToRemove
 
@@ -41,8 +41,8 @@ function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::A
     # Choose requests to remove  
     selectedIdx = randperm(nRequests)[1:nRequestsToRemove]
     requestsToRemove = Set(assignedRequests[selectedIdx])
-    append!(requestBank,assignedRequests[selectedIdx])
-    deleteat!(assignedRequests,selectedIdx)
+    append!(requestBank,requestsToRemove)
+    setdiff!(assignedRequests, requestsToRemove)
 
     println("==========> Removing requests: ",requestsToRemove)
 
@@ -57,10 +57,14 @@ end
 function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::ALNSParameters)
     @unpack currentSolution, assignedRequests, requestBank = currentState
     @unpack time, distance = scenario
-    @unpack worstRemovalP, minPercentToDestroy, maxPercentToDestroy = parameters
+    @unpack p, minPercentToDestroy, maxPercentToDestroy = parameters
     
     # Find number of requests currently in solution
     nRequests = length(assignedRequests)
+    if nRequests == 0
+        println("Warning: No requests available to remove.")
+        return
+    end
     
     # Find number of requests to remove
     nRequestsToRemove = findNumberOfRequestToRemove(minPercentToDestroy, maxPercentToDestroy, nRequests)
@@ -82,16 +86,12 @@ function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::
     # Remove requests probabilistically
     requestsToRemove = Set{Int}()
     for _ in 1:nRequestsToRemove
-        y = rand()  # Random number in [0,1]
-        idx = round(Int, y^worstRemovalP * length(sortedRequests))  # Skewed selection
-        idx = clamp(idx, 1, length(sortedRequests))  # Ensure valid index
-        request, _ = sortedRequests[idx]
-        
-        push!(requestsToRemove, request)
-        push!(requestBank, request)
-        deleteat!(assignedRequests, findfirst(x -> x == request, assignedRequests))
-        deleteat!(sortedRequests, idx)
+        requestId = chooseRequest(p, sortedRequests)
+        push!(requestsToRemove, requestId)
+        setdiff!(sortedRequests, [requestId])
     end
+    append!(requestBank, requestsToRemove)
+    setdiff!(assignedRequests, requestsToRemove)
     
     println("==========> Removing requests: ", requestsToRemove)
     
@@ -104,7 +104,77 @@ end
 #==
  Shaw removal
 ==#
-function shawRemoval!()
+function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::ALNSParameters)
+    @unpack currentSolution, assignedRequests, requestBank = currentState
+    @unpack time, distance, requestDict = scenario
+    @unpack p, minPercentToDestroy, maxPercentToDestroy, shawRemovalPhi, shawRemovalXi, minDriveTime, maxDriveTime, minStartOfTimeWindowPickUp, maxStartOfTimeWindowPickUp, minStartOfTimeWindowDropOff, maxStartOfTimeWindowDropOff = parameters
+
+    # Find number of requests currently in solution
+    nRequests = length(assignedRequests)
+    if nRequests == 0
+        println("Warning: No requests available to remove.")
+        return
+    end
+
+    # Find number of requests to remove 
+    nRequestsToRemove = findNumberOfRequestToRemove(minPercentToDestroy, maxPercentToDestroy, nRequests)
+     
+    # Requests to remove 
+    requestsToRemove = Set{Int}()
+
+    # Randomly select a request to remove
+    chosenRequestId = rand(assignedRequests)
+    chosenRequest = requestDict[chosenRequestId]
+
+    push!(requestsToRemove,chosenRequestId)
+    setdiff!(assignedRequests, [chosenRequestId])
+
+    while length(requestsToRemove) < nRequestsToRemove
+
+        # Find relatedness measure for all assigned requests 
+        relatednessMeasures = Dict{Int,Float64}()
+        for requestId in assignedRequests
+            relatednessMeasures[requestId] = relatednessMeasure(shawRemovalPhi,shawRemovalXi,time,maxDriveTime,minDriveTime,minStartOfTimeWindowPickUp,maxStartOfTimeWindowPickUp,minStartOfTimeWindowDropOff,maxStartOfTimeWindowDropOff,chosenRequest,requestDict[requestId]) 
+        end
+
+        # Sort array of not chosen requests according to relatedness measure
+        sortedRequests = sort(collect(relatednessMeasures), by = x -> x[2])  
+
+        # Select request to remove (probabilistically)
+        requestId = chooseRequest(p, sortedRequests)
+
+        # Update lists 
+        push!(requestsToRemove,requestId)
+        setdiff!(assignedRequests, [requestId])
+
+        # Choose request 
+        chosenRequestId = rand(requestsToRemove)
+        chosenRequest = requestDict[chosenRequestId]
+    end
+    append!(requestBank, requestsToRemove)
+
+    println("==========> Removing requests: ", requestsToRemove)
+
+    # Remove requests 
+    removeRequestsFromSolution!(time, distance, currentSolution, requestsToRemove)
+end
+
+#==
+ Method to find relatedness measure between two requests 
+==#
+function relatednessMeasure(shawRemovalPhi::Float64, shawRemovalXi::Float64, time::Array{Int,2}, maxDriveTime::Float64, minDriveTime::Float64, minStartOfTimeWindowPickUp::Float64,maxStartOfTimeWindowPickUp::Float64,minStartOfTimeWindowDropOff::Float64,maxStartOfTimeWindowDropOff::Float64,request1::Request,request2::Request)
+
+    # Direct drive time relatedness 
+    normalizedDriveTimePickUp = (Float64(time[request1.pickUpActivity.id,request2.pickUpActivity.id]) - minDriveTime)/(maxDriveTime - minDriveTime)
+    normalizedDriveTimeDropOff = (Float64(time[request1.dropOffActivity.id,request2.dropOffActivity.id]) - minDriveTime)/(maxDriveTime - minDriveTime)
+    driveTimeRelatedness = normalizedDriveTimePickUp + normalizedDriveTimeDropOff
+
+    # Time window relatedness
+    normalizationTimeWindowPickUp = abs((Float64(request1.pickUpActivity.timeWindow.startTime) - minStartOfTimeWindowPickUp)/(maxStartOfTimeWindowPickUp - minStartOfTimeWindowPickUp) - (Float64(request2.pickUpActivity.timeWindow.startTime) - minStartOfTimeWindowPickUp)/(maxStartOfTimeWindowPickUp - minStartOfTimeWindowPickUp))
+    normalizationTimeWindowDropOff = abs((Float64(request1.dropOffActivity.timeWindow.startTime) - minStartOfTimeWindowDropOff)/(maxStartOfTimeWindowDropOff - minStartOfTimeWindowDropOff) - (Float64(request2.dropOffActivity.timeWindow.startTime) - minStartOfTimeWindowDropOff)/(maxStartOfTimeWindowDropOff - minStartOfTimeWindowDropOff))
+    timeWindowRelatedness = normalizationTimeWindowPickUp + normalizationTimeWindowDropOff
+
+    return shawRemovalPhi*driveTimeRelatedness + shawRemovalXi*timeWindowRelatedness
 end
 
 
@@ -118,6 +188,16 @@ function findNumberOfRequestToRemove(minPercentToDestroy::Float64,maxPercentToDe
     return rand(minimumNumberToRemove:maximumNumberToRemove)
 end
 
+#==
+ Choose request in sorted list 
+==#
+function chooseRequest(p::Float64, sortedRequests)::Int
+    y = rand()  # Random number in [0,1]
+    idx = round(Int, y^p * length(sortedRequests))  # Skewed selection
+    idx = clamp(idx, 1, length(sortedRequests))  # Ensure valid index
+    requestId, _ = sortedRequests[idx]
+    return requestId
+end
 
 #==
  Method to remove requests

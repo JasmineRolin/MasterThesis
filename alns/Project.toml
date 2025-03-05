@@ -5,6 +5,7 @@ version = "0.1.0"
 
 [deps]
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 domain = "734a5951-1d14-4631-9222-bf0d0da96408"
@@ -12,5 +13,6 @@ utils = "d9eeeeb4-94be-4641-9ce8-3b648504a7dd"
 
 [compat]
 JSON3 = "1.14.1"
+LinearAlgebra = "1.11.0"
 Random = "1.11.0"
 UnPack = "1.0.2"
