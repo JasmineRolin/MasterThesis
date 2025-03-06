@@ -68,7 +68,6 @@ function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::
     
     # Find number of requests to remove
     nRequestsToRemove = findNumberOfRequestToRemove(minPercentToDestroy, maxPercentToDestroy, nAssignedRequests)
-    println("nRequestsToRemove: ", nRequestsToRemove)
     
     # Compute cost impact for each request
     costImpacts = Dict()
@@ -90,7 +89,6 @@ function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::
         requestId = chooseRequest(p, sortedRequests)
         push!(requestsToRemove, requestId)
         setdiff!(sortedRequests, [requestId])
-        println(sortedRequests)
     end
     append!(requestBank, requestsToRemove)
     setdiff!(assignedRequests, requestsToRemove)

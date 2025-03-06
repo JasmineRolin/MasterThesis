@@ -214,7 +214,7 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
 
     # Check that total distance is correct
     if !isapprox(totalDistanceCheck, totalDistance,atol=0.0001)
-        msg = "ROUTE INFEASIBLE: Total distance $(totalDistance) is incorrect. Calculated: $(totalDistanceCheck)"
+        msg = "ROUTE INFEASIBLE: Total distance $(totalDistance) is incorrect. Calculated: $(totalDistanceCheck), vehicle: $(vehicle.id)"
         return false, msg, Set{Int}() 
     end
 
