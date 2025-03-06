@@ -330,7 +330,9 @@ end
     @test feasible == true
 
     # Worst removal
-    shawRemoval!(scenario,currentState,parameters)
+    worstRemoval!(scenario,currentState,parameters)
+
+    printRouteHorizontal(currentState.currentSolution.vehicleSchedules[2])
 
     feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
     @test feasible == true
