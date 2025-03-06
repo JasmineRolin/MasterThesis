@@ -109,6 +109,21 @@ mutable struct ALNSState
         return new(zeros(nDestroy),zeros(nRepair),zeros(Int,nDestroy),zeros(Int,nRepair),currentSolution,currentSolution,Vector{Int}(),assignedRequests,length(assignedRequests))
     end
 
+    function ALNSState(currentSolution::Solution,nDestroy::Int,nRepair::Int,requestBank::Vector{Int})
+        assignedRequestsSet = Vector{Int}()
+        for schedule in currentSolution.vehicleSchedules
+            for activityAssignment in schedule.route
+                if activityAssignment.activity.activityType == PICKUP
+                    push!(assignedRequestsSet,activityAssignment.activity.requestId)
+                end
+            end
+        end
+
+        assignedRequests = collect(assignedRequestsSet)
+
+        return new(zeros(nDestroy),zeros(nRepair),zeros(Int,nDestroy),zeros(Int,nRepair),currentSolution,currentSolution,requestBank,assignedRequests,length(assignedRequests))
+    end
+
     # All-argument constructor
     function ALNSState(
         destroyWeights::Vector{Float64}, 

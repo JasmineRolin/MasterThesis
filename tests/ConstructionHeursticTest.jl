@@ -62,11 +62,6 @@ end
     solution, requestBank = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
 
-    # Print solution
-    for vehicle in solution.vehicleSchedules
-        printRouteHorizontal(vehicle)
-    end
-
     feasible, msg = checkSolutionFeasibility(scenario,solution)
     @test feasible == true
     @test msg == ""

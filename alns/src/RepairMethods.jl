@@ -32,12 +32,12 @@ function regretInsertion(state::ALNSState,scenario::Scenario)
             bestInsertion = secondBestInsertion = typemax(Float64)
             for v in 1:length(scenario.vehicles)
                 if compatibilityRequestVehicle[requests[r].id,v]
-                    if insCostMatrix[requests[r].id] < bestInsertion
+                    if insCostMatrix[requests[r].id,v] < bestInsertion
                         secondBestInsertion = bestInsertion
-                        bestInsertion = insCostMatrix[requests[r].id]
+                        bestInsertion = insCostMatrix[requests[r].id,v]
                         bestVehicleForRequest = v
-                    elseif insCostMatrix[requests[r].id] < secondBestInsertion
-                        secondBestInsertion = insCostMatrix[requests[r].id]
+                    elseif insCostMatrix[requests[r].id,v] < secondBestInsertion
+                        secondBestInsertion = insCostMatrix[requests[r].id,v]
                     end
                 end
             end
@@ -52,14 +52,30 @@ function regretInsertion(state::ALNSState,scenario::Scenario)
             end
         end
 
+        if bestRequest == -1
+            break
+        end
+
         # Find best insertion position
         status, delta, pickUp, dropOff, bestTypeOfSeat = findBestFeasibleInsertionRoute(requests[bestRequest], currentSolution.vehicleSchedules[overallBestVehicle], scenario)
+
+        # Update solution pre
+        state.currentSolution.totalCost -= currentSolution.vehicleSchedules[overallBestVehicle].totalCost
+        state.currentSolution.totalDistance -= currentSolution.vehicleSchedules[overallBestVehicle].totalDistance
+        state.currentSolution.totalRideTime -= currentSolution.vehicleSchedules[overallBestVehicle].totalTime
+        state.currentSolution.totalIdleTime -= currentSolution.vehicleSchedules[overallBestVehicle].totalIdleTime
 
         # Insert request
         insertRequest!(requests[bestRequest], currentSolution.vehicleSchedules[overallBestVehicle], pickUp, dropOff, bestTypeOfSeat, scenario)
         append!(state.assignedRequests, bestRequest)
+
+        # Update solution pro
         state.nAssignedRequests += 1
         state.currentSolution.nTaxi -= 1
+        state.currentSolution.totalCost += currentSolution.vehicleSchedules[overallBestVehicle].totalCost
+        state.currentSolution.totalDistance += currentSolution.vehicleSchedules[overallBestVehicle].totalDistance
+        state.currentSolution.totalRideTime += currentSolution.vehicleSchedules[overallBestVehicle].totalTime
+        state.currentSolution.totalIdleTime += currentSolution.vehicleSchedules[overallBestVehicle].totalIdleTime
 
         # Remove request from requestBank
         setdiff!(requestBank,[bestRequest])
@@ -118,21 +134,38 @@ function greedyInsertion(state::ALNSState,scenario::Scenario)
         bestPickUp = -1
         bestDropOff = -1
         bestTypeOfSeat = nothing
+        bestVehicle = -1
 
-        for schedule in currentSolution.vehicleSchedules
+        for (idx,schedule) in enumerate(currentSolution.vehicleSchedules)
             status, delta, pickUp, dropOff, bestTypeOfSeat = findBestFeasibleInsertionRoute(request, schedule, scenario)
             if status && delta < bestDelta
                 bestDelta = delta
                 bestSchedule = schedule
                 bestPickUp = pickUp
                 bestDropOff = dropOff
+                bestVehicle = idx
             end
         end
         if !isnothing(bestTypeOfSeat)
+
+            # Update solution pre
+            state.currentSolution.totalCost -= currentSolution.vehicleSchedules[bestVehicle].totalCost
+            state.currentSolution.totalDistance -= currentSolution.vehicleSchedules[bestVehicle].totalDistance
+            state.currentSolution.totalRideTime -= currentSolution.vehicleSchedules[bestVehicle].totalTime
+            state.currentSolution.totalIdleTime -= currentSolution.vehicleSchedules[bestVehicle].totalIdleTime
+
+            # Insert request
             insertRequest!(request, bestSchedule, bestPickUp, bestDropOff, bestTypeOfSeat, scenario)
             append!(state.assignedRequests, r)
+
+            # Update solution pro
             state.nAssignedRequests += 1
             state.currentSolution.nTaxi -= 1
+            state.currentSolution.totalCost += currentSolution.vehicleSchedules[bestVehicle].totalCost
+            state.currentSolution.totalDistance += currentSolution.vehicleSchedules[bestVehicle].totalDistance
+            state.currentSolution.totalRideTime += currentSolution.vehicleSchedules[bestVehicle].totalTime
+            state.currentSolution.totalIdleTime += currentSolution.vehicleSchedules[bestVehicle].totalIdleTime       
+            
         else
             append!(newRequestBank, r)
         end

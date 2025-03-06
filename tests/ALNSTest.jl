@@ -1,5 +1,5 @@
 using Test 
-using alns, domain, utils
+using alns, domain, utils, offlinesolution
 
 #==
 Test ALNSFunctions
@@ -280,4 +280,68 @@ end
 
 
 end
+
+
+@testset "ALNS test - Big Test" begin 
+    requestFile = "tests/resources/RequestsBig.csv"
+    vehiclesFile = "tests/resources/VehiclesBig.csv"
+    parametersFile = "tests/resources/Parameters.csv"
+    distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
+    timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
+    
+    # Read instance 
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    
+    # Constuct solution 
+    solution, requestBank = simpleConstruction(scenario)
+    solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+
+    # Construct ALNS state
+    currentState = ALNSState(solution,1,0,requestBank)
+
+    # Construct ALNS parameters
+    parameters = ALNSParameters()
+    setMinMaxValuesALNSParameters(parameters,scenario.time,scenario.requests)
+    parameters.minPercentToDestroy = 0.7
+    parameters.maxPercentToDestroy = 0.7
+
+    # Shaw Destroy 
+    shawRemoval!(scenario,currentState,parameters)
+
+    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    @test feasible == true
+
+    # Regret Repair
+    regretInsertion(currentState,scenario)
+
+    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    @test feasible == true
+
+    # Random destroy
+    randomDestroy!(scenario,currentState,parameters)
+
+    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    @test feasible == true
+
+    # Greedy repair
+    greedyInsertion(currentState,scenario)
+
+    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    @test feasible == true
+
+    # Worst removal
+    shawRemoval!(scenario,currentState,parameters)
+
+    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    @test feasible == true
+
+    # Greedy repair
+    greedyInsertion(currentState,scenario)
+
+    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    @test feasible == true
+    @test msg == ""
+      
+end
+
 

@@ -253,8 +253,8 @@ function updateWaitingAfterNode!(time::Array{Int,2},vehicleSchedule::VehicleSche
     route = vehicleSchedule.route
     if route[idx].endOfServiceTime + time[route[idx].activity.id,route[idx+2].activity.id] < route[idx+2].startOfServiceTime
         # Update waiting after node
-        route[idx+1].startOfServiceTime = route[idx].endOfServiceTime
-        route[idx+1].activity.timeWindow.startTime = route[idx].endOfServiceTime
+        route[idx+1].startOfServiceTime = route[idx].endOfServiceTime + time[route[idx].activity.id,route[idx+1].activity.id]
+        route[idx+1].activity.timeWindow.startTime = route[idx].endOfServiceTime + time[route[idx].activity.id,route[idx+1].activity.id]
         return 0
     else
         # Remove waiting after node
@@ -369,7 +369,7 @@ function updateDistance!(distance::Array{Float64,2},vehicleSchedule::VehicleSche
     # Update total distance
     if idxDropOff-1 == idxPickUp
 
-        if route[idxPickUp+2].activity.activityType == WAITING
+        if route[idxPickUp+2].activity.activityType == WAITING && route[idxPickUp+2].activity.id == route[idxDropOff].activity.id 
             vehicleSchedule.totalDistance -= (distance[vehicleSchedule.route[idxPickUp-1].activity.id,vehicleSchedule.route[idxPickUp+3].activity.id])
             vehicleSchedule.totalDistance += (distance[vehicleSchedule.route[idxPickUp-1].activity.id,request.pickUpActivity.id] + distance[request.pickUpActivity.id,request.dropOffActivity.id] + distance[request.dropOffActivity.id,vehicleSchedule.route[idxPickUp+3].activity.id])
         else
@@ -386,7 +386,7 @@ function updateDistance!(distance::Array{Float64,2},vehicleSchedule::VehicleSche
         end
     else
         # PickUp
-        if route[idxPickUp+1].activity.activityType == WAITING
+        if route[idxPickUp+1].activity.activityType == WAITING && route[idxPickUp+1].activity.id == route[idxPickUp].activity.id 
             vehicleSchedule.totalDistance -= (distance[vehicleSchedule.route[idxPickUp-1].activity.id,vehicleSchedule.route[idxPickUp+2].activity.id])
             vehicleSchedule.totalDistance += (distance[vehicleSchedule.route[idxPickUp-1].activity.id,request.pickUpActivity.id] + distance[request.pickUpActivity.id,vehicleSchedule.route[idxPickUp+2].activity.id])
         else
@@ -395,7 +395,7 @@ function updateDistance!(distance::Array{Float64,2},vehicleSchedule::VehicleSche
         end
 
         # DropOff
-        if route[idxDropOff+1].activity.activityType == WAITING
+        if route[idxDropOff+1].activity.activityType == WAITING && route[idxDropOff+1].activity.id == route[idxDropOff].activity.id 
             vehicleSchedule.totalDistance -= (distance[vehicleSchedule.route[idxDropOff-1].activity.id,vehicleSchedule.route[idxDropOff+2].activity.id])
             vehicleSchedule.totalDistance += (distance[vehicleSchedule.route[idxDropOff-1].activity.id,request.dropOffActivity.id] + distance[request.dropOffActivity.id,vehicleSchedule.route[idxDropOff+2].activity.id])
         else

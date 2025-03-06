@@ -359,7 +359,7 @@ function removeActivityFromRoute!(time::Array{Int,2},distance::Array{Float64,2},
         oldIdleTime = activityAssignmentAfter.endOfServiceTime - activityAssignmentAfter.startOfServiceTime
         activityAssignmentAfter.startOfServiceTime = activityAssignmentBefore.startOfServiceTime + time[activityAssignmentBefore.activity.id,activityAssignmentAfter.activity.id]
         activityAssignmentAfter.activity.timeWindow.startTime = activityAssignmentAfter.startOfServiceTime
-
+        
         # Update deltas 
         deltaDistance = distance[activityAssignmentBefore.activity.id,activityAssignmentAfter.activity.id] - distance[activityAssignmentBefore.activity.id,activityToRemove.activity.id] - distance[activityToRemove.activity.id,activityAssignmentAfter.activity.id]
         deltaIdleTime = (activityAssignmentAfter.endOfServiceTime - activityAssignmentAfter.startOfServiceTime) - oldIdleTime
