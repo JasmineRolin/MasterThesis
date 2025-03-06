@@ -172,7 +172,7 @@ end
  Method to if ALNS should terminate
 ==#
 function termination(startTime,timeLimit)
-    elapsedTime = round((time_ns() - startTime)/1e9,digits=3)
+    elapsedTime = time() - startTime
 
     if elapsedTime > timeLimit
         return true

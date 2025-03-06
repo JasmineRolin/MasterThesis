@@ -1,5 +1,5 @@
 using Test 
-using alns, domain, utils
+using alns, domain, utils, offlinesolution
 
 
 #@testset "ALNS test" begin 
@@ -8,15 +8,16 @@ using alns, domain, utils
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
     timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
+    alnsParametersFile = "tests/resources/ALNSParameters.json"
 
     # Read instance 
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
 
     # Choose destroy methods
     destroyMethods = Vector{GenericMethod}()
-    addMethod!(destroyMethods,"randomDestroy",randomDestroy)
-    addMethod!(destroyMethods,"worstRemoval",worstDestroy)
-    addMethod!(destroyMethods,"shawRemoval",bestDestroy)
+    addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
+    addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
+    addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
 
     # Choose repair methods
     repairMethods = Vector{GenericMethod}()
@@ -24,6 +25,6 @@ using alns, domain, utils
     addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
     # Run ALNS 
-    solution = runALNS(scenario,scenario.offlineRequests,destroyMethods,repairMethods)
+    solution = runALNS(scenario,scenario.offlineRequests,destroyMethods,repairMethods,simpleConstruction,alnsParametersFile)
 
 #end

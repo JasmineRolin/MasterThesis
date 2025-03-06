@@ -1,6 +1,6 @@
 module ALNSAlgorithm 
 
-using UnPack, domain, ..ALNSDomain, ..ALNSFunctions
+using UnPack, domain, utils, ..ALNSDomain, ..ALNSFunctions
 
 export ALNS
 
@@ -29,7 +29,7 @@ function ALNS(scenario::Scenario,initialSolution::Solution,configuration::ALNSCo
     startTime = time()
 
     # Iterate while time limit is not reached 
-    while !terminate(startTime,timeLimit)
+    while !termination(startTime,timeLimit)
         println("--> ALNS iteration: ", iteration)
         isAccepted = false 
         isImproved = false
@@ -42,7 +42,7 @@ function ALNS(scenario::Scenario,initialSolution::Solution,configuration::ALNSCo
         destroyIdx = destroy!(scenario,trialState,parameters,configuration)
 
         # Repair trial solution 
-        repairIdx = repair!(configuration,parameters,trialState,trialState.currentSolution)
+        repairIdx = repair!(scenario,trialState,configuration)
 
         # Check if solution is improved
         # TODO: create hash table to check if solution has been visited before
@@ -77,6 +77,13 @@ function ALNS(scenario::Scenario,initialSolution::Solution,configuration::ALNSCo
         # Update temperature and iteration
         temperature = coolingRate*temperature
         println("\t Temperature: ", temperature)
+
+        # Check solution 
+        # TODO: remove when ALNS is robust 
+        feasible, msg = checkSolutionFeasibility(currentState.currentSolution,scenario)
+        if !feasible
+            throw(msg) 
+        end
     end
 
     return currentState.bestSolution

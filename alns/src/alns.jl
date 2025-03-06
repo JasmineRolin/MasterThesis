@@ -55,6 +55,7 @@ export ALNS
 ==#
 include("ALNSRunner.jl")
 using .ALNSRunner
+export runALNS
 
 
 end
