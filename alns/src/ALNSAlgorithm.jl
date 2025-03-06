@@ -62,7 +62,7 @@ function ALNS(scenario::Scenario,initialSolution::Solution,configuration::ALNSCo
         updateScoreAndCount(scoreAccepted,scoreImproved,scoreNewBest,currentState,destroyIdx,repairIdx,isAccepted,isImproved,isNewBest)
 
         # Update weights and reset scores and count if end of segment
-        updateAfterEndOfSegment(segmentSize,currentState,reactionFactor,iteration)
+        updateWeightsAfterEndOfSegment(segmentSize,currentState,reactionFactor,iteration)
 
         # Update temperature and iteration
         temperature = coolingRate*temperature

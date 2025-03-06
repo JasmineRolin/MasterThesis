@@ -7,7 +7,7 @@ export addDestroyMethod!, addRepairMethod!
 export destroy!, repair!
 export rouletteWheel
 export calculateScore, updateWeights!
-export termination, findStartTemperature, accept, updateScoreAndCount, updateAfterEndOfSegment
+export termination, findStartTemperature, accept, updateScoreAndCount, updateWeightsAfterEndOfSegment
 
 
 #==
@@ -152,7 +152,7 @@ end
 #==
  Method to update weights after segment 
 ==#
-function updateAfterEndOfSegment(segmentSize::Int,state::ALNSState, reactionFactor, iteration::Int)
+function updateWeightsAfterEndOfSegment(segmentSize::Int,state::ALNSState, reactionFactor, iteration::Int)
     if iteration % segmentSize == 0
         # Update weights of destroy methods
         updateWeights!(state.destroyWeights,state.destroyScores,state.destroyNumberOfUses,reactionFactor)
@@ -161,10 +161,12 @@ function updateAfterEndOfSegment(segmentSize::Int,state::ALNSState, reactionFact
         updateWeights!(state.repairWeights,state.repairScores,state.repairNumberOfUses,reactionFactor)
 
         # Reset scores and counts
-        state.destroyScores = zeros(state.nDestroy)
-        state.repairScores = zeros(state.nRepair)
-        state.destroyNumberOfUses = zeros(state.nDestroy)
-        state.repairNumberOfUses = zeros(state.nRepair)
+        nDestroy = length(state.destroyScores)
+        nRepair = length(state.repairScores)
+        state.destroyScores = zeros(nDestroy)
+        state.repairScores = zeros(nRepair)
+        state.destroyNumberOfUses = zeros(nDestroy)
+        state.repairNumberOfUses = zeros(nRepair)
     end
 end
 

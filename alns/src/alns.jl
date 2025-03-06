@@ -24,7 +24,7 @@ export addDestroyMethod!, addRepairMethod!
 export destroy!, repair!
 export rouletteWheel
 export calculateScore, updateWeights!
-export termination, findStartTemperature, accept, updateScoreAndCount,updateAfterEndOfSegment
+export termination, findStartTemperature, accept, updateScoreAndCount,updateWeightsAfterEndOfSegment
 
 
 #==
