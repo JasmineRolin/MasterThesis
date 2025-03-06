@@ -19,7 +19,7 @@ using offlinesolution
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
 
     # Constuct solution 
-    solution = simpleConstruction(scenario)
+    solution, requestBank = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
     feasible, msg = checkSolutionFeasibility(scenario,solution)
 
@@ -62,7 +62,6 @@ using offlinesolution
 
     # Destroy 
     randomDestroy!(scenario,currentState,parameters)
-    solution.nTaxi += 1
     feasible1, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution)
     @test msg1 == ""
     @test feasible1 == true
@@ -70,7 +69,6 @@ using offlinesolution
     @test length(currentState.assignedRequests) == 2
 
     randomDestroy!(scenario,currentState,parameters)
-    solution.nTaxi += 1
     feasible2, msg2 = checkSolutionFeasibility(scenario,currentState.currentSolution)
     @test msg2 == ""
     @test feasible2 == true
@@ -79,7 +77,6 @@ using offlinesolution
 
 
     randomDestroy!(scenario,currentState,parameters)
-    solution.nTaxi += 1
     feasible3, msg3 = checkSolutionFeasibility(scenario,currentState.currentSolution)
     @test msg3 == ""
     @test feasible3 == true
@@ -99,7 +96,7 @@ end
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
 
     # Constuct solution 
-    solution = simpleConstruction(scenario)
+    solution, requestBank = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
 
     # Construct ALNS state
@@ -115,7 +112,6 @@ end
 
     # Destroy 
     randomDestroy!(scenario,currentState,parameters)
-    solution.nTaxi += 1
     feasible1, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution)
     @test msg1 == ""
     @test feasible1 == true
@@ -138,7 +134,7 @@ end
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
 
     # Constuct solution 
-    solution = simpleConstruction(scenario)
+    solution, requestBank = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
     feasible, msg = checkSolutionFeasibility(scenario,solution)
 
@@ -182,7 +178,6 @@ end
 
     # Destroy 
     worstRemoval!(scenario,currentState,parameters)
-    solution.nTaxi += 1
     feasible1, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution)
     @test msg1 == ""
     @test feasible1 == true
@@ -190,7 +185,6 @@ end
     @test length(currentState.assignedRequests) == 2
 
     worstRemoval!(scenario,currentState,parameters)
-    solution.nTaxi += 1
     feasible2, msg2 = checkSolutionFeasibility(scenario,currentState.currentSolution)
     @test msg2 == ""
     @test feasible2 == true
@@ -199,7 +193,6 @@ end
 
 
     worstRemoval!(scenario,currentState,parameters)
-    solution.nTaxi += 1
     feasible3, msg3 = checkSolutionFeasibility(scenario,currentState.currentSolution)
     @test msg3 == ""
     @test feasible3 == true
@@ -220,7 +213,7 @@ end
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
 
     # Constuct solution 
-    solution = simpleConstruction(scenario)
+    solution, requestBank = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
 
     # Construct ALNS state
@@ -236,7 +229,6 @@ end
 
     # Destroy 
     worstRemoval!(scenario,currentState,parameters)
-    solution.nTaxi += 1
     feasible1, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution)
     @test msg1 == ""
     @test feasible1 == true
@@ -260,7 +252,7 @@ end
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
 
     # Constuct solution 
-    solution = simpleConstruction(scenario)
+    solution, requestBank = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
     feasible, msg = checkSolutionFeasibility(scenario,solution)
 
@@ -306,7 +298,6 @@ end
 
     # Destroy 
     shawRemoval!(scenario,currentState,parameters)
-    solution.nTaxi += 2
     feasible1, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution)
     @test msg1 == ""
     @test feasible1 == true
@@ -314,7 +305,6 @@ end
     @test length(currentState.assignedRequests) == 1
 
     shawRemoval!(scenario,currentState,parameters)
-    solution.nTaxi += 1
     feasible2, msg2 = checkSolutionFeasibility(scenario,currentState.currentSolution)
     @test msg2 == ""
     @test feasible2 == true
@@ -334,7 +324,7 @@ end
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
 
     # Constuct solution 
-    solution = simpleConstruction(scenario)
+    solution, requestBank = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
 
     # Construct ALNS state
@@ -348,7 +338,6 @@ end
 
     # Destroy 
     shawRemoval!(scenario,currentState,parameters)
-    solution.nTaxi += 2
     feasible1, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution)
     @test msg1 == ""
     @test feasible1 == true
@@ -356,7 +345,6 @@ end
     @test length(currentState.assignedRequests) == 1
 
     shawRemoval!(scenario,currentState,parameters)
-    solution.nTaxi += 1
     feasible2, msg2 = checkSolutionFeasibility(scenario,currentState.currentSolution)
     @test msg2 == ""
     @test feasible2 == true

@@ -58,6 +58,8 @@ function regretInsertion(state::ALNSState,scenario::Scenario)
         # Insert request
         insertRequest!(requests[bestRequest], currentSolution.vehicleSchedules[overallBestVehicle], pickUp, dropOff, bestTypeOfSeat, scenario)
         append!(state.assignedRequests, bestRequest)
+        state.nAssignedRequests += 1
+        state.currentSolution.nTaxi -= 1
 
         # Remove request from requestBank
         setdiff!(requestBank,[bestRequest])
@@ -67,8 +69,6 @@ function regretInsertion(state::ALNSState,scenario::Scenario)
 
     end
 
-    # Update request bank
-    requestBank = newRequestBank
 
 end
 
@@ -131,12 +131,14 @@ function greedyInsertion(state::ALNSState,scenario::Scenario)
         if !isnothing(bestTypeOfSeat)
             insertRequest!(request, bestSchedule, bestPickUp, bestDropOff, bestTypeOfSeat, scenario)
             append!(state.assignedRequests, r)
+            state.nAssignedRequests += 1
+            state.currentSolution.nTaxi -= 1
         else
             append!(newRequestBank, r)
         end
     end
 
-    requestBank = newRequestBank
+    state.requestBank = newRequestBank
 
 end
 
