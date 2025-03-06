@@ -22,9 +22,10 @@ end
 ==#
 mutable struct ALNSParameters
     timeLimit::Float64 
+    segmentSize::Int # Number of iterations in a segment
+    w::Float64 # Start temperature control parameter. Choose start temperature so that from initial sol we have w% chance of accepting a worse solution
+    coolingRate::Float64 # Cooling rate for simulated annealing. The closer to 1 the slower the temperature decreases -> accept worse for longer time 
     reactionFactor::Float64 # How quickly to react to new score -  new_weight = old_weight*(1-reactionFactor) + score *reactionFactor;
-    startThreshold::Float64 # Start threshold for simulated annealing - (cost(trialSol) - cost(bestSol)) / cost(bestSol) < startThreshold*(1-elapsedSeconds/timeLimit)
-    solCostEps::Float64 # A solution is only accepted as new global best solution if new_solution_cost < old_global_best_cost - solCostEps
     scoreAccepted::Float64 # Score given for an accepted solution
 	scoreImproved::Float64 # Score given for a solution that is better than the current solution
 	scoreNewBest::Float64 # Score given for a new global best solution
@@ -42,9 +43,10 @@ mutable struct ALNSParameters
 
     function ALNSParameters( 
         timeLimit=10.0, 
+        segmentSize=10, # TODO: not from paper 
+        w=0.05,
+        coolingRate=0.99975,
         reactionFactor=0.01, 
-        startThreshold=0.03, 
-        solCostEps=0.0, 
         scoreAccepted=2.0, 
         scoreImproved=4.0, 
         scoreNewBest=10.0,
@@ -54,7 +56,7 @@ mutable struct ALNSParameters
         shawRemovalPhi=9.0,
         shawRemovalXi=3.0
         )
-        return new(timeLimit, reactionFactor, startThreshold, solCostEps, scoreAccepted, scoreImproved, scoreNewBest,minPercentToDestroy,maxPercentToDestroy,p,shawRemovalPhi,shawRemovalXi,0.0,0.0,0.0,0.0,0.0,0.0)
+        return new(timeLimit,segmentSize, w, coolingRate,reactionFactor, scoreAccepted, scoreImproved, scoreNewBest,minPercentToDestroy,maxPercentToDestroy,p,shawRemovalPhi,shawRemovalXi,0.0,0.0,0.0,0.0,0.0,0.0)
     end
 end
 
@@ -86,6 +88,8 @@ end
 mutable struct ALNSState 
     destroyWeights::Vector{Float64}
     repairWeights::Vector{Float64}
+    destroyScores::Vector{Float64}
+    repairScores::Vector{Float64}
     destroyNumberOfUses::Vector{Int} # Number of times method has been used in current segment 
     repairNumberOfUses::Vector{Int} # Number of times method has been used in current segment 
     bestSolution::Solution 
@@ -106,13 +110,15 @@ mutable struct ALNSState
 
         assignedRequests = collect(assignedRequestsSet)
 
-        return new(zeros(nDestroy),zeros(nRepair),zeros(Int,nDestroy),zeros(Int,nRepair),currentSolution,currentSolution,Vector{Int}(),assignedRequests,length(assignedRequests))
+        return new(ones(nDestroy)./nDestroy,ones(nRepair)./nRepair,zeros(nDestroy),zeros(nRepair),zeros(Int,nDestroy),zeros(Int,nRepair),currentSolution,currentSolution,Vector{Int}(),assignedRequests,length(assignedRequests))
     end
 
     # All-argument constructor
     function ALNSState(
         destroyWeights::Vector{Float64}, 
         repairWeights::Vector{Float64}, 
+        destroyScores::Vector{Float64},
+        repairScores::Vector{Float64},
         destroyNumberOfUses::Vector{Int}, 
         repairNumberOfUses::Vector{Int}, 
         bestSolution::Solution, 
@@ -121,7 +127,7 @@ mutable struct ALNSState
         assignedRequests::Vector{Int},
         nAssignedRequests::Int
     )
-        return new(destroyWeights, repairWeights, destroyNumberOfUses, repairNumberOfUses, bestSolution, currentSolution, requestBank, assignedRequests, nAssignedRequests)
+        return new(destroyWeights, repairWeights,destroyScores,repairScores, destroyNumberOfUses, repairNumberOfUses, bestSolution, currentSolution, requestBank, assignedRequests, nAssignedRequests)
     end
 
 

@@ -12,12 +12,18 @@ Test ALNSFunctions
 
     @test typeof(parameters) == ALNSParameters
     @test parameters.timeLimit == 10.0 
+    @test parameters.segmentSize == 10
+    @test parameters.w == 0.05
+    @test parameters.coolingRate == 0.99975
     @test parameters.reactionFactor == 0.01 
-    @test parameters.startThreshold == 0.03 
-    @test parameters.solCostEps == 0.0 
     @test parameters.scoreAccepted == 2.0 
     @test parameters.scoreImproved == 4.0 
     @test parameters.scoreNewBest == 10.0
+    @test parameters.minPercentToDestroy == 0.1
+    @test parameters.maxPercentToDestroy == 0.3
+    @test parameters.p == 6.0
+    @test parameters.shawRemovalPhi == 9.0
+    @test parameters.shawRemovalXi == 3.0
 end
 
 
@@ -33,20 +39,24 @@ end
 @testset "calculateScore test" begin 
     parameters = ALNSParameters()
 
+    scoreAccepted = parameters.scoreAccepted
+    scoreImproved = parameters.scoreImproved
+    scoreNewBest = parameters.scoreNewBest
+
     # Not accepted, improved or new best
-    score = calculateScore(parameters,false,false,false)
+    score = calculateScore(scoreAccepted,scoreImproved,scoreNewBest,false,false,false)
     @test score == 1.0
 
     # Accepted
-    score = calculateScore(parameters,true,false,false)
+    score = calculateScore(scoreAccepted,scoreImproved,scoreNewBest,true,false,false)
     @test score == 2.0
 
     # Improved 
-    score = calculateScore(parameters,true,true,false)
+    score = calculateScore(scoreAccepted,scoreImproved,scoreNewBest,true,true,false)
     @test score == 4.0
 
     # New best
-    score = calculateScore(parameters,true,true,true)
+    score = calculateScore(scoreAccepted,scoreImproved,scoreNewBest,true,true,true)
     @test score == 10.0
 
 end
@@ -116,12 +126,13 @@ end
     # Solution 
     solution = Solution([vehicleSchedule],70.0,4,5,2,4)
     
-    state = ALNSState(Float64[2.0,3.5],Float64[1.0,3.0],[1,2],[2,0],solution,solution,Vector{Int}(),Vector{Int}(),0)
+    state = ALNSState(Float64[2.0,3.5],Float64[1.0,3.0],[1.0,4.0],[4.0,1.0],[1,2],[2,0],solution,solution,Vector{Int}(),Vector{Int}(),0)
 
     # Update weights 
-    updateWeights!(state,configuration,2,1,true,true,false)
+    updateWeights!(state.destroyWeights,state.destroyScores,state.destroyNumberOfUses,parameters.reactionFactor)
+    updateWeights!(state.repairWeights,state.repairScores,state.repairNumberOfUses,parameters.reactionFactor)
 
-    @test state.destroyWeights[1] == 2.0 
+    @test state.destroyWeights[1] == 2.0*(1-0.01) + 0.01*(1.0/1) 
     @test state.destroyWeights[2] == 3.5*(1-0.01) + 0.01*(4.0/2.0)
     
     @test state.repairWeights[1] == 1.0*(1-0.01) + 0.01*(4.0/2.0) 
@@ -170,18 +181,16 @@ end
     # Solution 
     solution = Solution([vehicleSchedule],70.0,4,5,2,4)
     
-    state = ALNSState(Float64[2.0],Float64[3.0],[1],[2],solution,solution,Vector{Int}(),Vector{Int}(),0)
+    state = ALNSState(Float64[2.0],Float64[3.0],[1.0],[1.0],[1],[2],solution,solution,Vector{Int}(),Vector{Int}(),0)
 
     # Destroy 
     destroyIdx = destroy!(Scenario(),state,parameters,configuration)
     @test destroyIdx == 1
-    @test state.destroyNumberOfUses[1] == 2
     @test solution.totalCost == 900 
 
     # Repair 
     repairIdx = repair!(configuration,parameters,state,solution)
     @test repairIdx == 1
-    @test state.repairNumberOfUses[1] == 3
     @test solution.totalCost == 500 
 
 end
