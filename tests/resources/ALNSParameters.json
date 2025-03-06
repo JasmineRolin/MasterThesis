@@ -1,5 +1,5 @@
 {
-    "timeLimit": 10.0,
+    "timeLimit": 100.0,
     "segmentSize": 10,
     "w": 0.05, 
     "coolingRate": 0.99975,

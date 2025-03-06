@@ -1,29 +1,42 @@
 module ALNSRunner
 
-using domain, UnPack, ..ALNSDomain, ..ALNSFunctions, ..ALNSAlgorithm
+using UnPack, domain, offlinesolution, ..ALNSDomain, ..ALNSFunctions, ..ALNSAlgorithm
 
 #==
  Module to run ALNS algorithm 
 ==#
 
-function runALNS(scenario::Scenario, parametersFile::String)
-    # Unpack scenario
-    @unpack requests, onlineRequests, offlineRequests, serviceTimes, vehicles, vehicleCostPrHour, vehicleStartUpCost,planningPeriod = scenario
+function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::Vector{GenericMethod},repairMethods::Vector{GenericMethod},initialSolutionConstructor=simpleConstruction::Function,parametersFile=""::String)
+
+    # Retrieve relevant activity ids from requests 
+    activityIdx = Int[]
+    for request in requests
+        push!(activityIdx,request.pickupActivity.id)
+        push!(activityIdx,request.deliveryActivity.id)
+    end
+
+    # Vehicle indexes 
+    vehicleIdx = collect(length(scenario.requests)+1:length(scenario.requests)+scenario.nDepots)
+    allIdx = [activityIdx;vehicleIdx]
 
     # Read parameters 
-    parameters = readParameters(parametersFile)
+    if parametersFile == ""
+        parameters = ALNSParameters()
+    else
+        parameters = readParameters(parametersFile)
+    end
+    setMinMaxValuesALNSParameters(parameters,scenario.time[allIdx,allIdx],requests)
 
     # Create ALNS configuration 
-    configuration = ALNSConfiguration(parameters)
-    # TODO: add destroy and repair methods 
+    configuration = ALNSConfiguration(parameter,destroyMethods,repairMethods)
 
     # Construct initial solution 
-    # TODO: construct initial solution 
+    initialSolution = initialSolutionConstructor(scenario)
 
     # Call ALNS 
-    # solution = ALNS()
+    solution = ALNS(scenario,initialSolution,configuration,parameters)
 
-
+    return solution
 end
 
 

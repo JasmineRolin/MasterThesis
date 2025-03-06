@@ -12,7 +12,8 @@ export ALNS
  Method to run ALNS algorithm
 ==#
 function ALNS(scenario::Scenario,initialSolution::Solution,configuration::ALNSConfiguration, parameters::ALNSParameters)::Solution 
-    # TODO: implement ALNS     
+    
+    println("Initial solution cost", initialSolution.totalCost)
 
     # Unpack parameters
     @unpack timeLimit, w, coolingRate, segmentSize, reactionFactor, scoreAccepted, scoreImproved, scoreNewBest  = parameters
@@ -22,11 +23,14 @@ function ALNS(scenario::Scenario,initialSolution::Solution,configuration::ALNSCo
 
     # Initialize temperature, iteration and time 
     temperature = findStartTemperature(w,currentState.currentSolution)
+    println("Starting temperature: ", temperature)
+
     iteration = 0
     startTime = time()
 
     # Iterate while time limit is not reached 
     while !terminate(startTime,timeLimit)
+        println("--> ALNS iteration: ", iteration)
         isAccepted = false 
         isImproved = false
         isNewBest = false
@@ -43,17 +47,23 @@ function ALNS(scenario::Scenario,initialSolution::Solution,configuration::ALNSCo
         # Check if solution is improved
         # TODO: create hash table to check if solution has been visited before
         if trialState.currentSolution.totalCost < currentState.currentSolution.totalCost
+            println("\t New improved solution: ", trialState.currentSolution.totalCost, " old cost: ", currentState.currentSolution.totalCost)
+
             isImproved = true
             isAccepted = true
             currentState.currentSolution = deepcopy(trialState.currentSolution)
 
             # Check if new best solution
             if trialState.currentSolution.totalCost < currentState.bestSolution.totalCost
+                println("\t New best solution: ", trialState.currentSolution.totalCost, " old cost: ", currentState.currentSolution.totalCost)
+
                 isNewBest = true
                 currentState.bestSolution = deepcopy(trialState.currentSolution)
             end
         # Check if solution is accepted
         elseif accept(temperature,trialState.currentSolution.totalCost - currentState.currentSolution.totalCost)
+            println("\t Solution accepted: new cost", trialState.currentSolution.totalCost, " old cost: ", currentState.currentSolution.totalCost)
+
             isAccepted = true
             currentState.currentSolution = deepcopy(trialState.currentSolution)
         end
@@ -66,7 +76,10 @@ function ALNS(scenario::Scenario,initialSolution::Solution,configuration::ALNSCo
 
         # Update temperature and iteration
         temperature = coolingRate*temperature
+        println("\t Temperature: ", temperature)
     end
+
+    return currentState.bestSolution
 end 
 
 end

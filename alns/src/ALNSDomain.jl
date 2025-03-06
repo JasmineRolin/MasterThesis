@@ -80,6 +80,10 @@ mutable struct ALNSConfiguration
     function ALNSConfiguration(parameters::ALNSParameters)
         return new(Vector{GenericMethod}(), Vector{GenericMethod}(),parameters)
     end
+
+    function ALNSConfiguration(parameters::ALNSParameters, destroyMethods::Vector{GenericMethod},repairMethods::Vector{GenericMethod})
+        return new(destroyMethods, repairMethods, parameters)
+    end
 end
 
 #==

@@ -3,7 +3,7 @@ module ALNSFunctions
 using UnPack, JSON3, domain, ..ALNSDomain
 
 export readALNSParameters
-export addDestroyMethod!, addRepairMethod!
+export addMethod!
 export destroy!, repair!
 export rouletteWheel
 export calculateScore, updateWeights!
@@ -34,16 +34,10 @@ export termination, findStartTemperature, accept, updateScoreAndCount, updateWei
 end
 
 #==
- Methods to add destroy and repair methods to configuration 
+ Methods to add method 
 ==#
-# Method to add destroy method to configuration
- function addDestroyMethod!(configuration::ALNSConfiguration,name::String, method::Function)
-    push!(configuration.destroyMethods,GenericMethod(name,method))
-end
-
-# Method to add repair method to configuration
-function addRepairMethod!(configuration::ALNSConfiguration,name::String, method::Function)
-    push!(configuration.repairMethods,GenericMethod(name,method))
+ function addMethod!(methods::Vector{GenericMethod},name::String, method::Function)
+    push!(methods,GenericMethod(name,method))
 end
 
 
@@ -54,6 +48,8 @@ function destroy!(scenario::Scenario,state::ALNSState,parameters::ALNSParameters
     # Select method 
     destroyIdx = rouletteWheel(state.destroyWeights)
 
+    println("\t Destroy method: ", configuration.destroyMethods[destroyIdx].name)
+
     # Use method 
     configuration.destroyMethods[destroyIdx].method(scenario,state,parameters)
 
@@ -63,12 +59,14 @@ end
 #==
  Method to Repair  
 ==#
-function repair!(configuration::ALNSConfiguration,parameters::ALNSParameters,state::ALNSState,solution::Solution)::Int
+function repair!(scenario::Scenario, state::ALNSState, configuration::ALNSConfiguration)::Int
     # Select method 
     repairIdx = rouletteWheel(state.repairWeights)
 
+    println("\t Repair method: ", configuration.repairMethods[repairIdx].name)
+
     # Use method 
-    configuration.repairMethods[repairIdx].method(solution,parameters)
+    configuration.repairMethods[repairIdx].method(state,scenario)
 
     return repairIdx
 end

@@ -11,7 +11,7 @@ Test ALNSFunctions
     parameters = readALNSParameters(parametersFile)
 
     @test typeof(parameters) == ALNSParameters
-    @test parameters.timeLimit == 10.0 
+    @test parameters.timeLimit == 100.0 
     @test parameters.segmentSize == 10
     @test parameters.w == 0.05
     @test parameters.coolingRate == 0.99975
@@ -61,27 +61,21 @@ end
 
 end
 
-@testset "addDestroyMethod! and addRepairMethod! test" begin 
+@testset "aaddMethod! test" begin 
    # create dummy methods 
    function dest1() return 1  end
    function dest2() return 1  end
-   function rep1() return 1  end
-   function rep2() return 1  end
 
-   # Create configuration 
-   # Parameters 
-   parameters = ALNSParameters()
-   configuration = ALNSConfiguration(parameters)
-   addDestroyMethod!(configuration,"dest1",dest1)
-   addDestroyMethod!(configuration,"dest2",dest2)
-   addRepairMethod!(configuration,"rep1",rep1)
-   addRepairMethod!(configuration,"rep2",rep2)
+   # Create methods  
+   methods = Vector{GenericMethod}()
+   addMethod!(methods,"dest1",dest1)
+   addMethod!(methods,"dest2",dest2)
 
-   @test length(configuration.destroyMethods) == 2
-   @test length(configuration.repairMethods) == 2
-   @test typeof(configuration.destroyMethods[1]) == GenericMethod
-   @test configuration.destroyMethods[1].name == "dest1"
-   @test configuration.repairMethods[2].name == "rep2"
+   @test length(methods) == 2
+   @test typeof(methods[1]) == GenericMethod
+   @test typeof(methods[2]) == GenericMethod
+   @test methods[1].name == "dest1"
+   @test methods[2].name == "dest2"
 
 end 
 
@@ -97,10 +91,10 @@ end
     # Parameters 
     parameters = ALNSParameters()
     configuration = ALNSConfiguration(parameters)
-    addDestroyMethod!(configuration,"dest1",dest1)
-    addDestroyMethod!(configuration,"dest2",dest2)
-    addRepairMethod!(configuration,"rep1",rep1)
-    addRepairMethod!(configuration,"rep2",rep2)
+    addMethod!(configuration.destroyMethods,"dest1",dest1)
+    addMethod!(configuration.destroyMethods,"dest2",dest2)
+    addMethod!(configuration.repairMethods,"rep1",rep1)
+    addMethod!(configuration.repairMethods,"rep2",rep2)
 
     # Create state 
     # Vehicle 
@@ -154,8 +148,8 @@ end
     # Parameters 
     parameters = ALNSParameters()
     configuration = ALNSConfiguration(parameters)
-    addDestroyMethod!(configuration,"dest1",dest1)
-    addRepairMethod!(configuration,"rep1",rep1)
+    addMethod!(configuration.destroyMethods,"dest1",dest1)
+    addMethod!(configuration.repairMethods,"rep1",rep1)
 
     # Create state 
     # Vehicle 
@@ -207,10 +201,10 @@ end
     # Parameters 
     parameters = ALNSParameters()
     configuration = ALNSConfiguration(parameters)
-    addDestroyMethod!(configuration,"dest1",dest1)
-    addDestroyMethod!(configuration,"dest2",dest2)
-    addRepairMethod!(configuration,"rep1",rep1)
-    addRepairMethod!(configuration,"rep2",rep2)
+    addMethod!(configuration.destroyMethods,"dest1",dest1)
+    addMethod!(configuration.destroyMethods,"dest2",dest2)
+    addMethod!(configuration.repairMethods,"rep1",rep1)
+    addMethod!(configuration.repairMethods,"rep2",rep2)
 
     # Create state 
     # Vehicle 
@@ -252,10 +246,10 @@ end
     # Parameters 
     parameters = ALNSParameters()
     configuration = ALNSConfiguration(parameters)
-    addDestroyMethod!(configuration,"dest1",dest1)
-    addDestroyMethod!(configuration,"dest2",dest2)
-    addRepairMethod!(configuration,"rep1",rep1)
-    addRepairMethod!(configuration,"rep2",rep2)
+    addMethod!(configuration.destroyMethods,"dest1",dest1)
+    addMethod!(configuration.destroyMethods,"dest2",dest2)
+    addMethod!(configuration.repairMethods,"rep1",rep1)
+    addMethod!(configuration.repairMethods,"rep2",rep2)
 
     # Create state 
     # Vehicle 

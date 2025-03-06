@@ -20,7 +20,7 @@ export setMinMaxValuesALNSParameters
 include("ALNSFunctions.jl")
 using .ALNSFunctions
 export readALNSParameters
-export addDestroyMethod!, addRepairMethod!
+export addMethod!
 export destroy!, repair!
 export rouletteWheel
 export calculateScore, updateWeights!
