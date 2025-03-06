@@ -12,6 +12,7 @@ export GenericMethod
 export ALNSParameters, readParameters
 export ALNSConfiguration
 export ALNSState
+export setMinMaxValuesALNSParameters
 
 #== 
  Import from ALNSFunctions 
@@ -30,6 +31,7 @@ export calculateScore, updateWeights!
 ==#
 include("DestroyMethods.jl")
 using .DestroyMethods
+export randomDestroy!, worstRemoval!, shawRemoval!, findNumberOfRequestToRemove
 
 #==
  Import from RepairMethods 

@@ -8,7 +8,7 @@ export checkSolutionFeasibility,checkRouteFeasibility
 # Function to check feasibility of solution 
 ==#
 function checkSolutionFeasibility(scenario::Scenario,solution::Solution)
-    @unpack vehicleSchedules, totalCost, nTaxi, totalRideTime, totalDistance, idleTime = solution
+    @unpack vehicleSchedules, totalCost, nTaxi, totalRideTime, totalDistance, totalIdleTime = solution
 
     # Collect ids of all activities in scenario - assuming activities have id 1:2*nRequests
     nRequests = length(scenario.requests)
@@ -60,7 +60,7 @@ function checkSolutionFeasibility(scenario::Scenario,solution::Solution)
         msg = "SOLUTION INFEASIBLE: Total cost of solution is incorrect. Calculated: $(totalCostCheck), actual: $(totalCost)"
         return false, msg
     end
-    if totalDistanceCheck != totalDistance
+    if !isapprox(totalDistanceCheck,totalDistance,atol=0.0001)
         msg = "SOLUTION INFEASIBLE: Total distance of solution is incorrect. Calculated: $(totalDistanceCheck), actual: $(totalDistance)"
         return false, msg
     end
@@ -213,8 +213,8 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
     totalDistanceCheck += distance[route[end-1].activity.id,route[end].activity.id]
 
     # Check that total distance is correct
-    if !isapprox(totalDistanceCheck,totalDistance)  
-        msg = "ROUTE INFEASIBLE: Total distance $(totalDistance) is incorrect"
+    if !isapprox(totalDistanceCheck, totalDistance,atol=0.0001)
+        msg = "ROUTE INFEASIBLE: Total distance $(totalDistance) is incorrect. Calculated: $(totalDistanceCheck)"
         return false, msg, Set{Int}() 
     end
 

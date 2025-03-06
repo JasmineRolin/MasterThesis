@@ -59,8 +59,8 @@ end
     startOfServiceDropOff = 16 + endOfServiceTimePickUp + scenario.time[request.pickUpActivity.id,request.dropOffActivity.id]
     endOfServiceTimeDropOff = startOfServiceDropOff + scenario.serviceTimes[request.dropOffActivity.mobilityType]
 
-    pickUpActivity = ActivityAssignment(request.pickUpActivity, vehicleSchedule.vehicle, startOfServicePickUp, endOfServiceTimePickUp)
-    dropOffActivity = ActivityAssignment(request.dropOffActivity, vehicleSchedule.vehicle, startOfServiceDropOff, endOfServiceTimeDropOff)
+    pickUpActivity = ActivityAssignment(request.pickUpActivity, vehicleSchedule.vehicle, startOfServicePickUp, endOfServiceTimePickUp,WALKING)
+    dropOffActivity = ActivityAssignment(request.dropOffActivity, vehicleSchedule.vehicle, startOfServiceDropOff, endOfServiceTimeDropOff,WALKING)
 
     insert!(vehicleSchedule.route,2,pickUpActivity)
     insert!(vehicleSchedule.route,3,dropOffActivity)
@@ -69,12 +69,12 @@ end
     route = vehicleSchedule.route
     startOfServiceWaiting = route[3].endOfServiceTime 
     endOfServiceWaiting = route[4].startOfServiceTime - scenario.time[route[3].activity.id,route[4].activity.id]
-    waitingActivity = ActivityAssignment(Activity(route[3].activity.id,-1,WAITING,WALKING,route[3].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting)
+    waitingActivity = ActivityAssignment(Activity(route[3].activity.id,-1,WAITING,WALKING,route[3].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting,WALKING)
     insert!(vehicleSchedule.route,4,waitingActivity)
 
     startOfServiceWaiting = route[2].endOfServiceTime 
     endOfServiceWaiting = route[3].startOfServiceTime - scenario.time[route[2].activity.id,route[3].activity.id]
-    waitingActivity = ActivityAssignment(Activity(route[2].activity.id,-1,WAITING,WALKING,route[2].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting)
+    waitingActivity = ActivityAssignment(Activity(route[2].activity.id,-1,WAITING,WALKING,route[2].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting,WALKING)
     insert!(vehicleSchedule.route,3,waitingActivity)
 
     # Update vehicle schedule
@@ -120,8 +120,8 @@ end
     startOfServiceDropOff = 16 + endOfServiceTimePickUp + scenario.time[request.pickUpActivity.id,request.dropOffActivity.id]
     endOfServiceTimeDropOff = startOfServiceDropOff + scenario.serviceTimes[request.dropOffActivity.mobilityType]
 
-    pickUpActivity = ActivityAssignment(request.pickUpActivity, vehicleSchedule.vehicle, startOfServicePickUp, endOfServiceTimePickUp)
-    dropOffActivity = ActivityAssignment(request.dropOffActivity, vehicleSchedule.vehicle, startOfServiceDropOff, endOfServiceTimeDropOff)
+    pickUpActivity = ActivityAssignment(request.pickUpActivity, vehicleSchedule.vehicle, startOfServicePickUp, endOfServiceTimePickUp,WALKING)
+    dropOffActivity = ActivityAssignment(request.dropOffActivity, vehicleSchedule.vehicle, startOfServiceDropOff, endOfServiceTimeDropOff,WALKING)
 
     insert!(vehicleSchedule.route,2,pickUpActivity)
     insert!(vehicleSchedule.route,3,dropOffActivity)
@@ -130,12 +130,12 @@ end
     route = vehicleSchedule.route
     startOfServiceWaiting = route[3].endOfServiceTime 
     endOfServiceWaiting = route[4].startOfServiceTime - scenario.time[route[3].activity.id,route[4].activity.id]
-    waitingActivity = ActivityAssignment(Activity(route[3].activity.id,-1,WAITING,WALKING,route[3].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting)
+    waitingActivity = ActivityAssignment(Activity(route[3].activity.id,-1,WAITING,WALKING,route[3].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting,WALKING)
     insert!(vehicleSchedule.route,4,waitingActivity)
     
     startOfServiceWaiting = route[2].endOfServiceTime 
     endOfServiceWaiting = route[3].startOfServiceTime - scenario.time[route[2].activity.id,route[3].activity.id]
-    waitingActivity = ActivityAssignment(Activity(route[2].activity.id,-1,WAITING,WALKING,route[2].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting)
+    waitingActivity = ActivityAssignment(Activity(route[2].activity.id,-1,WAITING,WALKING,route[2].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting,WALKING)
     insert!(vehicleSchedule.route,3,waitingActivity)
 
     # Update vehicle schedule
@@ -181,8 +181,8 @@ end
     startOfServiceDropOff =  endOfServiceTimePickUp + scenario.time[request.pickUpActivity.id,request.dropOffActivity.id]
     endOfServiceTimeDropOff = startOfServiceDropOff + scenario.serviceTimes[request.dropOffActivity.mobilityType]
 
-    pickUpActivity = ActivityAssignment(request.pickUpActivity, vehicleSchedule.vehicle, startOfServicePickUp, endOfServiceTimePickUp)
-    dropOffActivity = ActivityAssignment(request.dropOffActivity, vehicleSchedule.vehicle, startOfServiceDropOff, endOfServiceTimeDropOff)
+    pickUpActivity = ActivityAssignment(request.pickUpActivity, vehicleSchedule.vehicle, startOfServicePickUp, endOfServiceTimePickUp,WALKING)
+    dropOffActivity = ActivityAssignment(request.dropOffActivity, vehicleSchedule.vehicle, startOfServiceDropOff, endOfServiceTimeDropOff,WALKING)
 
     insert!(vehicleSchedule.route,2,pickUpActivity)
     insert!(vehicleSchedule.route,3,dropOffActivity)
@@ -191,7 +191,7 @@ end
     route = vehicleSchedule.route
     startOfServiceWaiting = route[3].endOfServiceTime 
     endOfServiceWaiting = route[4].startOfServiceTime - scenario.time[route[3].activity.id,route[4].activity.id]
-    waitingActivity = ActivityAssignment(Activity(route[3].activity.id,-1,WAITING,WALKING,route[3].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting)
+    waitingActivity = ActivityAssignment(Activity(route[3].activity.id,-1,WAITING,WALKING,route[3].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting,WALKING)
     insert!(vehicleSchedule.route,4,waitingActivity)
 
     # Update vehicle schedule
@@ -239,8 +239,8 @@ end
     startOfServiceDropOff =  endOfServiceTimePickUp + scenario.time[request.pickUpActivity.id,request.dropOffActivity.id]
     endOfServiceTimeDropOff = startOfServiceDropOff + scenario.serviceTimes[request.dropOffActivity.mobilityType]
 
-    pickUpActivity = ActivityAssignment(request.pickUpActivity, vehicleSchedule.vehicle, startOfServicePickUp, endOfServiceTimePickUp)
-    dropOffActivity = ActivityAssignment(request.dropOffActivity, vehicleSchedule.vehicle, startOfServiceDropOff, endOfServiceTimeDropOff)
+    pickUpActivity = ActivityAssignment(request.pickUpActivity, vehicleSchedule.vehicle, startOfServicePickUp, endOfServiceTimePickUp,WALKING)
+    dropOffActivity = ActivityAssignment(request.dropOffActivity, vehicleSchedule.vehicle, startOfServiceDropOff, endOfServiceTimeDropOff,WALKING)
 
     insert!(vehicleSchedule.route,2,dropOffActivity)
     insert!(vehicleSchedule.route,3,pickUpActivity)
@@ -296,8 +296,8 @@ end
     startOfServiceDropOff =  25 + endOfServiceTimePickUp + scenario.time[request.pickUpActivity.id,request.dropOffActivity.id]
     endOfServiceTimeDropOff = startOfServiceDropOff + scenario.serviceTimes[request.dropOffActivity.mobilityType]
 
-    pickUpActivity = ActivityAssignment(request.pickUpActivity, vehicleSchedule.vehicle, startOfServicePickUp, endOfServiceTimePickUp)
-    dropOffActivity = ActivityAssignment(request.dropOffActivity, vehicleSchedule.vehicle, startOfServiceDropOff, endOfServiceTimeDropOff)
+    pickUpActivity = ActivityAssignment(request.pickUpActivity, vehicleSchedule.vehicle, startOfServicePickUp, endOfServiceTimePickUp,WALKING)
+    dropOffActivity = ActivityAssignment(request.dropOffActivity, vehicleSchedule.vehicle, startOfServiceDropOff, endOfServiceTimeDropOff,WALKING)
 
     insert!(vehicleSchedule.route,2,pickUpActivity)
     insert!(vehicleSchedule.route,3,dropOffActivity)
@@ -307,12 +307,12 @@ end
     route = vehicleSchedule.route
     startOfServiceWaiting = route[3].endOfServiceTime 
     endOfServiceWaiting = route[4].startOfServiceTime - scenario.time[route[3].activity.id,route[4].activity.id]
-    waitingActivity = ActivityAssignment(Activity(route[3].activity.id,-1,WAITING,WALKING,route[3].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting)
+    waitingActivity = ActivityAssignment(Activity(route[3].activity.id,-1,WAITING,WALKING,route[3].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting,WALKING)
     insert!(vehicleSchedule.route,4,waitingActivity)
 
     startOfServiceWaiting = route[2].endOfServiceTime 
     endOfServiceWaiting = route[3].startOfServiceTime - scenario.time[route[2].activity.id,route[3].activity.id]
-    waitingActivity = ActivityAssignment(Activity(route[2].activity.id,-1,WAITING,WALKING,route[2].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting)
+    waitingActivity = ActivityAssignment(Activity(route[2].activity.id,-1,WAITING,WALKING,route[2].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting,WALKING)
     insert!(vehicleSchedule.route,3,waitingActivity)
 
     # Update vehicle schedule

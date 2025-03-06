@@ -60,8 +60,7 @@ export ActivityAssignment
 ==#
 include("VehicleSchedule.jl")
 using .VehicleSchedules
-export VehicleSchedule
-export copyVehicleSchedule
+export VehicleSchedule, findPositionOfRequest, isVehicleScheduleEmpty, copyVehicleSchedule
 
 #==
  Export from Scenario module 
