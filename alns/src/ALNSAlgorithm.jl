@@ -46,6 +46,7 @@ function ALNS(scenario::Scenario,initialSolution::Solution,configuration::ALNSCo
 
         # Check if solution is improved
         # TODO: create hash table to check if solution has been visited before
+        # TODO: jas - update . accept always true if solution is better than current sol!
         if trialState.currentSolution.totalCost < currentState.currentSolution.totalCost
             println("\t New improved solution: ", trialState.currentSolution.totalCost, " old cost: ", currentState.currentSolution.totalCost)
 
