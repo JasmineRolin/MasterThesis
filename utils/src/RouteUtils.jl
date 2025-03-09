@@ -95,8 +95,6 @@ end
 # idxPickUp: index of link where pickup should be inserted 
 # idxDropOff: index of link where dropoff should be inserted 
 function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPickUp::Int,idxDropOff::Int,typeOfSeat::MobilityType,scenario::Scenario)
-    println("INITIAL")
-    printRouteHorizontal(vehicleSchedule)
     # Update r  oute
     activityAssignmentBeforePickUp, activityAssignmentAfterPickUp, activityAssignmentBeforeDropOff, activityAssignmentAfterDropOff = updateRoute!(scenario.time,scenario.serviceTimes,vehicleSchedule,request,typeOfSeat,idxPickUp,idxDropOff)
 
@@ -110,7 +108,7 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPic
     updatedIdxPickUp, updatedIdxDropOff = updateWaiting!(scenario.time,vehicleSchedule,idxPickUp,idxDropOff)
 
     # Update total distance
-    updateDistance!(scenario.distance,vehicleSchedule,request,updatedIdxDropOff,updatedIdxPickUp, activityAssignmentBeforePickUp, activityAssignmentAfterPickUp, activityAssignmentBeforeDropOff, activityAssignmentAfterDropOff)
+    updateDistance!(scenario,vehicleSchedule,request,updatedIdxDropOff,updatedIdxPickUp, activityAssignmentBeforePickUp, activityAssignmentAfterPickUp, activityAssignmentBeforeDropOff, activityAssignmentAfterDropOff)
 
     # Update idle time 
     vehicleSchedule.totalIdleTime = getTotalIdleTimeRoute(vehicleSchedule.route)
@@ -167,12 +165,13 @@ function updateRoute!(time::Array{Int,2},serviceTimes::Dict{MobilityType,Int},ve
     # Determine the time for drop off
     startOfServiceDrop = startOfServicePick + max(earliestStartOfServiceDropOff - latestStartOfServicePickUp, time[request.pickUpActivity.id,request.dropOffActivity.id]+serviceTimes[request.pickUpActivity.mobilityType])
 
-    # Insert request
+    # Save original nodes before and after pick up and drop off
     activityAssignmentBeforePickUp = route[idxPickUp]
     activityAssignmentAfterPickUp = route[idxPickUp+1]
     activityAssignmentBeforeDropOff = route[idxDropOff]
     activityAssignmentAfterDropOff = route[idxDropOff+1]
 
+    # Insert request
     pickUpActivity = ActivityAssignment(request.pickUpActivity, vehicleSchedule.vehicle, startOfServicePick, startOfServicePick + serviceTimes[request.pickUpActivity.mobilityType],typeOfSeat)
     dropOffActivity = ActivityAssignment(request.dropOffActivity, vehicleSchedule.vehicle, startOfServiceDrop, startOfServiceDrop + serviceTimes[request.dropOffActivity.mobilityType],typeOfSeat)
     insert!(vehicleSchedule.route,idxPickUp+1,pickUpActivity)
@@ -294,15 +293,21 @@ function updateWaitingBeforeNode!(time::Array{Int,2},vehicleSchedule::VehicleSch
     if route[idx-1].startOfServiceTime < route[idx-1].endOfServiceTime
         return 0
     else
-        # Remove waiting before node
         deleteat!(route,idx-1)
         deleteat!(vehicleSchedule.numberOfWalking,idx-1)
         deleteat!(vehicleSchedule.numberOfWheelchair,idx-1)
 
-        # Update schedule
-        #vehicleSchedule.totalDistance -= time[route[idx-1].activity.id,route[idx].activity.id] + time[route[idx-2].activity.id,route[idx-1].activity.id]
-        #vehicleSchedule.totalDistance += time[route[idx-2].activity.id,route[idx].activity.id]
-        #vehicleSchedule.idleTime -= route[idx-1].endOfServiceTime - route[idx-1].startOfServiceTime
+        # Check if a waiting node is still needed, but at location for node before 
+        if route[idx-2].endOfServiceTime + time[route[idx-2].activity.id,route[idx-1].activity.id] < route[idx-1].startOfServiceTime
+            startOfServiceWaiting = route[idx-2].endOfServiceTime 
+            endOfServiceWaiting = route[idx-1].startOfServiceTime - time[route[idx-2].activity.id,route[idx-1].activity.id]
+            waitingActivity = ActivityAssignment(Activity(route[idx-2].activity.id,-1,WAITING,WALKING,route[idx-2].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting,WALKING)
+            insert!(route,idx-1,waitingActivity)
+            insert!(vehicleSchedule.numberOfWalking,idx-1,vehicleSchedule.numberOfWalking[idx-2])
+            insert!(vehicleSchedule.numberOfWheelchair,idx-1,vehicleSchedule.numberOfWheelchair[idx-2])
+            return 0
+        end
+
         return -1
     end
 end
@@ -384,10 +389,12 @@ end
 #==
 # Method to update total distance of vehicle schedule after insertion of request
 ==#
-function updateDistance!(distance::Array{Float64,2},vehicleSchedule::VehicleSchedule,request::Request,idxDropOff::Int,idxPickUp::Int,activityAssignmentBeforePickUp::ActivityAssignment, activityAssignmentAfterPickUp::ActivityAssignment, activityAssignmentBeforeDropOff::ActivityAssignment, activityAssignmentAfterDropOff::ActivityAssignment)
+function updateDistance!(scenario::Scenario,vehicleSchedule::VehicleSchedule,request::Request,idxDropOff::Int,idxPickUp::Int,activityAssignmentBeforePickUp::ActivityAssignment, activityAssignmentAfterPickUp::ActivityAssignment, activityAssignmentBeforeDropOff::ActivityAssignment, activityAssignmentAfterDropOff::ActivityAssignment)
     
     route = vehicleSchedule.route 
 
+    
+    #==
     println("idxDropOff: ", idxDropOff)
     println("idxPickUp: ", idxPickUp)
     println(activityAssignmentBeforePickUp.activity.id)
@@ -411,6 +418,9 @@ function updateDistance!(distance::Array{Float64,2},vehicleSchedule::VehicleSche
     end
 
     println(vehicleSchedule.totalDistance)
+    ==#
+
+    vehicleSchedule.totalDistance = getTotalDistanceRoute(route, scenario)
 
 end
 
