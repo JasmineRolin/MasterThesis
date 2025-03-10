@@ -6,26 +6,19 @@ using ..ALNSDomain
 export greedyInsertion
 export regretInsertion
 
-#==
- Module that containts repair methods 
-==#
-# TODO: implement methods 
-# TODO: methods should all have same input (solution,parameters)
-
-
 #== 
     Method that performs regret insertion of requests
 ==#
 function regretInsertion(state::ALNSState,scenario::Scenario)
-    #TODO should we always ensure there is an empty route?
     #TODO should we implement noise?
     @unpack destroyWeights, repairWeights, destroyNumberOfUses, repairNumberOfUses, bestSolution, currentSolution, requestBank = state
+    newRequestBank = Int[]
     requests = scenario.requests
 
     # Define insertion matrix
     insCostMatrix = zeros(Float64, length(requests), length(scenario.vehicles))
-    matPossible = ones(Bool, length(requests), length(scenario.vehicles))
-    fillInsertionCostMatrix!(scenario, currentSolution, requestBank, insCostMatrix, matPossible)
+    compatibilityRequestVehicle = ones(Bool, length(requests), length(scenario.vehicles))
+    fillInsertionCostMatrix!(scenario, currentSolution, requestBank, insCostMatrix, compatibilityRequestVehicle)
 
     # Insert requests
     while !isempty(requestBank)
@@ -38,69 +31,88 @@ function regretInsertion(state::ALNSState,scenario::Scenario)
             bestVehicleForRequest = -1
             bestInsertion = secondBestInsertion = typemax(Float64)
             for v in 1:length(scenario.vehicles)
-                if matPossible[requests[r].id,v]
-                    if insCostMatrix[requests[r].id] < bestInsertion
+                if compatibilityRequestVehicle[requests[r].id,v]
+                    if insCostMatrix[requests[r].id,v] < bestInsertion
                         secondBestInsertion = bestInsertion
-                        bestInsertion = insCostMatrix[requests[r].id]
+                        bestInsertion = insCostMatrix[requests[r].id,v]
                         bestVehicleForRequest = v
-                    elseif insCostMatrix[requests[r].id] < secondBestInsertion
-                        secondBestInsertion = insCostMatrix[requests[r].id]
+                    elseif insCostMatrix[requests[r].id,v] < secondBestInsertion
+                        secondBestInsertion = insCostMatrix[requests[r].id,v]
                     end
                 end
             end
             if bestVehicleForRequest == -1
-                println("regretInsertion: No feasible vehicle for request. This should not happen")
+                append!(newRequestBank, r)
+                continue
             end
             if (secondBestInsertion - bestInsertion) > bestRegret
-                bestRegret = secondBestInsert - bestInsertion
+                bestRegret = secondBestInsertion - bestInsertion
                 bestRequest = r
                 overallBestVehicle = bestVehicleForRequest
             end
         end
 
+        if bestRequest == -1
+            break
+        end
+
         # Find best insertion position
-        status, delta, pickUp, dropOff, bestTypeOfSeat = findBestFeasibleInsertionRoute(request, schedule, scenario)
+        status, delta, pickUp, dropOff, bestTypeOfSeat = findBestFeasibleInsertionRoute(requests[bestRequest], currentSolution.vehicleSchedules[overallBestVehicle], scenario)
+
+        # Update solution pre
+        state.currentSolution.totalCost -= currentSolution.vehicleSchedules[overallBestVehicle].totalCost
+        state.currentSolution.totalDistance -= currentSolution.vehicleSchedules[overallBestVehicle].totalDistance
+        state.currentSolution.totalRideTime -= currentSolution.vehicleSchedules[overallBestVehicle].totalTime
+        state.currentSolution.totalIdleTime -= currentSolution.vehicleSchedules[overallBestVehicle].totalIdleTime
 
         # Insert request
         insertRequest!(requests[bestRequest], currentSolution.vehicleSchedules[overallBestVehicle], pickUp, dropOff, bestTypeOfSeat, scenario)
+        append!(state.assignedRequests, bestRequest)
+
+        # Update solution pro
+        state.nAssignedRequests += 1
+        state.currentSolution.nTaxi -= 1
+        state.currentSolution.totalCost += currentSolution.vehicleSchedules[overallBestVehicle].totalCost
+        state.currentSolution.totalDistance += currentSolution.vehicleSchedules[overallBestVehicle].totalDistance
+        state.currentSolution.totalRideTime += currentSolution.vehicleSchedules[overallBestVehicle].totalTime
+        state.currentSolution.totalIdleTime += currentSolution.vehicleSchedules[overallBestVehicle].totalIdleTime
 
         # Remove request from requestBank
-        deleteat!(requestBank, findfirst(requestBank, bestRequest))
+        setdiff!(requestBank,[bestRequest])
 
         # Recalculate insertion cost matrix
-        reCalcCostMatrix!(overallBestRoute, scenario, currentSolution, requestBank, insCostMatrix, matPossible)
+        reCalcCostMatrix!(overallBestVehicle, scenario, currentSolution, requestBank, insCostMatrix, compatibilityRequestVehicle)
+
     end
 
 
 end
 
-function fillInsertionCostMatrix!(scenario::Scenario, currentSolution::Solution, requestBank::Vector{Int}, insCostMatrix::Array{Float64,2}, matPossible::Array{Bool,2})
+function fillInsertionCostMatrix!(scenario::Scenario, currentSolution::Solution, requestBank::Vector{Int}, insCostMatrix::Array{Float64,2}, compatibilityRequestVehicle::Array{Bool,2})
     
     for r in requestBank
         for v in 1:length(scenario.vehicles)
-            if matPossible[r,v]
-                status, delta, pickUp, dropOff, bestTypeOfSeat = findBestFeasibleInsertionRoute(scenario.requests[r], currentSolution.vehicleSchedules[v], scenario)
-                if status
-                    insCostMatrix[r,v] = delta
-                else
-                    insCostMatrix[r,v] = typemax(Float64)
-                    matPossible[r,v] = false
-                end
+            status, delta, pickUp, dropOff, bestTypeOfSeat = findBestFeasibleInsertionRoute(scenario.requests[r], currentSolution.vehicleSchedules[v], scenario)
+            if status
+                insCostMatrix[r,v] = delta
+            else
+                insCostMatrix[r,v] = typemax(Float64)
+                compatibilityRequestVehicle[r,v] = false
             end
         end
     end
     
 end
 
-function reCalcCostMatrix!(v::Int,scenario::Scenario, currentSolution::Solution, requestBank::Vector{Int}, insCostMatrix::Array{Float64,2}, matPossible::Array{Bool,2})
+function reCalcCostMatrix!(v::Int,scenario::Scenario, currentSolution::Solution, requestBank::Vector{Int}, insCostMatrix::Array{Float64,2}, compatibilityRequestVehicle::Array{Bool,2})
     for r in requestBank
-        if matPossible[r,v]
+        if compatibilityRequestVehicle[r,v]
             status, delta, pickUp, dropOff, bestTypeOfSeat = findBestFeasibleInsertionRoute(scenario.requests[r], currentSolution.vehicleSchedules[v], scenario)
             if status
                 insCostMatrix[r,v] = delta
             else
                 insCostMatrix[r,v] = typemax(Float64)
-                matPossible[r,v] = false
+                compatibilityRequestVehicle[r,v] = false
             end
         end
     end
@@ -113,6 +125,7 @@ end
 ==#
 function greedyInsertion(state::ALNSState,scenario::Scenario)
     @unpack destroyWeights, repairWeights, destroyNumberOfUses, repairNumberOfUses, bestSolution, currentSolution, requestBank = state
+    newRequestBank = Int[]
 
     for r in requestBank
         request = scenario.requests[r]
@@ -121,25 +134,45 @@ function greedyInsertion(state::ALNSState,scenario::Scenario)
         bestPickUp = -1
         bestDropOff = -1
         bestTypeOfSeat = nothing
+        bestVehicle = -1
 
-        for schedule in currentSolution.vehicleSchedules
+        for (idx,schedule) in enumerate(currentSolution.vehicleSchedules)
             status, delta, pickUp, dropOff, bestTypeOfSeat = findBestFeasibleInsertionRoute(request, schedule, scenario)
             if status && delta < bestDelta
                 bestDelta = delta
                 bestSchedule = schedule
                 bestPickUp = pickUp
                 bestDropOff = dropOff
+                bestVehicle = idx
             end
         end
         if !isnothing(bestTypeOfSeat)
+
+            # Update solution pre
+            state.currentSolution.totalCost -= currentSolution.vehicleSchedules[bestVehicle].totalCost
+            state.currentSolution.totalDistance -= currentSolution.vehicleSchedules[bestVehicle].totalDistance
+            state.currentSolution.totalRideTime -= currentSolution.vehicleSchedules[bestVehicle].totalTime
+            state.currentSolution.totalIdleTime -= currentSolution.vehicleSchedules[bestVehicle].totalIdleTime
+
+            # Insert request
             insertRequest!(request, bestSchedule, bestPickUp, bestDropOff, bestTypeOfSeat, scenario)
+            append!(state.assignedRequests, r)
+
+            # Update solution pro
+            state.nAssignedRequests += 1
+            state.currentSolution.nTaxi -= 1
+            state.currentSolution.totalCost += currentSolution.vehicleSchedules[bestVehicle].totalCost
+            state.currentSolution.totalDistance += currentSolution.vehicleSchedules[bestVehicle].totalDistance
+            state.currentSolution.totalRideTime += currentSolution.vehicleSchedules[bestVehicle].totalTime
+            state.currentSolution.totalIdleTime += currentSolution.vehicleSchedules[bestVehicle].totalIdleTime       
+            
         else
-            currentSolution.nTaxi += 1
-            println("greedyInsertion: No feasible vehicle for request. This should not happen")
+            append!(newRequestBank, r)
         end
     end
 
-    return currentSolution
+    state.requestBank = newRequestBank
+
 end
 
 
@@ -154,7 +187,7 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
         for j in i:length(route)-1
             feasible, typeOfSeat = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,i,j,scenario)
             if feasible
-                delta = calculateInsertionCost(request, vehicleSchedule, i, j, scenario)
+                delta = calculateInsertionCost(scenario.time,scenario.serviceTimes,vehicleSchedule,request,i,j)
                 if delta < bestDelta
                     bestDelta = delta
                     bestPickUp = i
@@ -170,12 +203,52 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
 end
 
 
-function calculateInsertionCost(request::Request, vehicleSchedule::VehicleSchedule, i::Int, j::Int, scenario::Scenario)
-    # Calculate cost of inserting request at position i,j in route
-    newVehicleSchedule = copyVehicleSchedule(vehicleSchedule)
-    updateRoute!(scenario.time,scenario.serviceTimes,newVehicleSchedule,request,i,j)
-    newTotalCost = getTotalCostRoute(scenario,newVehicleSchedule.route)
-    return newTotalCost - vehicleSchedule.totalCost
+function calculateInsertionCost(time::Array{Int,2},serviceTimes::Dict{MobilityType,Int},vehicleSchedule::VehicleSchedule,request::Request,idxPickUp::Int,idxDropOff::Int)
+
+    route = vehicleSchedule.route
+
+    # Get time when cend of service is for node before pick up
+    if route[idxPickUp].activity.activityType == WAITING || route[idxPickUp].activity.activityType == DEPOT
+        endOfServiceBeforePick = route[idxPickUp].activity.timeWindow.startTime
+    else
+        endOfServiceBeforePick = route[idxPickUp].endOfServiceTime
+    end
+
+    # Get time when end of service is for node before drop off
+    if route[idxDropOff].activity.activityType == WAITING || route[idxDropOff].activity.activityType == DEPOT
+        endOfServiceBeforeDrop = route[idxDropOff].activity.timeWindow.startTime
+    else
+        endOfServiceBeforeDrop = route[idxDropOff].endOfServiceTime
+    end
+
+    # Get time when arriving at node after pick up
+    startOfServiceAfterPick = route[idxPickUp+1].startOfServiceTime
+
+    # Get time when arriving at node after drop off
+    startOfServiceAfterDrop = route[idxDropOff+1].startOfServiceTime
+
+
+    #Get available service time windows
+    earliestStartOfServicePickUp = max(endOfServiceBeforePick + time[route[idxPickUp].activity.id,request.pickUpActivity.id],request.pickUpActivity.timeWindow.startTime)
+    latestStartOfServicePickUp = min(startOfServiceAfterPick - time[request.pickUpActivity.id,route[idxPickUp+1].activity.id] - serviceTimes[request.pickUpActivity.mobilityType],request.pickUpActivity.timeWindow.endTime)
+    earliestStartOfServiceDropOff = max(endOfServiceBeforeDrop + time[route[idxDropOff].activity.id,request.dropOffActivity.id],request.dropOffActivity.timeWindow.startTime)
+    latestStartOfServiceDropOff = min(startOfServiceAfterDrop - time[request.dropOffActivity.id,route[idxDropOff+1].activity.id] - serviceTimes[request.dropOffActivity.mobilityType],request.dropOffActivity.timeWindow.endTime)  
+
+    # Get available service time window for pick up considering minimized excess drive time
+    earliestStartOfServicePickUpMinimization = max(earliestStartOfServicePickUp,earliestStartOfServiceDropOff - max(earliestStartOfServiceDropOff - latestStartOfServicePickUp, time[request.pickUpActivity.id,request.dropOffActivity.id] + serviceTimes[request.pickUpActivity.mobilityType]))
+    latestStartOfServicePickUpMinimization = min(latestStartOfServicePickUp,latestStartOfServiceDropOff-max(earliestStartOfServiceDropOff - latestStartOfServicePickUp, time[request.pickUpActivity.id,request.dropOffActivity.id] + serviceTimes[request.pickUpActivity.mobilityType]))
+
+    # Choose the best time for pick up (Here the latest time is chosen)
+    startOfServicePick = latestStartOfServicePickUpMinimization
+
+    # Determine the time for drop off
+    startOfServiceDrop = startOfServicePick + max(earliestStartOfServiceDropOff - latestStartOfServicePickUp, time[request.pickUpActivity.id,request.dropOffActivity.id]+serviceTimes[request.pickUpActivity.mobilityType])
+
+    # Determine delta cost
+    deltaCost = ((startOfServiceDrop - startOfServicePick) - time[request.pickUpActivity.id,request.dropOffActivity.id])/time[request.pickUpActivity.id,request.dropOffActivity.id]
+
+    return deltaCost
+
 end
 
 

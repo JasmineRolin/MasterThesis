@@ -14,68 +14,86 @@ function simpleConstruction(scenario::Scenario)
    
     # Initialize solution
     solution = Solution(scenario)
+    requestBank = Int[]
 
     for request in scenario.offlineRequests
-        # Initialize variables
-        feasible = false
-        getTaxi = false
-        typeOfSeat = nothing
-        triedDepots = Set{Int}()
-        idxPickUp, idxDropOff = -1, -1
-        vehicle = -1
-        closestDepot = -1
-        
         # Determine closest feasible vehicle
-        while !feasible && !getTaxi
-            closestDepot = getClosestDepot(request,triedDepots,scenario)
-            for vehicleIdx in scenario.depots[closestDepot]
-                vehicle = vehicleIdx
-                feasible, idxPickUp, idxDropOff, typeOfSeat = findFeasibleInsertionInSchedule(request,solution.vehicleSchedules[vehicle],scenario)
-                if !feasible
-                    push!(triedDepots, closestDepot)
-                else
-                    break
-                end
-            end
-            getTaxi = length(triedDepots) == scenario.nDepots
-        end
+        closestVehicleIdx, idxPickUp, idxDropOff, typeOfSeat = getClosestFeasibleVehicle(request,solution,scenario)
 
         # Insert request
-        if feasible
-            insertRequest!(request,solution.vehicleSchedules[vehicle],idxPickUp,idxDropOff,typeOfSeat,scenario)
+        if closestVehicleIdx != -1
+            insertRequest!(request,solution.vehicleSchedules[closestVehicleIdx],idxPickUp,idxDropOff,typeOfSeat,scenario)
         else
-            solution.nTaxi += getTaxi
+            append!(requestBank,request.id)
         end
 
     end
 
     # Update solution
     solution.totalCost, solution.totalDistance, solution.totalRideTime = getTotalCostDistanceTimeOfSolution(scenario,solution)
+    solution.nTaxi = length(requestBank)
     
-    return solution
+    return solution, requestBank
     
 end
 
 
 # ----------
-# Function to find the closest depot
+# Function to find the closest vehicle
 # ----------
-function getClosestDepot(request::Request, triedDepots::Set{Int},scenario::Scenario)
-    closest_depot = -1
-    nRequests = length(scenario.requests)
-    allDepotsIdx = collect(2 * nRequests + 1 : 2 * nRequests + scenario.nDepots)
-    considerDepots = setdiff(allDepotsIdx,triedDepots)
+function getClosestFeasibleVehicle(request::Request, solution::Solution, scenario::Scenario)
+    closestVehicle = nothing
+    minTravelTime = Inf
+    closestVehicleIdx = -1
+    bestPickUpIdx = -1
+    bestDropOffIdx = -1
+    bestTypeOfSeat = nothing
+    requestPickupId = request.pickUpActivity.id
+    requestTime = request.pickUpActivity.timeWindow.startTime
 
-    if isempty(considerDepots)
-        return -1  # No valid depots left
+    considerVehicles = collect(1:length(scenario.vehicles))
+
+    for vehicleIdx in considerVehicles
+        vehicle = scenario.vehicles[vehicleIdx]
+        vehicleSchedule = solution.vehicleSchedules[vehicle.id]
+        
+        # Ensure the vehicle is available within the time window
+        if vehicle.availableTimeWindow.startTime > requestTime || vehicle.availableTimeWindow.endTime < requestTime
+            continue
+        end
+        
+        # Find the vehicle's activity at the request pickup time
+        vehicleLocationId = nothing
+        for (idx,activity) in enumerate(vehicleSchedule.route)
+            if idx == length(vehicleSchedule.route)
+                vehicleLocationId = vehicleSchedule.route[end].activity.id
+                break
+            elseif vehicleSchedule.route[idx+1].startOfServiceTime >= requestTime
+                vehicleLocationId = activity.activity.id
+                break
+            end
+        end
+        
+        # Compute travel time from the determined vehicle location to the pickup location
+        travelTime = scenario.time[vehicleLocationId, requestPickupId]
+
+        # Determine if there is a feasible place to insert it
+        feasible, idxPickUp, idxDropOff, typeOfSeat = findFeasibleInsertionInSchedule(request,solution.vehicleSchedules[vehicleIdx],scenario)
+
+        # Update closest vehicle if a shorter travel time is found
+        if feasible && travelTime < minTravelTime
+            minTravelTime = travelTime
+            closestVehicle = vehicle
+            closestVehicleIdx = vehicleIdx
+            bestPickUpIdx = idxPickUp
+            bestDropOffIdx = idxDropOff
+            bestTypeOfSeat = typeOfSeat
+        end
     end
-
-    # Find the closest depot index
-    closestDepotIdx = argmin(scenario.time[considerDepots, request.id])  # Get index within considerDepots
-    closest_depot = considerDepots[closestDepotIdx]  # Convert back to original index
-
-    return closest_depot
+    
+    return closestVehicleIdx, bestPickUpIdx, bestDropOffIdx, bestTypeOfSeat
 end
+
 
 # ----------
 # Function to check feasibility of inserting a request in a vehicle schedule and returning feasible position

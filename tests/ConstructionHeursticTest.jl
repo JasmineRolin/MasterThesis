@@ -16,7 +16,7 @@ using utils, domain, offlinesolution
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
 
     # Constuct solution 
-    solution = simpleConstruction(scenario)
+    solution, requestBank = simpleConstruction(scenario)
     @test solution.nTaxi == 0
 
     # Print solution
@@ -40,7 +40,7 @@ end
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
     
     # Constuct solution 
-    solution = simpleConstruction(scenario)
+    solution, requestBank = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
     feasible, msg = checkSolutionFeasibility(scenario,solution)
     @test feasible == true
@@ -48,5 +48,24 @@ end
       
 end
 
+@testset "ConstructionHeurstic test - Big Test" begin 
+    requestFile = "tests/resources/RequestsBig.csv"
+    vehiclesFile = "tests/resources/VehiclesBig.csv"
+    parametersFile = "tests/resources/Parameters.csv"
+    distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
+    timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
+    
+    # Read instance 
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    
+    # Constuct solution 
+    solution, requestBank = simpleConstruction(scenario)
+    solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+
+    feasible, msg = checkSolutionFeasibility(scenario,solution)
+    @test feasible == true
+    @test msg == ""
+      
+end
 
 

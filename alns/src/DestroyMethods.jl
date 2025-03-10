@@ -43,6 +43,7 @@ function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::A
     append!(requestBank,requestsToRemove)
     setdiff!(assignedRequests, requestsToRemove)
     currentState.nAssignedRequests -= nRequestsToRemove
+    currentState.currentSolution.nTaxi += nRequestsToRemove
 
     println("==========> Removing requests: ",requestsToRemove)
 
@@ -80,7 +81,7 @@ function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::
     end
     
     # Sort requests by descending cost
-    sortedRequests = sort(collect(costImpacts), by=x -> -x[2])  # Sort by cost, highest first
+    sortedRequests = [x[1] for x in sort(collect(costImpacts), by=x -> -x[2])]  # Sort by cost, highest first
     
     # Remove requests probabilistically
     requestsToRemove = Set{Int}()
@@ -92,6 +93,7 @@ function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::
     append!(requestBank, requestsToRemove)
     setdiff!(assignedRequests, requestsToRemove)
     currentState.nAssignedRequests -= nRequestsToRemove
+    currentState.currentSolution.nTaxi += nRequestsToRemove
     
     println("==========> Removing requests: ", requestsToRemove)
     
@@ -137,7 +139,7 @@ function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::A
         end
 
         # Sort array of not chosen requests according to relatedness measure
-        sortedRequests = sort(collect(relatednessMeasures), by = x -> x[2])  
+        sortedRequests = [x[1] for x in sort(collect(relatednessMeasures), by=x -> -x[2])]
 
         # Select request to remove (probabilistically)
         requestId = chooseRequest(p, sortedRequests)
@@ -152,6 +154,7 @@ function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::A
     end
     append!(requestBank, requestsToRemove)
     currentState.nAssignedRequests -= nRequestsToRemove
+    currentState.currentSolution.nTaxi += nRequestsToRemove
 
     println("==========> Removing requests: ", requestsToRemove)
 
@@ -185,18 +188,17 @@ function findNumberOfRequestToRemove(minPercentToDestroy::Float64,maxPercentToDe
     minimumNumberToRemove = max(1,round(Int,minPercentToDestroy*nRequests))
     maximumNumberToRemove = max(minimumNumberToRemove,round(Int,maxPercentToDestroy*nRequests))
 
-    return rand(minimumNumberToRemove:maximumNumberToRemove)
+    return min(nRequests,rand(minimumNumberToRemove:maximumNumberToRemove))
 end
 
 #==
  Choose request in sorted list 
 ==#
-function chooseRequest(p::Float64, sortedRequests)::Int
+function chooseRequest(p::Float64, sortedRequests::Vector{Int})::Int
     y = rand()  # Random number in [0,1]
     idx = round(Int, y^p * length(sortedRequests))  # Skewed selection
     idx = clamp(idx, 1, length(sortedRequests))  # Ensure valid index
-    requestId, _ = sortedRequests[idx]
-    return requestId
+    return sortedRequests[idx]
 end
 
 #==
@@ -354,9 +356,9 @@ function removeActivityFromRoute!(time::Array{Int,2},distance::Array{Float64,2},
 
         # Update waiting activity
         oldIdleTime = activityAssignmentAfter.endOfServiceTime - activityAssignmentAfter.startOfServiceTime
-        activityAssignmentAfter.startOfServiceTime = activityAssignmentBefore.startOfServiceTime + time[activityAssignmentBefore.activity.id,activityAssignmentAfter.activity.id]
+        activityAssignmentAfter.startOfServiceTime = activityAssignmentBefore.endOfServiceTime + time[activityAssignmentBefore.activity.id,activityAssignmentAfter.activity.id]
         activityAssignmentAfter.activity.timeWindow.startTime = activityAssignmentAfter.startOfServiceTime
-
+        
         # Update deltas 
         deltaDistance = distance[activityAssignmentBefore.activity.id,activityAssignmentAfter.activity.id] - distance[activityAssignmentBefore.activity.id,activityToRemove.activity.id] - distance[activityToRemove.activity.id,activityAssignmentAfter.activity.id]
         deltaIdleTime = (activityAssignmentAfter.endOfServiceTime - activityAssignmentAfter.startOfServiceTime) - oldIdleTime

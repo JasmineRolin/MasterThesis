@@ -16,7 +16,7 @@ using utils, domain, offlinesolution
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
 
     # Construct solution
-    solution = simpleConstruction(scenario)
+    solution, requestBank = simpleConstruction(scenario)
 
     # Add online requests to taxies 
     # TODO: remove when online solution is created 
@@ -38,7 +38,7 @@ end
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
 
     # Construct solution
-    solution = simpleConstruction(scenario)
+    solution, requestBank = simpleConstruction(scenario)
     solution.totalCost = 90.0
 
     # Add online requests to taxies 
@@ -62,7 +62,7 @@ end
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
 
     # Construct solution
-    solution = simpleConstruction(scenario)
+    solution, requestBank = simpleConstruction(scenario)
     insertRequest!(scenario.requests[3],solution.vehicleSchedules[1],1,1,WALKING,scenario)
 
     # Add online requests to taxies 
@@ -87,7 +87,7 @@ end
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
 
     # Construct solution
-    solution = simpleConstruction(scenario)
+    solution, requestBank = simpleConstruction(scenario)
 
     # Add online requests to taxies 
     # TODO: remove when online solution is created 

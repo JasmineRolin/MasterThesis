@@ -260,7 +260,7 @@ function simulateScenario(scenario::Scenario)
     # Get solution for initial solution (online problem)
     # solution = offlineAlgorithm(scenario) # TODO: Change to right function name !!!!!!!!!!
     solution = Solution(scenario)
-    solution = simpleConstruction(scenario)
+    solution, requestBank = simpleConstruction(scenario)
 
     # Print routes
     println("------------------------------------------------------------------------------------------------------------------------------------------------")
