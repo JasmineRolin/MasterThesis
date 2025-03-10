@@ -358,10 +358,7 @@ function updateWaiting!(time::Array{Int,2},vehicleSchedule::VehicleSchedule,idxP
             inserted, updatedActivityAssignmentBeforePickUp = updateWaitingBeforeNode!(time,vehicleSchedule,updatedIdxPickUp)
             updatedIdxDropOff += inserted
             updatedIdxPickUp += inserted
-        end
-            # if inserted == 1
-        #     updatedActivityAssignmentBeforePickUp = tempActivity
-        # end
+        end       
 
         # Update or insert waiting after pick up 
         if route[updatedIdxPickUp+1].activity.activityType != WAITING
@@ -414,49 +411,49 @@ end
 # Method to update total distance of vehicle schedule after insertion of request
 ==#
 function updateDistance!(scenario::Scenario,vehicleSchedule::VehicleSchedule,request::Request,idxDropOff::Int,idxPickUp::Int,
-activityAssignmentBeforePickUp::Int, activityAssignmentAfterPickUp::Int, activityAssignmentBeforeDropOff::Int, activityAssignmentAfterDropOff::Int, 
-updatedActivityAssignmentBeforePickUp::Int, updatedActivityAssignmentAfterPickUp::Int, updatedActivityAssignmentBeforeDropOff::Int, updatedActivityAssignmentAfterDropOff::Int)
+                        activityAssignmentBeforePickUp::Int, activityAssignmentAfterPickUp::Int, activityAssignmentBeforeDropOff::Int, activityAssignmentAfterDropOff::Int, 
+                        updatedActivityAssignmentBeforePickUp::Int, updatedActivityAssignmentAfterPickUp::Int, updatedActivityAssignmentBeforeDropOff::Int, updatedActivityAssignmentAfterDropOff::Int)
 
-route = vehicleSchedule.route 
-distance = scenario.distance
-
-
-# Update total distance
-if idxDropOff-1 == idxPickUp
-#println(vehicleSchedule.totalDistance)
-vehicleSchedule.totalDistance -= distance[activityAssignmentBeforePickUp,activityAssignmentAfterPickUp]
-
-#println(distance[activityAssignmentBeforePickUp.activity.id,activityAssignmentAfterPickUp.activity.id])
-vehicleSchedule.totalDistance += (distance[updatedActivityAssignmentBeforePickUp,request.pickUpActivity.id] + distance[request.pickUpActivity.id,request.dropOffActivity.id] + distance[request.dropOffActivity.id,updatedActivityAssignmentAfterDropOff])
-
-#println((distance[activityAssignmentBeforePickUp.activity.id,request.pickUpActivity.id] + distance[request.pickUpActivity.id,request.dropOffActivity.id] + distance[request.dropOffActivity.id,activityAssignmentAfterDropOff.activity.id]))
-else
-
-vehicleSchedule.totalDistance -= distance[activityAssignmentBeforePickUp,activityAssignmentAfterPickUp] + distance[activityAssignmentBeforeDropOff,activityAssignmentAfterDropOff]
-
-vehicleSchedule.totalDistance += (distance[updatedActivityAssignmentBeforePickUp,request.pickUpActivity.id] + distance[request.pickUpActivity.id,updatedActivityAssignmentAfterPickUp] +  distance[updatedActivityAssignmentBeforeDropOff,request.dropOffActivity.id] + distance[request.dropOffActivity.id,updatedActivityAssignmentAfterDropOff])
-
-end
+    route = vehicleSchedule.route 
+    distance = scenario.distance
 
 
-if !isapprox(vehicleSchedule.totalDistance,getTotalDistanceRoute(route, scenario),atol=0.0001)
-println("CALCULATED: ", vehicleSchedule.totalDistance)
-println("REAL: ",getTotalDistanceRoute(route, scenario) )
-println("updatedActivityAssignmentBeforePickUp: ", updatedActivityAssignmentBeforePickUp)
-println("updatedActivityAssignmentAfterPickUp: ", updatedActivityAssignmentAfterPickUp)
-println("updatedActivityAssignmentBeforeDropOff: ", updatedActivityAssignmentBeforeDropOff)
-println("updatedActivityAssignmentAfterDropOff: ", updatedActivityAssignmentAfterDropOff)
-println("activityAssignmentBeforePickUp: ", activityAssignmentBeforePickUp)
-println("activityAssignmentAfterPickUp: ", activityAssignmentAfterPickUp)
-println("activityAssignmentBeforeDropOff: ", activityAssignmentBeforeDropOff)
-println("activityAssignmentAfterDropOff: ", activityAssignmentAfterDropOff)
-println("idxPickUp: ", idxPickUp)
-println("idxDropOff: ", idxDropOff)
-println("request: ", request.id)
-printRouteHorizontal(vehicleSchedule)
-end
+    # Update total distance
+    if idxDropOff-1 == idxPickUp
+        #println(vehicleSchedule.totalDistance)
+        vehicleSchedule.totalDistance -= distance[activityAssignmentBeforePickUp,activityAssignmentAfterPickUp]
 
-# vehicleSchedule.totalDistance = getTotalDistanceRoute(route, scenario)
+        #println(distance[activityAssignmentBeforePickUp.activity.id,activityAssignmentAfterPickUp.activity.id])
+        vehicleSchedule.totalDistance += (distance[updatedActivityAssignmentBeforePickUp,request.pickUpActivity.id] + distance[request.pickUpActivity.id,request.dropOffActivity.id] + distance[request.dropOffActivity.id,updatedActivityAssignmentAfterDropOff])
+
+        #println((distance[activityAssignmentBeforePickUp.activity.id,request.pickUpActivity.id] + distance[request.pickUpActivity.id,request.dropOffActivity.id] + distance[request.dropOffActivity.id,activityAssignmentAfterDropOff.activity.id]))
+    else
+
+        vehicleSchedule.totalDistance -= distance[activityAssignmentBeforePickUp,activityAssignmentAfterPickUp] + distance[activityAssignmentBeforeDropOff,activityAssignmentAfterDropOff]
+
+        vehicleSchedule.totalDistance += (distance[updatedActivityAssignmentBeforePickUp,request.pickUpActivity.id] + distance[request.pickUpActivity.id,updatedActivityAssignmentAfterPickUp] +  distance[updatedActivityAssignmentBeforeDropOff,request.dropOffActivity.id] + distance[request.dropOffActivity.id,updatedActivityAssignmentAfterDropOff])
+
+    end
+
+
+    if !isapprox(vehicleSchedule.totalDistance,getTotalDistanceRoute(route, scenario),atol=0.0001)
+        println("CALCULATED: ", vehicleSchedule.totalDistance)
+        println("REAL: ",getTotalDistanceRoute(route, scenario) )
+        println("updatedActivityAssignmentBeforePickUp: ", updatedActivityAssignmentBeforePickUp)
+        println("updatedActivityAssignmentAfterPickUp: ", updatedActivityAssignmentAfterPickUp)
+        println("updatedActivityAssignmentBeforeDropOff: ", updatedActivityAssignmentBeforeDropOff)
+        println("updatedActivityAssignmentAfterDropOff: ", updatedActivityAssignmentAfterDropOff)
+        println("activityAssignmentBeforePickUp: ", activityAssignmentBeforePickUp)
+        println("activityAssignmentAfterPickUp: ", activityAssignmentAfterPickUp)
+        println("activityAssignmentBeforeDropOff: ", activityAssignmentBeforeDropOff)
+        println("activityAssignmentAfterDropOff: ", activityAssignmentAfterDropOff)
+        println("idxPickUp: ", idxPickUp)
+        println("idxDropOff: ", idxDropOff)
+        println("request: ", request.id)
+        printRouteHorizontal(vehicleSchedule)
+    end
+
+    # vehicleSchedule.totalDistance = getTotalDistanceRoute(route, scenario)
 
 end
 
