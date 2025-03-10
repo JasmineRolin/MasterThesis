@@ -55,7 +55,7 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
             currentState.currentSolution = deepcopy(trialState.currentSolution)
             currentState.requestBank = deepcopy(trialState.requestBank)
             currentState.assignedRequests = deepcopy(trialState.assignedRequests)
-            currentState.nAssignedRequests = deepcopy(trialState.nAssignedRequests)
+            currentState.nAssignedRequests = trialState.nAssignedRequests
 
             # Check if new best solution
             if trialState.currentSolution.totalCost < currentState.bestSolution.totalCost
@@ -72,7 +72,7 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
             currentState.currentSolution = deepcopy(trialState.currentSolution)
             currentState.requestBank = deepcopy(trialState.requestBank)
             currentState.assignedRequests = deepcopy(trialState.assignedRequests)
-            currentState.nAssignedRequests = deepcopy(trialState.nAssignedRequests)
+            currentState.nAssignedRequests = trialState.nAssignedRequests
 
         end
 
