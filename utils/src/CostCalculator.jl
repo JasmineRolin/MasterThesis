@@ -24,6 +24,16 @@ function getTotalDistanceRoute(route::Vector{ActivityAssignment},scenario::Scena
     return totalDistance
 end
 
+function getTotalDistanceRoute(route::Vector{ActivityAssignment},distanceMatrix::Array{Float64,2})
+    totalDistance = 0
+
+    for i in 1:length(route)-1
+        totalDistance += distanceMatrix[route[i].activity.id, route[i+1].activity.id]
+    end
+
+    return totalDistance
+end
+
 #==
 #  Function to get total time of a route 
 ==#
