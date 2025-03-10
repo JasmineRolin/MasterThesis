@@ -7,9 +7,9 @@ export randomDestroy!, worstRemoval!, shawRemoval!, findNumberOfRequestToRemove
 #==
  Set seed each time module is reloaded
 ==#
-function __init__()
-    Random.seed!(1234)  # Ensures reproducibility each time the module is reloaded
-end
+# function __init__()
+#     Random.seed!(1234)  # Ensures reproducibility each time the module is reloaded
+# end
 
 #==
  Module that containts destroy methods 
@@ -362,6 +362,21 @@ function removeActivityFromRoute!(time::Array{Int,2},distance::Array{Float64,2},
         # Update deltas 
         deltaDistance = distance[activityAssignmentBefore.activity.id,activityAssignmentAfter.activity.id] - distance[activityAssignmentBefore.activity.id,activityToRemove.activity.id] - distance[activityToRemove.activity.id,activityAssignmentAfter.activity.id]
         deltaIdleTime = (activityAssignmentAfter.endOfServiceTime - activityAssignmentAfter.startOfServiceTime) - oldIdleTime
+
+        # Delete activity 
+        deleteat!(route,idx)
+
+        routeReduction = 1
+
+    elseif activityAssignmentBefore.activity.activityType == DEPOT
+
+        # Update depot 
+        activityAssignmentBefore.startOfServiceTime = activityAssignmentAfter.startOfServiceTime - time[activityAssignmentBefore.activity.id,activityAssignmentAfter.activity.id]
+        activityAssignmentBefore.endOfServiceTime = activityAssignmentAfter.startOfServiceTime
+        
+        # Update deltas 
+        deltaDistance = distance[activityAssignmentBefore.activity.id,activityAssignmentAfter.activity.id] - distance[activityAssignmentBefore.activity.id,activityToRemove.activity.id] - distance[activityToRemove.activity.id,activityAssignmentAfter.activity.id]
+        deltaIdleTime = 0
 
         # Delete activity 
         deleteat!(route,idx)

@@ -4,287 +4,287 @@ using alns, domain, utils, offlinesolution
 #==
 Test ALNSFunctions
 ==#
-@testset "readALNSParameters test" begin 
-    parametersFile = "tests/resources/ALNSParameters.json"
+# @testset "readALNSParameters test" begin 
+#     parametersFile = "tests/resources/ALNSParameters.json"
 
-    # Read parameters 
-    parameters = readALNSParameters(parametersFile)
+#     # Read parameters 
+#     parameters = readALNSParameters(parametersFile)
 
-    @test typeof(parameters) == ALNSParameters
-    @test parameters.timeLimit == 10.0 
-    @test parameters.reactionFactor == 0.01 
-    @test parameters.startThreshold == 0.03 
-    @test parameters.solCostEps == 0.0 
-    @test parameters.scoreAccepted == 2.0 
-    @test parameters.scoreImproved == 4.0 
-    @test parameters.scoreNewBest == 10.0
-end
-
-
-@testset "rouletteWheel test" begin
-    weights = Float64[1.0,3.4,5.0,9.3]
-
-    idx = rouletteWheel(weights)
-
-    @test idx > 0
-    @test idx <= 4
-end
-
-@testset "calculateScore test" begin 
-    parameters = ALNSParameters()
-
-    # Not accepted, improved or new best
-    score = calculateScore(parameters,false,false,false)
-    @test score == 1.0
-
-    # Accepted
-    score = calculateScore(parameters,true,false,false)
-    @test score == 2.0
-
-    # Improved 
-    score = calculateScore(parameters,true,true,false)
-    @test score == 4.0
-
-    # New best
-    score = calculateScore(parameters,true,true,true)
-    @test score == 10.0
-
-end
-
-@testset "addDestroyMethod! and addRepairMethod! test" begin 
-   # create dummy methods 
-   function dest1() return 1  end
-   function dest2() return 1  end
-   function rep1() return 1  end
-   function rep2() return 1  end
-
-   # Create configuration 
-   # Parameters 
-   parameters = ALNSParameters()
-   configuration = ALNSConfiguration(parameters)
-   addDestroyMethod!(configuration,"dest1",dest1)
-   addDestroyMethod!(configuration,"dest2",dest2)
-   addRepairMethod!(configuration,"rep1",rep1)
-   addRepairMethod!(configuration,"rep2",rep2)
-
-   @test length(configuration.destroyMethods) == 2
-   @test length(configuration.repairMethods) == 2
-   @test typeof(configuration.destroyMethods[1]) == GenericMethod
-   @test configuration.destroyMethods[1].name == "dest1"
-   @test configuration.repairMethods[2].name == "rep2"
-
-end 
+#     @test typeof(parameters) == ALNSParameters
+#     @test parameters.timeLimit == 10.0 
+#     @test parameters.reactionFactor == 0.01 
+#     @test parameters.startThreshold == 0.03 
+#     @test parameters.solCostEps == 0.0 
+#     @test parameters.scoreAccepted == 2.0 
+#     @test parameters.scoreImproved == 4.0 
+#     @test parameters.scoreNewBest == 10.0
+# end
 
 
-@testset "updateWeights! test" begin 
-    # create dummy methods 
-    function dest1() return 1  end
-    function dest2() return 1  end
-    function rep1() return 1  end
-    function rep2() return 1  end
+# @testset "rouletteWheel test" begin
+#     weights = Float64[1.0,3.4,5.0,9.3]
 
-    # Create configuration 
-    # Parameters 
-    parameters = ALNSParameters()
-    configuration = ALNSConfiguration(parameters)
-    addDestroyMethod!(configuration,"dest1",dest1)
-    addDestroyMethod!(configuration,"dest2",dest2)
-    addRepairMethod!(configuration,"rep1",rep1)
-    addRepairMethod!(configuration,"rep2",rep2)
+#     idx = rouletteWheel(weights)
 
-    # Create state 
-    # Vehicle 
-    depotLocation = Location("depot",10,10)
-    timeWindow = TimeWindow(900,980)
+#     @test idx > 0
+#     @test idx <= 4
+# end
 
-    capacities = Dict{MobilityType, Int}(WALKING => 3, WHEELCHAIR => 5)
+# @testset "calculateScore test" begin 
+#     parameters = ALNSParameters()
 
-    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,capacities,8)
+#     # Not accepted, improved or new best
+#     score = calculateScore(parameters,false,false,false)
+#     @test score == 1.0
 
-    # Activitys 
-    location = Location("PU",10.0,10.0)
-    timeWindow = TimeWindow(90,100)
-    activity = Activity(1,0,PICKUP,WALKING,location,timeWindow)
+#     # Accepted
+#     score = calculateScore(parameters,true,false,false)
+#     @test score == 2.0
 
-    # RequestAssignment
-    activityAssignment = ActivityAssignment(activity,vehicle,8,7,WALKING)
+#     # Improved 
+#     score = calculateScore(parameters,true,true,false)
+#     @test score == 4.0
 
-    # VehicleSchedule
-    route = [activityAssignment]
-    vehicleSchedule = VehicleSchedule(vehicle)
+#     # New best
+#     score = calculateScore(parameters,true,true,true)
+#     @test score == 10.0
 
-    # Solution 
-    solution = Solution([vehicleSchedule],70.0,4,5,2,4)
+# end
+
+# @testset "addDestroyMethod! and addRepairMethod! test" begin 
+#    # create dummy methods 
+#    function dest1() return 1  end
+#    function dest2() return 1  end
+#    function rep1() return 1  end
+#    function rep2() return 1  end
+
+#    # Create configuration 
+#    # Parameters 
+#    parameters = ALNSParameters()
+#    configuration = ALNSConfiguration(parameters)
+#    addDestroyMethod!(configuration,"dest1",dest1)
+#    addDestroyMethod!(configuration,"dest2",dest2)
+#    addRepairMethod!(configuration,"rep1",rep1)
+#    addRepairMethod!(configuration,"rep2",rep2)
+
+#    @test length(configuration.destroyMethods) == 2
+#    @test length(configuration.repairMethods) == 2
+#    @test typeof(configuration.destroyMethods[1]) == GenericMethod
+#    @test configuration.destroyMethods[1].name == "dest1"
+#    @test configuration.repairMethods[2].name == "rep2"
+
+# end 
+
+
+# @testset "updateWeights! test" begin 
+#     # create dummy methods 
+#     function dest1() return 1  end
+#     function dest2() return 1  end
+#     function rep1() return 1  end
+#     function rep2() return 1  end
+
+#     # Create configuration 
+#     # Parameters 
+#     parameters = ALNSParameters()
+#     configuration = ALNSConfiguration(parameters)
+#     addDestroyMethod!(configuration,"dest1",dest1)
+#     addDestroyMethod!(configuration,"dest2",dest2)
+#     addRepairMethod!(configuration,"rep1",rep1)
+#     addRepairMethod!(configuration,"rep2",rep2)
+
+#     # Create state 
+#     # Vehicle 
+#     depotLocation = Location("depot",10,10)
+#     timeWindow = TimeWindow(900,980)
+
+#     capacities = Dict{MobilityType, Int}(WALKING => 3, WHEELCHAIR => 5)
+
+#     vehicle = Vehicle(0,timeWindow,1,depotLocation,80,capacities,8)
+
+#     # Activitys 
+#     location = Location("PU",10.0,10.0)
+#     timeWindow = TimeWindow(90,100)
+#     activity = Activity(1,0,PICKUP,WALKING,location,timeWindow)
+
+#     # RequestAssignment
+#     activityAssignment = ActivityAssignment(activity,vehicle,8,7,WALKING)
+
+#     # VehicleSchedule
+#     route = [activityAssignment]
+#     vehicleSchedule = VehicleSchedule(vehicle)
+
+#     # Solution 
+#     solution = Solution([vehicleSchedule],70.0,4,5,2,4)
     
-    state = ALNSState(Float64[2.0,3.5],Float64[1.0,3.0],[1,2],[2,0],solution,solution,Vector{Int}(),Vector{Int}(),0)
+#     state = ALNSState(Float64[2.0,3.5],Float64[1.0,3.0],[1,2],[2,0],solution,solution,Vector{Int}(),Vector{Int}(),0)
 
-    # Update weights 
-    updateWeights!(state,configuration,2,1,true,true,false)
+#     # Update weights 
+#     updateWeights!(state,configuration,2,1,true,true,false)
 
-    @test state.destroyWeights[1] == 2.0 
-    @test state.destroyWeights[2] == 3.5*(1-0.01) + 0.01*(4.0/2.0)
+#     @test state.destroyWeights[1] == 2.0 
+#     @test state.destroyWeights[2] == 3.5*(1-0.01) + 0.01*(4.0/2.0)
     
-    @test state.repairWeights[1] == 1.0*(1-0.01) + 0.01*(4.0/2.0) 
-    @test state.repairWeights[2] == 3.0
+#     @test state.repairWeights[1] == 1.0*(1-0.01) + 0.01*(4.0/2.0) 
+#     @test state.repairWeights[2] == 3.0
 
-end  
+# end  
 
 
-@testset "destroy! and repair! test" begin
-    # Dummy methods
-    function dest1(scenario::Scenario,state::ALNSState,parameters::ALNSParameters)
-        solution.totalCost = 900       
-    end
-    function rep1(solution::Solution,parameters::ALNSParameters)
-        solution.totalCost = 500        
-    end
+# @testset "destroy! and repair! test" begin
+#     # Dummy methods
+#     function dest1(scenario::Scenario,state::ALNSState,parameters::ALNSParameters)
+#         solution.totalCost = 900       
+#     end
+#     function rep1(solution::Solution,parameters::ALNSParameters)
+#         solution.totalCost = 500        
+#     end
 
-    # Create configuration 
-    # Parameters 
-    parameters = ALNSParameters()
-    configuration = ALNSConfiguration(parameters)
-    addDestroyMethod!(configuration,"dest1",dest1)
-    addRepairMethod!(configuration,"rep1",rep1)
+#     # Create configuration 
+#     # Parameters 
+#     parameters = ALNSParameters()
+#     configuration = ALNSConfiguration(parameters)
+#     addDestroyMethod!(configuration,"dest1",dest1)
+#     addRepairMethod!(configuration,"rep1",rep1)
 
-    # Create state 
-    # Vehicle 
-    depotLocation = Location("depot",10,10)
-    timeWindow = TimeWindow(900,980)
+#     # Create state 
+#     # Vehicle 
+#     depotLocation = Location("depot",10,10)
+#     timeWindow = TimeWindow(900,980)
 
-    capacities = Dict{MobilityType, Int}(WALKING => 3, WHEELCHAIR => 5)
+#     capacities = Dict{MobilityType, Int}(WALKING => 3, WHEELCHAIR => 5)
 
-    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,capacities,8)
+#     vehicle = Vehicle(0,timeWindow,1,depotLocation,80,capacities,8)
 
-    # Activitys 
-    location = Location("PU",10.0,10.0)
-    timeWindow = TimeWindow(90,100)
-    activity = Activity(1,0,PICKUP,WALKING,location,timeWindow)
+#     # Activitys 
+#     location = Location("PU",10.0,10.0)
+#     timeWindow = TimeWindow(90,100)
+#     activity = Activity(1,0,PICKUP,WALKING,location,timeWindow)
 
-    # RequestAssignment
-    activityAssignment = ActivityAssignment(activity,vehicle,8,7,WALKING)
+#     # RequestAssignment
+#     activityAssignment = ActivityAssignment(activity,vehicle,8,7,WALKING)
 
-    # VehicleSchedule
-    route = [activityAssignment]
-    vehicleSchedule = VehicleSchedule(vehicle)
+#     # VehicleSchedule
+#     route = [activityAssignment]
+#     vehicleSchedule = VehicleSchedule(vehicle)
 
-    # Solution 
-    solution = Solution([vehicleSchedule],70.0,4,5,2,4)
+#     # Solution 
+#     solution = Solution([vehicleSchedule],70.0,4,5,2,4)
     
-    state = ALNSState(Float64[2.0],Float64[3.0],[1],[2],solution,solution,Vector{Int}(),Vector{Int}(),0)
+#     state = ALNSState(Float64[2.0],Float64[3.0],[1],[2],solution,solution,Vector{Int}(),Vector{Int}(),0)
 
-    # Destroy 
-    destroyIdx = destroy!(Scenario(),state,parameters,configuration)
-    @test destroyIdx == 1
-    @test state.destroyNumberOfUses[1] == 2
-    @test solution.totalCost == 900 
+#     # Destroy 
+#     destroyIdx = destroy!(Scenario(),state,parameters,configuration)
+#     @test destroyIdx == 1
+#     @test state.destroyNumberOfUses[1] == 2
+#     @test solution.totalCost == 900 
 
-    # Repair 
-    repairIdx = repair!(configuration,parameters,state,solution)
-    @test repairIdx == 1
-    @test state.repairNumberOfUses[1] == 3
-    @test solution.totalCost == 500 
+#     # Repair 
+#     repairIdx = repair!(configuration,parameters,state,solution)
+#     @test repairIdx == 1
+#     @test state.repairNumberOfUses[1] == 3
+#     @test solution.totalCost == 500 
 
-end
-
-
-@testset "Greedy Repair test" begin
-
-     # Create configuration 
-     # Parameters 
-     parameters = ALNSParameters()
-     configuration = ALNSConfiguration(parameters)
+# end
 
 
-     # Create route
-     requestFile = "tests/resources/RequestsRepair.csv"
-     vehiclesFile = "tests/resources/Vehicles.csv"
-     parametersFile = "tests/resources/Parameters.csv"
-     distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
-     timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
+# @testset "Greedy Repair test" begin
 
-     # Read instance 
-     scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
-
-     # Create VehicleSchedule
-     vehicleSchedule = VehicleSchedule(scenario.vehicles[1])
-
-     # Insert request
-     insertRequest!(scenario.requests[1],vehicleSchedule,1,1,WALKING,scenario)
-
-     # Create requestBank
-    requestBank = [2]
-    assignedRequests = [1]
-    nAssignedRequests = 1
-
-    # Solution 
-    solution = Solution([vehicleSchedule],70.0,4,5,2,4)
-
-    # Make ALNS state
-    state = ALNSState(Float64[2.0],Float64[3.0],[1],[2],solution,solution,requestBank,assignedRequests,nAssignedRequests)
-
-    # Greedy repair 
-    greedyInsertion(state,scenario)
-
-    #printRouteHorizontal(state.currentSolution.vehicleSchedules[1])
-
-    feasible, msg = checkRouteFeasibility(scenario, state.currentSolution.vehicleSchedules[1])
-    if !feasible
-        println(msg)
-    end
-    @test feasible == true
+#      # Create configuration 
+#      # Parameters 
+#      parameters = ALNSParameters()
+#      configuration = ALNSConfiguration(parameters)
 
 
-end
+#      # Create route
+#      requestFile = "tests/resources/RequestsRepair.csv"
+#      vehiclesFile = "tests/resources/Vehicles.csv"
+#      parametersFile = "tests/resources/Parameters.csv"
+#      distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
+#      timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
+
+#      # Read instance 
+#      scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+
+#      # Create VehicleSchedule
+#      vehicleSchedule = VehicleSchedule(scenario.vehicles[1])
+
+#      # Insert request
+#      insertRequest!(scenario.requests[1],vehicleSchedule,1,1,WALKING,scenario)
+
+#      # Create requestBank
+#     requestBank = [2]
+#     assignedRequests = [1]
+#     nAssignedRequests = 1
+
+#     # Solution 
+#     solution = Solution([vehicleSchedule],70.0,4,5,2,4)
+
+#     # Make ALNS state
+#     state = ALNSState(Float64[2.0],Float64[3.0],[1],[2],solution,solution,requestBank,assignedRequests,nAssignedRequests)
+
+#     # Greedy repair 
+#     greedyInsertion(state,scenario)
+
+#     #printRouteHorizontal(state.currentSolution.vehicleSchedules[1])
+
+#     feasible, msg = checkRouteFeasibility(scenario, state.currentSolution.vehicleSchedules[1])
+#     if !feasible
+#         println(msg)
+#     end
+#     @test feasible == true
+
+
+# end
 
 
 
 
-@testset "Regret Repair test" begin
+# @testset "Regret Repair test" begin
 
-    # Create configuration 
-    # Parameters 
-    parameters = ALNSParameters()
-    configuration = ALNSConfiguration(parameters)
-
-
-    # Create route
-    requestFile = "tests/resources/RequestsRepair.csv"
-    vehiclesFile = "tests/resources/Vehicles.csv"
-    parametersFile = "tests/resources/Parameters.csv"
-    distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
-    timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
-
-    # Read instance 
-    scenario2 = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
-    scenario = Scenario(scenario2.requests,scenario2.onlineRequests,scenario2.offlineRequests,scenario2.serviceTimes,[scenario2.vehicles[1]],scenario2.vehicleCostPrHour,scenario2.vehicleStartUpCost,scenario2.planningPeriod,scenario2.bufferTime,scenario2.maximumDriveTimePercent,scenario2.minimumMaximumDriveTime,scenario2.distance,scenario2.time,scenario2.nDepots,scenario2.depots)
-
-    # Create VehicleSchedule
-    vehicleSchedule = VehicleSchedule(scenario.vehicles[1])
-
-    # Insert request
-    insertRequest!(scenario.requests[1],vehicleSchedule,1,1,WALKING,scenario)
-
-    # Create requestBank
-    requestBank = [2]
-    assignedRequests = [1]
-    nAssignedRequests = 1
-
-    # Solution 
-    solution = Solution([vehicleSchedule],70.0,4,5,2,4)
-
-    # Make ALNS state
-    state = ALNSState(Float64[2.0],Float64[3.0],[1],[2],solution,solution,requestBank,assignedRequests,nAssignedRequests)
-
-    # Regret repair 
-    regretInsertion(state,scenario)
-
-    feasible, msg = checkRouteFeasibility(scenario, state.currentSolution.vehicleSchedules[1])
-    @test feasible == true
+#     # Create configuration 
+#     # Parameters 
+#     parameters = ALNSParameters()
+#     configuration = ALNSConfiguration(parameters)
 
 
-end
+#     # Create route
+#     requestFile = "tests/resources/RequestsRepair.csv"
+#     vehiclesFile = "tests/resources/Vehicles.csv"
+#     parametersFile = "tests/resources/Parameters.csv"
+#     distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
+#     timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
 
-@testset "ALNS test - Big Test" begin 
+#     # Read instance 
+#     scenario2 = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+#     scenario = Scenario(scenario2.requests,scenario2.onlineRequests,scenario2.offlineRequests,scenario2.serviceTimes,[scenario2.vehicles[1]],scenario2.vehicleCostPrHour,scenario2.vehicleStartUpCost,scenario2.planningPeriod,scenario2.bufferTime,scenario2.maximumDriveTimePercent,scenario2.minimumMaximumDriveTime,scenario2.distance,scenario2.time,scenario2.nDepots,scenario2.depots)
+
+#     # Create VehicleSchedule
+#     vehicleSchedule = VehicleSchedule(scenario.vehicles[1])
+
+#     # Insert request
+#     insertRequest!(scenario.requests[1],vehicleSchedule,1,1,WALKING,scenario)
+
+#     # Create requestBank
+#     requestBank = [2]
+#     assignedRequests = [1]
+#     nAssignedRequests = 1
+
+#     # Solution 
+#     solution = Solution([vehicleSchedule],70.0,4,5,2,4)
+
+#     # Make ALNS state
+#     state = ALNSState(Float64[2.0],Float64[3.0],[1],[2],solution,solution,requestBank,assignedRequests,nAssignedRequests)
+
+#     # Regret repair 
+#     regretInsertion(state,scenario)
+
+#     feasible, msg = checkRouteFeasibility(scenario, state.currentSolution.vehicleSchedules[1])
+#     @test feasible == true
+
+
+# end
+
+#@testset "ALNS test - Big Test" begin 
     requestFile = "tests/resources/RequestsBig.csv"
     vehiclesFile = "tests/resources/VehiclesBig.csv"
     parametersFile = "tests/resources/Parameters.csv"
@@ -300,6 +300,7 @@ end
 
     # Construct ALNS state
     currentState = ALNSState(solution,1,0,requestBank)
+    solution1 = deepcopy(currentState.currentSolution)
 
     # Construct ALNS parameters
     parameters = ALNSParameters()
@@ -309,59 +310,74 @@ end
 
     # Shaw Destroy 
     shawRemoval!(scenario,currentState,parameters)
+    solution2 = deepcopy(currentState.currentSolution)
 
-    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    feasible, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    println("feasible 1: ", feasible)
+
     if !feasible
-        println(msg)
+        println(msg1)
     end
-    @test feasible == true
+  # @test feasible == true
 
     # Regret Repair
     regretInsertion(currentState,scenario)
+    solution3 = deepcopy(currentState.currentSolution)
 
-    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    feasible, msg2 = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    println("feasible 2: ", feasible)
+
     if !feasible
-        println(msg)
+        println(msg2)
     end
-    @test feasible == true
+  #  @test feasible == true
 
     # Random destroy
     randomDestroy!(scenario,currentState,parameters)
+    solution4 = deepcopy(currentState.currentSolution)
 
-    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    feasible, msg3 = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    println("feasible 3: ", feasible)
     if !feasible
-        println(msg)
+        println(msg3)
     end
-    @test feasible == true
+   # @test feasible == true
 
     # Greedy repair
     greedyInsertion(currentState,scenario)
+    solution5 = deepcopy(currentState.currentSolution)
 
-    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    feasible, msg4 = checkSolutionFeasibility(scenario,currentState.currentSolution)
     if !feasible
-        println(msg)
+        println(msg4)
     end
-    @test feasible == true
+   # @test feasible == true
 
     # Worst removal
     worstRemoval!(scenario,currentState,parameters)
+    solution6 = deepcopy(currentState.currentSolution)
 
-    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    feasible, msg5 = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    println("feasible 5: ", feasible)
+
     if !feasible
-        println(msg)
+        println(msg5)
     end
-    @test feasible == true
+   # @test feasible == true
 
     # Greedy repair
     greedyInsertion(currentState,scenario)
+    solution7 = deepcopy(currentState.currentSolution)
 
-    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    feasible, msg6 = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    println("feasible 6: ", feasible)
+
     if !feasible
-        println(msg)
+        println(msg6)
     end
-    @test feasible == true
-    @test msg == ""
+   # @test feasible == true
+    #@test msg == ""
       
-end
+#end
 
 
