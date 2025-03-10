@@ -33,10 +33,10 @@ function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::
     configuration = ALNSConfiguration(parameters,destroyMethods,repairMethods)
 
     # Construct initial solution 
-    initialSolution = initialSolutionConstructor(scenario)
+    initialSolution, requestBank = initialSolutionConstructor(scenario)
 
     # Call ALNS 
-    solution = ALNS(scenario,initialSolution,configuration,parameters)
+    solution = ALNS(scenario,initialSolution, requestBank,configuration,parameters)
 
     return solution
 end

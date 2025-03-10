@@ -129,7 +129,7 @@ mutable struct ALNSState
 
         assignedRequests = collect(assignedRequestsSet)
 
-        return new(zeros(nDestroy),zeros(nRepair),zeros(Int,nDestroy),zeros(Int,nRepair),currentSolution,currentSolution,requestBank,assignedRequests,length(assignedRequests))
+        return new(ones(nDestroy)./nDestroy,ones(nRepair)./nRepair,zeros(nDestroy),zeros(nRepair),zeros(Int,nDestroy),zeros(Int,nRepair),currentSolution,currentSolution,requestBank,assignedRequests,length(assignedRequests))
     end
 
     # All-argument constructor

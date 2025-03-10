@@ -140,8 +140,8 @@ end
     function dest1(scenario::Scenario,state::ALNSState,parameters::ALNSParameters)
         solution.totalCost = 900       
     end
-    function rep1(solution::Solution,parameters::ALNSParameters)
-        solution.totalCost = 500        
+    function rep1(state::ALNSState,scenario::Scenario)
+        state.currentSolution.totalCost = 500        
     end
 
     # Create configuration 
@@ -183,9 +183,9 @@ end
     @test solution.totalCost == 900 
 
     # Repair 
-    repairIdx = repair!(configuration,parameters,state,solution)
+    repairIdx = repair!(Scenario(),state,configuration)
     @test repairIdx == 1
-    @test solution.totalCost == 500 
+    @test state.currentSolution.totalCost == 500 
 
 end
 

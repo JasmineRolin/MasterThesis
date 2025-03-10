@@ -11,7 +11,7 @@ export ALNS
 #==
  Method to run ALNS algorithm
 ==#
-function ALNS(scenario::Scenario,initialSolution::Solution,configuration::ALNSConfiguration, parameters::ALNSParameters)::Solution 
+function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters)::Solution 
     
     println("Initial solution cost", initialSolution.totalCost)
 
@@ -19,7 +19,7 @@ function ALNS(scenario::Scenario,initialSolution::Solution,configuration::ALNSCo
     @unpack timeLimit, w, coolingRate, segmentSize, reactionFactor, scoreAccepted, scoreImproved, scoreNewBest  = parameters
 
     # Create ALNS state
-    currentState = ALNSState(initialSolution, length(configuration.destroyMethods), length(configuration.repairMethods))
+    currentState = ALNSState(initialSolution, length(configuration.destroyMethods), length(configuration.repairMethods), requestBank)
 
     # Initialize temperature, iteration and time 
     temperature = findStartTemperature(w,currentState.currentSolution)
@@ -53,6 +53,9 @@ function ALNS(scenario::Scenario,initialSolution::Solution,configuration::ALNSCo
             isImproved = true
             isAccepted = true
             currentState.currentSolution = deepcopy(trialState.currentSolution)
+            currentState.requestBank = deepcopy(trialState.requestBank)
+            currentState.assignedRequests = deepcopy(trialState.assignedRequests)
+            currentState.nAssignedRequests = deepcopy(trialState.nAssignedRequests)
 
             # Check if new best solution
             if trialState.currentSolution.totalCost < currentState.bestSolution.totalCost
@@ -67,6 +70,10 @@ function ALNS(scenario::Scenario,initialSolution::Solution,configuration::ALNSCo
 
             isAccepted = true
             currentState.currentSolution = deepcopy(trialState.currentSolution)
+            currentState.requestBank = deepcopy(trialState.requestBank)
+            currentState.assignedRequests = deepcopy(trialState.assignedRequests)
+            currentState.nAssignedRequests = deepcopy(trialState.nAssignedRequests)
+
         end
 
         # Update method scores and counts 
@@ -81,10 +88,16 @@ function ALNS(scenario::Scenario,initialSolution::Solution,configuration::ALNSCo
 
         # Check solution 
         # TODO: remove when ALNS is robust 
-        feasible, msg = checkSolutionFeasibility(currentState.currentSolution,scenario)
+        feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
         if !feasible
             throw(msg) 
+        else
+            println("Feasible solution")
         end
+
+        # Update iteration
+        iteration += 1
+
     end
 
     return currentState.bestSolution
