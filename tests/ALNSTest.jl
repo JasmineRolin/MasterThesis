@@ -4,9 +4,6 @@ using alns, domain, utils, offlinesolution
 #==
 Test ALNSFunctions
 ==#
-
-
-
 @testset "ALNS test - Big Test" begin 
     requestFile = "tests/resources/RequestsBig.csv"
     vehiclesFile = "tests/resources/VehiclesBig.csv"
@@ -21,11 +18,8 @@ Test ALNSFunctions
     solution, requestBank = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
 
-    solution0 = deepcopy(solution)
-
     # Construct ALNS state
     currentState = ALNSState(solution,1,0,requestBank)
-    solution1 = deepcopy(currentState.currentSolution)
 
     # Construct ALNS parameters
     parameters = ALNSParameters()
@@ -35,58 +29,59 @@ Test ALNSFunctions
 
     # Shaw Destroy 
     shawRemoval!(scenario,currentState,parameters)
-    solution2 = deepcopy(currentState.currentSolution)
 
-    feasible, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
     if !feasible
-        println(msg1)
+        println(msg)
     end
     @test feasible == true
 
     # Regret Repair
     regretInsertion(currentState,scenario)
-    solution3 = deepcopy(currentState.currentSolution)
-    feasible, msg2 = checkSolutionFeasibility(scenario,currentState.currentSolution)
+
+    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
     if !feasible
-        println(msg2)
+        println(msg)
     end
     @test feasible == true
 
     # Random destroy
     randomDestroy!(scenario,currentState,parameters)
-    solution4 = deepcopy(currentState.currentSolution)
-    feasible, msg3 = checkSolutionFeasibility(scenario,currentState.currentSolution)
+
+    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
     if !feasible
-        println(msg3)
+        println(msg)
     end
     @test feasible == true
 
     # Greedy repair
     greedyInsertion(currentState,scenario)
-    solution5 = deepcopy(currentState.currentSolution)
-    feasible, msg4 = checkSolutionFeasibility(scenario,currentState.currentSolution)
+
+    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
     if !feasible
-        println(msg4)
+        println(msg)
     end
     @test feasible == true
 
     # Worst removal
     worstRemoval!(scenario,currentState,parameters)
-    solution6 = deepcopy(currentState.currentSolution)
-    feasible, msg5 = checkSolutionFeasibility(scenario,currentState.currentSolution)
+
+    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
     if !feasible
-        println(msg5)
+        println(msg)
     end
     @test feasible == true
 
     # Greedy repair
     greedyInsertion(currentState,scenario)
-    solution7 = deepcopy(currentState.currentSolution)
-    feasible, msg6 = checkSolutionFeasibility(scenario,currentState.currentSolution)
+
+    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
     if !feasible
-        println(msg6)
+        println(msg)
     end
-    @test feasible == true      
+    @test feasible == true
+    @test msg == ""
+      
 end
 
 
