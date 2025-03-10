@@ -298,6 +298,8 @@ Test ALNSFunctions
     solution, requestBank = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
 
+    solution0 = deepcopy(solution)
+    
     # Construct ALNS state
     currentState = ALNSState(solution,1,0,requestBank)
     solution1 = deepcopy(currentState.currentSolution)
