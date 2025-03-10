@@ -1,6 +1,7 @@
 {
     "timeLimit": 100.0,
-    "segmentSize": 10,
+    "printSegmentSize":100,
+    "segmentSize": 100,
     "w": 0.05, 
     "coolingRate": 0.99975,
     "reactionFactor": 0.01,

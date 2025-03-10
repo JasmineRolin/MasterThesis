@@ -1,6 +1,6 @@
 module ALNSRunner
 
-using UnPack, domain, offlinesolution, ..ALNSDomain, ..ALNSFunctions, ..ALNSAlgorithm
+using UnPack, domain, Dates, offlinesolution, ..ALNSDomain, ..ALNSFunctions, ..ALNSAlgorithm
 
 export runALNS
 
@@ -8,7 +8,10 @@ export runALNS
  Module to run ALNS algorithm 
 ==#
 
-function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::Vector{GenericMethod},repairMethods::Vector{GenericMethod},initialSolutionConstructor=simpleConstruction::Function,parametersFile=""::String)
+function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::Vector{GenericMethod},repairMethods::Vector{GenericMethod},initialSolutionConstructor=simpleConstruction::Function,outPutFileFolder="tests/resources"::String,parametersFile=""::String)
+
+    # Create log file 
+    fileName = string(outPutFileFolder,"ALNSOutput_",string(Dates.now()),".txt")
 
     # Retrieve relevant activity ids from requests 
     activityIdx = Int[]
@@ -36,7 +39,7 @@ function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::
     initialSolution, requestBank = initialSolutionConstructor(scenario)
 
     # Call ALNS 
-    solution = ALNS(scenario,initialSolution, requestBank,configuration,parameters)
+    solution = ALNS(scenario,initialSolution, requestBank,configuration,parameters, fileName)
 
     return solution
 end

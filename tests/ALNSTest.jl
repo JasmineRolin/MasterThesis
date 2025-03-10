@@ -24,8 +24,8 @@ Test ALNSFunctions
     # Construct ALNS parameters
     parameters = ALNSParameters()
     setMinMaxValuesALNSParameters(parameters,scenario.time,scenario.requests)
-    parameters.minPercentToDestroy = 0.7
-    parameters.maxPercentToDestroy = 0.7
+    parameters.minPercentToDestroy = 0.1
+    parameters.maxPercentToDestroy = 0.9
 
     # Shaw Destroy 
     shawRemoval!(scenario,currentState,parameters)
@@ -120,7 +120,7 @@ end
     addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
     
-    finalSolution = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods,simpleConstruction,"")
+    finalSolution = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods)
 
     feasible, msg = checkSolutionFeasibility(scenario,finalSolution)
     @test feasible == true

@@ -22,6 +22,7 @@ end
 ==#
 mutable struct ALNSParameters
     timeLimit::Float64 
+    printSegmentSize::Int # Number of iterations before printing 
     segmentSize::Int # Number of iterations in a segment
     w::Float64 # Start temperature control parameter. Choose start temperature so that from initial sol we have w% chance of accepting a worse solution
     coolingRate::Float64 # Cooling rate for simulated annealing. The closer to 1 the slower the temperature decreases -> accept worse for longer time 
@@ -43,7 +44,8 @@ mutable struct ALNSParameters
 
     function ALNSParameters( 
         timeLimit=10.0, 
-        segmentSize=10, # TODO: not from paper 
+        printSegmentSize=100,
+        segmentSize=100, # TODO: not from paper 
         w=0.05,
         coolingRate=0.99975,
         reactionFactor=0.01, 
@@ -56,7 +58,7 @@ mutable struct ALNSParameters
         shawRemovalPhi=9.0,
         shawRemovalXi=3.0
         )
-        return new(timeLimit,segmentSize, w, coolingRate,reactionFactor, scoreAccepted, scoreImproved, scoreNewBest,minPercentToDestroy,maxPercentToDestroy,p,shawRemovalPhi,shawRemovalXi,0.0,0.0,0.0,0.0,0.0,0.0)
+        return new(timeLimit,printSegmentSize,segmentSize, w, coolingRate,reactionFactor, scoreAccepted, scoreImproved, scoreNewBest,minPercentToDestroy,maxPercentToDestroy,p,shawRemovalPhi,shawRemovalXi,0.0,0.0,0.0,0.0,0.0,0.0)
     end
 end
 

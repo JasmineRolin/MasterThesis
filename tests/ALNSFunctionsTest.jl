@@ -12,7 +12,8 @@ Test ALNSFunctions
 
     @test typeof(parameters) == ALNSParameters
     @test parameters.timeLimit == 100.0 
-    @test parameters.segmentSize == 10
+    @test parameters.printSegmentSize == 100
+    @test parameters.segmentSize == 100
     @test parameters.w == 0.05
     @test parameters.coolingRate == 0.99975
     @test parameters.reactionFactor == 0.01 

@@ -1775,7 +1775,7 @@ uuid = "3161d3a3-bdf6-5164-811a-617609db77b4"
 version = "1.5.7+0"
 
 [[deps.alns]]
-deps = ["JSON3", "LinearAlgebra", "Random", "UnPack", "domain", "offlinesolution", "utils"]
+deps = ["Dates", "JSON3", "LinearAlgebra", "Random", "UnPack", "domain", "offlinesolution", "utils"]
 path = "alns"
 uuid = "923737b8-2e4c-4886-b2ed-ac7b70d13e65"
 version = "0.1.0"

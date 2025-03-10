@@ -4,6 +4,7 @@ authors = ["JasmineRolin <75620908+JasmineRolin@users.noreply.github.com>"]
 version = "0.1.0"
 
 [deps]
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -13,6 +14,7 @@ offlinesolution = "a9fb1b74-13ee-4d8c-9e56-7a41bc88c15d"
 utils = "d9eeeeb4-94be-4641-9ce8-3b648504a7dd"
 
 [compat]
+Dates = "1.11.0"
 JSON3 = "1.14.1"
 LinearAlgebra = "1.11.0"
 Random = "1.11.0"

@@ -48,7 +48,7 @@ function destroy!(scenario::Scenario,state::ALNSState,parameters::ALNSParameters
     # Select method 
     destroyIdx = rouletteWheel(state.destroyWeights)
 
-    println("\t Destroy method: ", configuration.destroyMethods[destroyIdx].name)
+    #println("\t Destroy method: ", configuration.destroyMethods[destroyIdx].name)
 
     # Use method 
     configuration.destroyMethods[destroyIdx].method(scenario,state,parameters)
@@ -63,7 +63,7 @@ function repair!(scenario::Scenario, state::ALNSState, configuration::ALNSConfig
     # Select method 
     repairIdx = rouletteWheel(state.repairWeights)
 
-    println("\t Repair method: ", configuration.repairMethods[repairIdx].name)
+    # println("\t Repair method: ", configuration.repairMethods[repairIdx].name)
 
     # Use method 
     configuration.repairMethods[repairIdx].method(state,scenario)

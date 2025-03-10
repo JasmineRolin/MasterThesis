@@ -11,26 +11,28 @@ export ALNS
 #==
  Method to run ALNS algorithm
 ==#
-function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters)::Solution 
+function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters,fileName::String)::Solution 
     
-    println("Initial solution cost", initialSolution.totalCost)
+    # File 
+    outputFile = open(fileName, "w")
+    write(outputFile,"iteration,Total Cost,Is Accepted, Is Improved,Is NewBest, Temperature,Destroy Weights, Repair Weights", "\n")
+
 
     # Unpack parameters
-    @unpack timeLimit, w, coolingRate, segmentSize, reactionFactor, scoreAccepted, scoreImproved, scoreNewBest  = parameters
+    @unpack timeLimit, w, coolingRate, segmentSize, reactionFactor, scoreAccepted, scoreImproved, scoreNewBest, printSegmentSize  = parameters
 
     # Create ALNS state
     currentState = ALNSState(initialSolution, length(configuration.destroyMethods), length(configuration.repairMethods), requestBank)
+    initialCost = initialSolution.totalCost
 
     # Initialize temperature, iteration and time 
     temperature = findStartTemperature(w,currentState.currentSolution)
-    println("Starting temperature: ", temperature)
 
     iteration = 0
     startTime = time()
 
     # Iterate while time limit is not reached 
     while !termination(startTime,timeLimit)
-        println("--> ALNS iteration: ", iteration)
         isAccepted = false 
         isImproved = false
         isNewBest = false
@@ -48,8 +50,6 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
         # TODO: create hash table to check if solution has been visited before
         # TODO: jas - update . accept always true if solution is better than current sol!
         if trialState.currentSolution.totalCost < currentState.currentSolution.totalCost
-            println("\t New improved solution: ", trialState.currentSolution.totalCost, " old cost: ", currentState.currentSolution.totalCost)
-
             isImproved = true
             isAccepted = true
             currentState.currentSolution = deepcopy(trialState.currentSolution)
@@ -59,15 +59,11 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
 
             # Check if new best solution
             if trialState.currentSolution.totalCost < currentState.bestSolution.totalCost
-                println("\t New best solution: ", trialState.currentSolution.totalCost, " old cost: ", currentState.currentSolution.totalCost)
-
                 isNewBest = true
                 currentState.bestSolution = deepcopy(trialState.currentSolution)
             end
         # Check if solution is accepted
         elseif accept(temperature,trialState.currentSolution.totalCost - currentState.currentSolution.totalCost)
-            println("\t Solution accepted: new cost", trialState.currentSolution.totalCost, " old cost: ", currentState.currentSolution.totalCost)
-
             isAccepted = true
             currentState.currentSolution = deepcopy(trialState.currentSolution)
             currentState.requestBank = deepcopy(trialState.requestBank)
@@ -84,21 +80,29 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
 
         # Update temperature and iteration
         temperature = coolingRate*temperature
-        println("\t Temperature: ", temperature)
 
         # Check solution 
         # TODO: remove when ALNS is robust 
         feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
         if !feasible
             throw(msg) 
-        else
-            println("Feasible solution")
+        end
+
+        # Write to file 
+        write(outputFile,iteration,",",currentState.currentSolution.totalCost, ",",isAccepted,",", isImproved,",",isNewBest, ",",temperature,",",join(currentState.destroyWeights),",",join(currentState.repairWeights,","), "\n")
+
+        # Print 
+        if iteration % printSegmentSize == 0
+            println("==> ALNS: Iteration: ", iteration, ", Current cost: ", currentState.currentSolution.totalCost, ", Best cost: ", currentState.bestSolution.totalCost,", Improvement from initial: ", (initialCost-currentState.bestSolution.totalCost)/initialCost, "%, Temperature: ", temperature)
         end
 
         # Update iteration
         iteration += 1
 
     end
+
+    # Close file 
+    close(outputFile)
 
     return currentState.bestSolution
 end 
