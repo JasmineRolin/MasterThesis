@@ -1,8 +1,9 @@
 {
-    "timeLimit": 10.0,
+    "timeLimit": 100.0,
+    "segmentSize": 10,
+    "w": 0.05, 
+    "coolingRate": 0.99975,
     "reactionFactor": 0.01,
-    "startThreshold": 0.03,
-    "solCostEps": 0.0,
     "scoreAccepted": 2.0,
     "scoreImproved": 4.0,
     "scoreNewBest": 10.0,
