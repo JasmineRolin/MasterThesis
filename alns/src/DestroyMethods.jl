@@ -7,9 +7,9 @@ export randomDestroy!, worstRemoval!, shawRemoval!, findNumberOfRequestToRemove
 #==
  Set seed each time module is reloaded
 ==#
-# function __init__()
-#     Random.seed!(1234)  # Ensures reproducibility each time the module is reloaded
-# end
+function __init__()
+    Random.seed!(1234)  # Ensures reproducibility each time the module is reloaded
+end
 
 #==
  Module that containts destroy methods 
