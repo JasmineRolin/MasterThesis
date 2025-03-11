@@ -246,6 +246,7 @@ end
     # Create configuration 
     # Parameters 
     parameters = ALNSParameters()
+    parameters.segmentSize = 20
     configuration = ALNSConfiguration(parameters)
     addMethod!(configuration.destroyMethods,"dest1",dest1)
     addMethod!(configuration.destroyMethods,"dest2",dest2)

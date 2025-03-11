@@ -14,9 +14,10 @@ using offlinesolution
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
     timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
+    scenarioName = "Small"
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
@@ -91,9 +92,10 @@ end
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
     timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
+    scenarioName = "Konsentra"
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
@@ -129,9 +131,10 @@ end
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
     timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
+    scenarioName = "Small"
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
@@ -208,9 +211,10 @@ end
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
     timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
+    scenarioName = "Konsentra"
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
@@ -247,9 +251,10 @@ end
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
     timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
+    scenarioName = "Small"
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
@@ -319,10 +324,10 @@ end
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
     timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
+    scenarioName = "Konsentra"
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
-
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
