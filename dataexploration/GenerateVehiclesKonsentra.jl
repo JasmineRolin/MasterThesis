@@ -157,7 +157,7 @@ end
 # ------
 function generateVehiclesKonsentra(shifts, locations)
     vehicles = DataFrame(id=Int[], start_of_availability=Int[], end_of_availability=Int[], 
-                         maximum_ride_time=Float64[], capacity_wheelchair=Int[], 
+                         maximum_ride_time=Int[], capacity_wheelchair=Int[], 
                          capacity_walking=Int[], depot_latitude=Float64[], depot_longitude=Float64[])
 
     id = 0
@@ -166,7 +166,7 @@ function generateVehiclesKonsentra(shifts, locations)
             id += 1
             location = rand(locations)
             push!(vehicles, [id, data["TimeWindow"][1], data["TimeWindow"][2],
-                             (data["TimeWindow"][2] - data["TimeWindow"][1]) * maxRideTimeRatio / 60, nWheelChair, nWalking, location[1], location[2]])
+                             Int(floor((data["TimeWindow"][2] - data["TimeWindow"][1]) * maxRideTimeRatio / 60)), nWheelChair, nWalking, location[1], location[2]])
         end
     end
 
