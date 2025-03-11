@@ -1,6 +1,6 @@
 module ALNSRunner
 
-using UnPack, domain, Dates, offlinesolution, ..ALNSDomain, ..ALNSFunctions, ..ALNSAlgorithm
+using UnPack,JSON, domain, Dates, offlinesolution, ..ALNSDomain, ..ALNSFunctions, ..ALNSAlgorithm
 
 export runALNS
 
@@ -8,10 +8,7 @@ export runALNS
  Module to run ALNS algorithm 
 ==#
 
-function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::Vector{GenericMethod},repairMethods::Vector{GenericMethod},initialSolutionConstructor=simpleConstruction::Function,outPutFileFolder="tests/resources"::String,parametersFile=""::String)
-
-    # Create log file 
-    fileName = string(outPutFileFolder,"ALNSOutput_",string(Dates.now()),".txt")
+function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::Vector{GenericMethod},repairMethods::Vector{GenericMethod};initialSolutionConstructor=simpleConstruction::Function,outPutFileFolder="tests/output/"::String,parametersFile=""::String)
 
     # Retrieve relevant activity ids from requests 
     activityIdx = Int[]
@@ -35,6 +32,15 @@ function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::
     # Create ALNS configuration 
     configuration = ALNSConfiguration(parameters,destroyMethods,repairMethods)
 
+    # Create log file name
+    timeStamp = Dates.format(Dates.now(), "yyyy-mm-dd-HH:MM:sss")
+    fileName = string(outPutFileFolder,"ALNSOutput_",string(timeStamp),".csv")
+
+    # Create specifications file 
+    specificationsFile = string(outPutFileFolder,"ALNSSpecifications_",string(timeStamp),".json")
+    writeALNSSpecificationsFile(specificationsFile,scenario,parameters,configuration)
+ 
+
     # Construct initial solution 
     initialSolution, requestBank = initialSolutionConstructor(scenario)
 
@@ -44,5 +50,25 @@ function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::
     return solution
 end
 
+using JSON, Dates
+
+
+#==
+    Write ALNS specifications to file 
+==#
+function writeALNSSpecificationsFile(fileName::String, scenario::Scenario,parameters::ALNSParameters,configuration::ALNSConfiguration)
+    # Create a dictionary for the entire specifications
+    specificationsDict = Dict(
+        "Scenario" => Dict("name" => scenario.name),
+        "RepairMethods" => [m.name for m in configuration.repairMethods],
+        "DestroyMethods" => [m.name for m in configuration.destroyMethods],
+        "Parameters" => ALNSParametersToDict(parameters)
+    )
+
+    # Write the dictionary to a JSON file
+    file = open(fileName, "w") 
+    write(file, JSON.json(specificationsDict))
+    close(file)
+end
 
 end

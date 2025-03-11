@@ -6,7 +6,7 @@ export GenericMethod
 export ALNSParameters
 export ALNSConfiguration
 export ALNSState
-export setMinMaxValuesALNSParameters
+export setMinMaxValuesALNSParameters, ALNSParametersToDict
 
 #==
  Struct to describe destroy or repair method 
@@ -70,6 +70,32 @@ function setMinMaxValuesALNSParameters(parameters::ALNSParameters,time,requests)
     parameters.maxStartOfTimeWindowDropOff = Float64(maximum([request.dropOffActivity.timeWindow.startTime for request in requests]))
     parameters.minStartOfTimeWindowDropOff = Float64(minimum([request.dropOffActivity.timeWindow.startTime for request in requests]))
 end
+
+function ALNSParametersToDict(params::ALNSParameters)
+    return Dict(
+        "timeLimit" => params.timeLimit,
+        "printSegmentSize" => params.printSegmentSize,
+        "segmentSize" => params.segmentSize,
+        "w" => params.w,
+        "coolingRate" => params.coolingRate,
+        "reactionFactor" => params.reactionFactor,
+        "scoreAccepted" => params.scoreAccepted,
+        "scoreImproved" => params.scoreImproved,
+        "scoreNewBest" => params.scoreNewBest,
+        "minPercentToDestroy" => params.minPercentToDestroy,
+        "maxPercentToDestroy" => params.maxPercentToDestroy,
+        "p" => params.p,
+        "shawRemovalPhi" => params.shawRemovalPhi,
+        "shawRemovalXi" => params.shawRemovalXi,
+        "maxDriveTime" => params.maxDriveTime,
+        "minDriveTime" => params.minDriveTime,
+        "minStartOfTimeWindowPickUp" => params.minStartOfTimeWindowPickUp,
+        "maxStartOfTimeWindowPickUp" => params.maxStartOfTimeWindowPickUp,
+        "minStartOfTimeWindowDropOff" => params.minStartOfTimeWindowDropOff,
+        "maxStartOfTimeWindowDropOff" => params.maxStartOfTimeWindowDropOff
+    )
+end
+
 
 #==
  Struct to describe configuration of ALNS algorithm 

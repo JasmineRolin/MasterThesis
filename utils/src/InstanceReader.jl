@@ -13,7 +13,7 @@ export splitRequests
  Function to read instance 
  Takes request, vehicles and parameters .csv as input 
 ==#
-function readInstance(requestFile::String, vehicleFile::String, parametersFile::String,distanceMatrixFile=""::String,timeMatrixFile=""::String)::Scenario
+function readInstance(requestFile::String, vehicleFile::String, parametersFile::String,scenarioName=""::String,distanceMatrixFile=""::String,timeMatrixFile=""::String)::Scenario
 
     # Check that files exist 
     if !isfile(requestFile)
@@ -57,7 +57,7 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     onlineRequests, offlineRequests = splitRequests(requests)
 
     # Get distance and time matrix
-    scenario = Scenario(requests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots,depots)
+    scenario = Scenario(scenarioName,requests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots,depots)
 
     return scenario
 

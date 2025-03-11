@@ -15,7 +15,9 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
     
     # File 
     outputFile = open(fileName, "w")
-    write(outputFile,"iteration,Total Cost,Is Accepted, Is Improved,Is NewBest, Temperature,Destroy Weights, Repair Weights", "\n")
+    nDestroy = length(configuration.destroyMethods)
+    nRepair = length(configuration.repairMethods)
+    write(outputFile,"Iteration,TotalCost,IsAccepted, IsImproved,IsNewBest, Temperature,",join(["DW$i" for i in 1:nDestroy], ","),",", join(["RW$i" for i in 1:nRepair], ","), "\n")
 
 
     # Unpack parameters
@@ -89,7 +91,15 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
         end
 
         # Write to file 
-        write(outputFile,iteration,",",currentState.currentSolution.totalCost, ",",isAccepted,",", isImproved,",",isNewBest, ",",temperature,",",join(currentState.destroyWeights),",",join(currentState.repairWeights,","), "\n")
+        write(outputFile, string(iteration), ",", 
+                 string(currentState.currentSolution.totalCost), ",", 
+                 string(isAccepted), ",", 
+                 string(isImproved), ",", 
+                 string(isNewBest), ",", 
+                 string(temperature), ",", 
+                 join(string.(currentState.destroyWeights), ","), ",", 
+                 join(string.(currentState.repairWeights), ","), "\n")
+
 
         # Print 
         if iteration % printSegmentSize == 0

@@ -18,6 +18,7 @@ export termination, findStartTemperature, accept, updateScoreAndCount, updateWei
     jsonData = JSON3.read(read(parametersFile, String))  # Read JSON file as a string and parse it
     return ALNSParameters(
         Float64(jsonData["timeLimit"]),
+        Int(jsonData["printSegmentSize"]),
         Int(jsonData["segmentSize"]),
         Float64(jsonData["w"]),
         Float64(jsonData["coolingRate"]),
