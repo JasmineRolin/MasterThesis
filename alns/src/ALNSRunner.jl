@@ -1,6 +1,6 @@
 module ALNSRunner
 
-using UnPack,JSON, domain, Dates, offlinesolution, ..ALNSDomain, ..ALNSFunctions, ..ALNSAlgorithm
+using UnPack,JSON, domain, Dates, offlinesolution, ..ALNSDomain, ..ALNSFunctions, ..ALNSAlgorithm, ..ALNSResults
 
 export runALNS
 
@@ -8,7 +8,16 @@ export runALNS
  Module to run ALNS algorithm 
 ==#
 
-function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::Vector{GenericMethod},repairMethods::Vector{GenericMethod};initialSolutionConstructor=simpleConstruction::Function,outPutFileFolder="tests/output/"::String,parametersFile=""::String)
+function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::Vector{GenericMethod},repairMethods::Vector{GenericMethod};initialSolutionConstructor=simpleConstruction::Function,outPutFileFolder="tests/output/"::String,parametersFile=""::String,savePlots=true::Bool,displayPlots=true::Bool,plotFolder=""::String)
+
+    # Create time stamp and output file folder
+    timeStamp = Dates.format(Dates.now(), "yyyy-mm-dd-HH:MM:sss")
+    outputFileFolderWithDate = string(outPutFileFolder,"/",timeStamp,"/")
+    
+    # Check if the output directory exists, and if not, create it
+    if !isdir(outputFileFolderWithDate)
+        mkdir(outputFileFolderWithDate)
+    end
 
     # Retrieve relevant activity ids from requests 
     activityIdx = Int[]
@@ -32,26 +41,32 @@ function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::
     # Create ALNS configuration 
     configuration = ALNSConfiguration(parameters,destroyMethods,repairMethods)
 
-    # Create log file name
-    timeStamp = Dates.format(Dates.now(), "yyyy-mm-dd-HH:MM:sss")
-    fileName = string(outPutFileFolder,"ALNSOutput_",string(timeStamp),".csv")
-
     # Create specifications file 
-    specificationsFile = string(outPutFileFolder,"ALNSSpecifications_",string(timeStamp),".json")
-    writeALNSSpecificationsFile(specificationsFile,scenario,parameters,configuration)
+    specificationsFileName = string(outputFileFolderWithDate,"ALNSSpecifications.json")
+    writeALNSSpecificationsFile(specificationsFileName,scenario,parameters,configuration)
  
+    # Create log file name
+    ALNSOutputFileName = string(outputFileFolderWithDate,"ALNSOutput.csv")
 
     # Construct initial solution 
     initialSolution, requestBank = initialSolutionConstructor(scenario)
 
     # Call ALNS 
-    solution = ALNS(scenario,initialSolution, requestBank,configuration,parameters, fileName)
+    solution = ALNS(scenario,initialSolution, requestBank,configuration,parameters, ALNSOutputFileName)
 
-    return solution
+    # Write KPIs to file 
+    KPIFileName = string(outputFileFolderWithDate,"ALNSKPIs.json")
+    writeKPIsToFile(KPIFileName,scenario,solution)
+
+    # Create results 
+    if savePlots
+        plotFolder = outputFileFolderWithDate
+    end
+
+    specification, KPIS = ALNSResult(specificationsFileName,KPIFileName,ALNSOutputFileName,savePlots=savePlots,displayPlots=displayPlots,plotFolder=plotFolder)
+
+    return solution, specification, KPIS
 end
-
-using JSON, Dates
-
 
 #==
     Write ALNS specifications to file 
@@ -70,5 +85,24 @@ function writeALNSSpecificationsFile(fileName::String, scenario::Scenario,parame
     write(file, JSON.json(specificationsDict))
     close(file)
 end
+
+#==
+ Write KPIs to file  
+==#
+function writeKPIsToFile(fileName::String, scenario::Scenario,solution::Solution)
+    KPIDict = Dict(
+        "Scenario" => Dict("name" => scenario.name),
+        "TotalCost" => solution.totalCost,
+        "TotalDistance" => solution.totalDistance,
+        "TotalRideTime" => solution.totalRideTime,
+        "TotalIdleTime" => solution.totalIdleTime,
+        "nTaxi" => solution.nTaxi
+    )
+
+    # Write the dictionary to a JSON file
+    file = open(fileName, "w") 
+    write(file, JSON.json(KPIDict))
+    close(file)
+end 
 
 end

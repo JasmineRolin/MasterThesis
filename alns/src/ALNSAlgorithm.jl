@@ -17,7 +17,7 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
     outputFile = open(fileName, "w")
     nDestroy = length(configuration.destroyMethods)
     nRepair = length(configuration.repairMethods)
-    write(outputFile,"Iteration,TotalCost,IsAccepted, IsImproved,IsNewBest, Temperature,",join(["DW$i" for i in 1:nDestroy], ","),",", join(["RW$i" for i in 1:nRepair], ","), "\n")
+    write(outputFile,"Iteration,TotalCost,IsAccepted,IsImproved,IsNewBest,Temperature,",join(["DW$i" for i in 1:nDestroy], ","),",", join(["RW$i" for i in 1:nRepair], ","), "\n")
 
 
     # Unpack parameters
