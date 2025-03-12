@@ -41,7 +41,7 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     bufferTime = parametersDf[1,"buffer_time"]
     maximumRideTimePercent = parametersDf[1,"maximum_ride_time_percent"]
     minimumMaximumRideTime = parametersDf[1,"minimum_maximum_ride_time"]
-    
+    taxiParameter = parametersDf[1,"taxi_parameter"]
 
     # Get vehicles 
     vehicles,depots, depotLocations = readVehicles(vehiclesDf,nRequests)
@@ -57,7 +57,7 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     onlineRequests, offlineRequests = splitRequests(requests)
 
     # Get distance and time matrix
-    scenario = Scenario(scenarioName,requests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots,depots)
+    scenario = Scenario(scenarioName,requests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots,depots,taxiParameter)
 
     return scenario
 

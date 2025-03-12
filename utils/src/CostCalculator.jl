@@ -106,6 +106,8 @@ function getTotalCostDistanceTimeOfSolution(scenario::Scenario,solution::Solutio
         totalDistance += schedule.totalDistance
         totalTime += schedule.totalTime
     end
+
+    totalCost += scenario.taxiParameter * solution.nTaxi
     return totalCost, totalDistance, totalTime
 end
 
