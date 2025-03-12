@@ -175,6 +175,12 @@ function generateVehiclesKonsentra(shifts, locations)
 end
 
 # ------
+# Update distance and time matrix
+# ------
+
+
+
+# ------
 # Main  
 # ------
 computeShiftCoverage!(shifts)
