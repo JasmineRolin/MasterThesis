@@ -8,10 +8,10 @@ export runALNS
  Module to run ALNS algorithm 
 ==#
 
-function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::Vector{GenericMethod},repairMethods::Vector{GenericMethod};initialSolutionConstructor=simpleConstruction::Function,outPutFileFolder="tests/output/"::String,parametersFile=""::String,savePlots=true::Bool,displayPlots=true::Bool,plotFolder=""::String)
+function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::Vector{GenericMethod},repairMethods::Vector{GenericMethod};initialSolutionConstructor=simpleConstruction::Function,outPutFileFolder="tests/output"::String,parametersFile=""::String,savePlots=true::Bool,displayPlots=true::Bool,plotFolder=""::String)
 
     # Create time stamp and output file folder
-    timeStamp = Dates.format(Dates.now(), "yyyy-mm-dd-HH:MM:sss")
+    timeStamp = Dates.format(Dates.now(), "yyyy-mm-dd_HH_MM_SS.sss")
     outputFileFolderWithDate = string(outPutFileFolder,"/",timeStamp,"/")
     
     # Check if the output directory exists, and if not, create it
