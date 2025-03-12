@@ -8,16 +8,15 @@ struct Activity
     id::Int 
     requestId::Int 
     activityType::ActivityType
-    mobilityType::MobilityType
     location::Location 
     timeWindow::TimeWindow
 
     function Activity()
-        new(0, 0, PICKUP, WALKING, Location("",0,0), TimeWindow(0,0))
+        new(0, 0, PICKUP, Location("",0,0), TimeWindow(0,0))
     end
 
-    function Activity(id::Int, requestId::Int, activityType::ActivityType, mobilityType::MobilityType, location::Location, timeWindow::TimeWindow)
-        new(id, requestId, activityType, mobilityType, location, timeWindow)
+    function Activity(id::Int, requestId::Int, activityType::ActivityType, location::Location, timeWindow::TimeWindow)
+        new(id, requestId, activityType, location, timeWindow)
     end
 end
 

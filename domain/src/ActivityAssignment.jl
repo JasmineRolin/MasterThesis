@@ -9,7 +9,6 @@ mutable struct ActivityAssignment
     vehicle::Vehicle 
     startOfServiceTime::Int 
     endOfServiceTime::Int 
-    mobilityAssignment::MobilityType
 end
 
 

@@ -94,7 +94,7 @@ end
     distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
     timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
     scenarioName = "Big"
-    alnsParameters = "tests/resources/ALNSParameters2.json"
+    alnsParameters = "tests/resources/ALNSParameters_Article.json"
 
     # Read instance 
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)

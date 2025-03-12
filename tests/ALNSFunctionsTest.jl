@@ -102,17 +102,15 @@ end
     depotLocation = Location("depot",10,10)
     timeWindow = TimeWindow(900,980)
 
-    capacities = Dict{MobilityType, Int}(WALKING => 3, WHEELCHAIR => 5)
-
-    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,capacities,8)
+    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,8)
 
     # Activitys 
     location = Location("PU",10.0,10.0)
     timeWindow = TimeWindow(90,100)
-    activity = Activity(1,0,PICKUP,WALKING,location,timeWindow)
+    activity = Activity(1,0,PICKUP,location,timeWindow)
 
     # RequestAssignment
-    activityAssignment = ActivityAssignment(activity,vehicle,8,7,WALKING)
+    activityAssignment = ActivityAssignment(activity,vehicle,8,7)
 
     # VehicleSchedule
     route = [activityAssignment]
@@ -157,17 +155,15 @@ end
     depotLocation = Location("depot",10,10)
     timeWindow = TimeWindow(900,980)
 
-    capacities = Dict{MobilityType, Int}(WALKING => 3, WHEELCHAIR => 5)
-
-    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,capacities,8)
+    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,8)
 
     # Activitys 
     location = Location("PU",10.0,10.0)
     timeWindow = TimeWindow(90,100)
-    activity = Activity(1,0,PICKUP,WALKING,location,timeWindow)
+    activity = Activity(1,0,PICKUP,location,timeWindow)
 
     # RequestAssignment
-    activityAssignment = ActivityAssignment(activity,vehicle,8,7,WALKING)
+    activityAssignment = ActivityAssignment(activity,vehicle,8,7)
 
     # VehicleSchedule
     route = [activityAssignment]
@@ -212,17 +208,15 @@ end
     depotLocation = Location("depot",10,10)
     timeWindow = TimeWindow(900,980)
 
-    capacities = Dict{MobilityType, Int}(WALKING => 3, WHEELCHAIR => 5)
-
-    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,capacities,8)
+    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,8)
 
     # Activitys 
     location = Location("PU",10.0,10.0)
     timeWindow = TimeWindow(90,100)
-    activity = Activity(1,0,PICKUP,WALKING,location,timeWindow)
+    activity = Activity(1,0,PICKUP,location,timeWindow)
 
     # RequestAssignment
-    activityAssignment = ActivityAssignment(activity,vehicle,8,7,WALKING)
+    activityAssignment = ActivityAssignment(activity,vehicle,8,7)
 
     # VehicleSchedule
     route = [activityAssignment]
@@ -258,17 +252,15 @@ end
     depotLocation = Location("depot",10,10)
     timeWindow = TimeWindow(900,980)
 
-    capacities = Dict{MobilityType, Int}(WALKING => 3, WHEELCHAIR => 5)
-
-    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,capacities,8)
+    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,8)
 
     # Activitys 
     location = Location("PU",10.0,10.0)
     timeWindow = TimeWindow(90,100)
-    activity = Activity(1,0,PICKUP,WALKING,location,timeWindow)
+    activity = Activity(1,0,PICKUP,location,timeWindow)
 
     # RequestAssignment
-    activityAssignment = ActivityAssignment(activity,vehicle,8,7,WALKING)
+    activityAssignment = ActivityAssignment(activity,vehicle,8,7)
 
     # VehicleSchedule
     route = [activityAssignment]
