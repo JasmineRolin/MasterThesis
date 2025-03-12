@@ -139,18 +139,11 @@ end
     requestFile = "Data/Konsentra/TransformedData_Data.csv"
     vehiclesFile = "Data/Konsentra/Vehicles.csv"
     parametersFile = "tests/resources/Parameters.csv"
-    distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
-    timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
+    distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra_withVehicles.txt"
+    timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra_withVehicles.txt"
     
     # Read instance 
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
-    
-    # Constuct solution 
-    solution, requestBank = simpleConstruction(scenario)
-    solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
-
-    # Construct ALNS state
-    currentState = ALNSState(solution,1,0,requestBank)
 
     # Construct ALNS parameters
     parameters = ALNSParameters()
