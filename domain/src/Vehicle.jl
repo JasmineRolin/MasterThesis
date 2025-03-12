@@ -14,7 +14,7 @@ struct Vehicle
 
     # Constructors
     function Vehicle()
-        return new(0, TimeWindow(0,0), 0, Location("",0,0), 0, Dict(), 0)
+        return new(0, TimeWindow(0,0), 0, Location("",0,0), 0, 0)
     end
 
     function Vehicle(id::Int, availableTimeWindow::TimeWindow, depotId::Int, depotLocation::Location, maximumRideTime::Int, totalCapacity::Int)

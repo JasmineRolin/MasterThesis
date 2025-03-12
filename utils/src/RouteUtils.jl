@@ -444,7 +444,7 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
             startOfServicePick = max(earliestStartOfServicePick,request.pickUpActivity.timeWindow.startTime)
             endOfPickUp = startOfServicePick + scenario.serviceTimes
 
-            earliestStartOfServiceDrop = endOfPickUp + scenario.time
+            earliestStartOfServiceDrop = endOfPickUp + scenario.time[request.pickUpActivity.id, request.dropOffActivity.id]
             startOfServiceDrop = max(earliestStartOfServiceDrop,request.dropOffActivity.timeWindow.startTime)
             endOfDropOff = startOfServiceDrop + scenario.serviceTimes
             arrivalNextNode = endOfDropOff + scenario.time[request.dropOffActivity.id, vehicleSchedule.route[idx+1].activity.id]
