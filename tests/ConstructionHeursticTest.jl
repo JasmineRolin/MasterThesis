@@ -25,6 +25,7 @@ using utils, domain, offlinesolution
 
     # Check solution
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
     feasible, msg = checkSolutionFeasibility(scenario,solution)
     println(msg)
     @test feasible == true
@@ -45,6 +46,7 @@ end
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
     feasible, msg = checkSolutionFeasibility(scenario,solution)
     @test feasible == true
     @test msg == ""
@@ -65,6 +67,7 @@ end
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
 
     feasible, msg = checkSolutionFeasibility(scenario,solution)
     @test feasible == true

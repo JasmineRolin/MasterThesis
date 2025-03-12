@@ -73,7 +73,7 @@ end
 
    # Read instance 
    scenario2 = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
-   scenario = Scenario(scenarioName,scenario2.requests,scenario2.onlineRequests,scenario2.offlineRequests,scenario2.serviceTimes,[scenario2.vehicles[1]],scenario2.vehicleCostPrHour,scenario2.vehicleStartUpCost,scenario2.planningPeriod,scenario2.bufferTime,scenario2.maximumDriveTimePercent,scenario2.minimumMaximumDriveTime,scenario2.distance,scenario2.time,scenario2.nDepots,scenario2.depots)
+   scenario = Scenario(scenarioName,scenario2.requests,scenario2.onlineRequests,scenario2.offlineRequests,scenario2.serviceTimes,[scenario2.vehicles[1]],scenario2.vehicleCostPrHour,scenario2.vehicleStartUpCost,scenario2.planningPeriod,scenario2.bufferTime,scenario2.maximumDriveTimePercent,scenario2.minimumMaximumDriveTime,scenario2.distance,scenario2.time,scenario2.nDepots,scenario2.depots,scenario2.taxiParameter)
 
    # Create VehicleSchedule
    vehicleSchedule = VehicleSchedule(scenario.vehicles[1])

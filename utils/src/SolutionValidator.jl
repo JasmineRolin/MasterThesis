@@ -56,10 +56,8 @@ function checkSolutionFeasibility(scenario::Scenario,solution::Solution)
     end
 
     # Check cost, distance and time of solution 
-    println(nTaxi)
-    println(totalCostCheck)
     totalCostCheck += nTaxi * scenario.taxiParameter
-    if totalCostCheck != totalCost
+    if !isapprox(totalCostCheck,totalCost,atol=0.0001)
         msg = "SOLUTION INFEASIBLE: Total cost of solution is incorrect. Calculated: $(totalCostCheck), actual: $(totalCost)"
         return false, msg
     end

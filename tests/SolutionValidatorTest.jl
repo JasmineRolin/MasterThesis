@@ -22,6 +22,7 @@ using utils, domain, offlinesolution
     # Add online requests to taxies 
     # TODO: remove when online solution is created 
     solution.nTaxi += length(scenario.onlineRequests)
+    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
 
     # Check solution
     feasible, msg = checkSolutionFeasibility(scenario,solution)
@@ -46,11 +47,12 @@ end
     # Add online requests to taxies 
     # TODO: remove when online solution is created 
     solution.nTaxi += length(scenario.onlineRequests)
+    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
 
     # Check solution
     feasible, msg = checkSolutionFeasibility(scenario,solution)
     @test feasible == false
-    @test msg == "SOLUTION INFEASIBLE: Total cost of solution is incorrect. Calculated: 0.0, actual: 90.0"
+    @test msg == "SOLUTION INFEASIBLE: Total cost of solution is incorrect. Calculated: 0.02, actual: 90.02"
 end
 
 @testset "checkSolutionFeasibility test - activity serviced multiple times" begin
@@ -71,6 +73,7 @@ end
     # Add online requests to taxies 
     # TODO: remove when online solution is created 
     solution.nTaxi += length(scenario.onlineRequests)
+    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
 
     # Check solution
     feasible, msg = checkSolutionFeasibility(scenario,solution)
@@ -96,6 +99,7 @@ end
     # Add online requests to taxies 
     # TODO: remove when online solution is created 
     solution.nTaxi += length(scenario.onlineRequests) - 1
+    solution.totalCost += (length(scenario.onlineRequests) - 1) * scenario.taxiParameter # TODO: Remove when online request are implemented
 
     # Check solution
     feasible, msg = checkSolutionFeasibility(scenario,solution)
