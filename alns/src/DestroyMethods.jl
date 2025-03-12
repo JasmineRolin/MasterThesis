@@ -44,6 +44,7 @@ function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::A
     setdiff!(assignedRequests, requestsToRemove)
     currentState.nAssignedRequests -= nRequestsToRemove
     currentState.currentSolution.nTaxi += nRequestsToRemove
+    currentState.currentSolution.totalCost += nRequestsToRemove *scenario.taxiParameter
 
     #println("==========> Removing requests: ",requestsToRemove)
 
@@ -94,6 +95,7 @@ function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::
     setdiff!(assignedRequests, requestsToRemove)
     currentState.nAssignedRequests -= nRequestsToRemove
     currentState.currentSolution.nTaxi += nRequestsToRemove
+    currentState.currentSolution.totalCost += nRequestsToRemove *scenario.taxiParameter
     
    # println("==========> Removing requests: ", requestsToRemove)
     
@@ -155,6 +157,7 @@ function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::A
     append!(requestBank, requestsToRemove)
     currentState.nAssignedRequests -= nRequestsToRemove
     currentState.currentSolution.nTaxi += nRequestsToRemove
+    currentState.currentSolution.totalCost += nRequestsToRemove *scenario.taxiParameter
 
     #println("==========> Removing requests: ", requestsToRemove)
 
