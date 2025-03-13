@@ -4,6 +4,8 @@ using alns, domain, utils, offlinesolution
 #==
 Test ALNSFunctions
 ==#
+
+#==
 @testset "ALNS test - Big Test" begin 
     requestFile = "tests/resources/RequestsBig.csv"
     vehiclesFile = "tests/resources/VehiclesBig.csv"
@@ -119,6 +121,47 @@ end
 
     
     finalSolution, specifications, KPIs = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters)
+
+    feasible, msg = checkSolutionFeasibility(scenario,finalSolution)
+    @test feasible == true
+    @test msg == ""
+
+    println("FINAL SOLUTION")
+    print("nTaxi: ",finalSolution.nTaxi)
+    printSolution(finalSolution,printRouteHorizontal)
+      
+end
+==#
+
+@testset "ALNS RUN test - Konsentra Test" begin 
+    requestFile = "Data/Konsentra/TransformedData_Data.csv"
+    vehiclesFile = "Data/Konsentra/Vehicles.csv"
+    parametersFile = "tests/resources/Parameters.csv"
+    distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra_withVehicles.txt"
+    timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra_withVehicles.txt"
+    
+    # Read instance 
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+
+    # Construct ALNS parameters
+    parameters = ALNSParameters()
+    setMinMaxValuesALNSParameters(parameters,scenario.time,scenario.requests)
+    parameters.minPercentToDestroy = 0.7
+    parameters.maxPercentToDestroy = 0.7
+
+    # Choose destroy methods
+    destroyMethods = Vector{GenericMethod}()
+    addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
+    addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
+    addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
+
+    # Choose repair methods
+    repairMethods = Vector{GenericMethod}()
+    addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
+    addMethod!(repairMethods,"regretInsertion",regretInsertion)
+
+    
+    finalSolution = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods,simpleConstruction,"")
 
     feasible, msg = checkSolutionFeasibility(scenario,finalSolution)
     @test feasible == true
