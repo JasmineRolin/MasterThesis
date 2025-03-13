@@ -17,9 +17,7 @@ Test ALNSFunctions
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
     
     # Constuct solution 
-    solution, requestBank = simpleConstruction(scenario)
-    solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
-    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
+    solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
 
     # Construct ALNS state
     currentState = ALNSState(solution,1,0,requestBank)
@@ -34,7 +32,7 @@ Test ALNSFunctions
     # Shaw Destroy 
     shawRemoval!(scenario,currentState,parameters)
 
-    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
     if !feasible
         println(msg)
     end
@@ -43,7 +41,7 @@ Test ALNSFunctions
     # Regret Repair
     regretInsertion(currentState,scenario)
 
-    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
     if !feasible
         println(msg)
     end
@@ -52,7 +50,7 @@ Test ALNSFunctions
     # Random destroy
     randomDestroy!(scenario,currentState,parameters)
 
-    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
     if !feasible
         println(msg)
     end
@@ -61,7 +59,7 @@ Test ALNSFunctions
     # Greedy repair
     greedyInsertion(currentState,scenario)
 
-    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
     if !feasible
         println(msg)
     end
@@ -70,7 +68,7 @@ Test ALNSFunctions
     # Worst removal
     worstRemoval!(scenario,currentState,parameters)
 
-    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
     if !feasible
         println(msg)
     end
@@ -79,7 +77,7 @@ Test ALNSFunctions
     # Greedy repair
     greedyInsertion(currentState,scenario)
 
-    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
+    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
     if !feasible
         println(msg)
     end
@@ -115,7 +113,7 @@ end
     
     finalSolution, specifications, KPIs = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters)
 
-    feasible, msg = checkSolutionFeasibility(scenario,finalSolution)
+    feasible, msg = checkSolutionFeasibility(scenario,finalSolution,scenario.offlineRequests)
     @test feasible == true
     @test msg == ""
 
@@ -151,7 +149,7 @@ end
     
     finalSolution,_,_ = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;initialSolutionConstructor=simpleConstruction)
 
-    feasible, msg = checkSolutionFeasibility(scenario,finalSolution)
+    feasible, msg = checkSolutionFeasibility(scenario,finalSolution,scenario.offlineRequests)
     @test feasible == true
     @test msg == ""
 
