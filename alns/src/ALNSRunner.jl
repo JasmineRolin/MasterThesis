@@ -51,6 +51,7 @@ function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::
     # Construct initial solution 
     initialSolution, requestBank = initialSolutionConstructor(scenario)
     initialSolution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+    initialSolution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
 
     # Call ALNS 
     solution = ALNS(scenario,initialSolution, requestBank,configuration,parameters, ALNSOutputFileName)

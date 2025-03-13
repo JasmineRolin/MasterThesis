@@ -45,8 +45,21 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
         # Destroy trial solution  
         destroyIdx = destroy!(scenario,trialState,parameters,configuration)
 
+        feasible, msg = checkSolutionFeasibility(scenario,trialState.currentSolution)
+        if !feasible
+            println("ALNS: INFEASIBLE SOLUTION AFTER Destroy IN ITERATION:", iteration)
+            throw(msg) 
+        end
+
+
         # Repair trial solution 
         repairIdx = repair!(scenario,trialState,configuration)
+
+        if !feasible
+            println("ALNS: INFEASIBLE SOLUTION AFTER Repair IN ITERATION:", iteration)
+            throw(msg) 
+        end
+
 
         # Check if solution is improved
         # TODO: create hash table to check if solution has been visited before
@@ -87,6 +100,7 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
         # TODO: remove when ALNS is robust 
         feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution)
         if !feasible
+            println("ALNS: INFEASIBLE SOLUTION IN ITERATION:", iteration)
             throw(msg) 
         end
 
@@ -113,6 +127,13 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
 
     # Close file 
     close(outputFile)
+
+    # Check final solution
+    feasible, msg = checkSolutionFeasibility(scenario,currentState.bestSolution)
+    if !feasible
+        println("ALNS: INFEASIBLE FINAL SOLUTION")
+        throw(msg) 
+    end
 
     return currentState.bestSolution
 end 

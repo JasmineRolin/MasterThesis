@@ -5,7 +5,6 @@ using alns, domain, utils, offlinesolution
 Test ALNSFunctions
 ==#
 
-#==
 @testset "ALNS test - Big Test" begin 
     requestFile = "tests/resources/RequestsBig.csv"
     vehiclesFile = "tests/resources/VehiclesBig.csv"
@@ -102,14 +101,6 @@ end
     # Read instance 
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
     
-    # Constuct solution 
-    solution, requestBank = simpleConstruction(scenario)
-    solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
-    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
-
-    # Construct ALNS state
-    currentState = ALNSState(solution,1,0,requestBank)
-
     # Choose destroy methods
     destroyMethods = Vector{GenericMethod}()
     addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
@@ -133,7 +124,7 @@ end
     printSolution(finalSolution,printRouteHorizontal)
       
 end
-==#
+
 
 @testset "ALNS RUN test - Konsentra Test" begin 
     requestFile = "Data/Konsentra/TransformedData_Data.csv"
@@ -141,15 +132,10 @@ end
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra_withVehicles.txt"
     timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra_withVehicles.txt"
+    scenarioName = "Konsentra"
     
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
-
-    # Construct ALNS parameters
-    parameters = ALNSParameters()
-    setMinMaxValuesALNSParameters(parameters,scenario.time,scenario.requests)
-    parameters.minPercentToDestroy = 0.7
-    parameters.maxPercentToDestroy = 0.7
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Choose destroy methods
     destroyMethods = Vector{GenericMethod}()
@@ -163,7 +149,7 @@ end
     addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
     
-    finalSolution = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods,simpleConstruction,"")
+    finalSolution,_,_ = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;initialSolutionConstructor=simpleConstruction)
 
     feasible, msg = checkSolutionFeasibility(scenario,finalSolution)
     @test feasible == true
