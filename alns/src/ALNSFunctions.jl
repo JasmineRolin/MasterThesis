@@ -1,7 +1,6 @@
 module ALNSFunctions 
 
 using UnPack, JSON3, domain, ..ALNSDomain
-using StatsBase
 
 export readALNSParameters
 export addMethod!
@@ -79,14 +78,19 @@ end
 ==#
 function rouletteWheel(weights::Vector{Float64})::Int
     totalWeight = sum(weights)
-    probabilities = weights ./ totalWeight
-    elements = collect(1:length(weights))
+    r = rand() * totalWeight  # Generate a random number in [0, totalWeight]
 
-    selectedElement = sample(elements, Weights(probabilities))
+    cumulativeSum = 0.0
+    for (i, w) in enumerate(weights)
+        cumulativeSum += w
+        if r <= cumulativeSum
+            return i  # Return the index of the selected element
+        end
+    end
 
-    return selectedElement
-
+    return length(weights)  # Fallback (should never be reached)
 end
+
 
 #==
  Method to calculate score of destroy or repair method 
@@ -137,9 +141,9 @@ end
 #==
  Method to set start temperature to use in simulated annealing 
 ==#
-function findStartTemperature(w::Float64, solution::Solution,scenario::Scenario)::Float64 
+function findStartTemperature(w::Float64, solution::Solution,taxiParameter::Float64)::Float64 
     # Cost of solution without request bank 
-    cost = solution.totalCost - solution.nTaxi*scenario.taxiParameter 
+    cost = solution.totalCost - solution.nTaxi*taxiParameter 
     
     # Find start temperature 
     return (w*cost)/0.6931

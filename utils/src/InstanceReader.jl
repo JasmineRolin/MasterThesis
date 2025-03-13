@@ -41,7 +41,7 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     bufferTime = parametersDf[1,"buffer_time"]
     maximumRideTimePercent = parametersDf[1,"maximum_ride_time_percent"]
     minimumMaximumRideTime = parametersDf[1,"minimum_maximum_ride_time"]
-    taxiParameter = parametersDf[1,"taxi_parameter"]
+    taxiParameter = Float64(parametersDf[1,"taxi_parameter"])
     
 
     # Get vehicles 

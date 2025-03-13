@@ -28,7 +28,7 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
     initialCost = initialSolution.totalCost
 
     # Initialize temperature, iteration and time 
-    temperature = findStartTemperature(w,currentState.currentSolution,scenario)
+    temperature = findStartTemperature(w,currentState.currentSolution,scenario.taxiParameter)
 
     iteration = 0
     startTime = time()
