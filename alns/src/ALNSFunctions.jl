@@ -139,8 +139,8 @@ end
 ==#
 function findStartTemperature(w::Float64, solution::Solution,scenario::Scenario)::Float64 
     # Cost of solution without request bank 
-    cost = solution.totalCost - solution.nTaxi*scenario.taxiParameter # TODO: make sure request bank is not included when we change objective 
-
+    cost = solution.totalCost - solution.nTaxi*scenario.taxiParameter 
+    
     # Find start temperature 
     return (w*cost)/0.6931
 end
