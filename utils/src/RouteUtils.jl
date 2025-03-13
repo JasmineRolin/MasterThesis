@@ -102,7 +102,7 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPic
     updateDepots!(scenario.time,vehicleSchedule,request,idxPickUp,idxDropOff)
 
     # Update waiting
-    updateWaiting!(scenario.time,scenario.distance,vehicleSchedule,request,idxPickUp,idxDropOff)
+    updatedIdxPickUp, updatedIdxDropOff = updateWaiting!(scenario.time,scenario.distance,vehicleSchedule,request,idxPickUp,idxDropOff)
 
     # Update idle time 
     vehicleSchedule.totalIdleTime = getTotalIdleTimeRoute(vehicleSchedule.route)
@@ -111,7 +111,7 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPic
     vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
 
     # Update total cost
-    vehicleSchedule.totalCost = getTotalCostRoute(scenario, vehicleSchedule.route)
+    vehicleSchedule.totalCost += getCostOfRequest(scenario.time,vehicleSchedule.route[updatedIdxPickUp],vehicleSchedule.route[updatedIdxDropOff])
 end
 
 
@@ -177,8 +177,6 @@ function updateRoute!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes
     else
         vehicleSchedule.totalDistance -= distance[activityAssignmentBeforePickUp,activityAssignmentAfterPickUp] + distance[activityAssignmentBeforeDropOff,activityAssignmentAfterDropOff]
     end
-
-    return activityAssignmentBeforePickUp, activityAssignmentAfterPickUp, activityAssignmentBeforeDropOff, activityAssignmentAfterDropOff
 
 end
 
@@ -378,7 +376,7 @@ function updateWaiting!(time::Array{Int,2},distance::Array{Float64,2},vehicleSch
         vehicleSchedule.totalDistance += (distance[updatedActivityAssignmentBeforePickUp,request.pickUpActivity.id] + distance[request.pickUpActivity.id,updatedActivityAssignmentAfterPickUp] +  distance[updatedActivityAssignmentBeforeDropOff,request.dropOffActivity.id] + distance[request.dropOffActivity.id,updatedActivityAssignmentAfterDropOff])
     end
 
-    return updatedIdxPickUp, updatedIdxDropOff, updatedActivityAssignmentBeforePickUp, updatedActivityAssignmentAfterPickUp, updatedActivityAssignmentBeforeDropOff, updatedActivityAssignmentAfterDropOff
+    return updatedIdxPickUp, updatedIdxDropOff
 
 end
 

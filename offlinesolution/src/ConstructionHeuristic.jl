@@ -10,13 +10,13 @@ export findFeasibleInsertionInSchedule
 # ----------
 # Construct a solution using a simple construction heuristic
 # ----------
-function simpleConstruction(scenario::Scenario)
+function simpleConstruction(scenario::Scenario,requests::Vector{Request})
    
     # Initialize solution
     solution = Solution(scenario)
     requestBank = Int[]
 
-    for request in scenario.offlineRequests
+    for request in requests
         # Determine closest feasible vehicle
         closestVehicleIdx, idxPickUp, idxDropOff = getClosestFeasibleVehicle(request,solution,scenario)
 

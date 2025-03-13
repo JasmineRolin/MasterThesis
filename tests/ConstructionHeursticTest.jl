@@ -17,16 +17,14 @@ using utils, domain, offlinesolution
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Constuct solution 
-    solution, requestBank = simpleConstruction(scenario)
+    solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
     @test solution.nTaxi == 0
 
     # Print solution
     printSolution(solution,printRouteHorizontal)
 
     # Check solution
-    solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
-    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
-    feasible, msg = checkSolutionFeasibility(scenario,solution)
+    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.offlineRequests)
     println(msg)
     @test feasible == true
 end
@@ -44,10 +42,9 @@ end
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
     
     # Constuct solution 
-    solution, requestBank = simpleConstruction(scenario)
-    solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
-    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
-    feasible, msg = checkSolutionFeasibility(scenario,solution)
+    solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
+  
+    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.offlineRequests)
     @test feasible == true
     @test msg == ""
       
@@ -65,11 +62,9 @@ end
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
     
     # Constuct solution 
-    solution, requestBank = simpleConstruction(scenario)
-    solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
-    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
+    solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
 
-    feasible, msg = checkSolutionFeasibility(scenario,solution)
+    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.offlineRequests)
     @test feasible == true
     @test msg == ""
       

@@ -152,7 +152,7 @@ Test ALNSFunctions
     
     finalSolution,_,_ = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;initialSolutionConstructor=simpleConstruction,parametersFile="tests/resources/ALNSParameters2.json")
 
-    feasible, msg = checkSolutionFeasibility(scenario,finalSolution)
+    feasible, msg = checkSolutionFeasibility(scenario,finalSolution,scenario.offlineRequests)
     @test feasible == true
     @test msg == ""
 

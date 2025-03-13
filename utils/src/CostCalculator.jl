@@ -59,7 +59,7 @@ function getTotalCostRoute(scenario::Scenario,route::Vector{ActivityAssignment})
             dropoffTime = assignment.startOfServiceTime
             directTime = time[activity.requestId, activity.id] 
             excessTime = (dropoffTime - pickupTime) - directTime
-            excessTimeRatio += excessTime / directTime
+            excessTimeRatio += (excessTime / directTime)*10.0
         end
     end
     
@@ -72,7 +72,7 @@ end
 function getCostOfRequest(time::Array{Int,2},pickUpActivity::ActivityAssignment,dropOffActivity::ActivityAssignment)
     directTime = time[pickUpActivity.activity.id,dropOffActivity.activity.id]
     excessTime = (dropOffActivity.startOfServiceTime - pickUpActivity.endOfServiceTime) - directTime
-    return excessTime/directTime
+    return (excessTime/directTime)*10.0
 end
 
 #==
