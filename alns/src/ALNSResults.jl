@@ -30,16 +30,21 @@ function ALNSResult(specificationsFile::String,ALNSKPISFile::String,ALNSOutputFi
     # Destroy weight plot
     destroyWeightPlot = createDestroyWeightPlot(ALNSOutput,specifications)
 
+    # Temperature plot
+    temperaturePlot = createTemperaturePlot(ALNSOutput)
+
     # Display and save plots
     if displayPlots
         display(costPlot)
         display(repairWeightPlot)
         display(destroyWeightPlot)
+        display(temperaturePlot)
     end
     if savePlots
         savefig(costPlot, joinpath(plotFolder, "ALNSCostPlot.png"))
         savefig(repairWeightPlot, joinpath(plotFolder, "ALNSRepairWeightPlot.png"))
         savefig(destroyWeightPlot, joinpath(plotFolder, "ALNSDestroyWeightPlot.png"))
+        savefig(temperaturePlot, joinpath(plotFolder, "ALNSTemperaturePlot.png"))
     end
 
     return specificationsTable, KPIsTable
@@ -109,17 +114,20 @@ function createCostPlot(df::DataFrame)
     isImproved = df.IsImproved
     isNewBest = df.IsNewBest
 
+    # Filter isImproved points to exclude isNewBest
+    onlyImproved = isImproved .& .!isNewBest
+
     # Create the line plot for total cost
-    p = plot(iterations, total_cost, label="Total Cost", linewidth=2, color=:blue, xlabel="Iteration", ylabel="Total Cost", title="ALNS Total Cost Over Iterations")
+    p = plot(iterations, total_cost, label="Total Cost", linewidth=2, color=:darkgray, xlabel="Iteration", ylabel="Total Cost", title="ALNS Total Cost Over Iterations",size=(900,500))
 
     # Add yellow dots for accepted solutions
     scatter!(iterations[isAccepted], total_cost[isAccepted], markershape=:circle, color=:yellow, label="Accepted")
 
     # Add green dots for improved solutions
-    scatter!(iterations[isImproved], total_cost[isImproved], markershape=:circle, color=:green, label="Improved")
+    scatter!(iterations[onlyImproved], total_cost[onlyImproved], markershape=:circle, color=:orange, label="Improved")
 
     # Add green stars for new best solutions
-    scatter!(iterations[isNewBest], total_cost[isNewBest], markershape=:star5, color=:green, label="New Best")
+    scatter!(iterations[isNewBest], total_cost[isNewBest], markershape=:star5, color=:green, label="New Best",markersize=10)
 
     return p
 end
@@ -169,6 +177,22 @@ function createDestroyWeightPlot(df::DataFrame,specifications::Dict)
 
     return p
 end
+
+#==
+ Method to create plot of temperature
+==#
+function createTemperaturePlot(df::DataFrame)
+    # Extract iteration numbers
+    iterations = df.Iteration
+
+
+    # Create a plot
+    p = plot(title="Temperature", xlabel="Iteration", ylabel="Temperature")
+    plot!(p, iterations, df[!, "Temperature"])
+
+    return p
+end
+
 
 
 

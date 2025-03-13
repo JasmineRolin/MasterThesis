@@ -188,7 +188,9 @@ end
 ==#
 function accept(tempature::Float64,delta::Float64)::Bool
     delta = Float64(delta)
+    #println("delta: ", delta)
     p = exp(-delta/tempature)
+    #println("p: ", p)
     if rand() < p 
         return true 
     end
