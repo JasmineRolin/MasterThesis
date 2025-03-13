@@ -20,7 +20,6 @@ MAX_EARLY_ARRIVAL = 5
 struct Request
     id::Int 
     requestType::RequestType
-    mobilityType::MobilityType
     callTime::Int # The time the request is received (minutes after midnight)
     pickUpActivity::Activity 
     dropOffActivity::Activity 
@@ -29,11 +28,11 @@ struct Request
 
     # Empty constructor
     function Request()
-        new(0, PICKUP_REQUEST, WALKING, 0, Activity(), Activity(), 0, 0)
+        new(0, PICKUP_REQUEST, 0, Activity(), Activity(), 0, 0)
     end
 
-    function Request(id::Int, requestType::RequestType, mobilityType::MobilityType, callTime::Int, pickUpActivity::Activity, dropOffActivity::Activity, directDriveTime::Int, maximumRideTime::Int)
-        new(id, requestType, mobilityType, callTime, pickUpActivity, dropOffActivity, directDriveTime, maximumRideTime)
+    function Request(id::Int, requestType::RequestType, callTime::Int, pickUpActivity::Activity, dropOffActivity::Activity, directDriveTime::Int, maximumRideTime::Int)
+        new(id, requestType, callTime, pickUpActivity, dropOffActivity, directDriveTime, maximumRideTime)
     end
 end
 

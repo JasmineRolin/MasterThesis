@@ -1,6 +1,7 @@
 module ALNSFunctions 
 
 using UnPack, JSON3, domain, ..ALNSDomain
+using StatsBase
 
 export readALNSParameters
 export addMethod!
@@ -78,17 +79,13 @@ end
 ==#
 function rouletteWheel(weights::Vector{Float64})::Int
     totalWeight = sum(weights)
-    r = rand() * totalWeight  # Generate a random number in [0, totalWeight]
+    probabilities = weights ./ totalWeight
+    elements = collect(1:length(weights))
 
-    cumulativeSum = 0.0
-    for (i, w) in enumerate(weights)
-        cumulativeSum += w
-        if r <= cumulativeSum
-            return i  # Return the index of the selected element
-        end
-    end
+    selectedElement = sample(elements, Weights(probabilities))
 
-    return length(weights)  # Fallback (should never be reached)
+    return selectedElement
+
 end
 
 #==

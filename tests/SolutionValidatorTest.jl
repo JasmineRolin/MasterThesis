@@ -68,7 +68,7 @@ end
 
     # Construct solution
     solution, requestBank = simpleConstruction(scenario)
-    insertRequest!(scenario.requests[3],solution.vehicleSchedules[1],1,1,WALKING,scenario)
+    insertRequest!(scenario.requests[3],solution.vehicleSchedules[1],1,1,scenario)
 
     # Add online requests to taxies 
     # TODO: remove when online solution is created 

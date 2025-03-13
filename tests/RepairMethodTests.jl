@@ -24,7 +24,7 @@ using alns, domain, utils, offlinesolution
     vehicleSchedule = VehicleSchedule(scenario.vehicles[1])
 
     # Insert request
-    insertRequest!(scenario.requests[1],vehicleSchedule,1,1,WALKING,scenario)
+    insertRequest!(scenario.requests[1],vehicleSchedule,1,1,scenario)
 
     # Create requestBank
    requestBank = [2]
@@ -79,7 +79,7 @@ end
    vehicleSchedule = VehicleSchedule(scenario.vehicles[1])
 
    # Insert request
-   insertRequest!(scenario.requests[1],vehicleSchedule,1,1,WALKING,scenario)
+   insertRequest!(scenario.requests[1],vehicleSchedule,1,1,scenario)
 
    # Choose destroy methods
    destroyMethods = Vector{GenericMethod}()

@@ -250,7 +250,6 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
     for requestToRemove in requestsToRemove
         # Find positions of pick up and drop off activity   
         pickUpPosition,dropOffPosition = findPositionOfRequest(schedule,requestToRemove)
-        mobilityType = schedule.route[pickUpPosition].mobilityAssignment
 
         # Save cost of request 
         cost = getCostOfRequest(time,schedule.route[pickUpPosition],schedule.route[dropOffPosition])
@@ -275,7 +274,6 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
             schedule.totalCost = 0.0
             schedule.totalTime = 0
             schedule.numberOfWalking = [0,0]
-            schedule.numberOfWheelchair = [0,0]
 
             # Update route 
             schedule.route[1].startOfServiceTime = schedule.vehicle.availableTimeWindow.startTime
@@ -299,18 +297,12 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
             rideTimeDelta += activeTimeDeltaPickUp + activeTimeDeltaDropOff
             costDelta -= cost
 
-            if mobilityType == WALKING
-                schedule.numberOfWalking[pickUpPosition:dropOffPosition-1] .-= 1
-            else
-                schedule.numberOfWheelchair[pickUpPosition:dropOffPosition-1] .-= 1
-            end
+            schedule.numberOfWalking[pickUpPosition:dropOffPosition-1] .-= 1
             if routeReductionPickUp == 1
                 deleteat!(schedule.numberOfWalking,pickUpPosition)
-                deleteat!(schedule.numberOfWheelchair,pickUpPosition)
             end
             if routeReductionDropOff == 1
                 deleteat!(schedule.numberOfWalking,dropOffPosition-routeReductionPickUp)
-                deleteat!(schedule.numberOfWheelchair,dropOffPosition-routeReductionPickUp)
             end 
 
         end
@@ -398,8 +390,8 @@ function removeActivityFromRoute!(time::Array{Int,2},distance::Array{Float64,2},
         startOfWaitingActivity = activityAssignmentBefore.endOfServiceTime
         endOfWaitingActivity = activityAssignmentAfter.startOfServiceTime - time[activityAssignmentBefore.activity.id,activityAssignmentAfter.activity.id]
 
-        waitingActivity = Activity(activityAssignmentBefore.activity.id,-1,WAITING,WALKING,activityAssignmentBefore.activity.location,TimeWindow(startOfWaitingActivity,endOfWaitingActivity))
-        waitingActivityAssignment = ActivityAssignment(waitingActivity,activityAssignmentBefore.vehicle,startOfWaitingActivity,endOfWaitingActivity,WALKING)
+        waitingActivity = Activity(activityAssignmentBefore.activity.id,-1,WAITING,activityAssignmentBefore.activity.location,TimeWindow(startOfWaitingActivity,endOfWaitingActivity))
+        waitingActivityAssignment = ActivityAssignment(waitingActivity,activityAssignmentBefore.vehicle,startOfWaitingActivity,endOfWaitingActivity)
         
         # Update deltas
         deltaDistance = distance[waitingActivityAssignment.activity.id,activityAssignmentAfter.activity.id] - distance[activityAssignmentBefore.activity.id,activityToRemove.activity.id] - distance[activityToRemove.activity.id,activityAssignmentAfter.activity.id]

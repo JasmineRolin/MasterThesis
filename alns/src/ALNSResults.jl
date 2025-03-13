@@ -30,6 +30,7 @@ function ALNSResult(specificationsFile::String,ALNSKPISFile::String,ALNSOutputFi
     # Destroy weight plot
     destroyWeightPlot = createDestroyWeightPlot(ALNSOutput,specifications)
 
+    # Display and save plots
     if displayPlots
         display(costPlot)
         display(repairWeightPlot)
