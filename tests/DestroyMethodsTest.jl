@@ -22,6 +22,7 @@ using offlinesolution
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
     feasible, msg = checkSolutionFeasibility(scenario,solution)
 
     # Put two requests in same schedule 
@@ -99,6 +100,7 @@ end
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
 
     # Construct ALNS state
     currentState = ALNSState(solution,1,0)
@@ -138,6 +140,7 @@ end
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
     feasible, msg = checkSolutionFeasibility(scenario,solution)
 
     # Put two requests in same schedule 
@@ -217,6 +220,7 @@ end
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
 
     # Construct ALNS state
     currentState = ALNSState(solution,1,0)
@@ -257,6 +261,7 @@ end
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
     feasible, msg = checkSolutionFeasibility(scenario,solution)
 
     # Put two requests in same schedule 
@@ -328,6 +333,7 @@ end
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
 
     # Construct ALNS state
     currentState = ALNSState(solution,1,0)

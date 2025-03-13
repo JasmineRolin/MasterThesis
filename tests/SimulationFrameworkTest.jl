@@ -20,6 +20,7 @@ using simulationframework
     # Simulate scenario 
     solution = simulateScenario(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # Remove when online request are implemented
+    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
 
     feasible, msg = checkSolutionFeasibility(scenario,solution)
     @test feasible == true

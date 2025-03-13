@@ -226,7 +226,7 @@ end
     solution = Solution([vehicleSchedule],70.0,4,5,2,4)
     
     # Update weights 
-    startTemperature = findStartTemperature(parameters.w,solution)
+    startTemperature = findStartTemperature(parameters.w,solution,0.0)
     @test isapprox(startTemperature,5.0497763)
 end  
 

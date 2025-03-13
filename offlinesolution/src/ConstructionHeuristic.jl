@@ -30,8 +30,9 @@ function simpleConstruction(scenario::Scenario)
     end
 
     # Update solution
-    solution.totalCost, solution.totalDistance, solution.totalRideTime = getTotalCostDistanceTimeOfSolution(scenario,solution)
     solution.nTaxi = length(requestBank)
+    solution.totalCost, solution.totalDistance, solution.totalRideTime = getTotalCostDistanceTimeOfSolution(scenario,solution)
+    
     
     return solution, requestBank
     

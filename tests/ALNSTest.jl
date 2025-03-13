@@ -20,6 +20,7 @@ Test ALNSFunctions
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
 
     # Construct ALNS state
     currentState = ALNSState(solution,1,0,requestBank)
@@ -104,6 +105,7 @@ end
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
 
     # Construct ALNS state
     currentState = ALNSState(solution,1,0,requestBank)

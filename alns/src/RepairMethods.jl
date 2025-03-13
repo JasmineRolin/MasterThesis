@@ -72,6 +72,7 @@ function regretInsertion(state::ALNSState,scenario::Scenario)
         # Update solution pro
         state.nAssignedRequests += 1
         state.currentSolution.nTaxi -= 1
+        state.currentSolution.totalCost -= scenario.taxiParameter
         state.currentSolution.totalCost += currentSolution.vehicleSchedules[overallBestVehicle].totalCost
         state.currentSolution.totalDistance += currentSolution.vehicleSchedules[overallBestVehicle].totalDistance
         state.currentSolution.totalRideTime += currentSolution.vehicleSchedules[overallBestVehicle].totalTime
@@ -160,6 +161,7 @@ function greedyInsertion(state::ALNSState,scenario::Scenario)
             # Update solution pro
             state.nAssignedRequests += 1
             state.currentSolution.nTaxi -= 1
+            state.currentSolution.totalCost -= scenario.taxiParameter
             state.currentSolution.totalCost += currentSolution.vehicleSchedules[bestVehicle].totalCost
             state.currentSolution.totalDistance += currentSolution.vehicleSchedules[bestVehicle].totalDistance
             state.currentSolution.totalRideTime += currentSolution.vehicleSchedules[bestVehicle].totalTime
