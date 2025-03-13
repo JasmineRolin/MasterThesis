@@ -6,7 +6,6 @@ module domain
 include("Enums.jl")
 using .Enums  # Using the relative module
 export RequestType,PICKUP_REQUEST,DROPOFF_REQUEST
-export MobilityType,WALKING,WHEELCHAIR
 export ActivityType, PICKUP, DROPOFF, WAITING, DEPOT 
 
 
@@ -36,7 +35,7 @@ export Activity,findCorrespondingId,findLoadOfActivity
 ==#
 include("Request.jl")
 using .Requests
-export Request, RequestType,MobilityType,PICKUP,DROPOFF,WALKING,WHEELCHAIR
+export Request,RequestType,PICKUP,DROPOFF,WALKING
 export findTimeWindowOfRequestedPickUpTime, findTimeWindowOfDropOff, findTimeWindowOfRequestedDropOffTime, findTimeWindowOfPickUp
 export findMaximumRideTime
 

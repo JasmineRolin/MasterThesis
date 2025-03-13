@@ -31,7 +31,6 @@ using offlinesolution
     solution.totalIdleTime -= solution.vehicleSchedules[3].totalIdleTime + solution.vehicleSchedules[4].totalIdleTime
 
     solution.vehicleSchedules[3].numberOfWalking = [solution.vehicleSchedules[3].numberOfWalking[1:4];solution.vehicleSchedules[4].numberOfWalking[2:4];solution.vehicleSchedules[3].numberOfWalking[end]]
-    solution.vehicleSchedules[3].numberOfWheelchair = [solution.vehicleSchedules[3].numberOfWheelchair[1:4];solution.vehicleSchedules[4].numberOfWheelchair[2:4];solution.vehicleSchedules[3].numberOfWheelchair[end]]
 
     solution.vehicleSchedules[3].route = [solution.vehicleSchedules[3].route[1:4];solution.vehicleSchedules[4].route[2:4];solution.vehicleSchedules[3].route[end]]
     solution.vehicleSchedules[3].route[4].endOfServiceTime = 517
@@ -148,8 +147,7 @@ end
     solution.totalIdleTime -= solution.vehicleSchedules[3].totalIdleTime + solution.vehicleSchedules[4].totalIdleTime
 
     solution.vehicleSchedules[3].numberOfWalking = [solution.vehicleSchedules[3].numberOfWalking[1:4];solution.vehicleSchedules[4].numberOfWalking[2:4];solution.vehicleSchedules[3].numberOfWalking[end]]
-    solution.vehicleSchedules[3].numberOfWheelchair = [solution.vehicleSchedules[3].numberOfWheelchair[1:4];solution.vehicleSchedules[4].numberOfWheelchair[2:4];solution.vehicleSchedules[3].numberOfWheelchair[end]]
-
+    
     solution.vehicleSchedules[3].route = [solution.vehicleSchedules[3].route[1:4];solution.vehicleSchedules[4].route[2:4];solution.vehicleSchedules[3].route[end]]
     solution.vehicleSchedules[3].route[4].endOfServiceTime = 517
     solution.vehicleSchedules[3].route[end-1].endOfServiceTime = 1252
@@ -268,8 +266,7 @@ end
     solution.totalIdleTime -= solution.vehicleSchedules[3].totalIdleTime + solution.vehicleSchedules[4].totalIdleTime
 
     solution.vehicleSchedules[3].numberOfWalking = [solution.vehicleSchedules[3].numberOfWalking[1:4];solution.vehicleSchedules[4].numberOfWalking[2:4];solution.vehicleSchedules[3].numberOfWalking[end]]
-    solution.vehicleSchedules[3].numberOfWheelchair = [solution.vehicleSchedules[3].numberOfWheelchair[1:4];solution.vehicleSchedules[4].numberOfWheelchair[2:4];solution.vehicleSchedules[3].numberOfWheelchair[end]]
-
+   
     solution.vehicleSchedules[3].route = [solution.vehicleSchedules[3].route[1:4];solution.vehicleSchedules[4].route[2:4];solution.vehicleSchedules[3].route[end]]
     solution.vehicleSchedules[3].route[4].endOfServiceTime = 517
     solution.vehicleSchedules[3].route[end-1].endOfServiceTime = 1252

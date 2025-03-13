@@ -26,7 +26,6 @@ function updateCurrentScheduleNotAvailableAnymore!(currentState::State,schedule:
     currentSchedule.totalCost = 0.0
     currentSchedule.totalIdleTime = 0
     currentSchedule.numberOfWalking = [0]
-    currentSchedule.numberOfWheelchair = [0]
 
     # Index to split route into current and completed route 
     idx = length(schedule.route) - 1 
@@ -89,7 +88,6 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
     currentSchedule.totalCost = getTotalCostRoute(scenario,currentSchedule.route)
     currentSchedule.totalIdleTime = getTotalIdleTimeRoute(currentSchedule.route)    
     currentSchedule.numberOfWalking = schedule.numberOfWalking[idx+1:end]
-    currentSchedule.numberOfWheelchair = schedule.numberOfWheelchair[idx+1:end]
 
 
     return idx, currentSchedule.activeTimeWindow.startTime
@@ -136,7 +134,6 @@ function updateFinalSolution!(scenario::Scenario,finalSolution::Solution,solutio
     finalSolution.vehicleSchedules[vehicle].totalCost += getTotalCostRoute(scenario,solution.vehicleSchedules[vehicle].route[1:idx+1]) 
     finalSolution.vehicleSchedules[vehicle].totalIdleTime += getTotalIdleTimeRoute(newCompletedRoute)
     append!(finalSolution.vehicleSchedules[vehicle].numberOfWalking,solution.vehicleSchedules[vehicle].numberOfWalking[1:idx])
-    append!(finalSolution.vehicleSchedules[vehicle].numberOfWheelchair, solution.vehicleSchedules[vehicle].numberOfWheelchair[1:idx])
 
     # # Update KPIs of solution
     finalSolution.totalRideTime += totalTimeOfNewCompletedRoute
@@ -178,7 +175,6 @@ function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,currentStat
 
 
         finalSolution.vehicleSchedules[vehicle].numberOfWalking = append!(finalSolution.vehicleSchedules[vehicle].numberOfWalking,schedule.numberOfWalking)
-        finalSolution.vehicleSchedules[vehicle].numberOfWheelchair = append!(finalSolution.vehicleSchedules[vehicle].numberOfWheelchair,schedule.numberOfWheelchair)
 
         # Update KPIs of solution
         finalSolution.totalRideTime += newDuration

@@ -150,7 +150,6 @@ function transformData(sheet_name, filename)
         dropoff_longitude = dfFilter[!,"To LON"],
         request_type = dfFilter[!,"ReqType"],
         request_time = dfFilter[!,"ReqTime"],
-        mobility_type = dfFilter[!,"SpaceType"],
         call_time = zeros(Float64, nrow(dfFilter)),
         direct_drive_time = zeros(Int, nrow(dfFilter))
     )

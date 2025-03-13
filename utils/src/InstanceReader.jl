@@ -35,7 +35,7 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     
     # Get parameters 
     planningPeriod = TimeWindow(parametersDf[1,"start_of_planning_period"],parametersDf[1,"end_of_planning_period"])
-    serviceTimes = Dict{MobilityType,Int}(WALKING => parametersDf[1,"service_time_walking"], WHEELCHAIR => parametersDf[1,"service_time_wheelchair"])
+    serviceTimes = parametersDf[1,"service_time_walking"]
     vehicleCostPrHour = Float64(parametersDf[1,"vehicle_cost_pr_hour"])
     vehicleStartUpCost = Float64(parametersDf[1,"vehicle_start_up_cost"])
     bufferTime = parametersDf[1,"buffer_time"]
@@ -85,8 +85,7 @@ function readVehicles(vehiclesDf::DataFrame, nRequests::Int)
         maximumRideTime = row.maximum_ride_time
         
         # Read capacities 
-        capacities = Dict{MobilityType,Int}(WALKING => row.capacity_walking, WHEELCHAIR => row.capacity_wheelchair)
-        totalCapacity = row.capacity_walking + row.capacity_wheelchair
+        totalCapacity = row.capacity_walking
 
         # Read depot 
         depotLatitude = row.depot_latitude 
@@ -108,7 +107,7 @@ function readVehicles(vehiclesDf::DataFrame, nRequests::Int)
         depotLocation = Location(string("Depot ",depotId),depotLatitude,depotLongitude)
 
         # Create vehicle 
-        vehicle = Vehicle(id,availableTimeWindow,depotId,depotLocation,maximumRideTime,capacities,totalCapacity)
+        vehicle = Vehicle(id,availableTimeWindow,depotId,depotLocation,maximumRideTime,totalCapacity)
         push!(vehicles,vehicle)
         
     end
@@ -133,9 +132,6 @@ function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maxim
 
         # Read request type 
         requestType = row.request_type == 1 ? PICKUP_REQUEST : DROPOFF_REQUEST
-
-        # Read mobility type 
-        mobilityType = row.mobility_type == "Walking" ? WALKING : WHEELCHAIR
 
         # Read call time 
         callTime = Int(floor(row.call_time))
@@ -167,9 +163,9 @@ function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maxim
             pickUpTimeWindow = findTimeWindowOfPickUp(dropOffTimeWindow,directDriveTime,maximumRideTime)
         end
 
-        pickUpActivity = Activity(id,id,PICKUP,mobilityType,pickUpLocation,pickUpTimeWindow)
-        dropOffActivity = Activity(dropOffId,id,DROPOFF,mobilityType,dropOffLocation,dropOffTimeWindow)
-        request = Request(id,requestType,mobilityType,callTime,pickUpActivity,dropOffActivity,directDriveTime,maximumRideTime)
+        pickUpActivity = Activity(id,id,PICKUP,pickUpLocation,pickUpTimeWindow)
+        dropOffActivity = Activity(dropOffId,id,DROPOFF,dropOffLocation,dropOffTimeWindow)
+        request = Request(id,requestType,callTime,pickUpActivity,dropOffActivity,directDriveTime,maximumRideTime)
 
         push!(requests,request)
     end

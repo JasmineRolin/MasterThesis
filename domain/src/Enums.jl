@@ -1,7 +1,6 @@
 module Enums 
 
 export RequestType,PICKUP_REQUEST,DROPOFF_REQUEST
-export MobilityType,WALKING,WHEELCHAIR
 export ActivityType, PICKUP, DROPOFF, WAITING, DEPOT 
 
 #==
@@ -28,13 +27,6 @@ MAX_EARLY_ARRIVAL = 5
     DROPOFF_REQUEST = 1
 end 
 
-#==
- Enum that describes customer type
-==# 
-@enum MobilityType begin 
-    WALKING = 0
-    WHEELCHAIR = 1
-end
 
 
 end 
