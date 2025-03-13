@@ -45,21 +45,8 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
         # Destroy trial solution  
         destroyIdx = destroy!(scenario,trialState,parameters,configuration)
 
-        feasible, msg = checkSolutionFeasibility(scenario,trialState.currentSolution)
-        if !feasible
-            println("ALNS: INFEASIBLE SOLUTION AFTER Destroy IN ITERATION:", iteration)
-            throw(msg) 
-        end
-
-
         # Repair trial solution 
         repairIdx = repair!(scenario,trialState,configuration)
-
-        if !feasible
-            println("ALNS: INFEASIBLE SOLUTION AFTER Repair IN ITERATION:", iteration)
-            throw(msg) 
-        end
-
 
         # Check if solution is improved
         # TODO: create hash table to check if solution has been visited before
