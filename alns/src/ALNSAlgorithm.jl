@@ -76,6 +76,8 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
             if trialState.currentSolution.totalCost < currentState.bestSolution.totalCost
                 isNewBest = true
                 currentState.bestSolution = deepcopy(trialState.currentSolution)
+                println("==>ALNS: NEW BEST: Iteration: ", iteration, ", Best cost: ", currentState.bestSolution.totalCost,", Improvement from initial: ", (initialCost-currentState.bestSolution.totalCost)/initialCost, "%")
+
             end
         # Check if solution is accepted
         elseif accept(temperature,trialState.currentSolution.totalCost - currentState.currentSolution.totalCost)
