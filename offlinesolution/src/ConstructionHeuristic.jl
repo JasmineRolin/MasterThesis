@@ -18,11 +18,11 @@ function simpleConstruction(scenario::Scenario)
 
     for request in scenario.offlineRequests
         # Determine closest feasible vehicle
-        closestVehicleIdx, idxPickUp, idxDropOff, typeOfSeat = getClosestFeasibleVehicle(request,solution,scenario)
+        closestVehicleIdx, idxPickUp, idxDropOff = getClosestFeasibleVehicle(request,solution,scenario)
 
         # Insert request
         if closestVehicleIdx != -1
-            insertRequest!(request,solution.vehicleSchedules[closestVehicleIdx],idxPickUp,idxDropOff,typeOfSeat,scenario)
+            insertRequest!(request,solution.vehicleSchedules[closestVehicleIdx],idxPickUp,idxDropOff,scenario)
         else
             append!(requestBank,request.id)
         end
@@ -47,7 +47,6 @@ function getClosestFeasibleVehicle(request::Request, solution::Solution, scenari
     closestVehicleIdx = -1
     bestPickUpIdx = -1
     bestDropOffIdx = -1
-    bestTypeOfSeat = nothing
     requestPickupId = request.pickUpActivity.id
     requestTime = request.pickUpActivity.timeWindow.startTime
 
@@ -78,7 +77,7 @@ function getClosestFeasibleVehicle(request::Request, solution::Solution, scenari
         travelTime = scenario.time[vehicleLocationId, requestPickupId]
 
         # Determine if there is a feasible place to insert it
-        feasible, idxPickUp, idxDropOff, typeOfSeat = findFeasibleInsertionInSchedule(request,solution.vehicleSchedules[vehicleIdx],scenario)
+        feasible, idxPickUp, idxDropOff = findFeasibleInsertionInSchedule(request,solution.vehicleSchedules[vehicleIdx],scenario)
 
         # Update closest vehicle if a shorter travel time is found
         if feasible && travelTime < minTravelTime
@@ -87,11 +86,10 @@ function getClosestFeasibleVehicle(request::Request, solution::Solution, scenari
             closestVehicleIdx = vehicleIdx
             bestPickUpIdx = idxPickUp
             bestDropOffIdx = idxDropOff
-            bestTypeOfSeat = typeOfSeat
         end
     end
     
-    return closestVehicleIdx, bestPickUpIdx, bestDropOffIdx, bestTypeOfSeat
+    return closestVehicleIdx, bestPickUpIdx, bestDropOffIdx
 end
 
 
@@ -110,9 +108,9 @@ function findFeasibleInsertionInSchedule(request::Request,vehicleSchedule::Vehic
     for idxPickUp in 1:length(vehicleSchedule.route)-1
         for idxDropOff in idxPickUp:length(vehicleSchedule.route)-1
             # Check feasibility
-            feasible, typeOfSeat = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,idxPickUp,idxDropOff,scenario)
+            feasible = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,idxPickUp,idxDropOff,scenario)
             if feasible
-                return true, idxPickUp, idxDropOff, typeOfSeat
+                return true, idxPickUp, idxDropOff
             end
         end 
     end

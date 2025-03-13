@@ -11,9 +11,10 @@ using utils, domain, offlinesolution
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
     timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
+    scenarioName = "Small"
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Construct solution
     solution, requestBank = simpleConstruction(scenario)
@@ -33,9 +34,10 @@ end
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
     timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
+    scenarioName = "Small"
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Construct solution
     solution, requestBank = simpleConstruction(scenario)
@@ -57,13 +59,14 @@ end
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
     timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
+    scenarioName = "Small"
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Construct solution
     solution, requestBank = simpleConstruction(scenario)
-    insertRequest!(scenario.requests[3],solution.vehicleSchedules[1],1,1,WALKING,scenario)
+    insertRequest!(scenario.requests[3],solution.vehicleSchedules[1],1,1,scenario)
 
     # Add online requests to taxies 
     # TODO: remove when online solution is created 
@@ -82,9 +85,10 @@ end
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
     timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
+    scenarioName = "Small"
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Construct solution
     solution, requestBank = simpleConstruction(scenario)

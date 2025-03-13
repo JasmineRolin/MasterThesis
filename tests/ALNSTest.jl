@@ -12,9 +12,10 @@ Test ALNSFunctions
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
     timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
+    scenarioName = "Big"
     
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
     
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
@@ -26,8 +27,9 @@ Test ALNSFunctions
     # Construct ALNS parameters
     parameters = ALNSParameters()
     setMinMaxValuesALNSParameters(parameters,scenario.time,scenario.requests)
-    parameters.minPercentToDestroy = 0.7
-    parameters.maxPercentToDestroy = 0.7
+    parameters.minPercentToDestroy = 0.1
+    parameters.maxPercentToDestroy = 0.9
+    
 
     # Shaw Destroy 
     shawRemoval!(scenario,currentState,parameters)
@@ -93,9 +95,11 @@ end
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
     timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
-    
+    scenarioName = "Big"
+    alnsParameters = "tests/resources/ALNSParameters_Article.json"
+
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
     
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
@@ -103,12 +107,6 @@ end
 
     # Construct ALNS state
     currentState = ALNSState(solution,1,0,requestBank)
-
-    # Construct ALNS parameters
-    parameters = ALNSParameters()
-    setMinMaxValuesALNSParameters(parameters,scenario.time,scenario.requests)
-    parameters.minPercentToDestroy = 0.7
-    parameters.maxPercentToDestroy = 0.7
 
     # Choose destroy methods
     destroyMethods = Vector{GenericMethod}()
@@ -122,7 +120,7 @@ end
     addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
     
-    finalSolution = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods,simpleConstruction,"")
+    finalSolution, specifications, KPIs = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters)
 
     feasible, msg = checkSolutionFeasibility(scenario,finalSolution)
     @test feasible == true

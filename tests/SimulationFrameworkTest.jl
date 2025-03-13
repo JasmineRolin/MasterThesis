@@ -12,9 +12,10 @@ using simulationframework
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "tests/resources/distanceMatrix_SmallToTestSimulation.txt"
     timeMatrixFile = "tests/resources/timeMatrix_SmallToTestSimulation.txt"
+    scenarioName = "SmallToTestSimulation."
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Simulate scenario 
     solution = simulateScenario(scenario)

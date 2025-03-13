@@ -1,6 +1,7 @@
 module ALNSFunctions 
 
 using UnPack, JSON3, domain, ..ALNSDomain
+using StatsBase
 
 export readALNSParameters
 export addMethod!
@@ -18,6 +19,7 @@ export termination, findStartTemperature, accept, updateScoreAndCount, updateWei
     jsonData = JSON3.read(read(parametersFile, String))  # Read JSON file as a string and parse it
     return ALNSParameters(
         Float64(jsonData["timeLimit"]),
+        Int(jsonData["printSegmentSize"]),
         Int(jsonData["segmentSize"]),
         Float64(jsonData["w"]),
         Float64(jsonData["coolingRate"]),
@@ -48,7 +50,7 @@ function destroy!(scenario::Scenario,state::ALNSState,parameters::ALNSParameters
     # Select method 
     destroyIdx = rouletteWheel(state.destroyWeights)
 
-    println("\t Destroy method: ", configuration.destroyMethods[destroyIdx].name)
+    #println("\t Destroy method: ", configuration.destroyMethods[destroyIdx].name)
 
     # Use method 
     configuration.destroyMethods[destroyIdx].method(scenario,state,parameters)
@@ -63,7 +65,7 @@ function repair!(scenario::Scenario, state::ALNSState, configuration::ALNSConfig
     # Select method 
     repairIdx = rouletteWheel(state.repairWeights)
 
-    println("\t Repair method: ", configuration.repairMethods[repairIdx].name)
+    # println("\t Repair method: ", configuration.repairMethods[repairIdx].name)
 
     # Use method 
     configuration.repairMethods[repairIdx].method(state,scenario)
@@ -77,17 +79,13 @@ end
 ==#
 function rouletteWheel(weights::Vector{Float64})::Int
     totalWeight = sum(weights)
-    r = rand() * totalWeight  # Generate a random number in [0, totalWeight]
+    probabilities = weights ./ totalWeight
+    elements = collect(1:length(weights))
 
-    cumulativeSum = 0.0
-    for (i, w) in enumerate(weights)
-        cumulativeSum += w
-        if r <= cumulativeSum
-            return i  # Return the index of the selected element
-        end
-    end
+    selectedElement = sample(elements, Weights(probabilities))
 
-    return length(weights)  # Fallback (should never be reached)
+    return selectedElement
+
 end
 
 #==

@@ -41,10 +41,10 @@ end
     pickUpTimeWindow = TimeWindow(90,100)
     dropOffTimeWindow = TimeWindow(900,980)
 
-    pickUpActivity = Activity(1,0,PICKUP,WALKING,pickUpLocation,pickUpTimeWindow)
-    dropOffActivity = Activity(1,0,PICKUP,WALKING,dropOffLocation,dropOffTimeWindow)
+    pickUpActivity = Activity(1,0,PICKUP,pickUpLocation,pickUpTimeWindow)
+    dropOffActivity = Activity(1,0,PICKUP,dropOffLocation,dropOffTimeWindow)
 
-    request = Request(0,PICKUP_REQUEST,WALKING,500,pickUpActivity,dropOffActivity,10,100)
+    request = Request(0,PICKUP_REQUEST,500,pickUpActivity,dropOffActivity,10,100)
 
     # Tests
     @test typeof(request) == Request
@@ -58,9 +58,7 @@ end
     depotLocation = Location("depot",10.0,10.0)
     timeWindow = TimeWindow(900,980)
 
-    capacities = Dict{MobilityType, Int}(WALKING => 3, WHEELCHAIR => 5)
-
-    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,capacities,8)
+    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,8)
 
     # Tests
     @test typeof(vehicle) == Vehicle
@@ -75,18 +73,15 @@ end
     depotLocation = Location("depot",10,10)
     timeWindow = TimeWindow(900,980)
 
-    capacities = Dict{MobilityType, Int}(WALKING => 3, WHEELCHAIR => 5)
-
-    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,capacities,8)
+    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,8)
 
     # Activitys 
     location = Location("PU",10.0,10.0)
     timeWindow = TimeWindow(90,100)
-    activity = Activity(1,0,PICKUP,WALKING,location,timeWindow)
-    mobilityAssignment = WALKING
+    activity = Activity(1,0,PICKUP,location,timeWindow)
 
     # RequestAssignment
-    activityAssignment = ActivityAssignment(activity,vehicle,8,7,mobilityAssignment)
+    activityAssignment = ActivityAssignment(activity,vehicle,8,7)
 
     # Tests
     @test typeof(activityAssignment) == ActivityAssignment
@@ -102,9 +97,7 @@ end
     depotLocation = Location("depot",10,10)
     timeWindow = TimeWindow(900,980)
 
-    capacities = Dict{MobilityType, Int}(WALKING => 3, WHEELCHAIR => 5)
-
-    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,capacities,8)
+    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,8)
 
     vehicleSchedule = VehicleSchedule(vehicle)
 
@@ -124,9 +117,10 @@ end
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
     timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
+    scenarioName = "Small"
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Solution 
     solution = Solution(scenario)

@@ -14,9 +14,10 @@ using offlinesolution
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
     timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
+    scenarioName = "Small"
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
@@ -30,7 +31,6 @@ using offlinesolution
     solution.totalIdleTime -= solution.vehicleSchedules[3].totalIdleTime + solution.vehicleSchedules[4].totalIdleTime
 
     solution.vehicleSchedules[3].numberOfWalking = [solution.vehicleSchedules[3].numberOfWalking[1:4];solution.vehicleSchedules[4].numberOfWalking[2:4];solution.vehicleSchedules[3].numberOfWalking[end]]
-    solution.vehicleSchedules[3].numberOfWheelchair = [solution.vehicleSchedules[3].numberOfWheelchair[1:4];solution.vehicleSchedules[4].numberOfWheelchair[2:4];solution.vehicleSchedules[3].numberOfWheelchair[end]]
 
     solution.vehicleSchedules[3].route = [solution.vehicleSchedules[3].route[1:4];solution.vehicleSchedules[4].route[2:4];solution.vehicleSchedules[3].route[end]]
     solution.vehicleSchedules[3].route[4].endOfServiceTime = 517
@@ -91,9 +91,10 @@ end
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
     timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
+    scenarioName = "Konsentra"
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
@@ -129,9 +130,10 @@ end
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
     timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
+    scenarioName = "Small"
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
@@ -145,8 +147,7 @@ end
     solution.totalIdleTime -= solution.vehicleSchedules[3].totalIdleTime + solution.vehicleSchedules[4].totalIdleTime
 
     solution.vehicleSchedules[3].numberOfWalking = [solution.vehicleSchedules[3].numberOfWalking[1:4];solution.vehicleSchedules[4].numberOfWalking[2:4];solution.vehicleSchedules[3].numberOfWalking[end]]
-    solution.vehicleSchedules[3].numberOfWheelchair = [solution.vehicleSchedules[3].numberOfWheelchair[1:4];solution.vehicleSchedules[4].numberOfWheelchair[2:4];solution.vehicleSchedules[3].numberOfWheelchair[end]]
-
+    
     solution.vehicleSchedules[3].route = [solution.vehicleSchedules[3].route[1:4];solution.vehicleSchedules[4].route[2:4];solution.vehicleSchedules[3].route[end]]
     solution.vehicleSchedules[3].route[4].endOfServiceTime = 517
     solution.vehicleSchedules[3].route[end-1].endOfServiceTime = 1252
@@ -208,9 +209,10 @@ end
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
     timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
+    scenarioName = "Konsentra"
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
@@ -247,9 +249,10 @@ end
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
     timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
+    scenarioName = "Small"
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
@@ -263,8 +266,7 @@ end
     solution.totalIdleTime -= solution.vehicleSchedules[3].totalIdleTime + solution.vehicleSchedules[4].totalIdleTime
 
     solution.vehicleSchedules[3].numberOfWalking = [solution.vehicleSchedules[3].numberOfWalking[1:4];solution.vehicleSchedules[4].numberOfWalking[2:4];solution.vehicleSchedules[3].numberOfWalking[end]]
-    solution.vehicleSchedules[3].numberOfWheelchair = [solution.vehicleSchedules[3].numberOfWheelchair[1:4];solution.vehicleSchedules[4].numberOfWheelchair[2:4];solution.vehicleSchedules[3].numberOfWheelchair[end]]
-
+   
     solution.vehicleSchedules[3].route = [solution.vehicleSchedules[3].route[1:4];solution.vehicleSchedules[4].route[2:4];solution.vehicleSchedules[3].route[end]]
     solution.vehicleSchedules[3].route[4].endOfServiceTime = 517
     solution.vehicleSchedules[3].route[end-1].endOfServiceTime = 1252
@@ -319,10 +321,10 @@ end
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
     timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
+    scenarioName = "Konsentra"
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
-
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario)
     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented

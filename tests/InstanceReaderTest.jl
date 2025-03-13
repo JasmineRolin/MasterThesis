@@ -15,9 +15,10 @@ using utils
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
     timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
+    scenarioName = "Small"
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Check vehicles
     @test length(scenario.vehicles) == 4
@@ -91,9 +92,10 @@ end
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
     timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
+    scenarioName = "Konsentra_Data"
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,distanceMatrixFile,timeMatrixFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     @test length(scenario.requests) == 28 
 

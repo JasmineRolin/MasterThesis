@@ -12,7 +12,7 @@ export GenericMethod
 export ALNSParameters, readParameters
 export ALNSConfiguration
 export ALNSState
-export setMinMaxValuesALNSParameters
+export setMinMaxValuesALNSParameters,ALNSParametersToDict
 
 #== 
  Import from ALNSFunctions 
@@ -42,6 +42,12 @@ using .RepairMethods
 export greedyInsertion
 export regretInsertion
 
+#==
+ Import from ALNSResults
+==#
+include("ALNSResults.jl")
+using .ALNSResults 
+export ALNSResult
 
 #==
  Import from ALNSAlgorithm
@@ -56,6 +62,7 @@ export ALNS
 include("ALNSRunner.jl")
 using .ALNSRunner
 export runALNS
+
 
 
 end

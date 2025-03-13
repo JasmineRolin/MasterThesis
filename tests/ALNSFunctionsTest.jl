@@ -12,7 +12,8 @@ Test ALNSFunctions
 
     @test typeof(parameters) == ALNSParameters
     @test parameters.timeLimit == 100.0 
-    @test parameters.segmentSize == 10
+    @test parameters.printSegmentSize == 100
+    @test parameters.segmentSize == 100
     @test parameters.w == 0.05
     @test parameters.coolingRate == 0.99975
     @test parameters.reactionFactor == 0.01 
@@ -101,17 +102,15 @@ end
     depotLocation = Location("depot",10,10)
     timeWindow = TimeWindow(900,980)
 
-    capacities = Dict{MobilityType, Int}(WALKING => 3, WHEELCHAIR => 5)
-
-    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,capacities,8)
+    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,8)
 
     # Activitys 
     location = Location("PU",10.0,10.0)
     timeWindow = TimeWindow(90,100)
-    activity = Activity(1,0,PICKUP,WALKING,location,timeWindow)
+    activity = Activity(1,0,PICKUP,location,timeWindow)
 
     # RequestAssignment
-    activityAssignment = ActivityAssignment(activity,vehicle,8,7,WALKING)
+    activityAssignment = ActivityAssignment(activity,vehicle,8,7)
 
     # VehicleSchedule
     route = [activityAssignment]
@@ -156,17 +155,15 @@ end
     depotLocation = Location("depot",10,10)
     timeWindow = TimeWindow(900,980)
 
-    capacities = Dict{MobilityType, Int}(WALKING => 3, WHEELCHAIR => 5)
-
-    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,capacities,8)
+    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,8)
 
     # Activitys 
     location = Location("PU",10.0,10.0)
     timeWindow = TimeWindow(90,100)
-    activity = Activity(1,0,PICKUP,WALKING,location,timeWindow)
+    activity = Activity(1,0,PICKUP,location,timeWindow)
 
     # RequestAssignment
-    activityAssignment = ActivityAssignment(activity,vehicle,8,7,WALKING)
+    activityAssignment = ActivityAssignment(activity,vehicle,8,7)
 
     # VehicleSchedule
     route = [activityAssignment]
@@ -211,17 +208,15 @@ end
     depotLocation = Location("depot",10,10)
     timeWindow = TimeWindow(900,980)
 
-    capacities = Dict{MobilityType, Int}(WALKING => 3, WHEELCHAIR => 5)
-
-    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,capacities,8)
+    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,8)
 
     # Activitys 
     location = Location("PU",10.0,10.0)
     timeWindow = TimeWindow(90,100)
-    activity = Activity(1,0,PICKUP,WALKING,location,timeWindow)
+    activity = Activity(1,0,PICKUP,location,timeWindow)
 
     # RequestAssignment
-    activityAssignment = ActivityAssignment(activity,vehicle,8,7,WALKING)
+    activityAssignment = ActivityAssignment(activity,vehicle,8,7)
 
     # VehicleSchedule
     route = [activityAssignment]
@@ -245,6 +240,7 @@ end
     # Create configuration 
     # Parameters 
     parameters = ALNSParameters()
+    parameters.segmentSize = 20
     configuration = ALNSConfiguration(parameters)
     addMethod!(configuration.destroyMethods,"dest1",dest1)
     addMethod!(configuration.destroyMethods,"dest2",dest2)
@@ -256,17 +252,15 @@ end
     depotLocation = Location("depot",10,10)
     timeWindow = TimeWindow(900,980)
 
-    capacities = Dict{MobilityType, Int}(WALKING => 3, WHEELCHAIR => 5)
-
-    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,capacities,8)
+    vehicle = Vehicle(0,timeWindow,1,depotLocation,80,8)
 
     # Activitys 
     location = Location("PU",10.0,10.0)
     timeWindow = TimeWindow(90,100)
-    activity = Activity(1,0,PICKUP,WALKING,location,timeWindow)
+    activity = Activity(1,0,PICKUP,location,timeWindow)
 
     # RequestAssignment
-    activityAssignment = ActivityAssignment(activity,vehicle,8,7,WALKING)
+    activityAssignment = ActivityAssignment(activity,vehicle,8,7)
 
     # VehicleSchedule
     route = [activityAssignment]
