@@ -7,13 +7,11 @@ export checkSolutionFeasibility,checkRouteFeasibility
 #==
 # Function to check feasibility of solution 
 ==#
-function checkSolutionFeasibility(scenario::Scenario,solution::Solution)
+function checkSolutionFeasibility(scenario::Scenario,solution::Solution,requests::Vector{Request})
     @unpack vehicleSchedules, totalCost, nTaxi, totalRideTime, totalDistance, totalIdleTime = solution
 
-    # Collect ids of all activities in scenario - assuming activities have id 1:2*nRequests
-    nRequests = length(scenario.requests)
-    activityIds = collect(1:(2*nRequests))
-    nActivities = length(activityIds)
+    # Collect reuqest ids 
+    activityIds = [[r.dropOffActivity.id for r in requests];[r.pickUpActivity.id for r in requests]]
 
     # Keep track of serviced activities assuming that activity 
     servicedActivities = Set{Int}()
@@ -50,7 +48,8 @@ function checkSolutionFeasibility(scenario::Scenario,solution::Solution)
     end
 
     # Check that all activities are serviced
-    if (nActivities-length(servicedActivities)) != 2*nTaxi # TODO: add check if we add list of activities serviced by taxi 
+    notServicedActivities = setdiff(activityIds, servicedActivities)
+    if length(notServicedActivities) != 2*nTaxi # TODO: add check if we add list of activities serviced by taxi 
         msg = "SOLUTION INFEASIBLE: Not all activities are serviced"
         return false, msg
     end

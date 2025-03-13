@@ -49,12 +49,10 @@ function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::
     ALNSOutputFileName = string(outputFileFolderWithDate,"ALNSOutput.csv")
 
     # Construct initial solution 
-    initialSolution, requestBank = initialSolutionConstructor(scenario)
-    initialSolution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
-    initialSolution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
+    initialSolution, requestBank = initialSolutionConstructor(scenario,requests)
 
     # Call ALNS 
-    solution = ALNS(scenario,initialSolution, requestBank,configuration,parameters, ALNSOutputFileName)
+    solution = ALNS(scenario,requests,initialSolution, requestBank,configuration,parameters, ALNSOutputFileName)
 
     # Write KPIs to file 
     KPIFileName = string(outputFileFolderWithDate,"ALNSKPIs.json")

@@ -17,15 +17,10 @@ using utils, domain, offlinesolution
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Construct solution
-    solution, requestBank = simpleConstruction(scenario)
-
-    # Add online requests to taxies 
-    # TODO: remove when online solution is created 
-    solution.nTaxi += length(scenario.onlineRequests)
-    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
+    solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
 
     # Check solution
-    feasible, msg = checkSolutionFeasibility(scenario,solution)
+    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.offlineRequests)
     @test feasible == true
 end
 
@@ -41,18 +36,13 @@ end
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Construct solution
-    solution, requestBank = simpleConstruction(scenario)
+    solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
     solution.totalCost = 90.0
 
-    # Add online requests to taxies 
-    # TODO: remove when online solution is created 
-    solution.nTaxi += length(scenario.onlineRequests)
-    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
-
     # Check solution
-    feasible, msg = checkSolutionFeasibility(scenario,solution)
+    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.offlineRequests)
     @test feasible == false
-    @test msg == "SOLUTION INFEASIBLE: Total cost of solution is incorrect. Calculated: 2000.0, actual: 2090.0"
+    @test msg == "SOLUTION INFEASIBLE: Total cost of solution is incorrect. Calculated: 0.0, actual: 90.0"
 end
 
 @testset "checkSolutionFeasibility test - activity serviced multiple times" begin
@@ -67,16 +57,11 @@ end
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Construct solution
-    solution, requestBank = simpleConstruction(scenario)
+    solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
     insertRequest!(scenario.requests[3],solution.vehicleSchedules[1],1,1,scenario)
 
-    # Add online requests to taxies 
-    # TODO: remove when online solution is created 
-    solution.nTaxi += length(scenario.onlineRequests)
-    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
-
     # Check solution
-    feasible, msg = checkSolutionFeasibility(scenario,solution)
+    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.offlineRequests)
     @test feasible == false
     @test msg == "SOLUTION INFEASIBLE: Activity 8 is serviced more than once"
 end
@@ -94,15 +79,10 @@ end
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Construct solution
-    solution, requestBank = simpleConstruction(scenario)
-
-    # Add online requests to taxies 
-    # TODO: remove when online solution is created 
-    solution.nTaxi += length(scenario.onlineRequests) - 1
-    solution.totalCost += (length(scenario.onlineRequests) - 1) * scenario.taxiParameter # TODO: Remove when online request are implemented
+    solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
 
     # Check solution
-    feasible, msg = checkSolutionFeasibility(scenario,solution)
+    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.requests)
     @test feasible == false
     @test msg == "SOLUTION INFEASIBLE: Not all activities are serviced"
 end
