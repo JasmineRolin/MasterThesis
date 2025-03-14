@@ -1,6 +1,6 @@
 #!/bin/sh
 #BSUB -J test
-#BSUB -o output.out
+#BSUB -o output_%J.out
 #BSUB -q hpc
 #BSUB -n 8
 #BSUB -R "rusage[mem=2GB]"
