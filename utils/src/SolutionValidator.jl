@@ -20,7 +20,7 @@ function checkSolutionFeasibility(scenario::Scenario,solution::Solution,requests
     totalCostCheck = 0.0 
     totalRideTimeCheck = 0
     totalDistanceCheck = 0.0
-    # TODO: keep track of idle time 
+    totalIdleTimeCheck = 0.0
 
     # Check all routes 
     for vehicleSchedule in vehicleSchedules
@@ -45,6 +45,7 @@ function checkSolutionFeasibility(scenario::Scenario,solution::Solution,requests
         totalRideTimeCheck += vehicleSchedule.totalTime
         totalDistanceCheck += vehicleSchedule.totalDistance
         totalCostCheck += vehicleSchedule.totalCost
+        totalIdleTimeCheck += vehicleSchedule.totalIdleTime
     end
 
     # Check that all activities are serviced
@@ -66,6 +67,10 @@ function checkSolutionFeasibility(scenario::Scenario,solution::Solution,requests
     end
     if totalRideTimeCheck != totalRideTime
         msg = "SOLUTION INFEASIBLE: Total ride time of solution is incorrect. Calculated: $(totalRideTimeCheck), actual: $(totalRideTime)"
+        return false, msg
+    end
+    if totalIdleTimeCheck != totalIdleTime
+        msg = "SOLUTION INFEASIBLE: Total idle time of solution is incorrect. Calculated: $(totalIdleTimeCheck), actual: $(totalIdleTime)"
         return false, msg
     end
 
@@ -116,6 +121,7 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
     
     # Check all activities on route 
     totalDistanceCheck = 0.0
+    totalIdleTimeCheck = 0.0
     currentCapacities = 0
     hasBeenServiced = Set{Int}() # TODO: Check if this still works with waiting activities
     endOfServiceTimePickUps = Dict{Int,Int}() # Keep track of end of service time for pick-ups
@@ -178,10 +184,8 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
                 msg = "ROUTE INFEASIBLE: Capacities not updated correctly for vehicle $(vehicle.id)"
                 return false, msg, Set{Int}() 
             end
-
-            
-
-
+        else
+            totalIdleTimeCheck += endOfServiceTime - startOfServiceTime
         end
 
         
@@ -213,6 +217,11 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
 
     if totalTime != activeTime
         msg = "ROUTE INFEASIBLE: Total time based on waiting nodes $(totalTime) is incorrect compared to active time $(activeTime) for vehicle $(vehicle.id)"
+        return false, msg, Set{Int}()
+    end
+
+    if totalIdleTimeCheck != vehicleSchedule.totalIdleTime
+        msg = "ROUTE INFEASIBLE: Total idle time $(totalIdleTimeCheck) is incorrect. Calculated: $(totalIdleTimeCheck), vehicle: $(vehicle.id)"
         return false, msg, Set{Int}()
     end
     

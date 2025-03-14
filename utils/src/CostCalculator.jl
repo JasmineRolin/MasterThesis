@@ -97,6 +97,7 @@ function getTotalCostDistanceTimeOfSolution(scenario::Scenario,solution::Solutio
     totalCost = 0.0
     totalDistance = 0.0
     totalTime = 0
+    totalIdleTime = 0
     for schedule in solution.vehicleSchedules
         if length(schedule.route) == 2 && schedule.route[1].activity.activityType == DEPOT && schedule.route[2].activity.activityType == DEPOT
             continue
@@ -105,11 +106,12 @@ function getTotalCostDistanceTimeOfSolution(scenario::Scenario,solution::Solutio
         totalCost += schedule.totalCost
         totalDistance += schedule.totalDistance
         totalTime += schedule.totalTime
+        totalIdleTime += schedule.totalIdleTime
     end
 
     totalCost += solution.nTaxi * scenario.taxiParameter
 
-    return totalCost, totalDistance, totalTime
+    return totalCost, totalDistance, totalTime, totalIdleTime
 end
 
 end
