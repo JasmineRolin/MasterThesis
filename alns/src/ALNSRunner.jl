@@ -63,7 +63,7 @@ function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::
         plotFolder = outputFileFolderWithDate
     end
 
-    specification, KPIS = ALNSResult(specificationsFileName,KPIFileName,ALNSOutputFileName,savePlots=savePlots,displayPlots=displayPlots,plotFolder=plotFolder)
+    specification, KPIS = ALNSResult(specificationsFileName,KPIFileName,ALNSOutputFileName,scenario,solution,requests,requestBank,savePlots=savePlots,displayPlots=displayPlots,plotFolder=plotFolder)
 
     return solution, requestBank, specification, KPIS
 end
