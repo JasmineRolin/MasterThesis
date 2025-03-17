@@ -170,7 +170,7 @@ function generateVehiclesKonsentra(shifts, locations)
     end
 
     # Write to CSV
-    CSV.write("Data/Konsentra/Vehicles.csv", vehicles)
+    CSV.write("Data/Konsentra/Vehicles_$Gamma.csv", vehicles)
 end
 
 # ------
