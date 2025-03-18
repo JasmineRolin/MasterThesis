@@ -113,7 +113,7 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
         msg = "ROUTE INFEASIBLE: Total time is incorrect for vehicle $(vehicle.id). Calculated time $(durationActiveTimeWindow), actual time $(totalTime)"
         return false, msg, Set{Int}()
     end
-    if totalCost != getTotalCostRoute(scenario,route)
+    if !isapprox(totalCost, getTotalCostRoute(scenario,route),atol=0.0001)
         msg = "ROUTE INFEASIBLE: Total cost is incorrect for vehicle $(vehicle.id). Calculated cost $(getTotalCostRoute(scenario,route)), actual cost $(totalCost)"
         return false, msg, Set{Int}()
     end
@@ -221,7 +221,7 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
     end
 
     if totalIdleTimeCheck != vehicleSchedule.totalIdleTime
-        msg = "ROUTE INFEASIBLE: Total idle time $(totalIdleTimeCheck) is incorrect. Calculated: $(totalIdleTimeCheck), vehicle: $(vehicle.id)"
+        msg = "ROUTE INFEASIBLE: Total idle time $(totalIdleTimeCheck) is incorrect. Calculated: $(vehicleSchedule.totalIdleTime), vehicle: $(vehicle.id)"
         return false, msg, Set{Int}()
     end
     

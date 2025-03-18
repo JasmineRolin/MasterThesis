@@ -44,28 +44,13 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
 
         # Destroy trial solution  
         destroyIdx = destroy!(scenario,trialState,parameters,configuration)
-
-        feasible, msg = checkSolutionFeasibility(scenario,trialState.currentSolution,requests)
-        if !feasible
-            println("ALNS: INFEASIBLE SOLUTION AFTER Destroy IN ITERATION:", iteration)
-            throw(msg) 
-        end
-
+        
         # Repair trial solution 
         repairIdx = repair!(scenario,trialState,configuration)
 
-        feasible, msg = checkSolutionFeasibility(scenario,trialState.currentSolution,requests)
-        if !feasible
-            println("ALNS: INFEASIBLE SOLUTION AFTER Repair IN ITERATION:", iteration)
-            throw(msg) 
-        end
-
         # Check if solution is improved
         # TODO: create hash table to check if solution has been visited before
-        # TODO: jas - update . accept always true if solution is better than current sol!
         if trialState.currentSolution.totalCost < currentState.currentSolution.totalCost
-           # println("==>ALNS: IMPROVED: Iteration: ", iteration, ", Current cost: ", currentState.currentSolution.totalCost,", Trial cost: ", trialState.currentSolution.totalCost)
-
             isImproved = true
             isAccepted = true
             currentState.currentSolution = deepcopy(trialState.currentSolution)
@@ -76,16 +61,12 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
 
             # Check if new best solution
             if trialState.currentSolution.totalCost < currentState.bestSolution.totalCost
-               # println("==>ALNS: NEW BEST: Iteration: ", iteration, ", Best cost: ", trialState.currentSolution.totalCost,", Previous best: ", currentState.bestSolution.totalCost)
-
                 isNewBest = true
                 currentState.bestSolution = deepcopy(trialState.currentSolution)
 
             end
         # Check if solution is accepted
         elseif accept(temperature,trialState.currentSolution.totalCost - currentState.currentSolution.totalCost)
-           # println("==>ALNS: ACCEPTED: Iteration: ", iteration, ", Current cost: ", currentState.currentSolution.totalCost,", Trial cost: ", trialState.currentSolution.totalCost)
-
             isAccepted = true
             currentState.currentSolution = deepcopy(trialState.currentSolution)
             currentState.requestBank = deepcopy(trialState.requestBank)

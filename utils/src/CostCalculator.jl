@@ -57,22 +57,22 @@ function getTotalCostRoute(scenario::Scenario,route::Vector{ActivityAssignment})
         elseif activity.activityType == DROPOFF && haskey(pickupTimes, activity.requestId)
             pickupTime = pickupTimes[activity.requestId]
             dropoffTime = assignment.startOfServiceTime
-            directTime = time[activity.requestId, activity.id] 
-            actualTime = (dropoffTime - pickupTime) 
+            directTime = Float64(time[activity.requestId, activity.id])
+            actualTime = Float64(dropoffTime - pickupTime)
             ratio += actualTime/directTime
         end
     end
     
-    return ratio
+    return ratio*10.0
 end
 
 #==
 # Function to get cost of request 
 =#
 function getCostOfRequest(time::Array{Int,2},pickUpActivity::ActivityAssignment,dropOffActivity::ActivityAssignment)
-    directTime = time[pickUpActivity.activity.id,dropOffActivity.activity.id]
-    actualTime = (dropOffActivity.startOfServiceTime - pickUpActivity.endOfServiceTime)
-    return  actualTime/directTime
+    directTime = Float64(time[pickUpActivity.activity.id,dropOffActivity.activity.id])
+    actualTime = Float64(dropOffActivity.startOfServiceTime - pickUpActivity.endOfServiceTime)
+    return  actualTime/directTime*10.0
 end
 
 #==
