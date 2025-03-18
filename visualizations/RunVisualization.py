@@ -32,7 +32,7 @@ customerAssignment = {}
 # Initialize an empty dictionary for the customers
 depots = {}
 
-file_path = "/Users/jasminerolin/Documents/GitHub/MasterThesis/Data/Konsentra/Vehicles.csv" #Data/Konsentra/Vehicles.csv"
+file_path = "/Users/jasminerolin/Documents/GitHub/MasterThesis/Data/Konsentra/Vehicles_0.5.csv" #Data/Konsentra/Vehicles.csv"
 df = pd.read_csv(file_path)
 
 # Loop over the rows of the dataframe and populate the customers dictionary
