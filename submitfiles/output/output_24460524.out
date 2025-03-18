@@ -1,0 +1,125 @@
+Loaded module: julia/1.10.2
+  Activating project at `~/MasterThesis`
+   Resolving package versions...
+ERROR: InterruptException:
+Stacktrace:
+  [1] print_table(f::Nothing, io::IOStream, a::Dict{String, Any}, ks::Vector{String}; indent::Int64, first_block::Bool, sorted::Bool, by::Function)
+    @ TOML.Internals.Printer ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/TOML/src/print.jl:200
+  [2] print_table (repeats 2 times)
+    @ ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/TOML/src/print.jl:139 [inlined]
+  [3] print
+    @ ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/TOML/src/print.jl:214 [inlined]
+  [4] #53
+    @ ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/Pkg/src/Types.jl:564 [inlined]
+  [5] open(::Pkg.Types.var"#53#56"{Dict{String, Any}}, ::String, ::Vararg{String}; kwargs::@Kwargs{})
+    @ Base ./io.jl:396
+  [6] open
+    @ ./io.jl:393 [inlined]
+  [7] (::Pkg.Types.var"#51#54"{String, String, Dates.DateTime, String})()
+    @ Pkg.Types ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/Pkg/src/Types.jl:563
+  [8] mkpidlock(f::Pkg.Types.var"#51#54"{String, String, Dates.DateTime, String}, at::String, pid::Int32; kwopts::@Kwargs{stale_age::Int64})
+    @ FileWatching.Pidfile ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:93
+  [9] mkpidlock
+    @ ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:90 [inlined]
+ [10] mkpidlock
+    @ ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:88 [inlined]
+ [11] write_env_usage(source_file::String, usage_filepath::String)
+    @ Pkg.Types ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/Pkg/src/Types.jl:539
+ [12] download_artifacts(env::Pkg.Types.EnvCache; platform::Base.BinaryPlatforms.Platform, julia_version::VersionNumber, verbose::Bool, io::IOStream)
+    @ Pkg.Operations ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/Pkg/src/Operations.jl:758
+ [13] add(ctx::Pkg.Types.Context, pkgs::Vector{Pkg.Types.PackageSpec}, new_git::Set{Base.UUID}; preserve::Pkg.Types.PreserveLevel, platform::Base.BinaryPlatforms.Platform)
+    @ Pkg.Operations ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/Pkg/src/Operations.jl:1394
+ [14] add
+    @ ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/Pkg/src/Operations.jl:1376 [inlined]
+ [15] add(ctx::Pkg.Types.Context, pkgs::Vector{Pkg.Types.PackageSpec}; preserve::Pkg.Types.PreserveLevel, platform::Base.BinaryPlatforms.Platform, kwargs::@Kwargs{io::IOStream})
+    @ Pkg.API ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/Pkg/src/API.jl:278
+ [16] add(pkgs::Vector{Pkg.Types.PackageSpec}; io::IOStream, kwargs::@Kwargs{})
+    @ Pkg.API ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/Pkg/src/API.jl:159
+ [17] add(pkgs::Vector{Pkg.Types.PackageSpec})
+    @ Pkg.API ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/Pkg/src/API.jl:148
+ [18] add
+    @ ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/Pkg/src/API.jl:147 [inlined]
+ [19] add(pkg::String)
+    @ Pkg.API ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/Pkg/src/API.jl:146
+ [20] top-level scope
+    @ none:1
+
+[3047773] signal (15): Terminated
+Terminated
+in expression starting at none:1
+gc_mark_obj8 at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/gc.c:1855
+gc_mark_outrefs at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/gc.c:2634 [inlined]
+gc_mark_loop_serial_ at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/gc.c:2690
+gc_mark_loop_serial at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/gc.c:2713
+gc_mark_loop at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/gc.c:2908 [inlined]
+_jl_gc_collect at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/gc.c:3241
+ijl_gc_collect at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/gc.c:3538
+maybe_collect at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/gc.c:937 [inlined]
+jl_gc_pool_alloc_inner at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/gc.c:1293 [inlined]
+jl_gc_pool_alloc_noinline at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/gc.c:1350
+jl_gc_alloc_ at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/julia_internal.h:476 [inlined]
+ijl_string_to_array at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/array.c:289
+unsafe_wrap at ./strings/string.jl:100 [inlined]
+StringVector at ./iobuffer.jl:32 [inlined]
+read at ./iostream.jl:527
+read at ./io.jl:1017 [inlined]
+#433 at ./io.jl:486 [inlined]
+#open#424 at ./io.jl:396
+open at ./io.jl:393 [inlined]
+read at ./io.jl:486 [inlined]
+readstring at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/usr/share/julia/stdlib/v1.10/TOML/src/TOML.jl:21 [inlined]
+parsefile at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/usr/share/julia/stdlib/v1.10/TOML/src/TOML.jl:43
+#51 at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/usr/share/julia/stdlib/v1.10/Pkg/src/Types.jl:541
+#mkpidlock#7 at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/usr/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:93
+mkpidlock at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/usr/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:90 [inlined]
+#mkpidlock#6 at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/usr/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:88 [inlined]
+mkpidlock at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/usr/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:88 [inlined]
+write_env_usage at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/usr/share/julia/stdlib/v1.10/Pkg/src/Types.jl:539
+#download_artifacts#42 at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/usr/share/julia/stdlib/v1.10/Pkg/src/Operations.jl:758
+download_artifacts at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/usr/share/julia/stdlib/v1.10/Pkg/src/Operations.jl:739
+unknown function (ip: 0x7f00dc7c36d9)
+_jl_invoke at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/gf.c:2894 [inlined]
+ijl_apply_generic at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/gf.c:3076
+#develop#93 at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/usr/share/julia/stdlib/v1.10/Pkg/src/Operations.jl:1414
+develop at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/usr/share/julia/stdlib/v1.10/Pkg/src/Operations.jl:1402 [inlined]
+#develop#124 at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/usr/share/julia/stdlib/v1.10/Pkg/src/API.jl:225
+develop at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/usr/share/julia/stdlib/v1.10/Pkg/src/API.jl:185
+unknown function (ip: 0x7f00dc7bcc40)
+_jl_invoke at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/gf.c:2894 [inlined]
+ijl_apply_generic at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/gf.c:3076
+#develop#17 at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/usr/share/julia/stdlib/v1.10/Pkg/src/API.jl:159
+_jl_invoke at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/gf.c:2894 [inlined]
+ijl_apply_generic at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/gf.c:3076
+develop at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/usr/share/julia/stdlib/v1.10/Pkg/src/API.jl:148
+#develop#14 at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/usr/share/julia/stdlib/v1.10/Pkg/src/API.jl:146 [inlined]
+develop at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/usr/share/julia/stdlib/v1.10/Pkg/src/API.jl:146 [inlined]
+#develop#19 at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/usr/share/julia/stdlib/v1.10/Pkg/src/API.jl:176
+develop at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/usr/share/julia/stdlib/v1.10/Pkg/src/API.jl:165
+unknown function (ip: 0x7f00dc7b84c5)
+_jl_invoke at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/gf.c:2894 [inlined]
+ijl_apply_generic at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/gf.c:3076
+jl_apply at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/julia.h:1982 [inlined]
+do_call at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/interpreter.c:126
+eval_value at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/interpreter.c:223
+eval_stmt_value at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/interpreter.c:174 [inlined]
+eval_body at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/interpreter.c:617
+jl_interpret_toplevel_thunk at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/interpreter.c:775
+jl_toplevel_eval_flex at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/toplevel.c:934
+jl_toplevel_eval_flex at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/toplevel.c:877
+jl_toplevel_eval_flex at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/toplevel.c:877
+ijl_toplevel_eval_in at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/toplevel.c:985
+eval at ./boot.jl:385 [inlined]
+exec_options at ./client.jl:291
+_start at ./client.jl:552
+jfptr__start_82738.1 at /zhome/90/f/147082/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/lib/julia/sys.so (unknown line)
+_jl_invoke at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/gf.c:2894 [inlined]
+ijl_apply_generic at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/gf.c:3076
+jl_apply at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/julia.h:1982 [inlined]
+true_main at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/jlapi.c:582
+jl_repl_entrypoint at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/src/jlapi.c:731
+main at /cache/build/builder-amdci5-1/julialang/julia-release-1-dot-10/cli/loader_exe.c:58
+__libc_start_call_main at /lib64/libc.so.6 (unknown line)
+__libc_start_main at /lib64/libc.so.6 (unknown line)
+unknown function (ip: 0x4010b8)
+unknown function (ip: (nil))
+Allocations: 10531535 (Pool: 10511297; Big: 20238); GC: 10

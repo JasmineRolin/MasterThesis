@@ -1,0 +1,69 @@
+Loaded module: julia/1.10.2
+  Activating project at `~/MasterThesis`
+   Resolving package versions...
+  No Changes to `~/.julia/environments/v1.10/Project.toml`
+  No Changes to `~/.julia/environments/v1.10/Manifest.toml`
+   Resolving package versions...
+  No Changes to `~/.julia/environments/v1.10/Project.toml`
+  No Changes to `~/.julia/environments/v1.10/Manifest.toml`
+   Resolving package versions...
+  No Changes to `~/.julia/environments/v1.10/Project.toml`
+  No Changes to `~/.julia/environments/v1.10/Manifest.toml`
+   Resolving package versions...
+  No Changes to `~/.julia/environments/v1.10/Project.toml`
+  No Changes to `~/.julia/environments/v1.10/Manifest.toml`
+   Resolving package versions...
+  No Changes to `~/.julia/environments/v1.10/Project.toml`
+  No Changes to `~/.julia/environments/v1.10/Manifest.toml`
+   Resolving package versions...
+  No Changes to `~/.julia/environments/v1.10/Project.toml`
+  No Changes to `~/.julia/environments/v1.10/Manifest.toml`
+   Resolving package versions...
+  No Changes to `~/.julia/environments/v1.10/Project.toml`
+  No Changes to `~/.julia/environments/v1.10/Manifest.toml`
+   Resolving package versions...
+  No Changes to `~/.julia/environments/v1.10/Project.toml`
+  No Changes to `~/.julia/environments/v1.10/Manifest.toml`
+ERROR: LoadError: PyError ($(Expr(:escape, :(ccall(#= /zhome/90/f/147082/.julia/packages/PyCall/1gn3u/src/pyfncall.jl:43 =# @pysym(:PyObject_Call), PyPtr, (PyPtr, PyPtr, PyPtr), o, pyargsptr, kw))))) <class 'json.decoder.JSONDecodeError'>
+JSONDecodeError('Expecting value: line 1 column 1 (char 0)')
+  File "/zhome/90/f/147082/MasterThesis/utils/src/DistanceCalculator.py", line 22, in fetch_distance_travel_time_osrm
+    response = requests.get(url).json()
+  File "/usr/lib/python3.9/site-packages/requests/models.py", line 900, in json
+    return complexjson.loads(self.text, **kwargs)
+  File "/usr/lib64/python3.9/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+  File "/usr/lib64/python3.9/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/usr/lib64/python3.9/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+
+Stacktrace:
+  [1] pyerr_check
+    @ ~/.julia/packages/PyCall/1gn3u/src/exception.jl:75 [inlined]
+  [2] pyerr_check
+    @ ~/.julia/packages/PyCall/1gn3u/src/exception.jl:79 [inlined]
+  [3] _handle_error(msg::String)
+    @ PyCall ~/.julia/packages/PyCall/1gn3u/src/exception.jl:96
+  [4] macro expansion
+    @ ~/.julia/packages/PyCall/1gn3u/src/exception.jl:110 [inlined]
+  [5] #107
+    @ ~/.julia/packages/PyCall/1gn3u/src/pyfncall.jl:43 [inlined]
+  [6] disable_sigint
+    @ ./c.jl:473 [inlined]
+  [7] __pycall!
+    @ ~/.julia/packages/PyCall/1gn3u/src/pyfncall.jl:42 [inlined]
+  [8] _pycall!(ret::PyCall.PyObject, o::PyCall.PyObject, args::Tuple{Tuple{Float64, Float64}, Tuple{Float64, Float64}}, nargs::Int64, kw::Ptr{Nothing})
+    @ PyCall ~/.julia/packages/PyCall/1gn3u/src/pyfncall.jl:29
+  [9] _pycall!(ret::PyCall.PyObject, o::PyCall.PyObject, args::Tuple{Tuple{Float64, Float64}, Tuple{Float64, Float64}}, kwargs::@Kwargs{})
+    @ PyCall ~/.julia/packages/PyCall/1gn3u/src/pyfncall.jl:11
+ [10] (::PyCall.PyObject)(::Tuple{Float64, Float64}, ::Vararg{Tuple{Float64, Float64}}; kwargs::@Kwargs{})
+    @ PyCall ~/.julia/packages/PyCall/1gn3u/src/pyfncall.jl:86
+ [11] getDistanceAndTimeMatrixFromLocations(locations::Vector{Tuple{Float64, Float64}})
+    @ utils.DistanceUtils ~/MasterThesis/utils/src/DistanceUtils.jl:76
+ [12] getTimeDistanceMatrix(requestFile::String, vehicleFile::String, dataName::String)
+    @ Main ~/MasterThesis/dataexploration/MakeAndSaveDistanceAndTimeMatrix.jl:34
+ [13] main()
+    @ Main ~/MasterThesis/dataexploration/MakeAndSaveDistanceAndTimeMatrix.jl:63
+ [14] top-level scope
+    @ ~/MasterThesis/dataexploration/MakeAndSaveDistanceAndTimeMatrix.jl:66
+in expression starting at /zhome/90/f/147082/MasterThesis/dataexploration/MakeAndSaveDistanceAndTimeMatrix.jl:66

@@ -18,4 +18,4 @@ julia -e 'using Pkg; Pkg.activate(".")'
 julia -e 'using Pkg; Pkg.add("DataFrames"); Pkg.add("CSV")'
 julia -e 'using Pkg; Pkg.develop(path="domain"); Pkg.develop(path="utils");Pkg.develop(path="offlinesolution");Pkg.develop(path="onlinesolution");Pkg.develop(path="alns");Pkg.develop(path="simulationframework");'
 
-julia dataexploration/MakeAndSaveDistanceAndTimeMatrix.jl "Data/Konsentra/TransformedData_06.02.csv" "Data/Konsentra/Vehicles_0.5.csv" "Konsentra_06_02_NewVehicles"
+julia dataexploration/MakeAndSaveDistanceAndTimeMatrix.jl "Data/Konsentra/TransformedData_Data.csv" "Data/Konsentra/Vehicles_0.5.csv" "Konsentra_Data2_NewVehicles"
