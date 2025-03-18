@@ -129,10 +129,10 @@ Test ALNSFunctions
 
 #@testset "ALNS RUN test - Konsentra Test" begin 
     requestFile = "Data/Konsentra/TransformedData_Data.csv"
-    vehiclesFile = "Data/Konsentra/Vehicles.csv"
+    vehiclesFile = "Data/Konsentra/Vehicles_0.5.csv"
     parametersFile = "tests/resources/Parameters.csv"
-    distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra_withVehicles.txt"
-    timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra_withVehicles.txt"
+    distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra_Data_NewVehicles.txt"
+    timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra_Data_NewVehicles.txt"
     scenarioName = "Konsentra"
     
     # Read instance 
@@ -158,7 +158,7 @@ Test ALNSFunctions
 
     # println("FINAL SOLUTION")
     # print("nTaxi: ",finalSolution.nTaxi)
-    # printSolution(finalSolution,printRouteHorizontal)
+     printSolution(finalSolution,printRouteHorizontal)
       
 #end
 
