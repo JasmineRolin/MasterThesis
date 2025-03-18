@@ -11,7 +11,7 @@ export ALNS
 #==
  Method to run ALNS algorithm
 ==#
-function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters,fileName::String)::Solution 
+function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters,fileName::String) 
     
     # File 
     outputFile = open(fileName, "w")
@@ -44,13 +44,12 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
 
         # Destroy trial solution  
         destroyIdx = destroy!(scenario,trialState,parameters,configuration)
-
+        
         # Repair trial solution 
         repairIdx = repair!(scenario,trialState,configuration)
 
         # Check if solution is improved
         # TODO: create hash table to check if solution has been visited before
-        # TODO: jas - update . accept always true if solution is better than current sol!
         if trialState.currentSolution.totalCost < currentState.currentSolution.totalCost
             isImproved = true
             isAccepted = true
@@ -59,10 +58,12 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
             currentState.assignedRequests = deepcopy(trialState.assignedRequests)
             currentState.nAssignedRequests = trialState.nAssignedRequests
 
+
             # Check if new best solution
             if trialState.currentSolution.totalCost < currentState.bestSolution.totalCost
                 isNewBest = true
                 currentState.bestSolution = deepcopy(trialState.currentSolution)
+
             end
         # Check if solution is accepted
         elseif accept(temperature,trialState.currentSolution.totalCost - currentState.currentSolution.totalCost)
@@ -71,7 +72,6 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
             currentState.requestBank = deepcopy(trialState.requestBank)
             currentState.assignedRequests = deepcopy(trialState.assignedRequests)
             currentState.nAssignedRequests = trialState.nAssignedRequests
-
         end
 
         # Update method scores and counts 
@@ -93,7 +93,7 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
 
         # Write to file 
         write(outputFile, string(iteration), ",", 
-                 string(currentState.currentSolution.totalCost), ",", 
+                 string(trialState.currentSolution.totalCost), ",", 
                  string(isAccepted), ",", 
                  string(isImproved), ",", 
                  string(isNewBest), ",", 
@@ -122,7 +122,7 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
         throw(msg) 
     end
 
-    return currentState.bestSolution
+    return currentState.bestSolution, currentState.requestBank
 end 
 
 end

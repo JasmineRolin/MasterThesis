@@ -42,7 +42,7 @@ end
     # Check solution
     feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.offlineRequests)
     @test feasible == false
-    @test msg == "SOLUTION INFEASIBLE: Total cost of solution is incorrect. Calculated: 0.0, actual: 90.0"
+    @test msg == "SOLUTION INFEASIBLE: Total cost of solution is incorrect. Calculated: 30.0, actual: 90.0"
 end
 
 @testset "checkSolutionFeasibility test - activity serviced multiple times" begin

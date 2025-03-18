@@ -96,7 +96,7 @@ end
  Method to calculate score of destroy or repair method 
 ==#
 function calculateScore(scoreAccepted::Float64, scoreImproved::Float64, scoreNewBest::Float64,isAccepted::Bool, isImproved::Bool, isNewBest::Bool)::Float64    
-    score = 1.0 # Initialize score to 1 of no update should be made 
+    score = 0 # Initialize score to 1 of no update should be made 
 
 	if isAccepted
 		score = max(score, scoreAccepted)

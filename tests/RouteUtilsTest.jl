@@ -84,8 +84,9 @@ end
     vehicleSchedule.activeTimeWindow.endTime = route[end-1].endOfServiceTime + scenario.time[route[end-1].activity.id,vehicle.depotId]
     vehicleSchedule.totalDistance = scenario.distance[vehicle.depotId,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
-    vehicleSchedule.totalCost = 10.0*((startOfServiceDropOff - endOfServiceTimePickUp ) - scenario.time[request.pickUpActivity.id,request.dropOffActivity.id])/scenario.time[request.pickUpActivity.id,request.dropOffActivity.id]
+    vehicleSchedule.totalCost = 10.0*(startOfServiceDropOff - endOfServiceTimePickUp)/scenario.time[request.pickUpActivity.id,request.dropOffActivity.id]
     vehicleSchedule.numberOfWalking = [0,1,1,0,0,0]
+    vehicleSchedule.totalIdleTime = 862.0
    
     # Check route feasibility
     feasible, msg = checkRouteFeasibility(scenario,vehicleSchedule)
@@ -145,7 +146,7 @@ end
     vehicleSchedule.activeTimeWindow.endTime = route[end-1].endOfServiceTime + scenario.time[route[end-1].activity.id,vehicle.depotId]
     vehicleSchedule.totalDistance = scenario.distance[vehicle.depotId,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
-    vehicleSchedule.totalCost = (startOfServiceDropOff - endOfServiceTimePickUp ) - scenario.time[request.pickUpActivity.id,request.dropOffActivity.id]
+    vehicleSchedule.totalCost = 10.0*(startOfServiceDropOff - endOfServiceTimePickUp )/scenario.time[request.pickUpActivity.id,request.dropOffActivity.id]
     vehicleSchedule.numberOfWalking = [0,1,1,0,0,0]
    
     feasible, msg = checkRouteFeasibility(scenario, vehicleSchedule)
@@ -201,7 +202,7 @@ end
     vehicleSchedule.activeTimeWindow.endTime = route[end-1].endOfServiceTime + scenario.time[route[end-1].activity.id,vehicle.depotId]
     vehicleSchedule.totalDistance = scenario.distance[vehicle.depotId,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
-    vehicleSchedule.totalCost = ((startOfServiceDropOff - endOfServiceTimePickUp ) - scenario.time[request.pickUpActivity.id,request.dropOffActivity.id])/scenario.time[request.pickUpActivity.id,request.dropOffActivity.id]
+    vehicleSchedule.totalCost = 10.0*(startOfServiceDropOff - endOfServiceTimePickUp)/scenario.time[request.pickUpActivity.id,request.dropOffActivity.id]
     vehicleSchedule.numberOfWalking = [0,1,0,0,0]
     
     # Check route feasibility
@@ -257,7 +258,7 @@ end
     vehicleSchedule.activeTimeWindow.endTime = dropOffActivity.endOfServiceTime + scenario.time[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.totalDistance = scenario.distance[vehicle.depotId,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
-    vehicleSchedule.totalCost = ((startOfServiceDropOff - endOfServiceTimePickUp ) - scenario.time[request.pickUpActivity.id,request.dropOffActivity.id])/scenario.time[request.pickUpActivity.id,request.dropOffActivity.id]
+    vehicleSchedule.totalCost = 0.0
     vehicleSchedule.numberOfWalking = [0,0,1,0]
     
     # Check route feasibility
@@ -322,7 +323,7 @@ end
     vehicleSchedule.activeTimeWindow.endTime = route[end-1].endOfServiceTime + scenario.time[route[end-1].activity.id,vehicle.depotId]
     vehicleSchedule.totalDistance = scenario.distance[vehicle.depotId,request.pickUpActivity.id] + scenario.distance[request.pickUpActivity.id,request.dropOffActivity.id] + scenario.distance[request.dropOffActivity.id,vehicle.depotId]
     vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
-    vehicleSchedule.totalCost = 10.0*((startOfServiceDropOff - endOfServiceTimePickUp ) - scenario.time[request.pickUpActivity.id,request.dropOffActivity.id])/scenario.time[request.pickUpActivity.id,request.dropOffActivity.id]
+    vehicleSchedule.totalCost = 10.0*(startOfServiceDropOff - endOfServiceTimePickUp)/scenario.time[request.pickUpActivity.id,request.dropOffActivity.id]
     vehicleSchedule.numberOfWalking = [0,1,0,0,0]
     
     # Check route feasibility
