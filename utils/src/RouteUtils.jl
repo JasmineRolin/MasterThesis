@@ -530,5 +530,70 @@ end
 
 
 
+function checkFeasibilityOfInsertionAtPosition2(request::Request, vehicleSchedule::VehicleSchedule,pickUpIdx::Int,dropOffIdx::Int,scenario::Scenario)
+
+    @unpack route,numberOfWalking, vehicle = vehicleSchedule
+
+    # Save cost of insertion 
+    deltaCost = 0.0 
+
+    # Save change in idle time 
+    deltaIdleTime = 0 
+
+    # Save change in distance 
+    deltaDistance = 0.0
+
+    # Identify schedule block in  route 
+    waitingOrDepotIndices = findall(x -> x.activity.activityType in (WAITING, DEPOT), activity_assignments)
+    waitingActivityIdxBeforePickUp = waitingOrDepotIndices[findlast(x -> x < pickUpIdx, waitingOrDepotIndices)]
+    waitingActivityIdxAfterPickUp = waitingOrDepotIndices[findlast(x -> x > pickUpIdx, waitingOrDepotIndices)]
+    waitingActivityIdxBeforeDropOff = waitingOrDepotIndices[findlast(x -> x < dropOffIdx, waitingOrDepotIndices)]
+    waitingActivityIdxAfterDropOff = waitingOrDepotIndices[findlast(x -> x > dropOffIdx, waitingOrDepotIndices)]
+
+    # Check if in same schedule block 
+    if waitingActivityIdxBeforePickUp != waitingActivityIdxBeforeDropOff || waitingActivityIdxAfterPickUp != waitingActivityIdxAfterDropOff
+        println("INFEASIBLE: DIFFERENT SCHEDULE BLOCKS")
+        return false
+    end
+
+    # Check load 
+    if any(numberOfWalking[pickUpIdx:dropOffIdx] .+ 1 .> vehicle.totalCapacity) # TODO: jas - check rigtigt 
+        println("INFEASIBLE: CAPACITY")
+        return false
+    end
+
+    # Check times for pick up 
+    if route[pickUpIdx].activity.timeWindow.startTime > request.pickUpActivity.timeWindow.endTime || route[pickUpIdx+1].activity.timeWindow.endTime < request.pickUpActivity.timeWindow.startTime
+        println("INFEASIBLE: PICK-UP TIME WINDOW")
+        return false
+    end
+
+    # Check times for drop off
+    if route[dropOffIdx].activity.timeWindow.startTime > request.dropOffActivity.timeWindow.endTime || route[dropOffIdx+1].activity.timeWindow.endTime < request.dropOffActivity.timeWindow.startTime
+        println("INFEASIBLE: DROP-OFF TIME WINDOW")
+        return false
+    end
+
+    # Retrieve schedule block
+    pickUpIdxInBlock = pickUpIdx - (waitingActivityIdxBeforePickUp-1)
+    dropOffIdxInBlock = dropOffIdx - (waitingActivityIdxBeforePickUp-1)
+    scheduleBlock = route[waitingActivityIdxBeforePickUp:waitingActivityIdxAfterPickUp]
+
+    # Identify case 
+    # Case 1 : W - ROUTE - P - D - W
+    if pickUpIdxInBlock == 1 && dropOffIdxInBlock pickUpIdxInBlock      
+    # Case 2 : W - P - D - ROUTE - W 
+    elseif pickUpIdxInBlock == length(scheduleBlock) - 1 && dropOffIdxInBlock == pickUpIdxInBlock
+    # Case 3 : W - P - ROUTE - D - ROUTE - W
+    elseif pickUpIdxInBlock == 1 && dropOffIdxInBlock != length(scheduleBlock) - 1
+    # Case 4 : W - ROUTE - P - ROUTE - D - W
+    elseif dropOffIdxInBlock == length(scheduleBlock) - 1 
+    # Case 5 : W - ROUTE - P - D - ROUTE - W
+    elseif pickUpIdxInBlock == dropOffIdxInBlock
+    # Case 6 : W - ROUTE - P - ROUTE - D - ROUTE - W
+    else
+    end
+    
+end
 
 end
