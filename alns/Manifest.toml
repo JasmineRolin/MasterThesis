@@ -2,7 +2,7 @@
 
 julia_version = "1.10.2"
 manifest_format = "2.0"
-project_hash = "109a96a4dfd37380f1d3e98cca5d3feac8ff20e0"
+project_hash = "080018590796c9ca2f7e2686dee57eca16479f49"
 
 [[deps.AliasTables]]
 deps = ["PtrArrays", "Random"]
@@ -1339,12 +1339,6 @@ version = "1.1.6+0"
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
 version = "1.52.0+1"
-
-[[deps.offlinesolution]]
-deps = ["domain", "utils"]
-path = "../offlinesolution"
-uuid = "a9fb1b74-13ee-4d8c-9e56-7a41bc88c15d"
-version = "0.1.0"
 
 [[deps.p7zip_jll]]
 deps = ["Artifacts", "Libdl"]

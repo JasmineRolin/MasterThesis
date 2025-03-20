@@ -4,7 +4,7 @@ using ..TimeWindows, ..Locations, ..Enums
 
 export Activity,findCorrespondingId,findLoadOfActivity
 
-struct Activity 
+mutable struct Activity 
     id::Int 
     requestId::Int 
     activityType::ActivityType

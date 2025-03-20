@@ -113,8 +113,10 @@ end
     addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
     addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
-    
-    finalSolution, specifications, KPIs = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters)
+  
+    initialSolution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
+
+    finalSolution, specifications, KPIs = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
 
     feasible, msg = checkSolutionFeasibility(scenario,finalSolution,scenario.offlineRequests)
     @test feasible == true
@@ -133,6 +135,7 @@ end
     parametersFile = "tests/resources/Parameters.csv"
     distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra_Data_NewVehicles.txt"
     timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra_Data_NewVehicles.txt"
+    alnsParameters = "tests/resources/ALNSParameters_Article.json"
     scenarioName = "Konsentra"
     
     # Read instance 
@@ -148,11 +151,12 @@ end
     repairMethods = Vector{GenericMethod}()
     addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
     addMethod!(repairMethods,"regretInsertion",regretInsertion)
-
     
-    finalSolution,requestBank,specification,KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;initialSolutionConstructor=simpleConstruction,parametersFile="tests/resources/ALNSParameters2.json")
 
-    feasible, msg = checkSolutionFeasibility(scenario,finalSolution,scenario.requests)
+    initialSolution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
+    finalSolution, specifications, KPIs = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
+
+    feasible, msg = checkSolutionFeasibility(scenario,finalSolution,scenario.offlineRequests)
     @test feasible == true
     @test msg == ""
 

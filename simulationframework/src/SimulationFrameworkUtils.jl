@@ -4,6 +4,7 @@ module SimulationFramework
 using utils
 using domain
 using offlinesolution
+using onlinesolution
 
 export simulateScenario
 
@@ -272,8 +273,12 @@ function simulateScenario(scenario::Scenario)
 
         # Determine current state
         currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario)
-
         printSolution(currentState.solution,printRouteHorizontal)
+
+        if itr == 0
+            # Update time windows for all requests in solution
+            updateTimeWindowsOnlineAll!(currentState.solution,scenario)
+        end        
 
         println("----------------")
         println("Final solution: ")

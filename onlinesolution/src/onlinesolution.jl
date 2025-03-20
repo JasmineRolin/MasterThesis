@@ -1,5 +1,8 @@
 module onlinesolution
 
-greet() = print("Hello World!")
+include("onlineSolutionUtils.jl")
+using .onlineSolutionUtils
+export updateTimeWindowsOnlineAll! 
+export onlineAlgorithm
 
-end # module onlinesolution
+end

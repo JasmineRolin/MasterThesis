@@ -1,6 +1,6 @@
 module ALNSRunner
 
-using UnPack,JSON, domain, Dates, offlinesolution, ..ALNSDomain, ..ALNSFunctions, ..ALNSAlgorithm, ..ALNSResults
+using UnPack,JSON, domain, Dates, ..ALNSDomain, ..ALNSFunctions, ..ALNSAlgorithm, ..ALNSResults
 
 export runALNS
 
@@ -8,7 +8,7 @@ export runALNS
  Module to run ALNS algorithm 
 ==#
 
-function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::Vector{GenericMethod},repairMethods::Vector{GenericMethod};initialSolutionConstructor=simpleConstruction::Function,outPutFileFolder="tests/output"::String,parametersFile=""::String,savePlots=true::Bool,displayPlots=true::Bool,plotFolder=""::String)
+function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::Vector{GenericMethod},repairMethods::Vector{GenericMethod};outPutFileFolder="tests/output"::String,parametersFile=""::String,savePlots=true::Bool,displayPlots=true::Bool,plotFolder=""::String,initialSolution=Solution(scenario)::Solution, requestBank=Vector{Request}(),stage="offline"::String)
 
     # Create time stamp and output file folder
     timeStamp = Dates.format(Dates.now(), "yyyy-mm-dd_HH_MM_SS.sss")
@@ -47,9 +47,6 @@ function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::
  
     # Create log file name
     ALNSOutputFileName = string(outputFileFolderWithDate,"ALNSOutput.csv")
-
-    # Construct initial solution 
-    initialSolution, requestBank = initialSolutionConstructor(scenario,requests)
 
     # Call ALNS 
     solution, requestBank = ALNS(scenario,requests,initialSolution, requestBank,configuration,parameters, ALNSOutputFileName)

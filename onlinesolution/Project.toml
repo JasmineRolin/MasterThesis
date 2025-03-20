@@ -2,3 +2,7 @@ name = "onlinesolution"
 uuid = "8da48cfb-8db1-429c-aa5b-1e7864c4ef49"
 authors = ["JasmineRolin <75620908+JasmineRolin@users.noreply.github.com>"]
 version = "0.1.0"
+
+[deps]
+alns = "923737b8-2e4c-4886-b2ed-ac7b70d13e65"
+domain = "734a5951-1d14-4631-9222-bf0d0da96408"
