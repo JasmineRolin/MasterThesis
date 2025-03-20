@@ -685,7 +685,7 @@ function determineServiceTimesAndShiftsCase1(time::Array{Int,2},serviceTime::Int
 
         # Insert if feasible 
         if arrivalAtPickUp - shift <= pickUpActivity.timeWindow.endTime 
-            shiftedArrivalAtPickUp = max(pickUpActivity.activity.timeWindow.start,arrivalAtPickUp - shift)
+            shiftedArrivalAtPickUp = max(pickUpActivity.timeWindow.startTime,arrivalAtPickUp - shift)
             shiftedArrivalAtDropOff = shiftedArrivalAtPickUp + serviceTime + time[pickUpId,dropOffId]
 
             # Infeasible if we can only arrive after latest start of drop off
@@ -709,7 +709,7 @@ function determineServiceTimesAndShiftsCase1(time::Array{Int,2},serviceTime::Int
             # Find new shift to arrive in drop off time window 
             shift = shift - (dropOffActivity.timeWindow.startTime - shiftedArrivalAtDropOff)
             startOfServiceTimePickUp = arrivalAtPickUp - shift
-            startOfServiceTimeDropOff = shiftedArrivalAtPickUp + serviceTime + time[pickUpId,dropOffId]
+            startOfServiceTimeDropOff = startOfServiceTimePickUp + serviceTime + time[pickUpId,dropOffId]
             shiftBeforePickUp = -shift
             shiftAfterDropOff = -shift + detour
 

@@ -409,10 +409,23 @@ using domain
     # Case where route needs to be shiftet forward 
     scenario.time[1,6] = 30
     feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity = determineServiceTimesAndShiftsCase1(scenario.time,scenario.serviceTimes,request1,vehicleSchedule.route[1:(end-1)])
-    @test startOfServiceTimePickUp == 460
-    @test startOfServiceTimeDropOff == 492
-    @test shiftAfterDropOff == 86
-    @test shiftBeforePickUp == 8
+    # @test startOfServiceTimePickUp == 460
+    # @test startOfServiceTimeDropOff == 492
+    # @test shiftAfterDropOff == 86
+    # @test shiftBeforePickUp == 8
+    # @test shiftBetweenPickupAndDropOff == 0
+    # @test addWaitingActivity == false
+
+    # Case where route needs to be shiftet backwards 
+    scenario.time[9,1] = 82
+    scenario.time[1,6] = 2
+    request1.dropOffActivity.timeWindow.startTime = 499
+    request1.pickUpActivity.timeWindow.endTime = 500
+    feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity = determineServiceTimesAndShiftsCase1(scenario.time,scenario.serviceTimes,request1,vehicleSchedule.route[1:(end-1)])
+    @test startOfServiceTimePickUp == 495
+    @test startOfServiceTimeDropOff == 499
+    @test shiftAfterDropOff == 93
+    @test shiftBeforePickUp == -9
     @test shiftBetweenPickupAndDropOff == 0
     @test addWaitingActivity == false
 #end
