@@ -553,25 +553,25 @@ function checkFeasibilityOfInsertionAtPosition2(request::Request, vehicleSchedul
     # Check if in same schedule block 
     if waitingActivityIdxBeforePickUp != waitingActivityIdxBeforeDropOff || waitingActivityIdxAfterPickUp != waitingActivityIdxAfterDropOff
         println("INFEASIBLE: DIFFERENT SCHEDULE BLOCKS")
-        return false
+        return false,0,0,0,0,0
     end
 
     # Check load 
     if any(numberOfWalking[pickUpIdx:dropOffIdx] .+ 1 .> vehicle.totalCapacity) # TODO: jas - check rigtigt 
         println("INFEASIBLE: CAPACITY")
-        return false
+        return false,0,0,0,0,0
     end
 
     # Check times for pick up 
     if route[pickUpIdx].activity.timeWindow.startTime > request.pickUpActivity.timeWindow.endTime || route[pickUpIdx+1].activity.timeWindow.endTime < request.pickUpActivity.timeWindow.startTime
         println("INFEASIBLE: PICK-UP TIME WINDOW")
-        return false
+        return false,0,0,0,0,0
     end
 
     # Check times for drop off
     if route[dropOffIdx].activity.timeWindow.startTime > request.dropOffActivity.timeWindow.endTime || route[dropOffIdx+1].activity.timeWindow.endTime < request.dropOffActivity.timeWindow.startTime
         println("INFEASIBLE: DROP-OFF TIME WINDOW")
-        return false
+        return false,0,0,0,0,0
     end
 
     # Retrieve schedule block
@@ -580,20 +580,107 @@ function checkFeasibilityOfInsertionAtPosition2(request::Request, vehicleSchedul
     scheduleBlock = route[waitingActivityIdxBeforePickUp:waitingActivityIdxAfterPickUp]
 
     # Identify case 
+    feasible = false
+    startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = 0,0,0,0,0
+    
     # Case 1 : W - ROUTE - P - D - W
     if pickUpIdxInBlock == 1 && dropOffIdxInBlock pickUpIdxInBlock      
+        feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = determineServiceTimesAndShiftsCase1()
     # Case 2 : W - P - D - ROUTE - W 
     elseif pickUpIdxInBlock == length(scheduleBlock) - 1 && dropOffIdxInBlock == pickUpIdxInBlock
+        feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = determineServiceTimesAndShiftsCase2()
     # Case 3 : W - P - ROUTE - D - ROUTE - W
     elseif pickUpIdxInBlock == 1 && dropOffIdxInBlock != length(scheduleBlock) - 1
+        feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = determineServiceTimesAndShiftsCase3()
     # Case 4 : W - ROUTE - P - ROUTE - D - W
     elseif dropOffIdxInBlock == length(scheduleBlock) - 1 
+        feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = determineServiceTimesAndShiftsCase4()
     # Case 5 : W - ROUTE - P - D - ROUTE - W
     elseif pickUpIdxInBlock == dropOffIdxInBlock
+        feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = determineServiceTimesAndShiftsCase5()
     # Case 6 : W - ROUTE - P - ROUTE - D - ROUTE - W
     else
+        feasible,  startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = determineServiceTimesAndShiftsCase6()
     end
     
+    return  feasible,  startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff
 end
+
+#==
+ Method to determine the time to start service at new request and how much to shift the existing route  
+==#
+# Case 1 : W - ROUTE - P - D - W
+function determineServiceTimesAndShiftsCase1(time::Array{Int,2},request::Request,scheduleBlock::Vector{ActivityAssignment},pickUpIdxInBlock::Int,dropOffIdxInBlock::Int)
+    feasible = false
+    startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = 0,0,0,0,0
+
+    # Retrieve info 
+    pickUpId = request.pickUpActivity.id
+    dropOffId = request.dropOffActivity.id
+
+    # Delta calculations 
+
+    # Duration of waiting activities at start and end of schedule block
+    waitingTimeStart = scheduleBlock[1].activity.activityType == DEPOT ? scheduleBlock[1].endOfServiceTime - scheduleBlock[1].activity.timeWindow.startTime : scheduleBlock[1].endOfServiceTime - scheduleBlock[1].startOfServiceTime
+    waitingTimeEnd = scheduleBlock[end].activity.activityType == DEPOT ? scheduleBlock[end].activity.timeWindow.endTime - scheduleBlock[end].startOfServiceTime : (scheduleBlock[1].endOfServiceTime - scheduleBlock[1].startOfServiceTime) + time[scheduleBlock[end-1].activity.id,scheduleBlock[end].activity.id] - time[dropOffId,scheduleBlock[end].activity.id]
+
+    # Can request be inserted directly at end of schedule block 
+    if request.pickUpActivity.timeWindow.startTime <= scheduleBlock[end-1].endOfServiceTime + time[scheduleBlock[end-1].activity.id,pickUpId] <= request.pickUpActivity.timeWindow.endTime
+        feasible = true 
+        startOfServiceTimePickUp = scheduleBlock[end-1].endOfServiceTime + time[scheduleBlock[end-1].activity.id,pickUpId]
+        startOfServiceTimeDropOff = startOfServiceTimePickUp  + scenario.serviceTimes + time[pickUpId,dropOffId] 
+    end
+
+    # Can request be inserted at end of schedule block by shifting route forward 
+
+    # Can request be inserted at end of schedule block by shifting route backward
+
+    # Can request be inserted at end of schedule by inserting waiting activity before pick-up
+
+
+    return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff
+end
+
+# Case 2 : W - P - D - ROUTE - W 
+function determineServiceTimesAndShiftsCase2()
+    feasible = false
+    startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = 0,0,0,0,0
+
+    return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff
+end
+
+# Case 3 : W - P - ROUTE - D - ROUTE - W
+function determineServiceTimesAndShiftsCase3()
+    feasible = false
+    startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = 0,0,0,0,0
+
+    return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff
+end
+
+# Case 4 : W - ROUTE - P - ROUTE - D - W
+function determineServiceTimesAndShiftsCase4()
+    feasible = false
+    startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = 0,0,0,0,0
+
+    return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff
+end
+
+# Case 5 : W - ROUTE - P - D - ROUTE - W
+function determineServiceTimesAndShiftsCase5()
+    feasible = false
+    startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = 0,0,0,0,0
+
+    return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff
+end
+
+# Case 6 : W - ROUTE - P - ROUTE - D - ROUTE - W
+function determineServiceTimesAndShiftsCase6()
+    feasible = false
+    startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = 0,0,0,0,0
+
+    return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff
+end
+
+
 
 end
