@@ -409,5 +409,10 @@ using domain
     # Case where route needs to be shiftet forward 
     scenario.time[1,6] = 30
     feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity = determineServiceTimesAndShiftsCase1(scenario.time,scenario.serviceTimes,request1,vehicleSchedule.route[1:(end-1)])
-
+    @test startOfServiceTimePickUp == 460
+    @test startOfServiceTimeDropOff == 492
+    @test shiftAfterDropOff == 86
+    @test shiftBeforePickUp == 8
+    @test shiftBetweenPickupAndDropOff == 0
+    @test addWaitingActivity == false
 #end
