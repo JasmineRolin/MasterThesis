@@ -197,7 +197,7 @@ def visualizeRoutes(customers,depot,routes):
     app.run_server(debug=True)
 
 
-def visualizePickupsAndDeliveries(customers, depot):
+def visualizePickupsAndDeliveries(customers, depots):
     # Calculate the average coordinates of the delivery points to center the map
     delivery_points = [data["delivery"] for data in customers.values()]
     avg_lat = sum([point[0] for point in delivery_points]) / len(delivery_points)
@@ -214,15 +214,17 @@ def visualizePickupsAndDeliveries(customers, depot):
             children=[
                 dl.TileLayer(),  # Add OpenStreetMap tiles
                 # Add depot marker
-                dl.Marker(
-                    position=depot,
-                    children=[dl.Popup("Depot")],
+                *[dl.Marker(
+                    position=data["loc"],
+                    children=[dl.Popup("Depot {depot}")],
                     icon={
                         "iconUrl": depot_icon_url,
                         "iconSize": [30, 30],
                         "iconAnchor": [15, 30],
                     },
-                ),
+                )
+                 for depot,data in depots.items()
+                ],
                 # Add pickup points
                 *[
                     dl.Marker(
@@ -248,7 +250,7 @@ def visualizePickupsAndDeliveries(customers, depot):
                         },
                     )
                     for customer, data in customers.items()
-                ],
+                 ],
             ],
             style={"height": "600px", "width": "100%"},
         ),

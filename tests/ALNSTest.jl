@@ -18,6 +18,8 @@ Test ALNSFunctions
     
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
+    solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+    solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
 
     # Construct ALNS state
     currentState = ALNSState(solution,1,0,requestBank)
@@ -87,6 +89,7 @@ Test ALNSFunctions
 end
 
 
+# TODO: update time and distance matrix 
 @testset "ALNS RUN test - Big Test" begin 
     requestFile = "tests/resources/RequestsBig.csv"
     vehiclesFile = "tests/resources/VehiclesBig.csv"
@@ -126,10 +129,10 @@ end
 
 @testset "ALNS RUN test - Konsentra Test" begin 
     requestFile = "Data/Konsentra/TransformedData_Data.csv"
-    vehiclesFile = "Data/Konsentra/Vehicles.csv"
+    vehiclesFile = "Data/Konsentra/Vehicles_0.5.csv"
     parametersFile = "tests/resources/Parameters.csv"
-    distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra_withVehicles.txt"
-    timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra_withVehicles.txt"
+    distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra_Data_NewVehicles.txt"
+    timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra_Data_NewVehicles.txt"
     scenarioName = "Konsentra"
     
     # Read instance 
@@ -147,15 +150,14 @@ end
     addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
     
-    finalSolution,_,_ = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;initialSolutionConstructor=simpleConstruction)
+    finalSolution,requestBank,specification,KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;initialSolutionConstructor=simpleConstruction,parametersFile="tests/resources/ALNSParameters2.json")
 
-    feasible, msg = checkSolutionFeasibility(scenario,finalSolution,scenario.offlineRequests)
+    feasible, msg = checkSolutionFeasibility(scenario,finalSolution,scenario.requests)
     @test feasible == true
     @test msg == ""
 
-    println("FINAL SOLUTION")
-    print("nTaxi: ",finalSolution.nTaxi)
-    printSolution(finalSolution,printRouteHorizontal)
-      
+    # println("FINAL SOLUTION")
+    # print("nTaxi: ",finalSolution.nTaxi)
+    #printSolution(finalSolution,printRouteHorizontal)
 end
 

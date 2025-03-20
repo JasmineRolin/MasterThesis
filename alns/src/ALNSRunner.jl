@@ -52,7 +52,7 @@ function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::
     initialSolution, requestBank = initialSolutionConstructor(scenario,requests)
 
     # Call ALNS 
-    solution = ALNS(scenario,requests,initialSolution, requestBank,configuration,parameters, ALNSOutputFileName)
+    solution, requestBank = ALNS(scenario,requests,initialSolution, requestBank,configuration,parameters, ALNSOutputFileName)
 
     # Write KPIs to file 
     KPIFileName = string(outputFileFolderWithDate,"ALNSKPIs.json")
@@ -63,9 +63,9 @@ function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::
         plotFolder = outputFileFolderWithDate
     end
 
-    specification, KPIS = ALNSResult(specificationsFileName,KPIFileName,ALNSOutputFileName,savePlots=savePlots,displayPlots=displayPlots,plotFolder=plotFolder)
+    specification, KPIS = ALNSResult(specificationsFileName,KPIFileName,ALNSOutputFileName,scenario,solution,requests,requestBank,savePlots=savePlots,displayPlots=displayPlots,plotFolder=plotFolder)
 
-    return solution, specification, KPIS
+    return solution, requestBank, specification, KPIS
 end
 
 #==

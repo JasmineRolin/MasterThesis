@@ -47,7 +47,7 @@ end
 ==#
 function getTotalCostRoute(scenario::Scenario,route::Vector{ActivityAssignment})
     time = scenario.time
-    excessTimeRatio = 0
+    ratio = 0.0
     pickupTimes = Dict{Int, Int}()
     
     for assignment in route
@@ -57,22 +57,22 @@ function getTotalCostRoute(scenario::Scenario,route::Vector{ActivityAssignment})
         elseif activity.activityType == DROPOFF && haskey(pickupTimes, activity.requestId)
             pickupTime = pickupTimes[activity.requestId]
             dropoffTime = assignment.startOfServiceTime
-            directTime = time[activity.requestId, activity.id] 
-            excessTime = (dropoffTime - pickupTime) - directTime
-            excessTimeRatio += (excessTime / directTime)*10.0
+            directTime = Float64(time[activity.requestId, activity.id])
+            actualTime = Float64(dropoffTime - pickupTime)
+            ratio += actualTime/directTime
         end
     end
     
-    return excessTimeRatio
+    return ratio*10.0
 end
 
 #==
 # Function to get cost of request 
 =#
 function getCostOfRequest(time::Array{Int,2},pickUpActivity::ActivityAssignment,dropOffActivity::ActivityAssignment)
-    directTime = time[pickUpActivity.activity.id,dropOffActivity.activity.id]
-    excessTime = (dropOffActivity.startOfServiceTime - pickUpActivity.endOfServiceTime) - directTime
-    return (excessTime/directTime)*10.0
+    directTime = Float64(time[pickUpActivity.activity.id,dropOffActivity.activity.id])
+    actualTime = Float64(dropOffActivity.startOfServiceTime - pickUpActivity.endOfServiceTime)
+    return  actualTime/directTime*10.0
 end
 
 #==
@@ -97,6 +97,7 @@ function getTotalCostDistanceTimeOfSolution(scenario::Scenario,solution::Solutio
     totalCost = 0.0
     totalDistance = 0.0
     totalTime = 0
+    totalIdleTime = 0
     for schedule in solution.vehicleSchedules
         if length(schedule.route) == 2 && schedule.route[1].activity.activityType == DEPOT && schedule.route[2].activity.activityType == DEPOT
             continue
@@ -105,11 +106,12 @@ function getTotalCostDistanceTimeOfSolution(scenario::Scenario,solution::Solutio
         totalCost += schedule.totalCost
         totalDistance += schedule.totalDistance
         totalTime += schedule.totalTime
+        totalIdleTime += schedule.totalIdleTime
     end
 
     totalCost += solution.nTaxi * scenario.taxiParameter
 
-    return totalCost, totalDistance, totalTime
+    return totalCost, totalDistance, totalTime, totalIdleTime
 end
 
 end

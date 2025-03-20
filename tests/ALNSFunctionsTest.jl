@@ -46,7 +46,7 @@ end
 
     # Not accepted, improved or new best
     score = calculateScore(scoreAccepted,scoreImproved,scoreNewBest,false,false,false)
-    @test score == 1.0
+    @test score == 0.0
 
     # Accepted
     score = calculateScore(scoreAccepted,scoreImproved,scoreNewBest,true,false,false)
