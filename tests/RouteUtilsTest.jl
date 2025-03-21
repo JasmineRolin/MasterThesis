@@ -336,7 +336,7 @@ using domain
 
 
 
-#@testset "routeFeasibility test - feasbile route" begin 
+@testset "routeFeasibility test - feasbile route" begin 
     requestFile = "tests/resources/Requests.csv"
     vehiclesFile = "tests/resources/Vehicles.csv"
     parametersFile = "tests/resources/Parameters.csv"
@@ -393,28 +393,28 @@ using domain
    
     # Check route feasibility
     feasible, msg = checkRouteFeasibility(scenario,vehicleSchedule)
-   # @test feasible == true
-   # @test msg == ""
+   @test feasible == true
+   @test msg == ""
 
     # Case where waiting node is added before pickup 
     feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity = determineServiceTimesAndShiftsCase1(scenario.time,scenario.serviceTimes,request1,vehicleSchedule.route[1:(end-1)])
-    # @test startOfServiceTimePickUp == 476 
-    # @test startOfServiceTimeDropOff == 480
-    # @test shiftAfterDropOff == 74 
-    # @test shiftBeforePickUp == 0
-    # @test shiftBetweenPickupAndDropOff == 0
-    # @test addWaitingActivity == true
+    @test startOfServiceTimePickUp == 476 
+    @test startOfServiceTimeDropOff == 480
+    @test shiftAfterDropOff == 74 
+    @test shiftBeforePickUp == 0
+    @test shiftBetweenPickupAndDropOff == 0
+    @test addWaitingActivity == true
 
 
     # Case where route needs to be shiftet forward 
     scenario.time[1,6] = 30
     feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity = determineServiceTimesAndShiftsCase1(scenario.time,scenario.serviceTimes,request1,vehicleSchedule.route[1:(end-1)])
-    # @test startOfServiceTimePickUp == 460
-    # @test startOfServiceTimeDropOff == 492
-    # @test shiftAfterDropOff == 86
-    # @test shiftBeforePickUp == 8
-    # @test shiftBetweenPickupAndDropOff == 0
-    # @test addWaitingActivity == false
+    @test startOfServiceTimePickUp == 460
+    @test startOfServiceTimeDropOff == 492
+    @test shiftAfterDropOff == 86
+    @test shiftBeforePickUp == 8
+    @test shiftBetweenPickupAndDropOff == 0
+    @test addWaitingActivity == false
 
     # Case where route needs to be shiftet backwards 
     scenario.time[9,1] = 82
@@ -428,4 +428,4 @@ using domain
     @test shiftBeforePickUp == -9
     @test shiftBetweenPickupAndDropOff == 0
     @test addWaitingActivity == false
-#end
+end
