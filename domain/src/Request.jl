@@ -17,7 +17,7 @@ MAX_EARLY_ARRIVAL = 5
 #== 
  Struct that defines request 
 ==#
-struct Request
+mutable struct Request
     id::Int 
     requestType::RequestType
     callTime::Int # The time the request is received (minutes after midnight)

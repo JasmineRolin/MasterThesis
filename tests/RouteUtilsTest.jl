@@ -336,103 +336,107 @@ using domain
 
 
 
-# @testset "routeFeasibility test - feasbile route" begin 
-#     requestFile = "tests/resources/Requests.csv"
-#     vehiclesFile = "tests/resources/Vehicles.csv"
-#     parametersFile = "tests/resources/Parameters.csv"
-#     distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
-#     timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
-#     scenarioName = "Small"
+@testset "routeFeasibility test - feasbile route" begin 
+    requestFile = "tests/resources/Requests.csv"
+    vehiclesFile = "tests/resources/Vehicles.csv"
+    parametersFile = "tests/resources/Parameters.csv"
+    distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
+    timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
+    scenarioName = "Small"
 
-#     # Read instance 
-#     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
-#     scenario.time[9,1] = 30
-#     scenario.time[11,4] = 22
+    # Read instance 
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
+    scenario.time[9,1] = 30
+    scenario.time[11,4] = 22
 
-#     # Create VehicleSchedule
-#     vehicle = scenario.vehicles[1]
-#     vehicleSchedule = VehicleSchedule(vehicle)
+    # Create VehicleSchedule
+    vehicle = scenario.vehicles[1]
+    vehicleSchedule = VehicleSchedule(vehicle)
 
-#     #== Check feasible route ==#
-#     # Update start depot 
-#     startTime = 405 - scenario.time[vehicle.depotId,4]
-#     vehicleSchedule.route[1].startOfServiceTime = startTime
-#     vehicleSchedule.route[1].endOfServiceTime = startTime
+    #== Check feasible route ==#
+    # Update start depot 
+    startTime = 405 - scenario.time[vehicle.depotId,4]
+    vehicleSchedule.route[1].startOfServiceTime = startTime
+    vehicleSchedule.route[1].endOfServiceTime = startTime
 
-#     # Requests  
-#     request1 = scenario.requests[1]
-#     request2 = scenario.requests[4]
+    # Requests  
+    request1 = scenario.requests[1]
+    request1.maximumRideTime = 40
+    request2 = scenario.requests[4]
 
-#     # Insert request 2 
-#     startOfServicePickUp = startTime + scenario.time[vehicle.depotId,request2.pickUpActivity.id] 
-#     endOfServiceTimePickUp = startOfServicePickUp + scenario.serviceTimes
+    # Insert request 2 
+    startOfServicePickUp = startTime + scenario.time[vehicle.depotId,request2.pickUpActivity.id] 
+    endOfServiceTimePickUp = startOfServicePickUp + scenario.serviceTimes
 
-#     startOfServiceDropOff = endOfServiceTimePickUp + scenario.time[request2.pickUpActivity.id,request2.dropOffActivity.id]
-#     endOfServiceTimeDropOff = startOfServiceDropOff + scenario.serviceTimes
+    startOfServiceDropOff = endOfServiceTimePickUp + scenario.time[request2.pickUpActivity.id,request2.dropOffActivity.id]
+    endOfServiceTimeDropOff = startOfServiceDropOff + scenario.serviceTimes
 
-#     pickUpActivity = ActivityAssignment(request2.pickUpActivity, vehicleSchedule.vehicle, startOfServicePickUp, endOfServiceTimePickUp)
-#     dropOffActivity = ActivityAssignment(request2.dropOffActivity, vehicleSchedule.vehicle, startOfServiceDropOff, endOfServiceTimeDropOff)
+    pickUpActivity = ActivityAssignment(request2.pickUpActivity, vehicleSchedule.vehicle, startOfServicePickUp, endOfServiceTimePickUp)
+    dropOffActivity = ActivityAssignment(request2.dropOffActivity, vehicleSchedule.vehicle, startOfServiceDropOff, endOfServiceTimeDropOff)
 
-#     insert!(vehicleSchedule.route,2,pickUpActivity)
-#     insert!(vehicleSchedule.route,3,dropOffActivity)
+    insert!(vehicleSchedule.route,2,pickUpActivity)
+    insert!(vehicleSchedule.route,3,dropOffActivity)
 
-#     # Insert waiting nodes
-#     route = vehicleSchedule.route
-#     startOfServiceWaiting = route[3].endOfServiceTime 
-#     endOfServiceWaiting = route[end].startOfServiceTime - scenario.time[route[3].activity.id,route[end].activity.id]
-#     waitingActivity = ActivityAssignment(Activity(route[3].activity.id,-1,WAITING,route[3].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting)
-#     insert!(vehicleSchedule.route,4,waitingActivity)
+    # Insert waiting nodes
+    route = vehicleSchedule.route
+    startOfServiceWaiting = route[3].endOfServiceTime 
+    endOfServiceWaiting = route[end].startOfServiceTime - scenario.time[route[3].activity.id,route[end].activity.id]
+    waitingActivity = ActivityAssignment(Activity(route[3].activity.id,-1,WAITING,route[3].activity.location,TimeWindow(startOfServiceWaiting,endOfServiceWaiting)),vehicleSchedule.vehicle,startOfServiceWaiting,endOfServiceWaiting)
+    insert!(vehicleSchedule.route,4,waitingActivity)
 
-#     # Update vehicle schedule
-#     vehicleSchedule.activeTimeWindow.startTime = startTime
-#     vehicleSchedule.totalDistance = scenario.distance[vehicle.depotId,request2.pickUpActivity.id] + scenario.distance[request2.pickUpActivity.id,request2.dropOffActivity.id] + scenario.distance[request2.dropOffActivity.id,vehicle.depotId]
-#     vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
-#     vehicleSchedule.totalCost = 10.0*(startOfServiceDropOff - endOfServiceTimePickUp)/scenario.time[request2.pickUpActivity.id,request2.dropOffActivity.id]
-#     vehicleSchedule.numberOfWalking = [0,1,0,0,0]
-#     vehicleSchedule.totalIdleTime = getTotalIdleTimeRoute(vehicleSchedule.route)
+    # Update vehicle schedule
+    vehicleSchedule.activeTimeWindow.startTime = startTime
+    vehicleSchedule.totalDistance = scenario.distance[vehicle.depotId,request2.pickUpActivity.id] + scenario.distance[request2.pickUpActivity.id,request2.dropOffActivity.id] + scenario.distance[request2.dropOffActivity.id,vehicle.depotId]
+    vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
+    vehicleSchedule.totalCost = 10.0*(startOfServiceDropOff - endOfServiceTimePickUp)/scenario.time[request2.pickUpActivity.id,request2.dropOffActivity.id]
+    vehicleSchedule.numberOfWalking = [0,1,0,0,0]
+    vehicleSchedule.totalIdleTime = getTotalIdleTimeRoute(vehicleSchedule.route)
    
-#     # Check route feasibility
-#     feasible, msg = checkRouteFeasibility(scenario,vehicleSchedule)
-#    @test feasible == true
-#    @test msg == ""
+    # Check route feasibility
+    feasible, msg = checkRouteFeasibility(scenario,vehicleSchedule)
+    @test feasible == true
+    @test msg == ""
 
-#     # Case where waiting node is added before pickup 
-#     feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity = determineServiceTimesAndShiftsCase1(scenario.time,scenario.serviceTimes,request1,vehicleSchedule.route[1:(end-1)])
-#     @test startOfServiceTimePickUp == 476 
-#     @test startOfServiceTimeDropOff == 480
-#     @test shiftAfterDropOff == 74 
-#     @test shiftBeforePickUp == 0
-#     @test shiftBetweenPickupAndDropOff == 0
-#     @test addWaitingActivity == true
-
-
-#     # Case where route needs to be shiftet forward 
-#     scenario.time[1,6] = 30
-#     feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity = determineServiceTimesAndShiftsCase1(scenario.time,scenario.serviceTimes,request1,vehicleSchedule.route[1:(end-1)])
-#     @test startOfServiceTimePickUp == 460
-#     @test startOfServiceTimeDropOff == 492
-#     @test shiftAfterDropOff == 86
-#     @test shiftBeforePickUp == 8
-#     @test shiftBetweenPickupAndDropOff == 0
-#     @test addWaitingActivity == false
-
-#     # Case where route needs to be shiftet backwards 
-#     scenario.time[9,1] = 82
-#     scenario.time[1,6] = 2
-#     request1.dropOffActivity.timeWindow.startTime = 499
-#     request1.pickUpActivity.timeWindow.endTime = 500
-#     feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity = determineServiceTimesAndShiftsCase1(scenario.time,scenario.serviceTimes,request1,vehicleSchedule.route[1:(end-1)])
-#     @test startOfServiceTimePickUp == 495
-#     @test startOfServiceTimeDropOff == 499
-#     @test shiftAfterDropOff == 93
-#     @test shiftBeforePickUp == -9
-#     @test shiftBetweenPickupAndDropOff == 0
-#     @test addWaitingActivity == false
-# end
+    # Case where waiting node is added before pickup 
+    feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity = determineServiceTimesAndShiftsCase1(scenario.time,scenario.serviceTimes,request1,vehicleSchedule.route[1:(end-1)])
+    @test feasible == true 
+    @test startOfServiceTimePickUp == 476 
+    @test startOfServiceTimeDropOff == 480
+    @test shiftAfterDropOff == 74 
+    @test shiftBeforePickUp == 0
+    @test shiftBetweenPickupAndDropOff == 0
+    @test addWaitingActivity == true
 
 
+    # Case where route needs to be shiftet forward 
+    scenario.time[1,6] = 30
+    feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity = determineServiceTimesAndShiftsCase1(scenario.time,scenario.serviceTimes,request1,vehicleSchedule.route[1:(end-1)])
+    @test feasible == true 
+    @test startOfServiceTimePickUp == 460
+    @test startOfServiceTimeDropOff == 492
+    @test shiftAfterDropOff == 86
+    @test shiftBeforePickUp == 8
+    @test shiftBetweenPickupAndDropOff == 0
+    @test addWaitingActivity == false
 
-#@testset "routeFeasibility test - feasbile route" begin 
+    # Case where route needs to be shiftet backwards 
+    scenario.time[9,1] = 82
+    scenario.time[1,6] = 2
+    request1.dropOffActivity.timeWindow.startTime = 499
+    request1.pickUpActivity.timeWindow.endTime = 500
+    feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity = determineServiceTimesAndShiftsCase1(scenario.time,scenario.serviceTimes,request1,vehicleSchedule.route[1:(end-1)])
+    @test feasible == true 
+    @test startOfServiceTimePickUp == 495
+    @test startOfServiceTimeDropOff == 499
+    @test shiftAfterDropOff == 93
+    @test shiftBeforePickUp == -9
+    @test shiftBetweenPickupAndDropOff == 0
+    @test addWaitingActivity == false
+end
+
+
+
+@testset "routeFeasibility test - feasbile route" begin 
     requestFile = "tests/resources/Requests.csv"
     vehiclesFile = "tests/resources/Vehicles.csv"
     parametersFile = "tests/resources/Parameters.csv"
@@ -490,42 +494,54 @@ using domain
    
     # Check route feasibility
     feasible, msg = checkRouteFeasibility(scenario,vehicleSchedule)
-    # @test feasible == true
-    # @test msg == ""
+    @test feasible == true
+    @test msg == ""
 
-    # Case where waiting node is added before pickup 
-    #feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity = determineServiceTimesAndShiftsCase2(scenario.time,scenario.serviceTimes,request2,vehicleSchedule.route[1:(end-1)])
-    # @test startOfServiceTimePickUp == 476 
-    # @test startOfServiceTimeDropOff == 480
-    # @test shiftAfterDropOff == 74 
-    # @test shiftBeforePickUp == 0
-    # @test shiftBetweenPickupAndDropOff == 0
-    # @test addWaitingActivity == true
+    # Case where pick up and drop off can be inserted directly 
+    feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity = determineServiceTimesAndShiftsCase2(scenario.time,scenario.serviceTimes,request2,vehicleSchedule.route[1:(end-1)])
+    @test feasible == true 
+    @test startOfServiceTimePickUp == 415
+    @test startOfServiceTimeDropOff == 430
+    @test shiftAfterDropOff == -3 
+    @test shiftBeforePickUp == -43
+    @test shiftBetweenPickupAndDropOff == 0
+    @test addWaitingActivity == false
 
+    # Shift back wards when inserting drop off and pick up 
     scenario.time[4,9] = 10
     request1.dropOffActivity.timeWindow.startTime = 475
     feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity = determineServiceTimesAndShiftsCase2(scenario.time,scenario.serviceTimes,request2,vehicleSchedule.route[1:(end-1)])
+    @test feasible == true 
+    @test startOfServiceTimePickUp == 417
+    @test startOfServiceTimeDropOff == 429
+    @test shiftAfterDropOff == -4
+    @test shiftBeforePickUp == -41
+    @test shiftBetweenPickupAndDropOff == 0
+    @test addWaitingActivity == false
 
-    # Case where route needs to be shiftet forward 
-    #scenario.time[1,6] = 30
-    #feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity = determineServiceTimesAndShiftsCase1(scenario.time,scenario.serviceTimes,request1,vehicleSchedule.route[1:(end-1)])
-    # @test startOfServiceTimePickUp == 460
-    # @test startOfServiceTimeDropOff == 492
-    # @test shiftAfterDropOff == 86
-    # @test shiftBeforePickUp == 8
-    # @test shiftBetweenPickupAndDropOff == 0
-    # @test addWaitingActivity == false
+    # Shift forwards when inserting drop off 
+    scenario.time[4,9] = 10
+    scenario.time[9,1] = 60
+    request1.dropOffActivity.timeWindow.startTime = 475
+    feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity = determineServiceTimesAndShiftsCase2(scenario.time,scenario.serviceTimes,request2,vehicleSchedule.route[1:(end-1)])
+    @test feasible == true 
+    @test startOfServiceTimePickUp == 409
+    @test startOfServiceTimeDropOff == 421
+    @test shiftAfterDropOff == 17
+    @test shiftBeforePickUp == -49
+    @test shiftBetweenPickupAndDropOff == 0
+    @test addWaitingActivity == false
 
-    # Case where route needs to be shiftet backwards 
-    # scenario.time[9,1] = 82
-    # scenario.time[1,6] = 2
-    # request1.dropOffActivity.timeWindow.startTime = 499
-    # request1.pickUpActivity.timeWindow.endTime = 500
-    # feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity = determineServiceTimesAndShiftsCase1(scenario.time,scenario.serviceTimes,request1,vehicleSchedule.route[1:(end-1)])
-#     @test startOfServiceTimePickUp == 495
-#     @test startOfServiceTimeDropOff == 499
-#     @test shiftAfterDropOff == 93
-#     @test shiftBeforePickUp == -9
-#     @test shiftBetweenPickupAndDropOff == 0
-#     @test addWaitingActivity == false
-# end
+    # Insert waiting after drop off 
+    scenario.time[4,9] = 10
+    scenario.time[9,1] = 20
+    request1.dropOffActivity.timeWindow.startTime = 480
+    feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity = determineServiceTimesAndShiftsCase2(scenario.time,scenario.serviceTimes,request2,vehicleSchedule.route[1:(end-1)])
+    @test feasible == true 
+    @test startOfServiceTimePickUp == 417
+    @test startOfServiceTimeDropOff == 429
+    @test shiftAfterDropOff == 0
+    @test shiftBeforePickUp == -41
+    @test shiftBetweenPickupAndDropOff == 0
+    @test addWaitingActivity == true
+end
