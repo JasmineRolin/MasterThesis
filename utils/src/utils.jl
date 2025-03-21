@@ -45,6 +45,7 @@ include("RouteUtils.jl")
 using .RouteUtils
 export printRoute,printSimpleRoute, insertRequest!,checkFeasibilityOfInsertionAtPosition,printRouteHorizontal,printSolution,updateRoute!
 export determineServiceTimesAndShiftsCase1
+export determineServiceTimesAndShiftsCase5
 
 #==
     Export from SolutionUtils module   
