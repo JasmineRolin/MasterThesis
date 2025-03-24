@@ -46,6 +46,7 @@ using .RouteUtils
 export printRoute,printSimpleRoute, insertRequest!,checkFeasibilityOfInsertionAtPosition,printRouteHorizontal,printSolution,updateRoute!
 export determineServiceTimesAndShiftsCase1
 export determineServiceTimesAndShiftsCase5
+export determineServiceTimesAndShiftsCase6
 
 #==
     Export from SolutionUtils module   
