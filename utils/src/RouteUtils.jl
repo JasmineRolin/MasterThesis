@@ -993,6 +993,7 @@ function determineServiceTimesAndShiftsCase3(time::Array{Int,2},serviceTime::Int
     waitingTimeStart +=  shiftAfterInsertingPickUp
     waitingTimeEnd +=  -shiftAfterInsertingPickUp
 
+    # TODO: check om rigtig fortegn 
     maxShiftForwardR1 = min(pickUpActivity.timeWindow.endTime - shiftedArrivalAtPickUp, determineMaximumShiftForward(waitingTimeEnd,scheduleBlock[2:(dropOffIdxInBlock-1)]) - shiftAfterInsertingPickUp)
     maxShiftBackWardR1 = min(shiftedArrivalAtPickUp - pickUpActivity.timeWindow.startTime, determineMaximumShiftBackward(waitingTimeStart,scheduleBlock[2:(dropOffIdxInBlock-1)]) + shiftAfterInsertingPickUp)
     shiftR1 = 0
@@ -1027,21 +1028,28 @@ function determineServiceTimesAndShiftsCase3(time::Array{Int,2},serviceTime::Int
     waitingTimeStart += shiftAfterInsertingDropOff
     waitingTimeEnd += -shiftAfterInsertingDropOff
 
-    arrivalAtActivityAfterDropOff = arrivalAtDropOff + serviceTime + time[dropOffId,activityAfterDropOff.activity.id]
+    arrivalAtActivityAfterDropOff = shiftedArrivalAtDropOff + serviceTime + time[dropOffId,activityAfterDropOff.activity.id]
 
-    maxShiftForwardR2 = min(dropOffActivity.timeWindow.endTime - shiftedArrivalAtDropOff, determineMaximumShiftForward(waitingTimeEnd,scheduleBlock[(dropOffIdxInBlock+1):(end-1)]) - shiftR1)
-    maxShiftBackWardR2 = min(shiftedArrivalAtDropOff - dropOffActivity.timeWindow.startTime, determineMaximumShiftBackward(waitingTimeStart,scheduleBlock[(dropOffIdxInBlock+1):(end-1)]) + shiftR1)
+    # We can either shift R1 forward or R2 backwards 
+        # TODO: check om rigtig fortegn 
+
+    maxShiftForwardR1 = min(dropOffActivity.timeWindow.endTime - shiftedArrivalAtDropOff, maxShiftForwardR1 - shiftAfterInsertingDropOff)
+    maxShiftBackWardR2 = determineMaximumShiftBackward(0,scheduleBlock[(dropOffIdxInBlock+1):(end-1)]) + shiftAfterInsertingPickUp
     shiftR2 = 0
 
-    # Shift R2 forward 
-    if arrivalAtActivityAfterDropOff <= activityAfterDropOff.activity.timeWindow.endTime
+    # No shift  
+    if activityAfterDropOff.activity.timeWindow.startTime <= arrivalAtActivityAfterDropOff <= activityAfterDropOff.activity.timeWindow.endTime
         shiftR2 = shiftAfterInsertingPickUp
-    elseif arrivalAtActivityAfterDropOff < activityAfterDropOff.activity.timeWindow.startTime && arrivalAtActivityAfterDropOff + maxShiftForwardR2 >= activityAfterDropOff.activity.timeWindow.startTime
-       shiftR2 = shiftAfterInsertingPickUp + activityAfterDropOff.timeWindow.startTime - arrivalAtActivityAfterDropOff # Shift until earliest time of activity after drop off
-
+    # Shift R1 forward 
+    elseif arrivalAtActivityAfterDropOff < activityAfterDropOff.activity.timeWindow.startTime && arrivalAtActivityAfterDropOff + maxShiftForwardR1 >= activityAfterDropOff.activity.timeWindow.startTime
+        shift = activityAfterDropOff.activity.timeWindow.startTime - arrivalAtActivityAfterDropOff
+        shiftR1 += shift 
+        shiftR2 += activityAfterDropOff.activity.timeWindow.startTime - activityAfterDropOff.startOfServiceTime
+        shiftedArrivalAtDropOff += shift
+        shiftedArrivalAtPickUp += shift
     # Shift R2 backwards
     elseif arrivalAtActivityAfterDropOff > activityAfterDropOff.activity.timeWindow.endTime && arrivalAtActivityAfterDropOff - maxShiftBackWardR2 <= activityAfterDropOff.activity.timeWindow.endTime
-        shiftR2 =  shiftAfterInsertingPickUp + max(dropOffActivity.timeWindow.startTime,arrivalAtActivityAfterDropOff - maxShiftBackWardR2) - arrivalAtActivityAfterDropOff
+        shiftR2 =  shiftAfterInsertingPickUp + max(arrivalAtActivityAfterDropOff.timeWindow.startTime,arrivalAtActivityAfterDropOff - maxShiftBackWardR2) - arrivalAtActivityAfterDropOff
     # Infeasible 
     else 
         return false,0,0,0,0,0,0,false
@@ -1052,8 +1060,8 @@ function determineServiceTimesAndShiftsCase3(time::Array{Int,2},serviceTime::Int
     startOfServiceTimePickUp = shiftedArrivalAtPickUp
     startOfServiceTimeDropOff = shiftedArrivalAtDropOff
     shiftBeforePickUp = shiftR1 - detourPickUp 
-    shiftBetweenPickupAndDropOff = shiftAfterInsertingPickUp + shiftR1 
-    shiftAfterDropOff = shiftR2 - detourDropOff
+    shiftBetweenPickupAndDropOff = shiftR1 
+    shiftAfterDropOff = shiftR2
 
     # TODO: check other requests and inserted request maximum ride time 
 
