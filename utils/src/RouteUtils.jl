@@ -793,57 +793,61 @@ function determineServiceTimesAndShiftsCase5(time::Array{Int,2},serviceTime::Int
     Detour = findDetour(time,serviceTime,activityBefore.activity.id,activityAfter.activity.id,request.pickUpActivity.id,request.dropOffActivity.id)
     waitingTimeEnd = scheduleBlock[end].activity.activityType == DEPOT ? scheduleBlock[end].activity.timeWindow.endTime - scheduleBlock[end].startOfServiceTime : scheduleBlock[end].endOfServiceTime - scheduleBlock[end].startOfServiceTime 
     waitingTimeStart = scheduleBlock[1].activity.activityType == DEPOT ? scheduleBlock[1].endOfServiceTime - scheduleBlock[1].activity.timeWindow.startTime : scheduleBlock[1].endOfServiceTime - scheduleBlock[1].startOfServiceTime
-    println("Waiting time start: ",waitingTimeStart)
-    println("Waiting time end: ",waitingTimeEnd)
 
     # Determine max shifts
-    max_shift_forward =  determineMaximumShiftForward(waitingTimeEnd,scheduleBlock[idx+1:end])
-    max_shift_backward = determineMaximumShiftBackward(waitingTimeStart,scheduleBlock[1:idx])
-    println("Max shift forward: ",max_shift_forward)
-    println("Max shift backward: ",max_shift_backward)
-    if Detour > max_shift_forward + max_shift_backward
+    AUP, ADOWN = determinePossibleAfterShift(waitingTimeEnd,scheduleBlock[idx+1:end])
+    BUP, BDOWN = determinePossibleBeforeShift(waitingTimeStart,scheduleBlock[1:idx])
+    if Detour > BUP + ADOWN
         println("Not possible to fit detour")
         return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
     end
 
     # Compute max ride time constraint
     max_MRT_shift = determineMaximumShiftMRT(scheduleBlock,idx,requests,serviceTime)
-    println("Max MRT shift: ",max_MRT_shift)
     if Detour > max_MRT_shift
         println("Max ride tim conflict")
         return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
     end
 
-    # Determine feasible shift
-    shift_forward = min(Detour,max_shift_forward)
-    shift_backward = min(Detour - shift_forward,max_shift_backward)
-
-    # Check that shift can done, so vehicle can drive directly between new request
-    if request.requestType == PICKUP
-        directTimeWindowStartPick = request.pickUpActivity.timeWindow.startTime
-        directTimeWindowEndDrop = directTimeWindowStartPick + (request.maximumRideTime-request.directDriveTime) + time[request.pickUpActivity.id,request.dropOffActivity.id] + serviceTime
+    # Determine direct drive time windows
+    if request.requestType == PICKUP_REQUEST
+        directTimeWindowPick = (request.pickUpActivity.timeWindow.startTime, request.pickUpActivity.timeWindow.startTime + (request.maximumRideTime-request.directDriveTime))
+        directTimeWindowDrop = (directTimeWindowPick[1] + time[request.pickUpActivity.id,request.dropOffActivity.id] + serviceTime, directTimeWindowPick[2] + time[request.pickUpActivity.id,request.dropOffActivity.id] + serviceTime)
     else
-        directTimeWindowStartPick = request.pickUpActivity.timeWindow.startTime + (request.maximumRideTime-request.directDriveTime)
-        directTimeWindowEndDrop = request.dropOffActivity.timeWindow.endTime
+        directTimeWindowDrop = (request.dropOffActivity.timeWindow.endTime - (request.maximumRideTime-request.directDriveTime), request.dropOffActivity.timeWindow.endTime)
+        directTimeWindowPick = (directTimeWindowDrop[1] - time[request.pickUpActivity.id,request.dropOffActivity.id] - serviceTime, directTimeWindowDrop[2] - time[request.pickUpActivity.id,request.dropOffActivity.id] - serviceTime)
     end
-    direct_shift_backward = scheduleBlock[idx].endOfServiceTime + time[scheduleBlock[idx].activity.id,request.pickUpActivity.id] - directTimeWindowStartPick
-    direct_shift_forward = directTimeWindowEndDrop - scheduleBlock[idx+1].startOfServiceTime - time[request.dropOffActivity.id,scheduleBlock[idx+1].activity.id] - serviceTime
-    println("Direct_shift_backward",direct_shift_backward)
-    println("Direct_shift_forward",direct_shift_forward)
-    
-    # Determine feasible shift
-    shift_forward = min(Detour,max_shift_forward, direct_shift_forward)
-    shift_backward = min(Detour - shift_forward,max_shift_backward, direct_shift_backward)
-    if shift_forward < 0 || shift_backward < 0
-        println("Not possible to insert request with direct drive time")
+
+    # Determine possible arrival times
+    possibleArrivalTimePickUp = (activityBefore.endOfServiceTime - BUP + time[activityBefore.activity.id,request.pickUpActivity.id], activityBefore.endOfServiceTime + BDOWN + time[activityBefore.activity.id,request.pickUpActivity.id])
+    possibleArrivalTimeDropOff = (activityAfter.startOfServiceTime - AUP - time[request.dropOffActivity.id,activityAfter.activity.id] - serviceTime, activityAfter.startOfServiceTime + ADOWN - time[request.dropOffActivity.id,activityAfter.activity.id ]- serviceTime)
+
+    # Determine feasible arrival times
+    arrivalTimePickUp = (max(possibleArrivalTimePickUp[1],directTimeWindowPick[1]), min(possibleArrivalTimePickUp[2],directTimeWindowPick[2]))
+    arrivalTimeDropOff = (max(possibleArrivalTimeDropOff[1],directTimeWindowDrop[1]), min(possibleArrivalTimeDropOff[2],directTimeWindowDrop[2]))
+    if arrivalTimePickUp[2] < arrivalTimePickUp[1] || arrivalTimeDropOff[2] < arrivalTimeDropOff[1]
+        println("Time window infeasibility")
         return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
     end
 
-    # Determine start of service time for request
-    startOfServiceTimePickUp = scheduleBlock[idx].endOfServiceTime + time[scheduleBlock[idx].activity.id,request.pickUpActivity.id] - shift_backward
-    startOfServiceTimeDropOff = startOfServiceTimePickUp + serviceTime + time[request.pickUpActivity.id,request.dropOffActivity.id] 
+    # Determine feasible shifts considering pickup and drop off time windows
+    potentialDropOffFromPick = (arrivalTimePickUp[1] + serviceTime + time[request.pickUpActivity.id,request.dropOffActivity.id],arrivalTimePickUp[2] + serviceTime + time[request.pickUpActivity.id,request.dropOffActivity.id])
+    possibleDropOffTimeWindow = (max(potentialDropOffFromPick[1],arrivalTimeDropOff[1]), min(potentialDropOffFromPick[2],arrivalTimeDropOff[2]))
+    if possibleDropOffTimeWindow[2] < possibleDropOffTimeWindow[1]
+        println("No possible drop off")
+        return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
+    end
 
-    return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shift_backward, 0, shift_forward, false
+    # determine service windows
+    startOfServiceTimeDropOff = possibleDropOffTimeWindow[2]
+    startOfServiceTimePickUp = startOfServiceTimeDropOff - serviceTime - time[request.pickUpActivity.id,request.dropOffActivity.id]
+
+    # Determine shifts 
+    shiftBeforePickUp = startOfServiceTimePickUp - (activityBefore.endOfServiceTime + time[activityBefore.activity.id,request.pickUpActivity.id])
+    shiftBetweenPickupAndDropOff = 0
+    shiftAfterDropOff = startOfServiceTimeDropOff - (activityAfter.startOfServiceTime - time[request.dropOffActivity.id,activityAfter.activity.id] - serviceTime)
+
+    return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, 0, shiftAfterDropOff, false
 end
 
 # Case 6 : W - ROUTE - P - ROUTE - D - ROUTE - W
@@ -852,7 +856,67 @@ function determineServiceTimesAndShiftsCase6()
     startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = 0,0,0,0,0
     addWaitingActivity = false
 
-    return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
+    # Retrieve info 
+    activityBefore = scheduleBlock[idx]
+    activityAfter = scheduleBlock[idx+1]
+    Detour = findDetour(time,serviceTime,activityBefore.activity.id,activityAfter.activity.id,request.pickUpActivity.id,request.dropOffActivity.id)
+    waitingTimeEnd = scheduleBlock[end].activity.activityType == DEPOT ? scheduleBlock[end].activity.timeWindow.endTime - scheduleBlock[end].startOfServiceTime : scheduleBlock[end].endOfServiceTime - scheduleBlock[end].startOfServiceTime 
+    waitingTimeStart = scheduleBlock[1].activity.activityType == DEPOT ? scheduleBlock[1].endOfServiceTime - scheduleBlock[1].activity.timeWindow.startTime : scheduleBlock[1].endOfServiceTime - scheduleBlock[1].startOfServiceTime
+
+    # Determine max shifts
+    AUP, ADOWN = determinePossibleAfterShift(waitingTimeEnd,scheduleBlock[idx+1:end])
+    BUP, BDOWN = determinePossibleBeforeShift(waitingTimeStart,scheduleBlock[1:idx])
+    if Detour > BUP + ADOWN
+        println("Not possible to fit detour")
+        return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
+    end
+
+    # Compute max ride time constraint
+    max_MRT_shift = determineMaximumShiftMRT(scheduleBlock,idx,requests,serviceTime)
+    if Detour > max_MRT_shift
+        println("Max ride tim conflict")
+        return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
+    end
+
+    # Determine direct drive time windows
+    if request.requestType == PICKUP_REQUEST
+        directTimeWindowPick = (request.pickUpActivity.timeWindow.startTime, request.pickUpActivity.timeWindow.startTime + (request.maximumRideTime-request.directDriveTime))
+        directTimeWindowDrop = (directTimeWindowPick[1] + time[request.pickUpActivity.id,request.dropOffActivity.id] + serviceTime, directTimeWindowPick[2] + time[request.pickUpActivity.id,request.dropOffActivity.id] + serviceTime)
+    else
+        directTimeWindowDrop = (request.dropOffActivity.timeWindow.endTime - (request.maximumRideTime-request.directDriveTime), request.dropOffActivity.timeWindow.endTime)
+        directTimeWindowPick = (directTimeWindowDrop[1] - time[request.pickUpActivity.id,request.dropOffActivity.id] - serviceTime, directTimeWindowDrop[2] - time[request.pickUpActivity.id,request.dropOffActivity.id] - serviceTime)
+    end
+
+    # Determine possible arrival times
+    possibleArrivalTimePickUp = (activityBefore.endOfServiceTime - BUP + time[activityBefore.activity.id,request.pickUpActivity.id], activityBefore.endOfServiceTime + BDOWN + time[activityBefore.activity.id,request.pickUpActivity.id])
+    possibleArrivalTimeDropOff = (activityAfter.startOfServiceTime - AUP - time[request.dropOffActivity.id,activityAfter.activity.id] - serviceTime, activityAfter.startOfServiceTime + ADOWN - time[request.dropOffActivity.id,activityAfter.activity.id ]- serviceTime)
+
+    # Determine feasible arrival times
+    arrivalTimePickUp = (max(possibleArrivalTimePickUp[1],directTimeWindowPick[1]), min(possibleArrivalTimePickUp[2],directTimeWindowPick[2]))
+    arrivalTimeDropOff = (max(possibleArrivalTimeDropOff[1],directTimeWindowDrop[1]), min(possibleArrivalTimeDropOff[2],directTimeWindowDrop[2]))
+    if arrivalTimePickUp[2] < arrivalTimePickUp[1] || arrivalTimeDropOff[2] < arrivalTimeDropOff[1]
+        println("Time window infeasibility")
+        return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
+    end
+
+    # Determine feasible shifts considering pickup and drop off time windows
+    potentialDropOffFromPick = (arrivalTimePickUp[1] + serviceTime + time[request.pickUpActivity.id,request.dropOffActivity.id],arrivalTimePickUp[2] + serviceTime + time[request.pickUpActivity.id,request.dropOffActivity.id])
+    possibleDropOffTimeWindow = (max(potentialDropOffFromPick[1],arrivalTimeDropOff[1]), min(potentialDropOffFromPick[2],arrivalTimeDropOff[2]))
+    if possibleDropOffTimeWindow[2] < possibleDropOffTimeWindow[1]
+        println("No possible drop off")
+        return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
+    end
+
+    # determine service windows
+    startOfServiceTimeDropOff = possibleDropOffTimeWindow[2]
+    startOfServiceTimePickUp = startOfServiceTimeDropOff - serviceTime - time[request.pickUpActivity.id,request.dropOffActivity.id]
+
+    # Determine shifts 
+    shiftBeforePickUp = startOfServiceTimePickUp - (activityBefore.endOfServiceTime + time[activityBefore.activity.id,request.pickUpActivity.id])
+    shiftBetweenPickupAndDropOff = 0
+    shiftAfterDropOff = startOfServiceTimeDropOff - (activityAfter.startOfServiceTime - time[request.dropOffActivity.id,activityAfter.activity.id] - serviceTime)
+
+    return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, 0, shiftAfterDropOff, false
 end
 
 #==
@@ -866,6 +930,18 @@ end
 function determineMaximumShiftBackward(waitingTimeStart::Int,scheduleBlock::Vector{ActivityAssignment})
     minimumDifferenceRoute = findmin([a.startOfServiceTime - a.activity.timeWindow.startTime for a in scheduleBlock])[1]
     return min(waitingTimeStart,minimumDifferenceRoute)
+end
+
+function determinePossibleAfterShift(waitingTimeStart::Int,scheduleBlock::Vector{ActivityAssignment})
+    BUP = min(waitingTimeStart,findmin([a.startOfServiceTime - a.activity.timeWindow.startTime for a in scheduleBlock])[1])
+    BDOWN = findmin([a.activity.timeWindow.endTime - a.startOfServiceTime for a in scheduleBlock])[1]
+    return BUP,BDOWN
+end
+
+function determinePossibleBeforeShift(waitingTimeEnd::Int,scheduleBlock::Vector{ActivityAssignment})
+    AUP = findmin([a.startOfServiceTime - a.activity.timeWindow.startTime for a in scheduleBlock])[1]
+    ADOWN = min(waitingTimeEnd,findmin([a.activity.timeWindow.endTime - a.startOfServiceTime for a in scheduleBlock])[1])
+    return AUP,ADOWN
 end
 
 #==
