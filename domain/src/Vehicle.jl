@@ -4,7 +4,7 @@ using ..TimeWindows, ..Locations
 
 export Vehicle 
 
-struct Vehicle 
+mutable struct Vehicle 
     id::Int 
     availableTimeWindow::TimeWindow # Minutes after midnight 
     depotId::Int 
