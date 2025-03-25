@@ -206,7 +206,6 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
 
     for i in 1:length(route)-1
         for j in i:length(route)-1
-            println(checkFeasibilityOfInsertionAtPosition2(request, vehicleSchedule,i,j,scenario))
             feasible,  startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, scheduleBlockStart, scheduleBlockEnd = checkFeasibilityOfInsertionAtPosition2(request, vehicleSchedule,i,j,scenario)
             if feasible
                 delta = calculateInsertionCost(scenario.time,scenario.serviceTimes,vehicleSchedule,request,i,j)
