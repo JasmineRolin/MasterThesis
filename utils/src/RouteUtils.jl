@@ -3,8 +3,6 @@ module RouteUtils
 using UnPack, domain, Printf, ..CostCalculator
 
 export printRoute,printSimpleRoute,insertRequest!,checkFeasibilityOfInsertionAtPosition,printRouteHorizontal,printSolution,updateRoute!
-export determineServiceTimesAndShiftsCase1,determineServiceTimesAndShiftsCase2, determineServiceTimesAndShiftsCase3,checkFeasibilityOfInsertionInScheduleBlock,checkFeasibilityOfInsertionAtPosition2
-
 
 #==
 # Method to print solution 
@@ -91,19 +89,42 @@ end
 # ----------
 # idxPickUp: index of link where pickup should be inserted 
 # idxDropOff: index of link where dropoff should be inserted 
-function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPickUp::Int,idxDropOff::Int,scenario::Scenario)
 
-    # Update r  oute
-    updateRoute!(scenario.time,scenario.distance,scenario.serviceTimes,vehicleSchedule,request,idxPickUp,idxDropOff)
+#==
+    New insert request 
+==#
+function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPickUp::Int,idxDropOff::Int,scheduleBlockStart::Int,scheduleBlockEnd::Int,scenario::Scenario,newStartOfServiceTimes::Array{Int,1},newEndOfServiceTimes::Array{Int,1})
+
+    route = vehicleSchedule.route
+    vehicle = vehicleSchedule.vehicle
+    serviceTime = scenario.serviceTimes
+
+    # Insert request
+    insert!(route,idxPickUp+1,ActivityAssignment(request.pickUpActivity,vehicle,0,0))
+    insert!(route,idxDropOff+2,ActivityAssignment(request.dropOffActivity,vehicle,0,0))
+
+    # Shift route
+    for (i,a) in enumerate(route[scheduleBlockStart:(scheduleBlockEnd+2)])
+        a.startOfServiceTime = newStartOfServiceTimes[i]
+        a.endOfServiceTime = newEndOfServiceTimes[i]
+
+        if a.activity.activityType == WAITING
+            a.activity.timeWindow.startTime = newStartOfServiceTimes[i]
+            a.activity.timeWindow.endTime = newEndOfServiceTimes[i]
+        end
+    end
+
+    # Update active time window 
+    if route[scheduleBlockStart].activity.activityType == DEPOT
+        vehicleSchedule.activeTimeWindow.startTime = route[scheduleBlockStart].startOfServiceTime
+    end
 
     # Update capacities
     updateCapacities!(vehicleSchedule,idxPickUp,idxDropOff)
 
-    # Update depots
-    updateDepots!(scenario.time,vehicleSchedule,request,idxPickUp,idxDropOff)
-
-    # Update waiting
-    updatedIdxPickUp, updatedIdxDropOff = updateWaiting!(scenario.time,scenario.distance,vehicleSchedule,request,idxPickUp,idxDropOff)
+    # Update waiting 
+    # TODO: stadig brugt? 
+    updateWaiting!(scenario.time,scenario.distance,vehicleSchedule,request,idxPickUp,idxDropOff)
 
     # Update idle time 
     vehicleSchedule.totalIdleTime = getTotalIdleTimeRoute(vehicleSchedule.route)
@@ -112,73 +133,10 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPic
     vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
 
     # Update total cost
-    vehicleSchedule.totalCost += getCostOfRequest(scenario.time,vehicleSchedule.route[updatedIdxPickUp],vehicleSchedule.route[updatedIdxDropOff])
-end
+    vehicleSchedule.totalCost = getTotalCostRoute(scenario,route) #TODO
 
-
-#==
-Method to update route in vehicle schedule after insertion of request. Will do it so minimize excess drive time and secondly as late as possible
-==#
-function updateRoute!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,vehicleSchedule::VehicleSchedule,request::Request,idxPickUp::Int,idxDropOff::Int)
-
-    route = vehicleSchedule.route
-
-    # Get time when cend of service is for node before pick up
-    if route[idxPickUp].activity.activityType == WAITING || route[idxPickUp].activity.activityType == DEPOT
-        endOfServiceBeforePick = route[idxPickUp].activity.timeWindow.startTime
-    else
-        endOfServiceBeforePick = route[idxPickUp].endOfServiceTime
-    end
-
-    # Get time when end of service is for node before drop off
-    if route[idxDropOff].activity.activityType == WAITING || route[idxDropOff].activity.activityType == DEPOT
-        endOfServiceBeforeDrop = route[idxDropOff].activity.timeWindow.startTime
-    else
-        endOfServiceBeforeDrop = route[idxDropOff].endOfServiceTime
-    end
-
-    # Get time when arriving at node after pick up
-    startOfServiceAfterPick = route[idxPickUp+1].startOfServiceTime
-
-    # Get time when arriving at node after drop off
-    startOfServiceAfterDrop = route[idxDropOff+1].startOfServiceTime
-
-
-    #Get available service time windows
-    earliestStartOfServicePickUp = max(endOfServiceBeforePick + time[route[idxPickUp].activity.id,request.pickUpActivity.id],request.pickUpActivity.timeWindow.startTime)
-    latestStartOfServicePickUp = min(startOfServiceAfterPick - time[request.pickUpActivity.id,route[idxPickUp+1].activity.id] - serviceTimes,request.pickUpActivity.timeWindow.endTime)
-    earliestStartOfServiceDropOff = max(endOfServiceBeforeDrop + time[route[idxDropOff].activity.id,request.dropOffActivity.id],request.dropOffActivity.timeWindow.startTime)
-    latestStartOfServiceDropOff = min(startOfServiceAfterDrop - time[request.dropOffActivity.id,route[idxDropOff+1].activity.id] - serviceTimes,request.dropOffActivity.timeWindow.endTime)  
-
-    # Get available service time window for pick up considering minimized excess drive time
-    earliestStartOfServicePickUpMinimization = max(earliestStartOfServicePickUp,earliestStartOfServiceDropOff - max(earliestStartOfServiceDropOff - latestStartOfServicePickUp, time[request.pickUpActivity.id,request.dropOffActivity.id] + serviceTimes))
-    latestStartOfServicePickUpMinimization = min(latestStartOfServicePickUp,latestStartOfServiceDropOff-max(earliestStartOfServiceDropOff - latestStartOfServicePickUp, time[request.pickUpActivity.id,request.dropOffActivity.id] + serviceTimes))
-
-    # Choose the best time for pick up (Here the latest time is chosen)
-    startOfServicePick = latestStartOfServicePickUpMinimization
-
-    # Determine the time for drop off
-    startOfServiceDrop = startOfServicePick + max(earliestStartOfServiceDropOff - latestStartOfServicePickUp, time[request.pickUpActivity.id,request.dropOffActivity.id]+serviceTimes)
-
-    # Save original nodes before and after pick up and drop off
-    activityAssignmentBeforePickUp = route[idxPickUp].activity.id
-    activityAssignmentAfterPickUp = route[idxPickUp+1].activity.id
-    activityAssignmentBeforeDropOff = route[idxDropOff].activity.id
-    activityAssignmentAfterDropOff = route[idxDropOff+1].activity.id
-
-    # Insert request
-    pickUpActivity = ActivityAssignment(request.pickUpActivity, vehicleSchedule.vehicle, startOfServicePick, startOfServicePick + serviceTimes)
-    dropOffActivity = ActivityAssignment(request.dropOffActivity, vehicleSchedule.vehicle, startOfServiceDrop, startOfServiceDrop + serviceTimes)
-    insert!(vehicleSchedule.route,idxPickUp+1,pickUpActivity)
-    insert!(vehicleSchedule.route,idxDropOff+2,dropOffActivity)
-
-    # Update total distance by removing distance betweeen old neighbors  
-    if idxDropOff == idxPickUp
-        vehicleSchedule.totalDistance -= distance[activityAssignmentBeforePickUp,activityAssignmentAfterPickUp]
-    else
-        vehicleSchedule.totalDistance -= distance[activityAssignmentBeforePickUp,activityAssignmentAfterPickUp] + distance[activityAssignmentBeforeDropOff,activityAssignmentAfterDropOff]
-    end
-
+    #Update total distance
+    vehicleSchedule.totalDistance = getTotalDistanceRoute(route,scenario.distance) #TODO
 end
 
 
@@ -416,7 +374,7 @@ end
 #==
 # Method to update depots in vehicle schedule after insertion of request
 ==#
-function updateDepots!(time::Array{Int,2}, vehicleSchedule::VehicleSchedule,request::Request,idxPickUp::Int,idxDropOff::Int)
+function updateDepots!(time::Array{Int,2}, vehicleSchedule::VehicleSchedule,idxPickUp::Int)
     route = vehicleSchedule.route
 
     # Update start depot 
@@ -451,119 +409,7 @@ function updateDistance!(scenario::Scenario,vehicleSchedule::VehicleSchedule,req
 end
 
 
-
-# ----------
-# Function to check feasibility of given placement of a request for in a vehicle schedule 
-# ----------
-# OBS: Made for when a service time is determined, and it cannot be changed
 function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule::VehicleSchedule,pickUpIdx::Int,dropOffIdx::Int,scenario::Scenario)
-
-    # Check vehicle capacity
-    if !(all(vehicleSchedule.numberOfWalking[(pickUpIdx + 1):dropOffIdx] .< vehicleSchedule.vehicle.totalCapacity))
-        return false
-    end
-
-    # Check if insertion is feasible 
-    if pickUpIdx == dropOffIdx
-        # Determine arrival times
-        idx = pickUpIdx
-        route = vehicleSchedule.route
-
-        # Determine arrival times for different cases
-        if (idx == 1 && route[1].activity.activityType == DEPOT) || (route[idx].activity.activityType == WAITING)
-            earliestStartOfServicePick = vehicleSchedule.route[idx].startOfServiceTime + scenario.time[vehicleSchedule.route[idx].activity.id, request.pickUpActivity.id]
-            startOfServicePick = max(earliestStartOfServicePick,request.pickUpActivity.timeWindow.startTime)
-            endOfPickUp = startOfServicePick + scenario.serviceTimes
-
-            earliestStartOfServiceDrop = endOfPickUp + scenario.time[request.pickUpActivity.id, request.dropOffActivity.id]
-            startOfServiceDrop = max(earliestStartOfServiceDrop,request.dropOffActivity.timeWindow.startTime)
-            endOfDropOff = startOfServiceDrop + scenario.serviceTimes
-            arrivalNextNode = endOfDropOff + scenario.time[request.dropOffActivity.id, vehicleSchedule.route[idx+1].activity.id]
-        else
-            return false
-        end
-
-        # Check time window
-        if startOfServicePick > request.pickUpActivity.timeWindow.endTime || startOfServicePick < request.pickUpActivity.timeWindow.startTime
-            #println("Infeasible: Time window pick-up")
-            return false
-        elseif startOfServiceDrop > request.dropOffActivity.timeWindow.endTime || startOfServiceDrop < request.dropOffActivity.timeWindow.startTime
-            #println("Infeasible: Time window drop-off")
-            return false
-        end
-        
-        # Check drive time: First node
-        if startOfServicePick > request.pickUpActivity.timeWindow.endTime
-            #println("Infeasible: Drive time from first node")
-            return false
-        end
-        
-        # Check drive time:Next node
-        if idx == length(vehicleSchedule.route)-1 && arrivalNextNode > vehicleSchedule.vehicle.availableTimeWindow.endTime
-            #println("Infeasible: Drive time to next node")
-            return false
-        elseif idx < length(vehicleSchedule.route)-1 && arrivalNextNode > vehicleSchedule.route[idx+1].startOfServiceTime
-            #println("Infeasible: Drive time to next node")
-            return false
-        end
-
-
-    else
-        route = vehicleSchedule.route
-        for activity in [request.pickUpActivity, request.dropOffActivity]
-            
-            if activity == request.pickUpActivity
-                idx = pickUpIdx
-            else
-                idx = dropOffIdx
-            end
-
-            # Determine arrival times for different cases
-            if (idx == 1 && route[1].activity.activityType == DEPOT) || (route[idx].activity.activityType == WAITING)
-
-                earliestStartOfServiceActivity = route[idx].startOfServiceTime + scenario.time[route[idx].activity.id, activity.id]
-                startOfServiceActivity = max(earliestStartOfServiceActivity,activity.timeWindow.startTime)
-                
-                endOfActivity = startOfServiceActivity + scenario.serviceTimes
-                arrivalNextNode = endOfActivity + scenario.time[activity.id, route[idx+1].activity.id]
-            else
-                return false
-            end
-
-            # Check time window
-            if startOfServiceActivity > activity.timeWindow.endTime || startOfServiceActivity < activity.timeWindow.startTime
-                #println("Infeasible: Time window")
-                return false
-            end
-
-            # Check drive time: First node
-            if startOfServiceActivity > activity.timeWindow.endTime
-                #println("Infeasible: Drive time from first node")
-                return false
-            end
-            
-            # Check drive time:Next node
-            if idx == length(route)-1 && arrivalNextNode > vehicleSchedule.vehicle.availableTimeWindow.endTime
-                #println("Infeasible: Drive time to next node")
-                return false
-            elseif idx < length(route)-1 && arrivalNextNode > route[idx+1].startOfServiceTime
-                #println("Infeasible: Drive time to next node")
-                return false
-            end
-    
-        end
-    end
-
-    
-        
-    # If all checks pass, the activity is feasible
-    #println("FEASIBLE")
-    return true
-end
-
-
-
-function checkFeasibilityOfInsertionAtPosition2(request::Request, vehicleSchedule::VehicleSchedule,pickUpIdx::Int,dropOffIdx::Int,scenario::Scenario)
 
     @unpack route,numberOfWalking, vehicle = vehicleSchedule
     @unpack time,serviceTimes = scenario
@@ -578,25 +424,25 @@ function checkFeasibilityOfInsertionAtPosition2(request::Request, vehicleSchedul
     # Check if in same schedule block 
     if waitingActivityIdxBeforePickUp != waitingActivityIdxBeforeDropOff || waitingActivityIdxAfterPickUp != waitingActivityIdxAfterDropOff
         println("INFEASIBLE: DIFFERENT SCHEDULE BLOCKS")
-        return false,0,0,0,0,0
+        return false, [], [], 0, 0
     end
 
     # Check load 
     if any(numberOfWalking[pickUpIdx:dropOffIdx] .+ 1 .> vehicle.totalCapacity) # TODO: jas - check rigtigt 
         println("INFEASIBLE: CAPACITY")
-        return false,0,0,0,0,0
+        return false, [], [], 0, 0
     end
 
     # Check times for pick up 
     if route[pickUpIdx].activity.timeWindow.startTime > request.pickUpActivity.timeWindow.endTime || route[pickUpIdx+1].activity.timeWindow.endTime < request.pickUpActivity.timeWindow.startTime
         println("INFEASIBLE: PICK-UP TIME WINDOW")
-        return false,0,0,0,0,0
+        return false, [], [], 0, 0
     end
 
     # Check times for drop off
     if route[dropOffIdx].activity.timeWindow.startTime > request.dropOffActivity.timeWindow.endTime || route[dropOffIdx+1].activity.timeWindow.endTime < request.dropOffActivity.timeWindow.startTime
         println("INFEASIBLE: DROP-OFF TIME WINDOW")
-        return false,0,0,0,0,0
+        return false, [], [], 0, 0
     end
 
     # Retrieve schedule block
@@ -607,7 +453,7 @@ function checkFeasibilityOfInsertionAtPosition2(request::Request, vehicleSchedul
     # Check feasibility 
     feasible, newStartOfServiceTimes, newEndOfServiceTimes = checkFeasibilityOfInsertionInScheduleBlock(scenario,request,scheduleBlock,pickUpIdxInBlock,dropOffIdxInBlock)
     
-    return  feasible, newStartOfServiceTimes, newEndOfServiceTimes 
+    return  feasible, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivityIdxBeforePickUp, waitingActivityIdxAfterDropOff 
 end
 
 
@@ -626,7 +472,8 @@ function checkFeasibilityOfInsertionInScheduleBlock(scenario::Scenario,request::
     currentActivity = scheduleBlock[1].activity
     previousActivity = scheduleBlock[1].activity
     newStartOfServiceTimes[1] = scheduleBlock[1].startOfServiceTime
-    newEndOfServiceTimes[1] = scheduleBlock[1].startOfServiceTime
+    newEndOfServiceTimes[1] = scheduleBlock[1].endOfServiceTime 
+    newEndOfServiceTimes[end] = scheduleBlock[end].endOfServiceTime
 
     maximumShiftForward =  scheduleBlock[1].activity.timeWindow.endTime - scheduleBlock[1].startOfServiceTime
     maximumShiftBackward = scheduleBlock[1].startOfServiceTime - scheduleBlock[1].activity.timeWindow.startTime
@@ -644,10 +491,15 @@ function checkFeasibilityOfInsertionInScheduleBlock(scenario::Scenario,request::
 
         # Check if we can insert next activity directly 
         arrivalAtCurrentActivity = newEndOfServiceTimes[idx-1] + time[previousActivity.id,currentActivity.id] 
-        if currentActivity.activityType == DEPOT ||  currentActivity.activityType == WAITING # Assuming that there is only depot or waiting at start and end of segment 
+        if currentActivity.activityType == DEPOT   # Assuming that there is only depot or waiting at start and end of segment 
+            # Service times for current activity
+            newStartOfServiceTimes[idx] = newEndOfServiceTimes[end]
+
+            # Return 
+            return true, newStartOfServiceTimes, newEndOfServiceTimes
+        elseif currentActivity.activityType == WAITING
             # Service times for current activity
             newStartOfServiceTimes[idx] = arrivalAtCurrentActivity
-            newEndOfServiceTimes[idx] = arrivalAtCurrentActivity
 
             # Return 
             return true, newStartOfServiceTimes, newEndOfServiceTimes
@@ -698,7 +550,7 @@ function checkFeasibilityOfInsertionInScheduleBlock(scenario::Scenario,request::
                 newEndOfServiceTimes[i] -= shift
             end
         else
-            false, newStartOfServiceTimes, newEndOfServiceTimes
+            return false, newStartOfServiceTimes, newEndOfServiceTimes
         end
 
         # Check maximum ride time 
@@ -716,503 +568,6 @@ function checkFeasibilityOfInsertionInScheduleBlock(scenario::Scenario,request::
     end
 
     return true, newStartOfServiceTimes, newEndOfServiceTimes
-end
-
-#==
- Method to determine the time to start service at new request and how much to shift the existing route  
-==#
-# Case 1 : W - ROUTE - P - D - W
-function determineServiceTimesAndShiftsCase1(time::Array{Int,2},serviceTime::Int,request::Request,scheduleBlock::Vector{ActivityAssignment})
-    feasible = false
-    startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = 0,0,0,0,0
-    addWaitingActivity = false
-
-    # Retrieve info 
-    pickUpActivity, dropOffActivity = request.pickUpActivity, request.dropOffActivity
-    pickUpId, dropOffId = pickUpActivity.id, dropOffActivity.id
-    startActivity = scheduleBlock[1]
-    endActivity = scheduleBlock[end]
-    activityBeforePickUp = scheduleBlock[end-1]
-  
-    # Duration of waiting activities at start and end of schedule block
-    detour = findDetour(time,serviceTime,activityBeforePickUp.activity.id,endActivity.activity.id,pickUpId,dropOffId)
-    waitingTimeStart = startActivity.activity.activityType == DEPOT ? startActivity.endOfServiceTime - startActivity.activity.timeWindow.startTime : startActivity.endOfServiceTime - startActivity.startOfServiceTime
-    waitingTimeEnd = (endActivity.activity.activityType == DEPOT ? endActivity.activity.timeWindow.endTime - endActivity.startOfServiceTime : (endActivity.endOfServiceTime - endActivity.startOfServiceTime)) - detour
-
-    # Determine shifts 
-    maxShiftForward = determineMaximumShiftForward(waitingTimeEnd,scheduleBlock[2:(end-1)])
-    maxShiftBackWard = determineMaximumShiftBackward(waitingTimeStart,scheduleBlock[2:(end-1)])
-
-    # Check if there is room for detour  
-    if maxShiftBackWard + waitingTimeEnd < detour
-        return false,0,0,0,0,0,false
-    end
-
-    arrivalAtPickUp = activityBeforePickUp.endOfServiceTime + time[activityBeforePickUp.activity.id,pickUpId]
-    arrivalAtDropOff = arrivalAtPickUp + serviceTime + time[pickUpId,dropOffId]
-    endOfWaitingAtEnd = endActivity.activity.timeWindow.endTime
-
-    # Can request be inserted directly at end of schedule block 
-    if pickUpActivity.timeWindow.startTime <= arrivalAtPickUp <= pickUpActivity.timeWindow.endTime && 
-        dropOffActivity.timeWindow.startTime <= arrivalAtDropOff <= dropOffActivity.timeWindow.endTime && 
-        arrivalAtDropOff + s + t[dropOffId,endActivity.activity.id] <= endOfWaitingAtEnd
-
-        feasible = true 
-        startOfServiceTimePickUp = arrivalAtPickUp
-        startOfServiceTimeDropOff = arrivalAtDropOff
-        return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
-    end
-
-    # Can request be inserted at end of schedule block by shifting route forward 
-    if arrivalAtPickUp < pickUpActivity.timeWindow.startTime
-        shiftedArrivalAtPickUp = arrivalAtPickUp + maxShiftForward
-        shiftedArrivalAtDropOff = shiftedArrivalAtPickUp + serviceTime + time[pickUpId,dropOffId]
-        
-        # Insert if feasible 
-        if shiftedArrivalAtPickUp >= pickUpActivity.timeWindow.startTime && shiftedArrivalAtDropOff >= dropOffActivity.timeWindow.startTime 
-            maxShiftForward = min(maxShiftForward, maxShiftForward - min(shiftedArrivalAtDropOff-dropOffActivity.timeWindow.startTime, shiftedArrivalAtPickUp-pickUpActivity.timeWindow.startTime)) # Place request at drop off earliest time window 
-            feasible = true
-            startOfServiceTimePickUp = arrivalAtPickUp + maxShiftForward
-            startOfServiceTimeDropOff = startOfServiceTimePickUp  + serviceTime + time[pickUpId,dropOffId]
-            shiftBeforePickUp = maxShiftForward
-            shiftAfterDropOff = maxShiftForward + detour 
-
-            # Maximum ride time exceeded 
-            if startOfServiceTimeDropOff - (startOfServiceTimePickUp + serviceTime) > request.maximumRideTime
-                return false,0,0,0,0,0,0,false
-            end
-
-            return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
-        end
-    end
-
-    # Can request be inserted at end of schedule block by shifting route backward
-    if arrivalAtPickUp > pickUpActivity.timeWindow.endTime
-        # Insert if feasible 
-        if arrivalAtPickUp - maxShiftBackWard <= pickUpActivity.timeWindow.endTime 
-            feasible = true 
-            shiftedArrivalAtPickUp = max(pickUpActivity.timeWindow.startTime,arrivalAtPickUp - maxShiftBackWard)
-            shiftedArrivalAtDropOff = shiftedArrivalAtPickUp + serviceTime + time[pickUpId,dropOffId]
-
-            # Infeasible if we can only arrive after latest start of drop off
-            if shiftedArrivalAtDropOff >= dropOffActivity.timeWindow.endTime
-                return false,0,0,0,0,0,false
-            end
-
-            # Insert if feasible
-            if dropOffActivity.timeWindow.startTime <= shiftedArrivalAtDropOff <= dropOffActivity.timeWindow.endTime 
-                feasible = true
-                maxShiftBackWard = arrivalAtPickUp - shiftedArrivalAtPickUp
-                startOfServiceTimePickUp = shiftedArrivalAtPickUp
-                startOfServiceTimeDropOff = shiftedArrivalAtDropOff
-                shiftBeforePickUp = -maxShiftBackWard
-                shiftAfterDropOff = -maxShiftBackWard + detour
-
-                # Maximum ride time exceeded 
-                if startOfServiceTimeDropOff - (startOfServiceTimePickUp + serviceTime) > request.maximumRideTime
-                    return false,0,0,0,0,0,0,false
-                end
-
-                return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
-
-            end
-
-            # Find new shift to arrive in drop off time window 
-            maxShiftBackWard = maxShiftBackWard - (dropOffActivity.timeWindow.startTime - shiftedArrivalAtDropOff)
-            startOfServiceTimePickUp = arrivalAtPickUp - maxShiftBackWard
-            startOfServiceTimeDropOff = startOfServiceTimePickUp + serviceTime + time[pickUpId,dropOffId]
-            shiftBeforePickUp = -maxShiftBackWard
-            shiftAfterDropOff = -maxShiftBackWard + detour
-
-            return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
-        end
-    end
-
-    # Can request be inserted at end of schedule by inserting waiting activity before pick-up
-    startOfWaitingActivity = activityBeforePickUp.endOfServiceTime
-    endOfWaitingActivity = dropOffActivity.timeWindow.startTime - time[pickUpId,dropOffId] - serviceTime - time[activityBeforePickUp.activity.id,pickUpId]
-
-    if startOfWaitingActivity > endOfWaitingActivity
-        return false,0,0,0,0,0
-    end
-
-    # Infeasible arrival at pick up 
-    arrivalAtPickUp = endOfWaitingActivity + time[activityBeforePickUp.activity.id,pickUpId]
-    if  arrivalAtPickUp > pickUpActivity.timeWindow.endTime || arrivalAtPickUp < pickUpActivity.timeWindow.startTime
-        return false,0,0,0,0,0
-    end
-
-    # Infeasible arrival at drop off 
-    arrivalAtDropOff = arrivalAtPickUp + serviceTime + time[pickUpId,dropOffId]
-    if arrivalAtDropOff > dropOffActivity.timeWindow.endTime || arrivalAtDropOff < dropOffActivity.timeWindow.startTime
-        return false,0,0,0,0,0
-    end
-
-    # Infeasible arrival at end of schedule block
-    arrivalAtEndWaiting = arrivalAtDropOff + serviceTime + time[dropOffId,endActivity.activity.id]
-    if arrivalAtEndWaiting > endOfWaitingAtEnd
-        return false,0,0,0,0,0
-    end
-
-    # Waiting can be inserted
-    feasible = true
-    addWaitingActivity = true 
-    startOfServiceTimePickUp = arrivalAtPickUp
-    startOfServiceTimeDropOff = arrivalAtDropOff
-    shiftAfterDropOff = (endOfWaitingActivity - startOfWaitingActivity) + detour
-
-    # Maximum ride time exceeded 
-    if startOfServiceTimeDropOff - (startOfServiceTimePickUp + serviceTime) > request.maximumRideTime
-        return false,0,0,0,0,0,0
-    end
-
-    return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
-end
-
-# Case 2 : W - P - D - ROUTE - W 
-function determineServiceTimesAndShiftsCase2(time::Array{Int,2},serviceTime::Int,request::Request,scheduleBlock::Vector{ActivityAssignment})
-    feasible = false
-    startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = 0,0,0,0,0
-    addWaitingActivity = false
-
-
-    # Retrieve info 
-    pickUpActivity, dropOffActivity = request.pickUpActivity, request.dropOffActivity
-    pickUpId, dropOffId = pickUpActivity.id, dropOffActivity.id
-    startActivity = scheduleBlock[1]
-    endActivity = scheduleBlock[end]
-    activityBeforePickUp = scheduleBlock[1]
-    activityAfterDropOff = scheduleBlock[2]
-  
-    # Duration of waiting activities at start and end of schedule block
-    detour = findDetour(time,serviceTime,activityBeforePickUp.activity.id,activityAfterDropOff.activity.id,pickUpId,dropOffId)
-    waitingTimeStart = startActivity.activity.activityType == DEPOT ? startActivity.endOfServiceTime - startActivity.activity.timeWindow.startTime : (startActivity.endOfServiceTime - startActivity.startOfServiceTime) 
-    waitingTimeEnd = (endActivity.activity.activityType == DEPOT ? endActivity.activity.timeWindow.endTime - endActivity.startOfServiceTime : (endActivity.endOfServiceTime - endActivity.startOfServiceTime)) - detour
-
-    # Determine shifts for inserting pickup activity 
-    maxShiftForward = determineMaximumShiftForward(waitingTimeEnd,scheduleBlock[2:(end-1)])
-    maxShiftBackWard = determineMaximumShiftBackward(waitingTimeStart,scheduleBlock[2:(end-1)])
-
-    # Check if there is room for detor 
-    if maxShiftForward + waitingTimeStart < detour
-        return false,0,0,0,0,0,false
-    end
-    
-    # Current arrival at pick up 
-    arrivalAtPickUp = activityAfterDropOff.startOfServiceTime - serviceTime - time[dropOffId,activityAfterDropOff.activity.id]
-    shiftedArrivalAtDropOff = arrivalAtPickUp
-
-    # Check if it feasible to insert drop off     
-    shiftAfterInsertingDropOff = 0
-
-    # Can drop off be inserted directly 
-    if dropOffActivity.timeWindow.startTime <= arrivalAtPickUp <= dropOffActivity.timeWindow.endTime 
-        startOfServiceTimeDropOff = arrivalAtPickUp
-
-    # Can drop off be inserted  by shifting route forward 
-    elseif arrivalAtPickUp < dropOffActivity.timeWindow.startTime && arrivalAtPickUp + maxShiftForward >= dropOffActivity.timeWindow.startTime
-        shiftedArrivalAtDropOff = min(arrivalAtPickUp + maxShiftForward,dropOffActivity.timeWindow.endTime)
-        shiftAfterInsertingDropOff = (shiftedArrivalAtDropOff - arrivalAtPickUp)
-
-    # Can drop off be inserted by shifting route backwards 
-    elseif arrivalAtPickUp > dropOffActivity.timeWindow.endTime && arrivalAtPickUp - maxShiftBackWard <= dropOffActivity.timeWindow.endTime
-        shiftedArrivalAtDropOff = dropOffActivity.timeWindow.endTime
-        shiftAfterInsertingDropOff = -(arrivalAtPickUp - shiftedArrivalAtDropOff)
-    # Can a waiting activity be inserted    
-    else
-        startOfWaitingActivity = dropOffActivity.timeWindow.endTime 
-        endOfWaitingActivity = activityAfterDropOff.startOfServiceTime - time[pickUpId,activityAfterDropOff.activity.id]
-        shiftedArrivalAtDropOff = dropOffActivity.timeWindow.endTime
-        shiftAfterInsertingDropOff = shiftedArrivalAtDropOff - arrivalAtPickUp
-        maxShiftBackWard = typemax(Int) # Work around when inserting waiting activity
-        addWaitingActivity = true
-
-        if startOfWaitingActivity > endOfWaitingActivity
-            return false,0,0,0,0,0,0,false
-        end
-
-    end
-
-    # Check if it feasible to insert pick up
-    shiftAfterInsertingPickUp = 0
-    maxShiftForward = min(dropOffActivity.timeWindow.endTime-shiftedArrivalAtDropOff, maxShiftForward - shiftAfterInsertingDropOff)
-    maxShiftBackWard = min(shiftedArrivalAtDropOff-dropOffActivity.timeWindow.startTime, maxShiftBackWard + shiftAfterInsertingDropOff)
-
-    # Can pick up be inserted directly
-    arrivalAtPickUp = shiftedArrivalAtDropOff - serviceTime - time[pickUpId,dropOffId]
-    arrivalAtStartNode = arrivalAtPickUp - time[activityBeforePickUp.activity.id,pickUpId]
-
-    if pickUpActivity.timeWindow.startTime <= arrivalAtPickUp <= pickUpActivity.timeWindow.endTime && arrivalAtStartNode >= activityBeforePickUp.activity.timeWindow.startTime
-        startOfServiceTimePickUp = arrivalAtPickUp
-        startOfServiceTimeDropOff = shiftedArrivalAtDropOff
-
-        # Maximum ride time exceeded 
-        if startOfServiceTimeDropOff - (startOfServiceTimePickUp + serviceTime) > request.maximumRideTime
-            return false,0,0,0,0,0,0,false
-        end
-
-        feasible = true
-        shiftBeforePickUp = shiftAfterInsertingDropOff - detour 
-        shiftAfterDropOff = shiftAfterInsertingDropOff*(!addWaitingActivity)
-
-        return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
-    end
-
-    # Can pick up be inserted by shifting route forward
-    if arrivalAtPickUp < pickUpActivity.timeWindow.startTime && arrivalAtPickUp + maxShiftForward >= pickUpActivity.timeWindow.startTime
-        startOfServiceTimePickUp = min(arrivalAtPickUp + maxShiftForward,pickUpActivity.timeWindow.endTime)
-        startOfServiceTimeDropOff = startOfServiceTimePickUp + serviceTime + time[pickUpId,dropOffId]
-        shiftAfterInsertingPickUp = (startOfServiceTimePickUp - arrivalAtPickUp)
-
-        # Maximum ride time exceeded 
-        if startOfServiceTimeDropOff - (startOfServiceTimePickUp + serviceTime) > request.maximumRideTime
-            return false,0,0,0,0,0,0,false
-        end
-
-        feasible = true
-        shiftBeforePickUp = (shiftAfterInsertingDropOff+shiftAfterInsertingPickUp) - detour 
-        shiftAfterDropOff = (shiftAfterInsertingDropOff+shiftAfterInsertingPickUp)*(!addWaitingActivity)
-        return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
-    end
-
-    # Can pick up be inserted by shifting route backwards
-    if arrivalAtPickUp > pickUpActivity.timeWindow.endTime && arrivalAtPickUp - maxShiftBackWard <= pickUpActivity.timeWindow.endTime
-        startOfServiceTimePickUp = pickUpActivity.timeWindow.endTime
-        startOfServiceTimeDropOff = startOfServiceTimePickUp + serviceTime + time[pickUpId,dropOffId]
-        shiftAfterInsertingPickUp = -(arrivalAtPickUp - startOfServiceTimePickUp)
-
-        # Maximum ride time exceeded 
-        if startOfServiceTimeDropOff - (startOfServiceTimePickUp + serviceTime) > request.maximumRideTime
-            return false,0,0,0,0,0,0,false
-        end
-
-        feasible = true
-        shiftBeforePickUp = (shiftAfterInsertingDropOff+shiftAfterInsertingPickUp) - detour 
-        shiftAfterDropOff = (shiftAfterInsertingDropOff+shiftAfterInsertingPickUp)*(!addWaitingActivity)
-        return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
-    end
-
-
-    return false,0,0,0,0,0,0,false
-end
-
-# Case 3 : W - P - ROUTE - D - ROUTE - W
-function determineServiceTimesAndShiftsCase3(time::Array{Int,2},serviceTime::Int,request::Request,scheduleBlock::Vector{ActivityAssignment}, pickUpIdxInBlock::Int, dropOffIdxInBlock::Int)
-    feasible = false
-    startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = 0,0,0,0,0
-    addWaitingActivity = false
-
-    # Retrieve info 
-    pickUpActivity, dropOffActivity = request.pickUpActivity, request.dropOffActivity
-    pickUpId, dropOffId = pickUpActivity.id, dropOffActivity.id
-    startActivity = scheduleBlock[1]
-    endActivity = scheduleBlock[end]
-    activityBeforePickUp = scheduleBlock[pickUpIdxInBlock]
-    activityAfterPickUp = scheduleBlock[pickUpIdxInBlock+1]
-    activityBeforeDropOff = scheduleBlock[dropOffIdxInBlock]
-    activityAfterDropOff = scheduleBlock[dropOffIdxInBlock+1]
-
-    # Duration of waiting activities at start and end of schedule block
-    detourPickUp = findDetour(time,serviceTime,activityBeforePickUp.activity.id,activityAfterPickUp.activity.id,pickUpId) 
-    detourDropOff = findDetour(time,serviceTime,activityBeforeDropOff.activity.id,activityAfterDropOff.activity.id,dropOffId) 
-    detour = detourDropOff + detourPickUp
-    waitingTimeStart = (startActivity.activity.activityType == DEPOT ? startActivity.endOfServiceTime - startActivity.activity.timeWindow.startTime : (startActivity.endOfServiceTime - startActivity.startOfServiceTime)) - detourPickUp
-    waitingTimeEnd = (endActivity.activity.activityType == DEPOT ? endActivity.activity.timeWindow.endTime - endActivity.startOfServiceTime : (endActivity.endOfServiceTime - endActivity.startOfServiceTime)) - detourDropOff
-
-    # Determine shifts 
-    maxShiftForward = determineMaximumShiftForward(waitingTimeEnd,scheduleBlock[2:(end-1)])
-    maxShiftBackWard = determineMaximumShiftBackward(waitingTimeStart,scheduleBlock[2:(end-1)])
-
-    # Check if there is room for detor 
-    if maxShiftForward + waitingTimeStart < detour
-        return false,0,0,0,0,0,false
-    end
-    
-    # Current arrival at drop off 
-    arrivalAtPickUp = activityAfterPickUp.startOfServiceTime - serviceTime - time[pickUpId,activityAfterPickUp.activity.id]
-    shiftedArrivalAtPickUp = arrivalAtPickUp
-
-    # Check if it feasible to insert pick up 
-    shiftAfterInsertingPickUp = 0
-
-    # Can pick up be inserted directly 
-    if pickUpActivity.timeWindow.startTime <= arrivalAtPickUp <= pickUpActivity.timeWindow.endTime 
-        startOfServiceTimePickUp = arrivalAtPickUp
-
-    # Can drop off be inserted by shifting route forward 
-    elseif arrivalAtPickUp < pickUpActivity.timeWindow.startTime && arrivalAtPickUp + maxShiftForward >= pickUpActivity.timeWindow.startTime
-        shiftedArrivalAtPickUp = min(arrivalAtPickUp + maxShiftForward,dropOffActivity.timeWindow.endTime)
-        shiftAfterInsertingPickUp = (shiftedArrivalAtPickUp - arrivalAtPickUp)
-
-    # Can pick up be inserted by shifting route backwards 
-    elseif arrivalAtPickUp > pickUpActivity.timeWindow.endTime && arrivalAtPickUp - maxShiftBackWard <= pickUpActivity.timeWindow.endTime
-        shiftedArrivalAtPickUp = pickUpActivity.timeWindow.endTime
-        shiftAfterInsertingPickUp = -(arrivalAtPickUp - shiftedArrivalAtPickUp)
-    # Infeasible   
-    else
-        return false,0,0,0,0,0,0,false
-    end
-
-    # Check if it feasible to insert drop off
-    arrivalAtDropOff = activityBeforeDropOff.endOfServiceTime + time[activityBeforeDropOff.activity.id,dropOffId] + shiftAfterInsertingPickUp
-    shiftedArrivalAtDropOff = arrivalAtDropOff
-
-    # Can drop off be inserted directly
-    arrivalAtActivityAfterDropOff = arrivalAtDropOff + serviceTime + time[dropOffId,activityAfterDropOff.activity.id]
-    if dropOffActivity.timeWindow.startTime <= arrivalAtDropOff <= dropOffActivity.timeWindow.endTime && arrivalAtActivityAfterDropOff <= activityAfterDropOff.activity.timeWindow.endTime
-        startOfServiceTimeDropOff = arrivalAtDropOff
-        startOfServiceTimePickUp = shiftedArrivalAtPickUp
-
-        if startOfServiceTimeDropOff - (startOfServiceTimePickUp + serviceTime) > request.maximumRideTime
-            return false,0,0,0,0,0,0,false
-        end
-
-        feasible = true
-        shiftBeforePickUp = shiftAfterInsertingPickUp - detourPickUp
-        shiftBetweenPickupAndDropOff = shiftAfterInsertingPickUp
-        shiftAfterDropOff = shiftBetweenPickupAndDropOff + detourDropOff
-
-        return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
-    end
-
-    # Check if drop off can be inserted by shifting route before 
-    # W - R1 - D - R2 - W
-    waitingTimeStart +=  shiftAfterInsertingPickUp
-    waitingTimeEnd +=  -shiftAfterInsertingPickUp
-
-    # TODO: check om rigtig fortegn 
-    maxShiftForwardR1 = min(pickUpActivity.timeWindow.endTime - shiftedArrivalAtPickUp, determineMaximumShiftForward(waitingTimeEnd,scheduleBlock[2:dropOffIdxInBlock]) - shiftAfterInsertingPickUp)
-    maxShiftBackWardR1 = min(shiftedArrivalAtPickUp - pickUpActivity.timeWindow.startTime, determineMaximumShiftBackward(waitingTimeStart,scheduleBlock[2:dropOffIdxInBlock]) + shiftAfterInsertingPickUp)
-    shiftR1 = 0
-
-    # Shift R1 forward 
-    if arrivalAtDropOff < dropOffActivity.timeWindow.startTime && arrivalAtDropOff + maxShiftForwardR1 >= dropOffActivity.timeWindow.startTime
-        shiftedArrivalAtDropOff = dropOffActivity.timeWindow.startTime
-        shiftAfterInsertingDropOff = (shiftedArrivalAtDropOff - arrivalAtDropOff)
-        shiftedArrivalAtPickUp = shiftedArrivalAtPickUp + shiftAfterInsertingDropOff
-        shiftR1 = shiftAfterInsertingPickUp + shiftAfterInsertingDropOff
-
-        if shiftedArrivalAtDropOff - (shiftedArrivalAtPickUp + serviceTime) > request.maximumRideTime
-            return false,0,0,0,0,0,0,false
-        end
-
-    # Shift R1 backwards
-    elseif arrivalAtDropOff > dropOffActivity.timeWindow.endTime && arrivalAtDropOff - maxShiftBackWardR1 <= dropOffActivity.timeWindow.endTime
-        shiftedArrivalAtDropOff = max(dropOffActivity.timeWindow.startTime,arrivalAtDropOff - maxShiftBackWardR1)
-        shiftAfterInsertingDropOff = -(arrivalAtDropOff - shiftedArrivalAtDropOff)
-        shiftedArrivalAtPickUp = shiftedArrivalAtPickUp + shiftAfterInsertingDropOff
-        shiftR1 = shiftAfterInsertingPickUp + shiftAfterInsertingDropOff
-
-        if shiftedArrivalAtDropOff - (shiftedArrivalAtPickUp + serviceTime) > request.maximumRideTime
-            return false,0,0,0,0,0,0,false
-        end
-    # Infeasible 
-    else 
-        return false,0,0,0,0,0,0,false
-    end
-
-    # Check if drop off can be inserted by shifting route after 
-    waitingTimeStart += shiftAfterInsertingDropOff
-    waitingTimeEnd += -shiftAfterInsertingDropOff
-
-    arrivalAtActivityAfterDropOff = shiftedArrivalAtDropOff + serviceTime + time[dropOffId,activityAfterDropOff.activity.id]
-
-    # We can either shift R1 forward or R2 backwards 
-        # TODO: check om rigtig fortegn 
-
-    maxShiftForwardR1 = min(dropOffActivity.timeWindow.endTime - shiftedArrivalAtDropOff, maxShiftForwardR1 - shiftAfterInsertingDropOff)
-    maxShiftBackWardR2 = determineMaximumShiftBackward(typemax(Int),scheduleBlock[(dropOffIdxInBlock+1):(end-1)]) + shiftAfterInsertingPickUp
-    shiftR2 = 0
-
-    # No shift  
-    if activityAfterDropOff.activity.timeWindow.startTime <= arrivalAtActivityAfterDropOff <= activityAfterDropOff.activity.timeWindow.endTime
-        shiftR2 = shiftAfterInsertingPickUp
-    # Shift R1 forward 
-    elseif arrivalAtActivityAfterDropOff < activityAfterDropOff.activity.timeWindow.startTime && arrivalAtActivityAfterDropOff + maxShiftForwardR1 >= activityAfterDropOff.activity.timeWindow.startTime
-        shift = activityAfterDropOff.activity.timeWindow.startTime - arrivalAtActivityAfterDropOff
-        shiftR1 += shift 
-        shiftR2 = activityAfterDropOff.activity.timeWindow.startTime - activityAfterDropOff.startOfServiceTime
-        shiftedArrivalAtDropOff += shift
-        shiftedArrivalAtPickUp += shift
-    # Shift R2 backwards
-    elseif arrivalAtActivityAfterDropOff > activityAfterDropOff.activity.timeWindow.endTime && arrivalAtActivityAfterDropOff - maxShiftBackWardR2 <= activityAfterDropOff.activity.timeWindow.endTime
-        shiftR2 =  max(activityAfterDropOff.activity.timeWindow.startTime,arrivalAtActivityAfterDropOff - maxShiftBackWardR2) - activityAfterDropOff.startOfServiceTime
-    # Infeasible 
-    else 
-        return false,0,0,0,0,0,0,false
-    end
-
-
-    feasible = true 
-    startOfServiceTimePickUp = shiftedArrivalAtPickUp
-    startOfServiceTimeDropOff = shiftedArrivalAtDropOff
-    shiftBeforePickUp = shiftR1 - detourPickUp 
-    shiftBetweenPickupAndDropOff = shiftR1 
-    shiftAfterDropOff = shiftR2
-
-    # TODO: check other requests and inserted request maximum ride time 
-
-
-    return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
-end
-
-# Case 4 : W - ROUTE - P - ROUTE - D - W
-function determineServiceTimesAndShiftsCase4()
-    feasible = false
-    startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = 0,0,0,0,0
-    addWaitingActivity = false
-
-    return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
-end
-
-# Case 5 : W - ROUTE - P - D - ROUTE - W
-function determineServiceTimesAndShiftsCase5()
-    feasible = false
-    startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = 0,0,0,0,0
-    addWaitingActivity = false
-
-    return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
-end
-
-# Case 6 : W - ROUTE - P - ROUTE - D - ROUTE - W
-function determineServiceTimesAndShiftsCase6()
-    feasible = false
-    startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = 0,0,0,0,0
-    addWaitingActivity = false
-
-    return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
-end
-
-#==
- Methods to determine maximum shifts
-==#
-function determineMaximumShiftForward(waitingTimeEnd::Int,scheduleBlock::Vector{ActivityAssignment})
-    if isempty(scheduleBlock)
-        return waitingTimeEnd
-    end
-
-    minimumDifferenceRoute = findmin([a.activity.timeWindow.endTime - a.startOfServiceTime for a in scheduleBlock])[1]
-    return min(waitingTimeEnd,minimumDifferenceRoute)
-end
-
-function determineMaximumShiftBackward(waitingTimeStart::Int,scheduleBlock::Vector{ActivityAssignment})
-    if isempty(scheduleBlock)
-        return waitingTimeStart
-    end
-
-    minimumDifferenceRoute = findmin([a.startOfServiceTime - a.activity.timeWindow.startTime for a in scheduleBlock])[1]
-    return min(waitingTimeStart,minimumDifferenceRoute)
-end
-
-#==
- Method to find detour  
-==#
-function findDetour(time::Array{Int,2},serviceTime::Int,activityBefore::Int,activityAfter::Int,activity::Int)
-    return time[activityBefore,activity] + time[activity,activityAfter] + serviceTime - time[activityBefore,activityAfter]
-end
-
-function findDetour(time::Array{Int,2},serviceTime::Int,activityBefore::Int,activityAfter::Int,pickUpActivity::Int,dropOffActivity::Int)
-    return time[activityBefore,pickUpActivity] + time[pickUpActivity,dropOffActivity] + time[dropOffActivity,activityAfter] + 2*serviceTime - time[activityBefore,activityAfter]
 end
 
 end
