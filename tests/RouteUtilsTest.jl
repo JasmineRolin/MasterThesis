@@ -658,7 +658,7 @@ using domain
     request2.dropOffActivity.timeWindow.startTime = 455
     request2.dropOffActivity.timeWindow.endTime = 465
     request1.dropOffActivity.timeWindow.startTime = 467
-    request1.dropOffActivity.timeWindow.endTime = 485
+    request1.dropOffActivity.timeWindow.endTime = 500
     scenario.time[9,6] = 35
     vehicleSchedule.route[1].activity.timeWindow.startTime = 250
     feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity = determineServiceTimesAndShiftsCase3(scenario.time,scenario.serviceTimes,request2,vehicleSchedule.route[1:(end-1)],1,2)
