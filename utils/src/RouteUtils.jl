@@ -934,8 +934,7 @@ function determineServiceTimesAndShiftsCase6(time::Array{Int,2},serviceTime::Int
     BUP, BDOWN = determinePossibleBeforeShift(waitingTimeStart,scheduleBlock[1:pickUpIdx])
     CUP, CDOWN = determinePossibleMiddleShift(BUP,ADOWN,scheduleBlock[(pickUpIdx+1):dropOffIdx])
     ADOWN_prime = min(ADOWN,CDOWN)
-    AUP_prime = min(AUP,BUP)
-    println("BUP: ",BUP, " BDOWN: ", BDOWN, " CUP: ", CUP, " CDOWN: ", CDOWN, " AUP: ", AUP, " ADOWN: ", ADOWN)
+    AUP_prime = min(AUP,CUP)
     if DetourPick > BUP + CDOWN || DetourDrop > CUP + ADOWN || DetourPick + DetourDrop > BUP + ADOWN
         println("Not possible to fit detour")
         return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
@@ -945,6 +944,9 @@ function determineServiceTimesAndShiftsCase6(time::Array{Int,2},serviceTime::Int
     max_MRT_shift_pick = determineMaximumShiftMRT(scheduleBlock,pickUpIdx,requests,serviceTime)
     max_MRT_shift_drop = determineMaximumShiftMRT(scheduleBlock,dropOffIdx,requests,serviceTime)
     max_MRT_shift_PickDrop = determineMaximumShiftMRT(scheduleBlock,pickUpIdx,dropOffIdx,requests,serviceTime)
+    println(max_MRT_shift_pick)
+    println(max_MRT_shift_drop)
+    println(max_MRT_shift_PickDrop)
     if DetourPick > max_MRT_shift_pick || DetourDrop > max_MRT_shift_drop || DetourPick + DetourDrop > max_MRT_shift_PickDrop
         println("Max ride time conflict")
         return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
@@ -954,36 +956,48 @@ function determineServiceTimesAndShiftsCase6(time::Array{Int,2},serviceTime::Int
     possibleArrivalTimePickUpFromBefore = (activityBeforePick.endOfServiceTime - BUP + time[activityBeforePick.activity.id,request.pickUpActivity.id], activityBeforePick.endOfServiceTime + BDOWN + time[activityBeforePick.activity.id,request.pickUpActivity.id])
     possibleArrivalTimePickUpFromAfter = (activityAfterPick.startOfServiceTime - AUP_prime - time[request.pickUpActivity.id,activityAfterPick.activity.id] - serviceTime, activityAfterPick.startOfServiceTime + ADOWN_prime - time[request.pickUpActivity.id,activityAfterPick.activity.id] - serviceTime)
     possibleArrivalTimePickUP = (max(possibleArrivalTimePickUpFromBefore[1],possibleArrivalTimePickUpFromAfter[1],request.pickUpActivity.timeWindow.startTime), min(possibleArrivalTimePickUpFromBefore[2],possibleArrivalTimePickUpFromAfter[2],request.pickUpActivity.timeWindow.endTime))
-    println(possibleArrivalTimePickUpFromBefore)
-    println(possibleArrivalTimePickUpFromAfter)
-    println("Pick up: ",possibleArrivalTimePickUP)
     if possibleArrivalTimePickUP[2] < possibleArrivalTimePickUP[1]
         println("Infeasible: Pick up time window")
         return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
     end
 
+    # Determine shift when pick up is inserted
+    initialPickUpTime = possibleArrivalTimePickUP[1]
+    initialshiftBeforePickUp = initialPickUpTime - (activityBeforePick.endOfServiceTime + time[activityBeforePick.activity.id,request.pickUpActivity.id])
+    initialshiftAfterPickUp = initialPickUpTime - (activityAfterPick.startOfServiceTime - time[request.pickUpActivity.id,activityAfterPick.activity.id] - serviceTime)
+    println("initialPickUpTime: ",initialPickUpTime)
+    println("initialshiftBeforePickUp: ",initialshiftBeforePickUp)
+    println("initialshiftAfterPickUp: ",initialshiftAfterPickUp)
+
     # Determine shift for drop-off
-    BUP_prime = min(CUP,BUP,(activityBeforePick.endOfServiceTime + time[activityBeforePick.activity.id,request.pickUpActivity.id]) -possibleArrivalTimePickUP[1])
-    BDOWN_prime = min(CDOWN,BDOWN,possibleArrivalTimePickUP[2] + (activityBeforePick.endOfServiceTime + time[activityBeforePick.activity.id,request.pickUpActivity.id]))
-    
+    BUP_prime = 0
+    BDOWN_prime = possibleArrivalTimePickUP[2] - possibleArrivalTimePickUP[1]
+    AUP_prime = AUP + initialshiftAfterPickUp
+    ADOWN_prime = ADOWN - initialshiftAfterPickUp 
+    println("BUP_prime: ",BUP_prime," BDOWN_prime: ",BDOWN_prime," AUP_prime: ",AUP_prime," ADOWN_prime: ",ADOWN_prime)
+
+    # Determine time window for node before and after drop off
     possibleArrivalTimeDropOffFromBefore = (activityBeforeDrop.endOfServiceTime - BUP_prime + time[activityBeforeDrop.activity.id,request.dropOffActivity.id], activityBeforeDrop.endOfServiceTime + BDOWN_prime + time[activityBeforeDrop.activity.id,request.dropOffActivity.id])
-    possibleArrivalTimeDropOffFromAfter  = (activityAfterDrop.startOfServiceTime - AUP - time[request.dropOffActivity.id,activityAfterDrop.activity.id] - serviceTime, activityAfterDrop.startOfServiceTime + ADOWN - time[request.dropOffActivity.id,activityAfterDrop.activity.id ]- serviceTime)
+    possibleArrivalTimeDropOffFromAfter  = (activityAfterDrop.startOfServiceTime - AUP_prime - time[request.dropOffActivity.id,activityAfterDrop.activity.id] - serviceTime, activityAfterDrop.startOfServiceTime + ADOWN_prime - time[request.dropOffActivity.id,activityAfterDrop.activity.id ]- serviceTime)
+    println("possibleArrivalTimeDropOffFromBefore: ",possibleArrivalTimeDropOffFromBefore)
+    println("possibleArrivalTimeDropOffFromAfter: ",possibleArrivalTimeDropOffFromAfter)
 
     # Ensure it can come from pick up
     fromPickToDropTimeWindow = (possibleArrivalTimePickUP[1] + request.directDriveTime, possibleArrivalTimePickUP[2] + request.maximumRideTime)
+    println("fromPickToDropTimeWindow: ",fromPickToDropTimeWindow)
 
     # Determine feasible arrival times
     arrivalTimeDropOff = (max(possibleArrivalTimeDropOffFromBefore[1],possibleArrivalTimeDropOffFromAfter[1],fromPickToDropTimeWindow[1],request.dropOffActivity.timeWindow.startTime), min(possibleArrivalTimeDropOffFromBefore[2],possibleArrivalTimeDropOffFromAfter[2],fromPickToDropTimeWindow[2],request.dropOffActivity.timeWindow.endTime))
-    println("Drop off: ",arrivalTimeDropOff)
+    println("arrivalTimeDropOff: ",arrivalTimeDropOff)
     if arrivalTimeDropOff[2] < arrivalTimeDropOff[1]
-        println("Time window infeasibility")
+        println("Infeasible: Drop-off time window")
         return feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, addWaitingActivity
     end
 
     # determine service windows and shifts
-    startOfServiceTimeDropOff = possibleDropOffTimeWindow[2]
+    startOfServiceTimeDropOff = arrivalTimeDropOff[2]
     shiftAfterDropOff = startOfServiceTimeDropOff - (activityAfterDrop.startOfServiceTime - time[request.dropOffActivity.id,activityAfterDrop.activity.id] - serviceTime)
-    shiftBetweenPickupAndDropOff = -startOfServiceTimeDropOff + (activityBeforeDrop.endOfServiceTime + time[activityBeforeDrop.activity.id,request.dropOffActivity.id])
+    shiftBetweenPickupAndDropOff = startOfServiceTimeDropOff - (activityBeforeDrop.endOfServiceTime + time[activityBeforeDrop.activity.id,request.dropOffActivity.id])
     startOfServiceTimePickUp = activityAfterPick.startOfServiceTime + shiftBetweenPickupAndDropOff - serviceTime - time[request.pickUpActivity.id,activityAfterPick.activity.id]
     shiftBeforePickUp = -startOfServiceTimePickUp + (activityBeforePick.endOfServiceTime + time[activityBeforePick.activity.id,request.pickUpActivity.id])
 
@@ -1071,7 +1085,7 @@ function determineMaximumShiftMRT(scheduleBlock::Vector{ActivityAssignment}, idx
         end
     end
 
-    return max_MRT_shift == Inf ? 0 : max_MRT_shift  # If no valid shifts, return 0
+    return max_MRT_shift == Inf ? Inf : max_MRT_shift  # If no valid shifts, return 0
 end
 
 function determineMaximumShiftMRT(scheduleBlock::Vector{ActivityAssignment}, idx1::Int, idx2::Int, requests::Vector{Request},serviceTime::Int)
@@ -1108,7 +1122,7 @@ function determineMaximumShiftMRT(scheduleBlock::Vector{ActivityAssignment}, idx
         end
     end
 
-    return max_MRT_shift == Inf ? 0 : max_MRT_shift  # If no valid shifts, return 0
+    return max_MRT_shift == Inf ? Inf : max_MRT_shift  # If no valid shifts, return 0
 end
 
 end
