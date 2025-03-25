@@ -3,7 +3,7 @@ module RouteUtils
 using UnPack, domain, Printf, ..CostCalculator
 
 export printRoute,printSimpleRoute,insertRequest!,checkFeasibilityOfInsertionAtPosition,printRouteHorizontal,printSolution,updateRoute!
-export determineServiceTimesAndShiftsCase1,determineServiceTimesAndShiftsCase2, determineServiceTimesAndShiftsCase3,checkFeasibilityOfInsertionInScheduleBlock
+export determineServiceTimesAndShiftsCase1,determineServiceTimesAndShiftsCase2, determineServiceTimesAndShiftsCase3,checkFeasibilityOfInsertionInScheduleBlock,checkFeasibilityOfInsertionAtPosition2
 
 
 #==
@@ -569,11 +569,11 @@ function checkFeasibilityOfInsertionAtPosition2(request::Request, vehicleSchedul
     @unpack time,serviceTimes = scenario
 
     # Identify schedule block in  route 
-    waitingOrDepotIndices = findall(x -> x.activity.activityType in (WAITING, DEPOT), activity_assignments)
-    waitingActivityIdxBeforePickUp = waitingOrDepotIndices[findlast(x -> x < pickUpIdx, waitingOrDepotIndices)]
-    waitingActivityIdxAfterPickUp = waitingOrDepotIndices[findlast(x -> x > pickUpIdx, waitingOrDepotIndices)]
-    waitingActivityIdxBeforeDropOff = waitingOrDepotIndices[findlast(x -> x < dropOffIdx, waitingOrDepotIndices)]
-    waitingActivityIdxAfterDropOff = waitingOrDepotIndices[findlast(x -> x > dropOffIdx, waitingOrDepotIndices)]
+    waitingOrDepotIndices = findall(x -> x.activity.activityType in (WAITING, DEPOT), route)
+    waitingActivityIdxBeforePickUp = waitingOrDepotIndices[findlast(x -> x <= pickUpIdx, waitingOrDepotIndices)]
+    waitingActivityIdxAfterPickUp = waitingOrDepotIndices[findfirst(x -> x > pickUpIdx, waitingOrDepotIndices)]
+    waitingActivityIdxBeforeDropOff = waitingOrDepotIndices[findlast(x -> x <= dropOffIdx, waitingOrDepotIndices)]
+    waitingActivityIdxAfterDropOff = waitingOrDepotIndices[findfirst(x -> x > dropOffIdx, waitingOrDepotIndices)]
 
     # Check if in same schedule block 
     if waitingActivityIdxBeforePickUp != waitingActivityIdxBeforeDropOff || waitingActivityIdxAfterPickUp != waitingActivityIdxAfterDropOff
@@ -600,43 +600,29 @@ function checkFeasibilityOfInsertionAtPosition2(request::Request, vehicleSchedul
     end
 
     # Retrieve schedule block
-    pickUpIdxInBlock = pickUpIdx - (waitingActivityIdxBeforePickUp-1)
-    dropOffIdxInBlock = dropOffIdx - (waitingActivityIdxBeforePickUp-1)
+    pickUpIdxInBlock = (pickUpIdx - (waitingActivityIdxBeforePickUp-1)) + 1 # Index as if pickup is inserted 
+    dropOffIdxInBlock = (dropOffIdx - (waitingActivityIdxBeforePickUp-1)) + 2 # Index as if pickup and dropoff is inserted
     scheduleBlock = route[waitingActivityIdxBeforePickUp:waitingActivityIdxAfterPickUp]
 
-    # Identify case 
-    feasible = false
-    startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = 0,0,0,0,0
+    # Check feasibility 
+    feasible, newStartOfServiceTimes, newEndOfServiceTimes = checkFeasibilityOfInsertionInScheduleBlock(scenario,request,scheduleBlock,pickUpIdxInBlock,dropOffIdxInBlock)
     
-    # Case 1 : W - ROUTE - P - D - W
-    if pickUpIdxInBlock == 1 && dropOffIdxInBlock pickUpIdxInBlock      
-        feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = determineServiceTimesAndShiftsCase1(time,serviceTimes,request,scheduleBlock)
-    # Case 2 : W - P - D - ROUTE - W 
-    elseif pickUpIdxInBlock == length(scheduleBlock) - 1 && dropOffIdxInBlock == pickUpIdxInBlock
-        feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = determineServiceTimesAndShiftsCase2()
-    # Case 3 : W - P - ROUTE - D - ROUTE - W
-    elseif pickUpIdxInBlock == 1 && dropOffIdxInBlock != length(scheduleBlock) - 1
-        feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = determineServiceTimesAndShiftsCase3()
-    # Case 4 : W - ROUTE - P - ROUTE - D - W
-    elseif dropOffIdxInBlock == length(scheduleBlock) - 1 
-        feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = determineServiceTimesAndShiftsCase4()
-    # Case 5 : W - ROUTE - P - D - ROUTE - W
-    elseif pickUpIdxInBlock == dropOffIdxInBlock
-        feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = determineServiceTimesAndShiftsCase5()
-    # Case 6 : W - ROUTE - P - ROUTE - D - ROUTE - W
-    else
-        feasible,  startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = determineServiceTimesAndShiftsCase6()
-    end
-    
-    return  feasible,  startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff
+    return  feasible, newStartOfServiceTimes, newEndOfServiceTimes 
 end
 
 
-function checkFeasibilityOfInsertionInScheduleBlock(time::Array{Int,2},serviceTime::Int,request::Request,scheduleBlock::Vector{ActivityAssignment}, pickUpIdxInBlock::Int, dropOffIdxInBlock::Int)
+function checkFeasibilityOfInsertionInScheduleBlock(scenario::Scenario,request::Request,scheduleBlock::Vector{ActivityAssignment}, pickUpIdxInBlock::Int, dropOffIdxInBlock::Int)
+    @unpack time,serviceTimes ,requests = scenario 
     nActivities = length(scheduleBlock) + 2 
+
+    # New service times 
     newStartOfServiceTimes = zeros(Int,nActivities)
     newEndOfServiceTimes = zeros(Int,nActivities)
 
+    # Keep track of ride times 
+    pickUpIndexes = Dict{Int,Int}() # (RequestId, index)
+
+    # Initialize
     currentActivity = scheduleBlock[1].activity
     previousActivity = scheduleBlock[1].activity
     newStartOfServiceTimes[1] = scheduleBlock[1].startOfServiceTime
@@ -668,20 +654,17 @@ function checkFeasibilityOfInsertionInScheduleBlock(time::Array{Int,2},serviceTi
         elseif currentActivity.timeWindow.startTime <= arrivalAtCurrentActivity <= currentActivity.timeWindow.endTime 
             # Service times for current activity 
             newStartOfServiceTimes[idx] = arrivalAtCurrentActivity
-            newEndOfServiceTimes[idx] = (currentActivity.activityType == DEPOT || currentActivity.activityType == DEPOT) ?  arrivalAtCurrentActivity : arrivalAtCurrentActivity + serviceTime
+            newEndOfServiceTimes[idx] = (currentActivity.activityType == DEPOT || currentActivity.activityType == DEPOT) ?  arrivalAtCurrentActivity : arrivalAtCurrentActivity + serviceTimes
 
             # Update maximum shifts 
             maximumShiftBackward = min(maximumShiftBackward,arrivalAtCurrentActivity - currentActivity.timeWindow.startTime)
             maximumShiftForward = min(maximumShiftForward,currentActivity.timeWindow.endTime - arrivalAtCurrentActivity)
 
-            # Set current as previous activity 
-            previousActivity = currentActivity
-
         # Check if we can insert next activity by shifting route forward
         elseif arrivalAtCurrentActivity <= currentActivity.timeWindow.startTime  && arrivalAtCurrentActivity + maximumShiftForward >= currentActivity.timeWindow.startTime
             # Service times for current activity
             newStartOfServiceTimes[idx] = currentActivity.timeWindow.startTime
-            newEndOfServiceTimes[idx] = (currentActivity.activityType == DEPOT || currentActivity.activityType == DEPOT) ?  currentActivity.timeWindow.startTime : currentActivity.timeWindow.startTime + serviceTime
+            newEndOfServiceTimes[idx] = (currentActivity.activityType == DEPOT || currentActivity.activityType == DEPOT) ?  currentActivity.timeWindow.startTime : currentActivity.timeWindow.startTime + serviceTimes
 
             # Determine shift 
             shift = currentActivity.timeWindow.startTime - arrivalAtCurrentActivity
@@ -696,14 +679,11 @@ function checkFeasibilityOfInsertionInScheduleBlock(time::Array{Int,2},serviceTi
                 newEndOfServiceTimes[i] += shift
             end
 
-            # Set current as previous activity
-            previousActivity = currentActivity
-
         # Check if we can insert next activity be shifting route backwards 
         elseif  arrivalAtCurrentActivity >= currentActivity.timeWindow.endTime &&  arrivalAtCurrentActivity - maximumShiftBackward <= currentActivity.timeWindow.endTime
             # Service times for current activity
             newStartOfServiceTimes[idx] = currentActivity.timeWindow.endTime
-            newEndOfServiceTimes[idx] = (currentActivity.activityType == DEPOT || currentActivity.activityType == DEPOT) ?  currentActivity.timeWindow.endTime : currentActivity.timeWindow.endTime + serviceTime
+            newEndOfServiceTimes[idx] = (currentActivity.activityType == DEPOT || currentActivity.activityType == DEPOT) ?  currentActivity.timeWindow.endTime : currentActivity.timeWindow.endTime + serviceTimes
 
             # Determine shift
             shift = arrivalAtCurrentActivity - currentActivity.timeWindow.endTime
@@ -717,12 +697,22 @@ function checkFeasibilityOfInsertionInScheduleBlock(time::Array{Int,2},serviceTi
                 newStartOfServiceTimes[i] -= shift
                 newEndOfServiceTimes[i] -= shift
             end
-
-             # Set current as previous activity
-             previousActivity = currentActivity
         else
             false, newStartOfServiceTimes, newEndOfServiceTimes
         end
+
+        # Check maximum ride time 
+        requestId = currentActivity.requestId
+        if currentActivity.activityType == PICKUP
+            pickUpIndexes[requestId] = idx
+        elseif currentActivity.activityType == DROPOFF
+            if newStartOfServiceTimes[idx] - newEndOfServiceTimes[pickUpIndexes[requestId]] > requests[requestId].maximumRideTime
+                return false, newStartOfServiceTimes, newEndOfServiceTimes
+            end
+        end
+
+        # Set current as previous activity
+        previousActivity = currentActivity
     end
 
     return true, newStartOfServiceTimes, newEndOfServiceTimes
