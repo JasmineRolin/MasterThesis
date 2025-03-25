@@ -2,8 +2,7 @@ module RouteUtils
 
 using UnPack, domain, Printf, ..CostCalculator
 
-export printRoute,printSimpleRoute,insertRequest!,checkFeasibilityOfInsertionAtPosition,printRouteHorizontal,printSolution,updateRoute!,determineServiceTimesAndShiftsCase1, determineServiceTimesAndShiftsCase5, determineServiceTimesAndShiftsCase6
-
+export printRoute,printSimpleRoute,insertRequest!,checkFeasibilityOfInsertionAtPosition, checkFeasibilityOfInsertionAtPosition2,printRouteHorizontal,printSolution,updateRoute!,determineServiceTimesAndShiftsCase1, determineServiceTimesAndShiftsCase5, determineServiceTimesAndShiftsCase6
 
 #==
 # Method to print solution 
@@ -489,6 +488,18 @@ function updateDepots!(time::Array{Int,2}, vehicleSchedule::VehicleSchedule,requ
 
 end
 
+function updateDepots!(time::Array{Int,2}, vehicleSchedule::VehicleSchedule,request::Request,idxPickUp::Int,idxDropOff::Int)
+    route = vehicleSchedule.route
+
+    # Update start depot 
+    if idxPickUp == 1 
+        newActiveTimeWindowStart = route[2].startOfServiceTime - time[route[1].activity.id,route[2].activity.id]
+        vehicleSchedule.activeTimeWindow.startTime = newActiveTimeWindowStart
+        route[1].startOfServiceTime = newActiveTimeWindowStart
+        route[1].endOfServiceTime = newActiveTimeWindowStart
+    end
+
+end
 
 #==
 # Method to update total distance of vehicle schedule after insertion of request
@@ -623,74 +634,69 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
 end
 
 
-
 function checkFeasibilityOfInsertionAtPosition2(request::Request, vehicleSchedule::VehicleSchedule,pickUpIdx::Int,dropOffIdx::Int,scenario::Scenario)
 
     @unpack route,numberOfWalking, vehicle = vehicleSchedule
     @unpack time,serviceTimes = scenario
 
     # Identify schedule block in  route 
-    waitingOrDepotIndices = findall(x -> x.activity.activityType in (WAITING, DEPOT), activity_assignments)
-    waitingActivityIdxBeforePickUp = waitingOrDepotIndices[findlast(x -> x < pickUpIdx, waitingOrDepotIndices)]
-    waitingActivityIdxAfterPickUp = waitingOrDepotIndices[findlast(x -> x > pickUpIdx, waitingOrDepotIndices)]
-    waitingActivityIdxBeforeDropOff = waitingOrDepotIndices[findlast(x -> x < dropOffIdx, waitingOrDepotIndices)]
-    waitingActivityIdxAfterDropOff = waitingOrDepotIndices[findlast(x -> x > dropOffIdx, waitingOrDepotIndices)]
+    waitingOrDepotIndices = findall(x -> x.activity.activityType in (WAITING, DEPOT), route)
+    waitingActivityIdxBeforePickUp = waitingOrDepotIndices[findlast(x -> x <= pickUpIdx, waitingOrDepotIndices)]
+    waitingActivityIdxAfterPickUp = waitingOrDepotIndices[findfirst(x -> x > pickUpIdx, waitingOrDepotIndices)]
+    waitingActivityIdxBeforeDropOff = waitingOrDepotIndices[findlast(x -> x <= dropOffIdx, waitingOrDepotIndices)]
+    waitingActivityIdxAfterDropOff = waitingOrDepotIndices[findfirst(x -> x > dropOffIdx, waitingOrDepotIndices)]
 
+    println("HERE")
     # Check if in same schedule block 
     if waitingActivityIdxBeforePickUp != waitingActivityIdxBeforeDropOff || waitingActivityIdxAfterPickUp != waitingActivityIdxAfterDropOff
         println("INFEASIBLE: DIFFERENT SCHEDULE BLOCKS")
-        return false,0,0,0,0,0
+        return false,0,0,0,0,0,0,0
     end
 
     # Check load 
     if any(numberOfWalking[pickUpIdx:dropOffIdx] .+ 1 .> vehicle.totalCapacity) # TODO: jas - check rigtigt 
         println("INFEASIBLE: CAPACITY")
-        return false,0,0,0,0,0
+        return false,0,0,0,0,0,0,0
     end
 
     # Check times for pick up 
     if route[pickUpIdx].activity.timeWindow.startTime > request.pickUpActivity.timeWindow.endTime || route[pickUpIdx+1].activity.timeWindow.endTime < request.pickUpActivity.timeWindow.startTime
         println("INFEASIBLE: PICK-UP TIME WINDOW")
-        return false,0,0,0,0,0
+        return false,0,0,0,0,0,0,0
     end
 
     # Check times for drop off
     if route[dropOffIdx].activity.timeWindow.startTime > request.dropOffActivity.timeWindow.endTime || route[dropOffIdx+1].activity.timeWindow.endTime < request.dropOffActivity.timeWindow.startTime
         println("INFEASIBLE: DROP-OFF TIME WINDOW")
-        return false,0,0,0,0,0
+        return false,0,0,0,0,0,0,0
     end
 
     # Retrieve schedule block
-    pickUpIdxInBlock = pickUpIdx - (waitingActivityIdxBeforePickUp-1)
-    dropOffIdxInBlock = dropOffIdx - (waitingActivityIdxBeforePickUp-1)
+    pickUpIdxInBlock = (pickUpIdx - (waitingActivityIdxBeforePickUp-1))  # Index as if pickup is inserted 
+    dropOffIdxInBlock = (dropOffIdx - (waitingActivityIdxBeforePickUp-1))  # Index as if pickup and dropoff is inserted
     scheduleBlock = route[waitingActivityIdxBeforePickUp:waitingActivityIdxAfterPickUp]
 
-    # Identify case 
-    feasible = false
-    startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = 0,0,0,0,0
-    
+    # Check feasibility 
     # Case 1 : W - ROUTE - P - D - W
-    if pickUpIdxInBlock == 1 && dropOffIdxInBlock pickUpIdxInBlock      
-        feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = determineServiceTimesAndShiftsCase1(time,serviceTimes,request,scheduleBlock)
+    if pickUpIdxInBlock == 1 && dropOffIdxInBlock == pickUpIdxInBlock  
+        println("No Case1")    
+        return false,0,0,0,0,0,0,0
     # Case 2 : W - P - D - ROUTE - W 
     elseif pickUpIdxInBlock == length(scheduleBlock) - 1 && dropOffIdxInBlock == pickUpIdxInBlock
-        feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = determineServiceTimesAndShiftsCase2()
-    # Case 3 : W - P - ROUTE - D - ROUTE - W
-    elseif pickUpIdxInBlock == 1 && dropOffIdxInBlock != length(scheduleBlock) - 1
-        feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = determineServiceTimesAndShiftsCase3()
-    # Case 4 : W - ROUTE - P - ROUTE - D - W
-    elseif dropOffIdxInBlock == length(scheduleBlock) - 1 
-        feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = determineServiceTimesAndShiftsCase4()
+        println("No case2")
+        return false,0,0,0,0,0,0,0
     # Case 5 : W - ROUTE - P - D - ROUTE - W
     elseif pickUpIdxInBlock == dropOffIdxInBlock
-        feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = determineServiceTimesAndShiftsCase5(time,serviceTimes,request,scheduleBlock,pickUpIdxInBlock)
+        feasible, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = determineServiceTimesAndShiftsCase5(time,serviceTimes,request,scheduleBlock,pickUpIdxInBlock,scenario.requests)
     # Case 6 : W - ROUTE - P - ROUTE - D - ROUTE - W
     else
-        feasible,  startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = determineServiceTimesAndShiftsCase6()
+        feasible,  startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = determineServiceTimesAndShiftsCase6(time,serviceTimes,request,scheduleBlock, pickUpIdxInBlock, dropOffIdxInBlock, scenario.requests)
     end
     
-    return  feasible,  startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff
+    println("HERE2")
+    return  feasible,  startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, waitingActivityIdxBeforePickUp, waitingActivityIdxAfterPickUp
 end
+
 
 #==
  Method to determine the time to start service at new request and how much to shift the existing route  
@@ -845,6 +851,7 @@ end
 
 # Case 5 : W - ROUTE - P - D - ROUTE - W 
 function determineServiceTimesAndShiftsCase5(time::Array{Int,2},serviceTime::Int,request::Request,scheduleBlock::Vector{ActivityAssignment}, idx::Int, requests::Vector{Request})
+    println("HERE4")
     feasible = false
     startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = 0,0,0,0,0
     addWaitingActivity = false
@@ -915,6 +922,7 @@ end
 # Case 6 : W - ROUTE - P - ROUTE - D - ROUTE - W
 # OBS: Index here have to be the index in the schedule block
 function determineServiceTimesAndShiftsCase6(time::Array{Int,2},serviceTime::Int,request::Request,scheduleBlock::Vector{ActivityAssignment}, pickUpIdx::Int, dropOffIdx::Int, requests::Vector{Request})
+    println("HERE3")
     feasible = false
     startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff = 0,0,0,0,0
     addWaitingActivity = false
@@ -989,7 +997,6 @@ function determineServiceTimesAndShiftsCase6(time::Array{Int,2},serviceTime::Int
     shiftBetweenPickupAndDropOff = startOfServiceTimeDropOff - (activityBeforeDrop.endOfServiceTime + time[activityBeforeDrop.activity.id,request.dropOffActivity.id])
     startOfServiceTimePickUp = activityAfterPick.startOfServiceTime + shiftBetweenPickupAndDropOff - serviceTime - time[request.pickUpActivity.id,activityAfterPick.activity.id]
     shiftBeforePickUp =-( -startOfServiceTimePickUp + (activityBeforePick.endOfServiceTime + time[activityBeforePick.activity.id,request.pickUpActivity.id]))
-
     return true, startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff, false
 end
 

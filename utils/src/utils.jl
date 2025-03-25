@@ -44,6 +44,7 @@ export getCostOfRequest
 include("RouteUtils.jl")
 using .RouteUtils
 export printRoute,printSimpleRoute, insertRequest!,checkFeasibilityOfInsertionAtPosition,printRouteHorizontal,printSolution,updateRoute!
+export checkFeasibilityOfInsertionAtPosition2
 export determineServiceTimesAndShiftsCase1
 export determineServiceTimesAndShiftsCase5
 export determineServiceTimesAndShiftsCase6
