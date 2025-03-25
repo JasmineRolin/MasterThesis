@@ -3,7 +3,7 @@ module RouteUtils
 using UnPack, domain, Printf, ..CostCalculator
 
 export printRoute,printSimpleRoute,insertRequest!,checkFeasibilityOfInsertionAtPosition,printRouteHorizontal,printSolution,updateRoute!
-export determineServiceTimesAndShiftsCase1,determineServiceTimesAndShiftsCase2, determineServiceTimesAndShiftsCase3
+export determineServiceTimesAndShiftsCase1,determineServiceTimesAndShiftsCase2, determineServiceTimesAndShiftsCase3,checkFeasibilityOfInsertionInScheduleBlock
 
 
 #==
@@ -629,6 +629,103 @@ function checkFeasibilityOfInsertionAtPosition2(request::Request, vehicleSchedul
     end
     
     return  feasible,  startOfServiceTimePickUp, startOfServiceTimeDropOff, shiftBeforePickUp, shiftBetweenPickupAndDropOff, shiftAfterDropOff
+end
+
+
+function checkFeasibilityOfInsertionInScheduleBlock(time::Array{Int,2},serviceTime::Int,request::Request,scheduleBlock::Vector{ActivityAssignment}, pickUpIdxInBlock::Int, dropOffIdxInBlock::Int)
+    nActivities = length(scheduleBlock) + 2 
+    newStartOfServiceTimes = zeros(Int,nActivities)
+    newEndOfServiceTimes = zeros(Int,nActivities)
+
+    currentActivity = scheduleBlock[1].activity
+    previousActivity = scheduleBlock[1].activity
+    newStartOfServiceTimes[1] = scheduleBlock[1].startOfServiceTime
+    newEndOfServiceTimes[1] = scheduleBlock[1].startOfServiceTime
+
+    maximumShiftForward =  scheduleBlock[1].activity.timeWindow.endTime - scheduleBlock[1].startOfServiceTime
+    maximumShiftBackward = scheduleBlock[1].startOfServiceTime - scheduleBlock[1].activity.timeWindow.startTime
+
+    idxActivityInSchedule = 1
+    for idx in 2:nActivities
+        if idx == pickUpIdxInBlock
+            currentActivity = request.pickUpActivity
+        elseif idx == dropOffIdxInBlock
+            currentActivity = request.dropOffActivity
+        else
+            idxActivityInSchedule += 1
+            currentActivity = scheduleBlock[idxActivityInSchedule].activity
+        end 
+
+        # Check if we can insert next activity directly 
+        arrivalAtCurrentActivity = newEndOfServiceTimes[idx-1] + time[previousActivity.id,currentActivity.id] 
+        if currentActivity.activityType == DEPOT ||  currentActivity.activityType == WAITING # Assuming that there is only depot or waiting at start and end of segment 
+            # Service times for current activity
+            newStartOfServiceTimes[idx] = arrivalAtCurrentActivity
+            newEndOfServiceTimes[idx] = arrivalAtCurrentActivity
+
+            # Return 
+            return true, newStartOfServiceTimes, newEndOfServiceTimes
+        elseif currentActivity.timeWindow.startTime <= arrivalAtCurrentActivity <= currentActivity.timeWindow.endTime 
+            # Service times for current activity 
+            newStartOfServiceTimes[idx] = arrivalAtCurrentActivity
+            newEndOfServiceTimes[idx] = (currentActivity.activityType == DEPOT || currentActivity.activityType == DEPOT) ?  arrivalAtCurrentActivity : arrivalAtCurrentActivity + serviceTime
+
+            # Update maximum shifts 
+            maximumShiftBackward = min(maximumShiftBackward,arrivalAtCurrentActivity - currentActivity.timeWindow.startTime)
+            maximumShiftForward = min(maximumShiftForward,currentActivity.timeWindow.endTime - arrivalAtCurrentActivity)
+
+            # Set current as previous activity 
+            previousActivity = currentActivity
+
+        # Check if we can insert next activity by shifting route forward
+        elseif arrivalAtCurrentActivity <= currentActivity.timeWindow.startTime  && arrivalAtCurrentActivity + maximumShiftForward >= currentActivity.timeWindow.startTime
+            # Service times for current activity
+            newStartOfServiceTimes[idx] = currentActivity.timeWindow.startTime
+            newEndOfServiceTimes[idx] = (currentActivity.activityType == DEPOT || currentActivity.activityType == DEPOT) ?  currentActivity.timeWindow.startTime : currentActivity.timeWindow.startTime + serviceTime
+
+            # Determine shift 
+            shift = currentActivity.timeWindow.startTime - arrivalAtCurrentActivity
+
+            # Update maximum shifts
+            maximumShiftBackward = 0
+            maximumShiftForward = min(maximumShiftForward - shift,currentActivity.timeWindow.endTime - currentActivity.timeWindow.startTime)
+
+            # Update service times for previous activities 
+            for i in 1:(idx-1)
+                newStartOfServiceTimes[i] += shift
+                newEndOfServiceTimes[i] += shift
+            end
+
+            # Set current as previous activity
+            previousActivity = currentActivity
+
+        # Check if we can insert next activity be shifting route backwards 
+        elseif  arrivalAtCurrentActivity >= currentActivity.timeWindow.endTime &&  arrivalAtCurrentActivity - maximumShiftBackward <= currentActivity.timeWindow.endTime
+            # Service times for current activity
+            newStartOfServiceTimes[idx] = currentActivity.timeWindow.endTime
+            newEndOfServiceTimes[idx] = (currentActivity.activityType == DEPOT || currentActivity.activityType == DEPOT) ?  currentActivity.timeWindow.endTime : currentActivity.timeWindow.endTime + serviceTime
+
+            # Determine shift
+            shift = arrivalAtCurrentActivity - currentActivity.timeWindow.endTime
+
+            # Update maximum shifts
+            maximumShiftBackward = min(maximumShiftBackward - shift ,currentActivity.timeWindow.endTime - currentActivity.timeWindow.startTime)
+            maximumShiftForward = 0
+
+            # Update service times for previous activities 
+            for i in 1:(idx-1)
+                newStartOfServiceTimes[i] -= shift
+                newEndOfServiceTimes[i] -= shift
+            end
+
+             # Set current as previous activity
+             previousActivity = currentActivity
+        else
+            false, newStartOfServiceTimes, newEndOfServiceTimes
+        end
+    end
+
+    return true, newStartOfServiceTimes, newEndOfServiceTimes
 end
 
 #==
