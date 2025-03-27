@@ -57,7 +57,7 @@ function regretInsertion(state::ALNSState,scenario::Scenario)
         end
 
         # Find best insertion position
-        status, delta, pickUp, dropOff, newStartOfServiceTimes, newEndOfServiceTimes, startOfScheduleBlock, endOfScheduleBlock,waitingActivitiesToDelete = findBestFeasibleInsertionRoute(requests[bestRequest], currentSolution.vehicleSchedules[overallBestVehicle], scenario)
+        status, delta, pickUp, dropOff, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete = findBestFeasibleInsertionRoute(requests[bestRequest], currentSolution.vehicleSchedules[overallBestVehicle], scenario)
 
         # Update solution pre
         state.currentSolution.totalCost -= currentSolution.vehicleSchedules[overallBestVehicle].totalCost
@@ -66,7 +66,7 @@ function regretInsertion(state::ALNSState,scenario::Scenario)
         state.currentSolution.totalIdleTime -= currentSolution.vehicleSchedules[overallBestVehicle].totalIdleTime
 
         # Insert request
-        insertRequest!(requests[bestRequest], currentSolution.vehicleSchedules[overallBestVehicle], pickUp, dropOff,startOfScheduleBlock,endOfScheduleBlock, scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete)
+        insertRequest!(requests[bestRequest], currentSolution.vehicleSchedules[overallBestVehicle], pickUp, dropOff, scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete)
         append!(state.assignedRequests, bestRequest)
 
         # Update solution pro
@@ -93,7 +93,7 @@ function fillInsertionCostMatrix!(scenario::Scenario, currentSolution::Solution,
     
     for r in requestBank
         for v in 1:length(scenario.vehicles)
-            status, delta, _, _,_,_,_,_  = findBestFeasibleInsertionRoute(scenario.requests[r], currentSolution.vehicleSchedules[v], scenario)
+            status, delta, _, _,_,_,_  = findBestFeasibleInsertionRoute(scenario.requests[r], currentSolution.vehicleSchedules[v], scenario)
             if status
                 insCostMatrix[r,v] = delta
             else
@@ -108,7 +108,7 @@ end
 function reCalcCostMatrix!(v::Int,scenario::Scenario, currentSolution::Solution, requestBank::Vector{Int}, insCostMatrix::Array{Float64,2}, compatibilityRequestVehicle::Array{Bool,2})
     for r in requestBank
         if compatibilityRequestVehicle[r,v]
-            status, delta, _, _,_,_,_,_ = findBestFeasibleInsertionRoute(scenario.requests[r], currentSolution.vehicleSchedules[v], scenario)
+            status, delta, _, _,_,_,_ = findBestFeasibleInsertionRoute(scenario.requests[r], currentSolution.vehicleSchedules[v], scenario)
             if status
                 insCostMatrix[r,v] = delta
             else
@@ -137,12 +137,10 @@ function greedyInsertion(state::ALNSState,scenario::Scenario)
         bestVehicle = -1
         bestNewStartOfServiceTimes = []
         bestNewEndOfServiceTimes = []
-        bestStartOfScheduleBlock = -1
-        bestEndOfScheduleBlock = -1
         bestWaitingActivitiesToDelete = []
 
         for (idx,schedule) in enumerate(currentSolution.vehicleSchedules)
-            status, delta, pickUp, dropOff, newStartOfServiceTimes, newEndOfServiceTimes, startOfScheduleBlock, endOfScheduleBlock, waitingActivitiesToDelete = findBestFeasibleInsertionRoute(request, schedule, scenario)
+            status, delta, pickUp, dropOff, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete = findBestFeasibleInsertionRoute(request, schedule, scenario)
             if status && delta < bestDelta
                 bestDelta = delta
                 bestSchedule = schedule
@@ -151,8 +149,6 @@ function greedyInsertion(state::ALNSState,scenario::Scenario)
                 bestVehicle = idx
                 bestNewStartOfServiceTimes = deepcopy(newStartOfServiceTimes)
                 bestNewEndOfServiceTimes = deepcopy(newEndOfServiceTimes)
-                bestStartOfScheduleBlock = startOfScheduleBlock
-                bestEndOfScheduleBlock = endOfScheduleBlock
                 bestWaitingActivitiesToDelete = deepcopy(waitingActivitiesToDelete)
             end
         end
@@ -165,7 +161,7 @@ function greedyInsertion(state::ALNSState,scenario::Scenario)
             state.currentSolution.totalIdleTime -= currentSolution.vehicleSchedules[bestVehicle].totalIdleTime
 
             # Insert request
-            insertRequest!(request, bestSchedule, bestPickUp, bestDropOff,bestStartOfScheduleBlock,bestEndOfScheduleBlock, scenario,bestNewStartOfServiceTimes,bestNewEndOfServiceTimes, bestWaitingActivitiesToDelete)
+            insertRequest!(request, bestSchedule, bestPickUp, bestDropOff, scenario,bestNewStartOfServiceTimes,bestNewEndOfServiceTimes, bestWaitingActivitiesToDelete)
             append!(state.assignedRequests, r)
 
             # Update solution pro
@@ -193,14 +189,12 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
     bestDropOff = -1
     bestNewStartOfServiceTimes = []
     bestNewEndOfServiceTimes = []
-    bestStartOfScheduleBlock = -1
-    bestEndOfScheduleBlock = -1
     bestWaitingActivitiesToDelete = []  
     route = vehicleSchedule.route
 
     for i in 1:length(route)-1
         for j in i:length(route)-1
-            feasible, newStartOfServiceTimes, newEndOfServiceTimes,startOfScheduleBlock,endOfScheduleBlock,waitingActivitiesToDelete = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,i,j,scenario)
+            feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,i,j,scenario)
            
             if feasible
                 delta = calculateInsertionCost(scenario.time,scenario.serviceTimes,vehicleSchedule,request,i,j)
@@ -210,19 +204,18 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
                     bestDropOff = j
                     bestNewStartOfServiceTimes = deepcopy(newStartOfServiceTimes)
                     bestNewEndOfServiceTimes = deepcopy(newEndOfServiceTimes)
-                    bestStartOfScheduleBlock = startOfScheduleBlock
-                    bestEndOfScheduleBlock = endOfScheduleBlock
                     bestWaitingActivitiesToDelete = deepcopy(waitingActivitiesToDelete)
                 end
             end
         end
     end
 
-    return bestDelta < typemax(Float64), bestDelta, bestPickUp, bestDropOff, bestNewStartOfServiceTimes, bestNewEndOfServiceTimes, bestStartOfScheduleBlock, bestEndOfScheduleBlock,bestWaitingActivitiesToDelete
+    return bestDelta < typemax(Float64), bestDelta, bestPickUp, bestDropOff, bestNewStartOfServiceTimes, bestNewEndOfServiceTimes,bestWaitingActivitiesToDelete
 
 end
 
 
+# TODO: should be calculated in checkFeasibilityOfInsertionAtPosition
 function calculateInsertionCost(time::Array{Int,2},serviceTimes::Int,vehicleSchedule::VehicleSchedule,request::Request,idxPickUp::Int,idxDropOff::Int)
 
     route = vehicleSchedule.route
