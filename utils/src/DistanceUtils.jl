@@ -54,11 +54,6 @@ end
 #  Function to get distance and time matrix
 ==#
 function getDistanceAndTimeMatrixFromLocations(locations::Vector{Tuple{Float64, Float64}})::Tuple{Array{Float64, 2}, Array{Int, 2}}
-    # Ensure Julia can find the Python script
-    push!(pyimport("sys")."path", "utils/src")  
-
-    # Import the py module 
-    osrm = pyimport("DistanceCalculator")  
 
     # Initialize
     nLocations = length(locations)
@@ -73,14 +68,43 @@ function getDistanceAndTimeMatrixFromLocations(locations::Vector{Tuple{Float64, 
                 distanceMatrix[i,j] = 0
                 travelTimeMatrix[i,j] = 0
             else
-                dist, time = osrm.fetch_distance_travel_time_osrm(loc1, loc2)
-                distanceMatrix[i,j] = dist/1000.0
+                dist, time = haversine_distance(loc1[1],loc1[2],loc2[1],loc2[2])
+                distanceMatrix[i,j] = dist
                 travelTimeMatrix[i,j] = ceil(time)
             end
         end
     end
 
     return distanceMatrix, travelTimeMatrix
+end
+
+#==
+# Haversine distance between two points
+==#
+function haversine_distance(lat1, lon1, lat2, lon2; speedKmh=60.0)
+    # Earth's radius in kilometers
+    R = 6371.0
+
+    # Convert degrees to radians
+    lat1 = deg2rad(lat1)
+    lon1 = deg2rad(lon1)
+    lat2 = deg2rad(lat2)
+    lon2 = deg2rad(lon2)
+
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+
+    # Haversine formula
+    a = sin(dlat/2)^2 + cos(lat1) * cos(lat2) * sin(dlon/2)^2
+    c = 2 * atan(sqrt(a), sqrt(1 - a))
+
+    # Distance in kilometers
+    distanceKm = R * c
+
+    # Time in hours (assuming constant speed)
+    timeHours = distanceKm / speedKmh
+
+    return distanceKm, timeHours*60
 end
 
 end
