@@ -49,6 +49,8 @@ function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::A
     # Remove requests from solution
     removeRequestsFromSolution!(time,distance,currentSolution,requestsToRemove)
 
+    println("removed requests: ", requestsToRemove)
+
 end
 
 #==
@@ -98,7 +100,7 @@ function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::
         
     # Remove requests from solution
     removeRequestsFromSolution!(time, distance, currentSolution, requestsToRemove)
-
+    println("removed requests: ", requestsToRemove)
 end
 
 
@@ -159,6 +161,7 @@ function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::A
 
     # Remove requests 
     removeRequestsFromSolution!(time, distance, currentSolution, requestsToRemove)
+    println("removed requests: ", requestsToRemove)
 end
 
 #==

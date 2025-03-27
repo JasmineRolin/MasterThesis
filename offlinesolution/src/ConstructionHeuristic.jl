@@ -118,9 +118,9 @@ function findFeasibleInsertionInSchedule(request::Request,vehicleSchedule::Vehic
     for idxPickUp in 1:length(vehicleSchedule.route)-1
         for idxDropOff in idxPickUp:length(vehicleSchedule.route)-1
             # Check feasibility
-            feasible, newStartOfServiceTimes, newEndOfServiceTimes, startOfScheduleBlock, endOfScheduleBlock= checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,idxPickUp,idxDropOff,scenario)
+            feasible, newStartOfServiceTimes, newEndOfServiceTimes, startOfScheduleBlock, endOfScheduleBlock, waitingActivitiesToDelete = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,idxPickUp,idxDropOff,scenario)
             if feasible
-                return true, idxPickUp, idxDropOff, newStartOfServiceTimes, newEndOfServiceTimes, startOfScheduleBlock, endOfScheduleBlock
+                return true, idxPickUp, idxDropOff, newStartOfServiceTimes, newEndOfServiceTimes, startOfScheduleBlock, endOfScheduleBlock, waitingActivitiesToDelete
             end
         end 
     end

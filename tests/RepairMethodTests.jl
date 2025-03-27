@@ -28,7 +28,7 @@ using alns, domain, utils, offlinesolution
     endOfScheduleBlock = 2
     newStartOfServiceTimes = [428,476,480,1380]
     newEndOfServiceTimes = [428,478,482,1380]
-    insertRequest!(scenario.requests[1],vehicleSchedule,1,1,startOfScheduleBlock,endOfScheduleBlock,scenario,newStartOfServiceTimes,newEndOfServiceTimes)
+    insertRequest!(scenario.requests[1],vehicleSchedule,1,1,startOfScheduleBlock,endOfScheduleBlock,scenario,newStartOfServiceTimes,newEndOfServiceTimes,[])
 
     # Create requestBank
     requestBank = [2]
@@ -85,7 +85,7 @@ end
    endOfScheduleBlock = 2
    newStartOfServiceTimes = [428,476,480,1380]
    newEndOfServiceTimes = [428,478,482,1380]
-   insertRequest!(scenario.requests[1],vehicleSchedule,1,1,startOfScheduleBlock,endOfScheduleBlock,scenario,newStartOfServiceTimes,newEndOfServiceTimes)
+   insertRequest!(scenario.requests[1],vehicleSchedule,1,1,startOfScheduleBlock,endOfScheduleBlock,scenario,newStartOfServiceTimes,newEndOfServiceTimes,[])
 
    # Choose destroy methods
    destroyMethods = Vector{GenericMethod}()
