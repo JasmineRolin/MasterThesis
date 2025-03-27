@@ -423,25 +423,21 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
 
     # Check if in same schedule block 
     if waitingActivityIdxBeforePickUp != waitingActivityIdxBeforeDropOff || waitingActivityIdxAfterPickUp != waitingActivityIdxAfterDropOff
-        println("INFEASIBLE: DIFFERENT SCHEDULE BLOCKS")
         return false, [], [], 0, 0
     end
 
     # Check load 
     if any(numberOfWalking[pickUpIdx:dropOffIdx] .+ 1 .> vehicle.totalCapacity) # TODO: jas - check rigtigt 
-        println("INFEASIBLE: CAPACITY")
         return false, [], [], 0, 0
     end
 
     # Check times for pick up 
     if route[pickUpIdx].activity.timeWindow.startTime > request.pickUpActivity.timeWindow.endTime || route[pickUpIdx+1].activity.timeWindow.endTime < request.pickUpActivity.timeWindow.startTime
-        println("INFEASIBLE: PICK-UP TIME WINDOW")
         return false, [], [], 0, 0
     end
 
     # Check times for drop off
     if route[dropOffIdx].activity.timeWindow.startTime > request.dropOffActivity.timeWindow.endTime || route[dropOffIdx+1].activity.timeWindow.endTime < request.dropOffActivity.timeWindow.startTime
-        println("INFEASIBLE: DROP-OFF TIME WINDOW")
         return false, [], [], 0, 0
     end
 
