@@ -5,7 +5,7 @@ using alns, domain, utils, offlinesolution
 Test ALNSFunctions
 ==#
 
-# @testset "ALNS test - Big Test" begin 
+@testset "ALNS test - Big Test" begin 
     requestFile = "tests/resources/RequestsBig.csv"
     vehiclesFile = "tests/resources/VehiclesBig.csv"
     parametersFile = "tests/resources/Parameters.csv"
@@ -87,78 +87,78 @@ Test ALNSFunctions
     @test feasible == true
     @test msg == ""
       
-# end
+end
 
 
 # TODO: update time and distance matrix 
-#@testset "ALNS RUN test - Big Test" begin 
-#     requestFile = "tests/resources/RequestsBig.csv"
-#     vehiclesFile = "tests/resources/VehiclesBig.csv"
-#     parametersFile = "tests/resources/Parameters.csv"
-#     distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
-#     timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
-#     scenarioName = "Big"
-#     alnsParameters = "tests/resources/ALNSParameters_Article.json"
+@testset "ALNS RUN test - Big Test" begin 
+    requestFile = "tests/resources/RequestsBig.csv"
+    vehiclesFile = "tests/resources/VehiclesBig.csv"
+    parametersFile = "tests/resources/Parameters.csv"
+    distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
+    timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
+    scenarioName = "Big"
+    alnsParameters = "tests/resources/ALNSParameters_Article.json"
 
-#     # Read instance 
-#     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
+    # Read instance 
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
     
-#     # Choose destroy methods
-#     destroyMethods = Vector{GenericMethod}()
-#     addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
-#     addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
-#     addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
+    # Choose destroy methods
+    destroyMethods = Vector{GenericMethod}()
+    addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
+    addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
+    addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
 
-#     # Choose repair methods
-#     repairMethods = Vector{GenericMethod}()
-#     addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
-#     addMethod!(repairMethods,"regretInsertion",regretInsertion)
+    # Choose repair methods
+    repairMethods = Vector{GenericMethod}()
+    addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
+    addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
     
-#     finalSolution, specifications, KPIs = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters)
+    finalSolution, specifications, KPIs = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters)
 
-#     feasible, msg = checkSolutionFeasibility(scenario,finalSolution,scenario.offlineRequests)
-#     @test feasible == true
-#     @test msg == ""
+    feasible, msg = checkSolutionFeasibility(scenario,finalSolution,scenario.offlineRequests)
+    @test feasible == true
+    @test msg == ""
 
-#     println("FINAL SOLUTION")
-#     print("nTaxi: ",finalSolution.nTaxi)
-#     printSolution(finalSolution,printRouteHorizontal)
+    println("FINAL SOLUTION")
+    print("nTaxi: ",finalSolution.nTaxi)
+    printSolution(finalSolution,printRouteHorizontal)
       
-# end
+end
 
 
-#@testset "ALNS RUN test - Konsentra Test" begin 
-    # requestFile = "Data/Konsentra/TransformedData_Data.csv"
-    # vehiclesFile = "Data/Konsentra/Vehicles_0.5.csv"
-    # parametersFile = "tests/resources/Parameters.csv"
-    # distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra_Data_NewVehicles.txt"
-    # timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra_Data_NewVehicles.txt"
-    # scenarioName = "Konsentra"
+@testset "ALNS RUN test - Konsentra Test" begin 
+    requestFile = "Data/Konsentra/TransformedData_Data.csv"
+    vehiclesFile = "Data/Konsentra/Vehicles_0.5.csv"
+    parametersFile = "tests/resources/Parameters.csv"
+    distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra_Data_NewVehicles.txt"
+    timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra_Data_NewVehicles.txt"
+    scenarioName = "Konsentra"
     
-    # # Read instance 
-    # scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
+    # Read instance 
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
-    # # Choose destroy methods
-    # destroyMethods = Vector{GenericMethod}()
-    # addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
-    # addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
-    # addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
+    # Choose destroy methods
+    destroyMethods = Vector{GenericMethod}()
+    addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
+    addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
+    addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
 
-    # # Choose repair methods
-    # repairMethods = Vector{GenericMethod}()
-    # addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
-    # addMethod!(repairMethods,"regretInsertion",regretInsertion)
+    # Choose repair methods
+    repairMethods = Vector{GenericMethod}()
+    addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
+    addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
     
-    # finalSolution,requestBank,specification,KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;initialSolutionConstructor=simpleConstruction,parametersFile="tests/resources/ALNSParameters2.json")
+    finalSolution,requestBank,specification,KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;initialSolutionConstructor=simpleConstruction,parametersFile="tests/resources/ALNSParameters2.json")
 
-    # feasible, msg = checkSolutionFeasibility(scenario,finalSolution,scenario.requests)
-    # @test feasible == true
-    # @test msg == ""
+    feasible, msg = checkSolutionFeasibility(scenario,finalSolution,scenario.requests)
+    @test feasible == true
+    @test msg == ""
 
-    # println("FINAL SOLUTION")
-    # print("nTaxi: ",finalSolution.nTaxi)
-    #printSolution(finalSolution,printRouteHorizontal)
-#end
+    println("FINAL SOLUTION")
+    print("nTaxi: ",finalSolution.nTaxi)
+    printSolution(finalSolution,printRouteHorizontal)
+end
 

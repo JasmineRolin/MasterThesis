@@ -511,6 +511,7 @@ function checkFeasibilityOfInsertionInRoute(scenario::Scenario,totalIdleTime::In
                     return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete
                 end
             end
+            previousActivity = currentActivity
 
             continue
         end
