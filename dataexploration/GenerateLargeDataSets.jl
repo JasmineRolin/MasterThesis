@@ -75,10 +75,9 @@ end
 #==
 # Get request time distribution
 ==#
-function getRequestTimeDistribution(requestTimePickUp::Array{Int}, requestTimeDropOff::Array{Int}, startTime::Int, endTime::Int)
+function getRequestTimeDistribution(requestTimePickUp::Array{Int}, requestTimeDropOff::Array{Int}, time_range::Vector{Int})
     # PICK UP TIME KDE
     kde_pickUpTime = KernelDensity.kde(requestTimePickUp)
-    time_range = range(startTime, stop=endTime, length=200)
     density_values_pickUp = [pdf(kde_pickUpTime, t) for t in time_range]
     probabilities_pickUpTime = density_values_pickUp / sum(density_values_pickUp)
 
@@ -167,7 +166,7 @@ time_range_plot = collect(range(8*60,23*60,200))
 x_range = collect(range(minimum(location_matrix[:,1]), maximum(location_matrix[:,1]), length=200))  
 y_range = collect(range(minimum(location_matrix[:,2]), maximum(location_matrix[:,2]), length=200))  
 
-probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff = getRequestTimeDistribution(requestTimePickUp, requestTimeDropOff, 1, 1000)
+probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff = getRequestTimeDistribution(requestTimePickUp, requestTimeDropOff, time_range)
 probabilities_location, density_grid = getLocationDistribution(location_matrix, x_range, y_range)
 
 for i in 1:nData
