@@ -121,7 +121,7 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPic
     vehicleSchedule.activeTimeWindow.endTime = route[end].endOfServiceTime
 
     # Update capacities
-    updateCapacities!(vehicleSchedule,idxPickUp,idxDropOff)
+    updateCapacities!(vehicleSchedule,idxPickUp,idxDropOff,waitingActivitiesToDelete)
 
     # Update waiting 
     # TODO: stadig brugt? 
@@ -144,7 +144,7 @@ end
 #==
 # Method to update capacities of vehicle schedule after insertion of request
 ==#
-function updateCapacities!(vehicleSchedule::VehicleSchedule,idxPickUp::Int,idxDropOff::Int)
+function updateCapacities!(vehicleSchedule::VehicleSchedule,idxPickUp::Int,idxDropOff::Int,waitingActivitiesToDelete::Vector{Int} )
 
     # Update capacities
     beforePickUp = vehicleSchedule.numberOfWalking[idxPickUp]
@@ -154,6 +154,9 @@ function updateCapacities!(vehicleSchedule::VehicleSchedule,idxPickUp::Int,idxDr
     for i in idxPickUp+2:idxDropOff+1
         vehicleSchedule.numberOfWalking[i] = vehicleSchedule.numberOfWalking[i] + 1
     end
+
+    # Delete entries for deleted waiting activities 
+    deleteat!(vehicleSchedule.numberOfWalking,waitingActivitiesToDelete)
 
 end
 
