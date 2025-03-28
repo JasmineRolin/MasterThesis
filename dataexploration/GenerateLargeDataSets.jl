@@ -182,10 +182,19 @@ scatter!(results.pickup_longitude, results.pickup_latitude, marker=:circle, labe
 scatter!(results.dropoff_longitude, results.dropoff_latitude, marker=:circle, label="New Locations", color=:red)
 
 # Plot request time distribution 
-histogram(requestTimePickUp,normalize=:pdf,label="Histrogram of given data",color=:blue)
-plot!(time_range, probabilities_pickUpTime, label="Probability Distribution From KDE", linewidth=2, linestyle=:solid, color=:red)
+requestTimePickUp_hours = requestTimePickUp ./ 60
+time_range_hours = time_range ./ 60
+probabilities_pickUpTime_scaled = probabilities_pickUpTime .* 60
+histogram(requestTimePickUp_hours, normalize=:pdf, label="Histogram of Given Data", color=:blue)
+plot!(time_range_hours, probabilities_pickUpTime_scaled, label="Probability Distribution From KDE", linewidth=2, linestyle=:solid, color=:red)
 title!("Pickup Time Distribution")
+xlabel!("Time (Hours)")
 
-histogram(requestTimeDropOff,normalize=:pdf,label="Histrogram of given data",color=:blue)
-plot!(time_range, probabilities_dropOffTime, label="Probability Distribution From KDE", linewidth=2, linestyle=:solid, color=:red)
+# Plot histogram and KDE for drop-off time
+requestTimeDropOff_hours = requestTimeDropOff ./ 60
+time_range_hours = time_range ./ 60
+probabilities_dropOffTime_scaled = probabilities_dropOffTime .* 60
+histogram(requestTimeDropOff_hours, normalize=:pdf, label="Histogram of Given Data", color=:blue)
+plot!(time_range_hours, probabilities_dropOffTime_scaled, label="Probability Distribution From KDE", linewidth=2, linestyle=:solid, color=:red)
 title!("Dropoff Time Distribution")
+xlabel!("Time (Hours)")
