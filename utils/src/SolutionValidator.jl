@@ -51,7 +51,7 @@ function checkSolutionFeasibility(scenario::Scenario,solution::Solution,requests
     # Check that all activities are serviced
     notServicedActivities = setdiff(activityIds, servicedActivities)
     if length(notServicedActivities) != 2*nTaxi # TODO: add check if we add list of activities serviced by taxi 
-        msg = "SOLUTION INFEASIBLE: Not all activities are serviced"
+        msg = "SOLUTION INFEASIBLE: Not all activities are serviced. Serviced: $(length(servicedActivities)), not serviced: $(length(notServicedActivities)), nTaxi: $(nTaxi)"
         return false, msg
     end
 

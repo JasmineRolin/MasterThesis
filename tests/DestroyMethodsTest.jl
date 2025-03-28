@@ -18,68 +18,60 @@ using offlinesolution
 
     # Read instance 
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
-
-    # Constuct solution 
-    solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
-    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.offlineRequests)
-
-    # Put two requests in same schedule 
-    solution.totalDistance -= solution.vehicleSchedules[3].totalDistance + solution.vehicleSchedules[4].totalDistance
-    solution.totalCost -= solution.vehicleSchedules[3].totalCost + solution.vehicleSchedules[4].totalCost
-    solution.totalRideTime -= solution.vehicleSchedules[3].totalTime + solution.vehicleSchedules[4].totalTime
-    solution.totalIdleTime -= solution.vehicleSchedules[3].totalIdleTime + solution.vehicleSchedules[4].totalIdleTime
-
-    solution.vehicleSchedules[3].numberOfWalking = [solution.vehicleSchedules[3].numberOfWalking[1:4];solution.vehicleSchedules[4].numberOfWalking[2:4];solution.vehicleSchedules[3].numberOfWalking[end]]
-
-    solution.vehicleSchedules[3].route = [solution.vehicleSchedules[3].route[1:4];solution.vehicleSchedules[4].route[2:4];solution.vehicleSchedules[3].route[end]]
-    solution.vehicleSchedules[3].route[4].endOfServiceTime = 517
-    solution.vehicleSchedules[3].route[end-1].endOfServiceTime = 1252
-
-
-    solution.vehicleSchedules[3].totalCost = getTotalCostRoute(scenario,solution.vehicleSchedules[3].route)
-    solution.vehicleSchedules[3].totalDistance = getTotalDistanceRoute(solution.vehicleSchedules[3].route,scenario)
-    solution.vehicleSchedules[3].totalTime = getTotalTimeRoute(solution.vehicleSchedules[3])
-    solution.vehicleSchedules[3].totalIdleTime = getTotalIdleTimeRoute(solution.vehicleSchedules[3].route)
     
-
-    solution.vehicleSchedules[4] = VehicleSchedule(solution.vehicleSchedules[4].vehicle)
-
-    solution.totalDistance += solution.vehicleSchedules[3].totalDistance 
-    solution.totalCost += solution.vehicleSchedules[3].totalCost 
-    solution.totalRideTime += solution.vehicleSchedules[3].totalTime 
-    solution.totalIdleTime += solution.vehicleSchedules[3].totalIdleTime 
-
-    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.offlineRequests)
+    # Constuct solution 
+    solution, requestBank = simpleConstruction(scenario,scenario.requests)
+    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.requests)
     @test feasible == true
+
+    
+    printSolution(solution,printRouteHorizontal)
 
     # Construct ALNS state
     currentState = ALNSState(solution,1,0)
 
     # Construct ALNS parameters
     parameters = ALNSParameters()
+    parameters.minPercentToDestroy = 0.1
+    parameters.maxPercentToDestroy = 0.1
     setMinMaxValuesALNSParameters(parameters,scenario.time,scenario.requests)
 
     # Destroy 
     randomDestroy!(scenario,currentState,parameters)
-    feasible1, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
+    feasible1, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.requests)
     @test msg1 == ""
     @test feasible1 == true
     @test length(currentState.requestBank) == 1
-    @test length(currentState.assignedRequests) == 2
+    @test length(currentState.assignedRequests) == 4
 
     randomDestroy!(scenario,currentState,parameters)
-    feasible2, msg2 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
+    feasible2, msg2 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.requests)
     @test msg2 == ""
     @test feasible2 == true
     @test length(currentState.requestBank) == 2
+    @test length(currentState.assignedRequests) == 3
+
+
+    randomDestroy!(scenario,currentState,parameters)
+    feasible3, msg3 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.requests)
+    @test msg3 == ""
+    @test feasible3 == true
+    @test length(currentState.requestBank) == 3
+    @test length(currentState.assignedRequests) == 2
+
+    randomDestroy!(scenario,currentState,parameters)
+    feasible3, msg3 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.requests)
+    @test msg3 == ""
+    @test feasible3 == true
+    @test length(currentState.requestBank) == 4
     @test length(currentState.assignedRequests) == 1
 
 
     randomDestroy!(scenario,currentState,parameters)
-    feasible3, msg3 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
+    feasible3, msg3 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.requests)
     @test msg3 == ""
     @test feasible3 == true
-    @test length(currentState.requestBank) == 3
+    @test length(currentState.requestBank) == 5
     @test length(currentState.assignedRequests) == 0
 end 
 
@@ -104,17 +96,19 @@ end
     # Construct ALNS parameters
     parameters = ALNSParameters()
     setMinMaxValuesALNSParameters(parameters,scenario.time,scenario.requests)
+    parameters.minPercentToDestroy = 0.7
+    parameters.maxPercentToDestroy = 0.7
 
     feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
     @test feasible == true
-    @test length(currentState.assignedRequests) == 3
+    @test length(currentState.assignedRequests) == 6
 
     # Destroy 
     randomDestroy!(scenario,currentState,parameters)
     feasible1, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
     @test msg1 == ""
     @test feasible1 == true
-    @test length(currentState.requestBank) == 1
+    @test length(currentState.requestBank) == 4
     @test length(currentState.assignedRequests) == 2
 end
 
@@ -134,40 +128,10 @@ end
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Constuct solution 
-    solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
+    solution, requestBank = simpleConstruction(scenario,scenario.requests)
    
-    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.offlineRequests)
+    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.requests)
     @test feasible == true
-
-    # Put two requests in same schedule 
-    solution.totalDistance -= solution.vehicleSchedules[3].totalDistance + solution.vehicleSchedules[4].totalDistance
-    solution.totalCost -= solution.vehicleSchedules[3].totalCost + solution.vehicleSchedules[4].totalCost
-    solution.totalRideTime -= solution.vehicleSchedules[3].totalTime + solution.vehicleSchedules[4].totalTime
-    solution.totalIdleTime -= solution.vehicleSchedules[3].totalIdleTime + solution.vehicleSchedules[4].totalIdleTime
-
-    solution.vehicleSchedules[3].numberOfWalking = [solution.vehicleSchedules[3].numberOfWalking[1:4];solution.vehicleSchedules[4].numberOfWalking[2:4];solution.vehicleSchedules[3].numberOfWalking[end]]
-    
-    solution.vehicleSchedules[3].route = [solution.vehicleSchedules[3].route[1:4];solution.vehicleSchedules[4].route[2:4];solution.vehicleSchedules[3].route[end]]
-    solution.vehicleSchedules[3].route[4].endOfServiceTime = 517
-    solution.vehicleSchedules[3].route[end-1].endOfServiceTime = 1252
-
-
-    solution.vehicleSchedules[3].totalCost = getTotalCostRoute(scenario,solution.vehicleSchedules[3].route)
-    solution.vehicleSchedules[3].totalDistance = getTotalDistanceRoute(solution.vehicleSchedules[3].route,scenario)
-    solution.vehicleSchedules[3].totalTime = getTotalTimeRoute(solution.vehicleSchedules[3])
-    solution.vehicleSchedules[3].totalIdleTime = getTotalIdleTimeRoute(solution.vehicleSchedules[3].route)
-    
-
-    solution.vehicleSchedules[4] = VehicleSchedule(solution.vehicleSchedules[4].vehicle)
-
-    solution.totalDistance += solution.vehicleSchedules[3].totalDistance 
-    solution.totalCost += solution.vehicleSchedules[3].totalCost 
-    solution.totalRideTime += solution.vehicleSchedules[3].totalTime 
-    solution.totalIdleTime += solution.vehicleSchedules[3].totalIdleTime 
-
-    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.offlineRequests)
-    @test feasible == true
-
 
     # Construct ALNS state
     currentState = ALNSState(solution,1,0)
@@ -175,28 +139,22 @@ end
     # Construct ALNS parameters
     parameters = ALNSParameters()
     setMinMaxValuesALNSParameters(parameters,scenario.time,scenario.requests)
+    parameters.minPercentToDestroy = 0.7
+    parameters.maxPercentToDestroy = 0.7
 
     # Destroy 
     worstRemoval!(scenario,currentState,parameters)
-    feasible1, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
+    feasible1, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.requests)
     @test msg1 == ""
     @test feasible1 == true
-    @test length(currentState.requestBank) == 1
-    @test length(currentState.assignedRequests) == 2
-
-    worstRemoval!(scenario,currentState,parameters)
-    feasible2, msg2 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
-    @test msg2 == ""
-    @test feasible2 == true
-    @test length(currentState.requestBank) == 2
+    @test length(currentState.requestBank) == 4
     @test length(currentState.assignedRequests) == 1
 
-
     worstRemoval!(scenario,currentState,parameters)
-    feasible3, msg3 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
-    @test msg3 == ""
-    @test feasible3 == true
-    @test length(currentState.requestBank) == 3
+    feasible2, msg2 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.requests)
+    @test msg2 == ""
+    @test feasible2 == true
+    @test length(currentState.requestBank) == 5
     @test length(currentState.assignedRequests) == 0
 end 
 
@@ -222,17 +180,19 @@ end
     # Construct ALNS parameters
     parameters = ALNSParameters()
     setMinMaxValuesALNSParameters(parameters,scenario.time,scenario.requests)
+    parameters.minPercentToDestroy = 0.7
+    parameters.maxPercentToDestroy = 0.7
 
     feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
     @test feasible == true
-    @test length(currentState.assignedRequests) == 3
+    @test length(currentState.assignedRequests) == 6
 
     # Destroy 
     worstRemoval!(scenario,currentState,parameters)
     feasible1, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
     @test msg1 == ""
     @test feasible1 == true
-    @test length(currentState.requestBank) == 1
+    @test length(currentState.requestBank) == 4
     @test length(currentState.assignedRequests) == 2
 end
 
@@ -253,38 +213,9 @@ end
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Constuct solution 
-    solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
-    
-    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.offlineRequests)
-    @test feasible == true
+    solution, requestBank = simpleConstruction(scenario,scenario.requests)
 
-    # Put two requests in same schedule 
-    solution.totalDistance -= solution.vehicleSchedules[3].totalDistance + solution.vehicleSchedules[4].totalDistance
-    solution.totalCost -= solution.vehicleSchedules[3].totalCost + solution.vehicleSchedules[4].totalCost
-    solution.totalRideTime -= solution.vehicleSchedules[3].totalTime + solution.vehicleSchedules[4].totalTime
-    solution.totalIdleTime -= solution.vehicleSchedules[3].totalIdleTime + solution.vehicleSchedules[4].totalIdleTime
-
-    solution.vehicleSchedules[3].numberOfWalking = [solution.vehicleSchedules[3].numberOfWalking[1:4];solution.vehicleSchedules[4].numberOfWalking[2:4];solution.vehicleSchedules[3].numberOfWalking[end]]
-   
-    solution.vehicleSchedules[3].route = [solution.vehicleSchedules[3].route[1:4];solution.vehicleSchedules[4].route[2:4];solution.vehicleSchedules[3].route[end]]
-    solution.vehicleSchedules[3].route[4].endOfServiceTime = 517
-    solution.vehicleSchedules[3].route[end-1].endOfServiceTime = 1252
-
-
-    solution.vehicleSchedules[3].totalCost = getTotalCostRoute(scenario,solution.vehicleSchedules[3].route)
-    solution.vehicleSchedules[3].totalDistance = getTotalDistanceRoute(solution.vehicleSchedules[3].route,scenario)
-    solution.vehicleSchedules[3].totalTime = getTotalTimeRoute(solution.vehicleSchedules[3])
-    solution.vehicleSchedules[3].totalIdleTime = getTotalIdleTimeRoute(solution.vehicleSchedules[3].route)
-    
-
-    solution.vehicleSchedules[4] = VehicleSchedule(solution.vehicleSchedules[4].vehicle)
-
-    solution.totalDistance += solution.vehicleSchedules[3].totalDistance 
-    solution.totalCost += solution.vehicleSchedules[3].totalCost 
-    solution.totalRideTime += solution.vehicleSchedules[3].totalTime 
-    solution.totalIdleTime += solution.vehicleSchedules[3].totalIdleTime 
-
-    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.offlineRequests)
+    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.requests)
     @test feasible == true
 
 
@@ -299,17 +230,17 @@ end
 
     # Destroy 
     shawRemoval!(scenario,currentState,parameters)
-    feasible1, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
+    feasible1, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.requests)
     @test msg1 == ""
     @test feasible1 == true
-    @test length(currentState.requestBank) == 2
+    @test length(currentState.requestBank) == 4
     @test length(currentState.assignedRequests) == 1
 
     shawRemoval!(scenario,currentState,parameters)
-    feasible2, msg2 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
+    feasible2, msg2 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.requests)
     @test msg2 == ""
     @test feasible2 == true
-    @test length(currentState.requestBank) == 3
+    @test length(currentState.requestBank) == 5
     @test length(currentState.assignedRequests) == 0
 end 
 
@@ -341,13 +272,13 @@ end
     feasible1, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
     @test msg1 == ""
     @test feasible1 == true
-    @test length(currentState.requestBank) == 2
-    @test length(currentState.assignedRequests) == 1
+    @test length(currentState.requestBank) == 4
+    @test length(currentState.assignedRequests) == 2
 
     shawRemoval!(scenario,currentState,parameters)
     feasible2, msg2 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
     @test msg2 == ""
     @test feasible2 == true
-    @test length(currentState.requestBank) == 3
-    @test length(currentState.assignedRequests) == 0
+    @test length(currentState.requestBank) == 5
+    @test length(currentState.assignedRequests) == 1
 end
