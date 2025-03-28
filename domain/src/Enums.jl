@@ -23,8 +23,8 @@ MAX_EARLY_ARRIVAL = 5
  Enum that describes activity type
 ==#
 @enum RequestType begin
-    PICKUP_REQUEST = 0
-    DROPOFF_REQUEST = 1
+    PICKUP_REQUEST = 1
+    DROPOFF_REQUEST = 0
 end 
 
 

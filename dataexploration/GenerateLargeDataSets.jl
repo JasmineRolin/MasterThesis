@@ -6,7 +6,7 @@ using StatsBase
 
 include("TransformKonsentraData.jl")
 
-global DoD = 0.6 # Degree of dynamism
+global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 2*60 # 2 hours buffer
 global nData = 1
@@ -32,7 +32,7 @@ function getOldData(Data::Vector{String})
             push!(longitudes, Float64(r.dropoff_longitude))
 
             # Get request time for pick-up or drop-off
-            if r.request_type == 0
+            if r.request_type == 1
                 push!(requestTimePickUp, r.request_time)
             else
                 push!(requestTimeDropOff, r.request_time)
@@ -115,12 +115,12 @@ function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, p
     for i in 1:nSample
         # Determine type of request
         if rand() < 0.5
-            requestType = 0  # pick-up request
+            requestType = 1  # pick-up request
             sampled_indices = sample(1:length(probabilities_pickUpTime), Weights(probabilities_pickUpTime), 1)
             sampledTimePick = time_range[sampled_indices]
             requestTime = sampledTimePick[1]
         else
-            requestType = 1  # drop-off request
+            requestType = 0  # drop-off request
             sampled_indices = sample(1:length(probabilities_dropOffTime), Weights(probabilities_dropOffTime), 1)
             sampledTimeDrop = time_range[sampled_indices]
             requestTime = sampledTimeDrop[1]
@@ -137,6 +137,7 @@ function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, p
 
     # Determine pre-known requests
     preKnown = preKnownRequests(results, DoD, serviceWindow, callBuffer)
+    println(preKnown)
 
     # Determine call time
     callTime(results, serviceWindow, callBuffer, preKnown)
@@ -161,26 +162,30 @@ location_matrix, requestTimePickUp, requestTimeDropOff = getOldData([
 ])
 
 # Set probabilities and time range
-time_range = collect(8*60:23*60)
-time_range_plot = collect(range(8*60,23*60,200))  
+time_range = collect(range(6*60,23*60))
 x_range = collect(range(minimum(location_matrix[:,1]), maximum(location_matrix[:,1]), length=200))  
 y_range = collect(range(minimum(location_matrix[:,2]), maximum(location_matrix[:,2]), length=200))  
 
 probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff = getRequestTimeDistribution(requestTimePickUp, requestTimeDropOff, time_range)
 probabilities_location, density_grid = getLocationDistribution(location_matrix, x_range, y_range)
 
+results = DataFrame(id = Int[],pickup_latitude = Float64[],pickup_longitude = Float64[],dropoff_latitude = Float64[],dropoff_longitude = Float64[],request_type = Int[],request_time = Int[],mobility_type = String[],call_time = Int[],direct_drive_time = Int[])
 for i in 1:nData
     # Make requests and save to CSV
     output_file = "Data/Konsentra/GeneratedRequests_" * string(i) * ".csv"
-    results = makeRequests(100, probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range, output_file)
+    results = makeRequests(10, probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range, output_file)
 end
 
 # Visualize results 
-heatmap(x_range, y_range, density_grid, xlabel="Longitude", ylabel="Latitude", title="Density Map")
+heatmap(x_range, y_range, -density_grid, xlabel="Longitude", ylabel="Latitude", title="Density Map",c = :RdYlGn,colorbar=false)
 scatter!(results.pickup_longitude, results.pickup_latitude, marker=:circle, label="New Locations", color=:blue)
 scatter!(results.dropoff_longitude, results.dropoff_latitude, marker=:circle, label="New Locations", color=:red)
 
 # Plot request time distribution 
-histogram(requestTimePickUp)
-plot!(time_range_plot, probabilities_pickUpTime*length(requestTimePickUp), label="Original Pickup", linewidth=2, linestyle=:solid, color=:blue)
+histogram(requestTimePickUp,normalize=:pdf,label="Histrogram of given data",color=:blue)
+plot!(time_range, probabilities_pickUpTime, label="Probability Distribution From KDE", linewidth=2, linestyle=:solid, color=:red)
+title!("Pickup Time Distribution")
 
+histogram(requestTimeDropOff,normalize=:pdf,label="Histrogram of given data",color=:blue)
+plot!(time_range, probabilities_dropOffTime, label="Probability Distribution From KDE", linewidth=2, linestyle=:solid, color=:red)
+title!("Dropoff Time Distribution")

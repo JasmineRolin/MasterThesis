@@ -29,10 +29,18 @@ function preKnownRequests(df, DoD, serviceWindow, callBuffer)
     requestWithLaterTime = Int[]
     probabiltyRequest = Float64[]
     
+    # Calculate direct pickup time for drop off requests
+    if df[!,:request_type] == 0
+        pick_up_location = (Float64(df[!,:pickup_latitude]), Float64(df[!,:pickup_longitude]))
+        drop_off_location = (Float64(df[!,:dropoff_latitude]), Float64(df[!,:dropoff_longitude]))
+        _, time = getDistanceAndTimeMatrixFromLocations([pick_up_location, drop_off_location])
+        df[!,"direct_drive_time"] = time[1,2]
+    end
+
     # Known due to time
     for i in 1:nrow(df)
         request_time = df[!,:request_time][i]
-        if  request_time < serviceWindow[1] + callBuffer
+        if  request_time < serviceWindow[1] + callBuffer || (df[i,:request_type] == 0 && df[i, :request_time]- df[i,"direct_drive_time"] < serviceWindow[1] + callBuffer)
             known_requests[i] = true  # Known by default if request too early
             numberKnownDueToTime += 1
         else
@@ -67,21 +75,14 @@ function callTime(df, serviceWindow, callBuffer, preKnown)
         if preKnown[i]
             df[i, "call_time"] = 0
 
-        elseif df[i, :request_time] == serviceWindow[1] + callBuffer
+        elseif df[i, :request_time] == serviceWindow[1] + callBuffer || (df[i,:request_type] == 0 && df[i, :request_time]- df[i,"direct_drive_time"] == serviceWindow[1] + callBuffer)
             df[i, "call_time"] = serviceWindow[1]
-        
         else
             # Determine latest call time 
             if df[i,:request_type] == 1 # Pick up 
                 call_window = [serviceWindow[1], df[i, :request_time] - callBuffer]
             else # Drop off 
-                pick_up_location = (Float64(df[i,:pickup_latitude]), Float64(df[i,:pickup_longitude]))
-                drop_off_location = (Float64(df[i,:dropoff_latitude]), Float64(df[i,:dropoff_longitude]))
-                _, time = getDistanceAndTimeMatrixFromLocations([pick_up_location, drop_off_location])
-                df[i,"direct_drive_time"] = time[1,2]
-
-                direct_pick_up_time = df[i, :request_time] - time[1,2]
-
+                direct_pick_up_time = df[i, :request_time] - df[i,"direct_drive_time"]
                 call_window = [serviceWindow[1],direct_pick_up_time - callBuffer]
             end
 
