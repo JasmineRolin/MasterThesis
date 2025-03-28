@@ -81,12 +81,6 @@ function getCostOfRequest(time::Array{Int,2},endOfServiceTimePickUp::Int,startOf
     return  actualTime/directTime*10.0
 end
 
-function getCostOfRequest(time::Array{Int,2},endOfServiceTimePickUp::Int,startOfServiceTimeDropOff::Int,pickUpActivityId::Int,dropOffActivityId::Int)
-    directTime = Float64(time[pickUpActivityId,dropOffActivityId])
-    actualTime = Float64(startOfServiceTimeDropOff - endOfServiceTimePickUp)
-    return  actualTime/directTime*10.0
-end
-
 
 #==
 # Function to get total idle time of route 

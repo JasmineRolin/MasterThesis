@@ -515,9 +515,14 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                 if newStartOfServiceTimes[idx] - newEndOfServiceTimes[pickUpIndexes[requestId]] > requests[requestId].maximumRideTime
                     return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete
                 end
-            end
-            previousActivity = currentActivity
 
+                # Update total cost
+                totalCost += getCostOfRequest(time,newEndOfServiceTimes[pickUpIndexes[requestId]],newStartOfServiceTimes[idx],requests[requestId].pickUpActivity.id,requests[requestId].dropOffActivity.id)
+            end
+
+            # Set previous as current activity
+            previousActivity = currentActivity
+            
             continue
         end
 
@@ -556,6 +561,9 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                     newStartOfServiceTimes[idx+1] = newStartOfServiceTimes[idx]
                     newEndOfServiceTimes[idx+1] = newEndOfServiceTimes[idx]
                 end
+
+                # Update total distance 
+                totalDistance += distance[previousActivity.id,nextActivity.id]
             # Keep waiting activity     
             else
                 feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
@@ -586,6 +594,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                 return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete
             end
 
+            # Update total cost
             totalCost += getCostOfRequest(time,newEndOfServiceTimes[pickUpIndexes[requestId]],newStartOfServiceTimes[idx],requests[requestId].pickUpActivity.id,requests[requestId].dropOffActivity.id)
         end
 
