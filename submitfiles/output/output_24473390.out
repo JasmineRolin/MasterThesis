@@ -1,0 +1,450 @@
+Loaded module: julia/1.10.2
+  Activating project at `~/MasterThesis`
+   Resolving package versions...
+  No Changes to `~/MasterThesis/Project.toml`
+  No Changes to `~/MasterThesis/Manifest.toml`
+Precompiling project...
+    AbstractFFTs Being precompiled by another machine (hostname: n-62-31-5, pid: 1017222, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/AbstractFFTs/Di3HZ_Qi9EZ.ji.pidfile)
+    IndirectArrays Being precompiled by another machine (hostname: n-62-31-5, pid: 1017222, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/IndirectArrays/UR6AD_Qi9EZ.ji.pidfile)
+    OffsetArrays Being precompiled by another machine (hostname: n-62-31-5, pid: 1017222, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/OffsetArrays/UDEDl_Qi9EZ.ji.pidfile)
+  ✓ Pipe
+  ✓ IteratorInterfaceExtensions
+  ✓ LaTeXStrings
+  ✓ UnPack
+  ✓ WorkerUtilities
+  ✓ StatsAPI
+  ✓ Contour
+  ✓ TensorCore
+    FillArrays Being precompiled by another machine (hostname: n-62-31-5, pid: 1017222, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/FillArrays/2Dg1l_Qi9EZ.ji.pidfile)
+    IterTools Being precompiled by another machine (hostname: n-62-31-5, pid: 1017222, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/IterTools/hhnii_Qi9EZ.ji.pidfile)
+  ✓ VersionParsing
+  ✓ ConcurrentUtilities
+  ✓ StructTypes
+  ✓ TableTraits
+  ✓ CompilerSupportLibraries_jll
+  ✓ BufferedStreams
+    Observables Being precompiled by another machine (hostname: n-62-31-5, pid: 1017222, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/Observables/qosmH_Qi9EZ.ji.pidfile)
+  ✓ Measures
+  ✓ Format
+  ✓ SentinelArrays
+  ✓ Grisu
+  ✓ Compat
+  ✓ domain
+  ✓ DataValueInterfaces
+    Pidfile Being precompiled by another machine (hostname: n-62-31-5, pid: 1017222, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/Pidfile/wlmRx_Qi9EZ.ji.pidfile)
+  ✓ OrderedCollections
+  ✓ EnumX
+  ✓ Requires
+  ✓ MbedTLS
+  ✓ StableRNGs
+  ✓ Reexport
+  ✓ Unzip
+  ✓ DocStringExtensions
+  ✓ InlineStrings
+  ✓ SimpleBufferStream
+  ✓ URIs
+  ✓ ExceptionUnwrapping
+  ✓ PtrArrays
+  ✓ NaNMath
+  ✓ MacroTools
+  ✓ IrrationalConstants
+  ✓ DelimitedFiles
+  ✓ InvertedIndices
+  ✓ TranscodingStreams
+  ✓ onlinesolution
+  ✓ UnicodeFun
+    FunctionalCollections Being precompiled by another machine (hostname: n-62-31-5, pid: 1017222, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/FunctionalCollections/U1ZAw_Qi9EZ.ji.pidfile)
+  ✓ DataAPI
+  ✓ Inflate
+  ✓ BitFlags
+  ✓ Scratch
+  ✓ CodecZlib
+  ✓ SuiteSparse
+  ✓ Crayons
+  ✓ CodeTracking
+  ✓ Tables
+  ✓ Statistics
+    Parameters Being precompiled by another machine (hostname: n-62-31-5, pid: 1017222, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/Parameters/ycYNs_Qi9EZ.ji.pidfile)
+  ✓ Showoff
+    Hexagons Being precompiled by another machine (hostname: n-62-31-5, pid: 1017222, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/Hexagons/YDvG6_Qi9EZ.ji.pidfile)
+  ✓ Compat → CompatLinearAlgebraExt
+    Ratios Being precompiled by another machine (hostname: n-62-31-5, pid: 1017222, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/Ratios/zQEsd_Qi9EZ.ji.pidfile)
+  ✓ WoodburyMatrices
+    Adapt Being precompiled by another machine (hostname: n-62-31-5, pid: 1017222, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/Adapt/rUIgN_Qi9EZ.ji.pidfile)
+  ✓ Preferences
+  ✓ ProtoBuf
+  ✓ AliasTables
+  ✓ CommonSubexpressions
+  ✓ FileIO
+    Lazy Being precompiled by another machine (hostname: n-62-31-5, pid: 1017222, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/Lazy/mi7Ul_Qi9EZ.ji.pidfile)
+  ✓ MutableArithmetics
+    Hiccup Being precompiled by another machine (hostname: n-62-31-5, pid: 1017222, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/Hiccup/rCzVW_Qi9EZ.ji.pidfile)
+┌ Warning: attempting to remove probably stale pidfile
+│   path = "/zhome/a7/e/146976/.julia/compiled/v1.10/IndirectArrays/UR6AD_Qi9EZ.ji.pidfile"
+└ @ FileWatching.Pidfile ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:273
+┌ Warning: attempting to remove probably stale pidfile
+│   path = "/zhome/a7/e/146976/.julia/compiled/v1.10/AbstractFFTs/Di3HZ_Qi9EZ.ji.pidfile"
+└ @ FileWatching.Pidfile ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:273
+  ✓ Media
+┌ Warning: attempting to remove probably stale pidfile
+│   path = "/zhome/a7/e/146976/.julia/compiled/v1.10/FillArrays/2Dg1l_Qi9EZ.ji.pidfile"
+└ @ FileWatching.Pidfile ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:273
+┌ Warning: attempting to remove probably stale pidfile
+│   path = "/zhome/a7/e/146976/.julia/compiled/v1.10/IterTools/hhnii_Qi9EZ.ji.pidfile"
+└ @ FileWatching.Pidfile ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:273
+  ✓ IndirectArrays
+  ✓ AbstractFFTs
+  ✓ IterTools
+┌ Warning: attempting to remove probably stale pidfile
+│   path = "/zhome/a7/e/146976/.julia/compiled/v1.10/Observables/qosmH_Qi9EZ.ji.pidfile"
+└ @ FileWatching.Pidfile ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:273
+  ✓ SimpleTraits
+  ✓ LogExpFunctions
+  ✓ FillArrays
+┌ Warning: attempting to remove probably stale pidfile
+│   path = "/zhome/a7/e/146976/.julia/compiled/v1.10/Pidfile/wlmRx_Qi9EZ.ji.pidfile"
+└ @ FileWatching.Pidfile ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:273
+  ✓ LoggingExtras
+  ✓ Observables
+  ✓ PooledArrays
+  ✓ Missings
+  ✓ StaticArraysCore
+  ✓ RelocatableFolders
+  ✓ Pidfile
+  ✓ PDMats
+  ✓ Mustache
+┌ Warning: attempting to remove probably stale pidfile
+│   path = "/zhome/a7/e/146976/.julia/compiled/v1.10/ChainRulesCore/G6ax7_Qi9EZ.ji.pidfile"
+└ @ FileWatching.Pidfile ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:244
+  ✓ FilePathsBase
+  ✓ Latexify
+  ✓ Distances
+  ✓ CategoricalArrays
+┌ Warning: attempting to remove probably stale pidfile
+│   path = "/zhome/a7/e/146976/.julia/compiled/v1.10/FunctionalCollections/U1ZAw_Qi9EZ.ji.pidfile"
+└ @ FileWatching.Pidfile ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:273
+  ✓ FilePathsBase → FilePathsBaseMmapExt
+  ✓ PrecompileTools
+  ✓ JLLWrappers
+  ✓ AxisAlgorithms
+  ✓ FunctionalCollections
+┌ Warning: attempting to remove probably stale pidfile
+│   path = "/zhome/a7/e/146976/.julia/compiled/v1.10/MPIPreferences/rGk9Z_Qi9EZ.ji.pidfile"
+└ @ FileWatching.Pidfile ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:244
+  ✓ ChainRulesCore
+  ✓ FillArrays → FillArraysPDMatsExt
+  ✓ DiffResults
+┌ Warning: attempting to remove probably stale pidfile
+│   path = "/zhome/a7/e/146976/.julia/compiled/v1.10/Parameters/ycYNs_Qi9EZ.ji.pidfile"
+└ @ FileWatching.Pidfile ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:273
+  ✓ OpenSSL_jll
+  ✓ MPIPreferences
+┌ Warning: attempting to remove probably stale pidfile
+│   path = "/zhome/a7/e/146976/.julia/compiled/v1.10/Hexagons/YDvG6_Qi9EZ.ji.pidfile"
+└ @ FileWatching.Pidfile ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:273
+  ✓ Distances → DistancesSparseArraysExt
+┌ Warning: attempting to remove probably stale pidfile
+│   path = "/zhome/a7/e/146976/.julia/compiled/v1.10/Ratios/zQEsd_Qi9EZ.ji.pidfile"
+└ @ FileWatching.Pidfile ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:273
+┌ Warning: attempting to remove probably stale pidfile
+│   path = "/zhome/a7/e/146976/.julia/compiled/v1.10/Adapt/rUIgN_Qi9EZ.ji.pidfile"
+└ @ FileWatching.Pidfile ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:273
+  ✓ CategoricalArrays → CategoricalArraysStructTypesExt
+  ✓ Parameters
+  ✓ Juno
+  ✓ FilePathsBase → FilePathsBaseTestExt
+  ✓ Hexagons
+  ✓ Adapt
+  ✓ Ratios
+  ✓ Kaleido_jll
+  ✓ EpollShim_jll
+  ✓ Graphite2_jll
+  ✓ Libmount_jll
+  ✓ HiGHS_jll
+  ✓ LLVMOpenMP_jll
+  ✓ RecipesBase
+  ✓ FixedPointNumbers
+  ✓ StringManipulation
+  ✓ Bzip2_jll
+  ✓ Lz4_jll
+  ✓ Xorg_libICE_jll
+  ✓ libaec_jll
+  ✓ Rmath_jll
+  ✓ Gurobi_jll
+  ✓ Xorg_libXau_jll
+┌ Warning: attempting to remove probably stale pidfile
+│   path = "/zhome/a7/e/146976/.julia/compiled/v1.10/Lazy/mi7Ul_Qi9EZ.ji.pidfile"
+└ @ FileWatching.Pidfile ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:273
+  ✓ libpng_jll
+  ✓ Hwloc_jll
+┌ Warning: attempting to remove probably stale pidfile
+│   path = "/zhome/a7/e/146976/.julia/compiled/v1.10/Hiccup/rCzVW_Qi9EZ.ji.pidfile"
+└ @ FileWatching.Pidfile ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:273
+  ✓ IntelOpenMP_jll
+  ✓ LAME_jll
+  ✓ LERC_jll
+  ✓ fzf_jll
+┌ Warning: attempting to remove probably stale pidfile
+│   path = "/zhome/a7/e/146976/.julia/compiled/v1.10/OffsetArrays/UDEDl_Qi9EZ.ji.pidfile"
+└ @ FileWatching.Pidfile ~/.julia/juliaup/julia-1.10.2+0.x64.linux.gnu/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:273
+  ✓ JpegTurbo_jll
+  ✓ XZ_jll
+  ✓ Ogg_jll
+  ✓ mtdev_jll
+  ✓ Hiccup
+  ✓ oneTBB_jll
+  ✓ gperf_jll
+  ✓ Xorg_libXdmcp_jll
+  ✓ x265_jll
+  ✓ libaom_jll
+  ✓ x264_jll
+  ✓ Zstd_jll
+  ✓ LZO_jll
+  ✓ libvorbis_jll
+  ✓ MicrosoftMPI_jll
+  ✓ Opus_jll
+  ✓ eudev_jll
+  ✓ OffsetArrays
+  ✓ libevdev_jll
+  ✓ Lazy
+  ✓ Libffi_jll
+  ✓ Wayland_protocols_jll
+  ✓ FFTW_jll
+  ✓ Libgpg_error_jll
+  ✓ Libiconv_jll
+  ✓ ColorTypes
+  ✓ OpenSpecFun_jll
+  ✓ Xorg_libpthread_stubs_jll
+  ✓ FriBidi_jll
+  ✓ Libuuid_jll
+  ✓ AbstractFFTs → AbstractFFTsChainRulesCoreExt
+  ✓ MPItrampoline_jll
+  ✓ ChainRulesCore → ChainRulesCoreSparseArraysExt
+  ✓ libfdk_aac_jll
+  ✓ FillArrays → FillArraysStatisticsExt
+  ✓ Libgcrypt_jll
+  ✓ Pixman_jll
+  ✓ Ratios → RatiosFixedPointNumbersExt
+  ✓ CategoricalArrays → CategoricalArraysRecipesBaseExt
+  ✓ FreeType2_jll
+  ✓ CodecBzip2
+  ✓ JLFzf
+  ✓ Rmath
+  ✓ Xorg_libSM_jll
+  ✓ OpenMPI_jll
+  ✓ LogExpFunctions → LogExpFunctionsChainRulesCoreExt
+  ✓ Expat_jll
+  ✓ MPICH_jll
+  ✓ StaticArrays
+  ✓ Xorg_xtrans_jll
+  ✓ OffsetArrays → OffsetArraysAdaptExt
+  ✓ DataStructures
+  ✓ MKL_jll
+  ✓ JuliaInterpreter
+  ✓ Unitful
+  ✓ OpenSSL
+  ✓ Blosc_jll
+  ✓ Libtiff_jll
+  ✓ libinput_jll
+  ✓ XML2_jll
+  ✓ Distances → DistancesChainRulesCoreExt
+  ✓ LibExpat
+  ✓ Adapt → AdaptStaticArraysExt
+  ✓ StaticArrays → StaticArraysStatisticsExt
+  ✓ CategoricalArrays → CategoricalArraysSentinelArraysExt
+  ✓ Dbus_jll
+  ✓ Fontconfig_jll
+  ✓ Blosc
+  ✓ SortingAlgorithms
+  ✓ AbstractFFTs → AbstractFFTsTestExt
+  ✓ Adapt → AdaptSparseArraysExt
+  ✓ HDF5_jll
+  ✓ XSLT_jll
+  ✓ Gettext_jll
+  ✓ Wayland_jll
+  ✓ StaticArrays → StaticArraysChainRulesCoreExt
+  ✓ Loess
+  ✓ QuadGK
+  ✓ ColorVectorSpace
+  ✓ Glib_jll
+  ✓ SpecialFunctions
+  ✓ Xorg_libxcb_jll
+  ✓ ArnoldiMethod
+  ✓ StatsBase
+  ✓ Colors
+  ✓ Xorg_xcb_util_jll
+  ✓ Xorg_libX11_jll
+  ✓ ColorVectorSpace → SpecialFunctionsExt
+  ✓ SpecialFunctions → SpecialFunctionsChainRulesCoreExt
+  ✓ Interpolations
+  ✓ Xorg_xcb_util_renderutil_jll
+  ✓ Widgets
+  ✓ CoupledFields
+  ✓ Xorg_xcb_util_image_jll
+  ✓ LoweredCodeUtils
+  ✓ Xorg_xcb_util_keysyms_jll
+  ✓ Xorg_xcb_util_wm_jll
+  ✓ Xorg_libXrender_jll
+  ✓ Xorg_libXext_jll
+  ✓ Xorg_libXfixes_jll
+  ✓ Xorg_xcb_util_cursor_jll
+  ✓ Xorg_libxkbfile_jll
+  ✓ HypergeometricFunctions
+  ✓ DiffRules
+  ✓ Parsers
+  ✓ HDF5
+  ✓ Xorg_libXinerama_jll
+  ✓ Xorg_libXrandr_jll
+  ✓ Xorg_libXi_jll
+  ✓ Interpolations → InterpolationsUnitfulExt
+  ✓ Libglvnd_jll
+  ✓ Xorg_libXcursor_jll
+  ✓ Cairo_jll
+  ✓ Xorg_xkbcomp_jll
+  ✓ InlineStrings → ParsersExt
+  ✓ Xorg_xkeyboard_config_jll
+  ✓ H5Zblosc
+  ✓ WeakRefStrings
+  ✓ JSON
+  ✓ HarfBuzz_jll
+  ✓ StatsFuns
+  ✓ FFTW
+  ✓ xkbcommon_jll
+  ✓ Graphs
+  ✓ AssetRegistry
+  ✓ PlotlyKaleido
+  ✓ ColorSchemes
+  ✓ CategoricalArrays → CategoricalArraysJSONExt
+  ✓ Conda
+  ✓ libass_jll
+  ✓ ForwardDiff
+  ✓ Pango_jll
+  ✓ Vulkan_Loader_jll
+  ✓ BenchmarkTools
+  ✓ Qt6Base_jll
+  ✓ libdecor_jll
+  ✓ FFMPEG_jll
+  ✓ ForwardDiff → ForwardDiffStaticArraysExt
+  ✓ StatsFuns → StatsFunsChainRulesCoreExt
+  ✓ Compose
+  ✓ FFMPEG
+  ✓ GLFW_jll
+  ✓ Qt6ShaderTools_jll
+  ✓ PrettyTables
+  ✓ Revise
+  ✓ PlotlyBase
+  ✓ GR_jll
+  ✓ Revise → DistributedExt
+  ✓ Qt6Declarative_jll
+  ✓ JSON3
+  ✓ Qt6Wayland_jll
+  ✓ HTTP
+  ✓ FileIO → HTTPExt
+  ✓ WebSockets
+  ✓ Mux
+  ✓ PyCall
+  ✓ Distributions
+  ✓ PlotUtils
+  ✓ JLD
+  ✓ OpenStreetMapX
+  ✓ GR
+  ✓ WebIO
+  ✓ Distributions → DistributionsTestExt
+  ✓ PlotlyBase → DistributionsExt
+  ✓ JSExpr
+  ✓ Distributions → DistributionsChainRulesCoreExt
+  ✓ CSV
+  ✓ PlotThemes
+  ✓ RecipesPipeline
+  ✓ Blink
+  ✓ KernelDensity
+  ✓ Gadfly
+  ✓ DataFrames
+  ✓ MathOptInterface
+  ✓ PlotlyBase → DataFramesExt
+  ✓ utils
+  ✓ Latexify → DataFramesExt
+  ✓ PlotlyBase → JSON3Ext
+  ✓ Latexify → SparseArraysExt
+  ✓ offlinesolution
+  ✓ UnitfulLatexify
+  ✓ simulationframework
+  ✓ PlotlyJS
+  ✓ Gurobi
+  ✓ PlotlyJS → CSVExt
+  ✓ PlotlyJS → DataFramesExt
+  ✓ HiGHS
+  ✓ PlotlyJS → JSON3Ext
+  ✓ JuMP
+  ✓ Plots
+  ✓ Plots → FileIOExt
+  ✓ Plots → UnitfulExt
+  ✓ alns
+  314 dependencies successfully precompiled in 194 seconds. 11 already precompiled.
+  1 dependency had output during precompilation:
+┌ LoweredCodeUtils
+│  WARNING: using IR.SSAValue in module LoweredCodeUtils conflicts with an existing identifier.
+│  WARNING: using IR.SlotNumber in module LoweredCodeUtils conflicts with an existing identifier.
+└  
+   Resolving package versions...
+  No Changes to `~/MasterThesis/Project.toml`
+  No Changes to `~/MasterThesis/Manifest.toml`
+Precompiling project...
+  ✓ Latexify → DataFramesExt
+  ✓ simulationframework
+  2 dependencies successfully precompiled in 6 seconds. 323 already precompiled.
+   Resolving package versions...
+  No Changes to `~/MasterThesis/Project.toml`
+  No Changes to `~/MasterThesis/Manifest.toml`
+   Resolving package versions...
+  No Changes to `~/MasterThesis/Project.toml`
+  No Changes to `~/MasterThesis/Manifest.toml`
+   Resolving package versions...
+  No Changes to `~/MasterThesis/Project.toml`
+  No Changes to `~/MasterThesis/Manifest.toml`
+   Resolving package versions...
+  No Changes to `~/MasterThesis/Project.toml`
+  No Changes to `~/MasterThesis/Manifest.toml`
+   Resolving package versions...
+  No Changes to `~/MasterThesis/Project.toml`
+  No Changes to `~/MasterThesis/Manifest.toml`
+   Resolving package versions...
+  No Changes to `~/MasterThesis/Project.toml`
+  No Changes to `~/MasterThesis/Manifest.toml`
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@hpc.dtu.dk>
+Subject: Job 24473390: <Distance_and_Matrix_file> in cluster <dcc> Done
+
+Job <Distance_and_Matrix_file> was submitted from host <hpclogin1> by user <s194351> in cluster <dcc> at Thu Mar 20 15:41:44 2025
+Job was executed on host(s) <8*n-62-29-9>, in queue <hpc>, as user <s194351> in cluster <dcc> at Thu Mar 20 15:41:45 2025
+</zhome/a7/e/146976> was used as the home directory.
+</zhome/a7/e/146976/MasterThesis> was used as the working directory.
+Started at Thu Mar 20 15:41:45 2025
+Terminated at Thu Mar 20 18:01:49 2025
+Results reported at Thu Mar 20 18:01:49 2025
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+submitfiles/submit_TimeAndDistanceMatrix.sh
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   1050.03 sec.
+    Max Memory :                                 2058 MB
+    Average Memory :                             347.18 MB
+    Total Requested Memory :                     65536.00 MB
+    Delta Memory :                               63478.00 MB
+    Max Swap :                                   -
+    Max Processes :                              9
+    Max Threads :                                22
+    Run time :                                   8404 sec.
+    Turnaround time :                            8405 sec.
+
+The output (if any) is above this job summary.
+

@@ -1,0 +1,89 @@
+Loaded module: julia/1.10.2
+  Activating project at `~/MasterThesis`
+   Resolving package versions...
+  No Changes to `~/MasterThesis/Project.toml`
+  No Changes to `~/MasterThesis/Manifest.toml`
+Precompiling project...
+    DataFrames Being precompiled by another machine (hostname: n-62-29-9, pid: 162936, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/DataFrames/AR9oZ_Qi9EZ.ji.pidfile)
+    MathOptInterface Being precompiled by another machine (hostname: n-62-29-9, pid: 162936, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/MathOptInterface/tyub8_Qi9EZ.ji.pidfile)
+  ✓ DataFrames
+    DataFramesExt Being precompiled by another machine (hostname: n-62-29-9, pid: 162936, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/DataFramesExt/8XGBh_Qi9EZ.ji.pidfile)
+    utils Being precompiled by another machine (hostname: n-62-29-9, pid: 162936, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/utils/thX5A_Qi9EZ.ji.pidfile)
+    DataFramesExt Being precompiled by another machine (hostname: n-62-29-9, pid: 162936, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/DataFramesExt/4OLnU_Qi9EZ.ji.pidfile)
+  ✓ PlotlyBase → DataFramesExt
+  ✓ utils
+    CSVExt Being precompiled by another machine (hostname: n-62-29-9, pid: 162936, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/CSVExt/vStPm_Qi9EZ.ji.pidfile)
+  ✓ MathOptInterface
+    JuMP Being precompiled by another machine (hostname: n-62-29-9, pid: 162936, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/JuMP/DmXqY_Qi9EZ.ji.pidfile)
+    HiGHS Being precompiled by another machine (hostname: n-62-29-9, pid: 162936, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/HiGHS/WFic5_Qi9EZ.ji.pidfile)
+  ✓ Latexify → DataFramesExt
+  ✓ offlinesolution
+  ✓ Latexify → SparseArraysExt
+  ✓ UnitfulLatexify
+    Plots Being precompiled by another machine (hostname: n-62-29-9, pid: 162936, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/Plots/ld3vC_Qi9EZ.ji.pidfile)
+  ✓ simulationframework
+  ✓ PlotlyJS → CSVExt
+  ✓ HiGHS
+  ✓ JuMP
+  ✓ Plots
+    alns Being precompiled by another machine (hostname: n-62-29-9, pid: 162936, pidfile: /zhome/a7/e/146976/.julia/compiled/v1.10/alns/HfEzT_Qi9EZ.ji.pidfile)
+  ✓ alns
+  14 dependencies successfully precompiled in 105 seconds. 311 already precompiled.
+   Resolving package versions...
+  No Changes to `~/MasterThesis/Project.toml`
+  No Changes to `~/MasterThesis/Manifest.toml`
+   Resolving package versions...
+  No Changes to `~/MasterThesis/Project.toml`
+  No Changes to `~/MasterThesis/Manifest.toml`
+   Resolving package versions...
+  No Changes to `~/MasterThesis/Project.toml`
+  No Changes to `~/MasterThesis/Manifest.toml`
+   Resolving package versions...
+  No Changes to `~/MasterThesis/Project.toml`
+  No Changes to `~/MasterThesis/Manifest.toml`
+   Resolving package versions...
+  No Changes to `~/MasterThesis/Project.toml`
+  No Changes to `~/MasterThesis/Manifest.toml`
+   Resolving package versions...
+  No Changes to `~/MasterThesis/Project.toml`
+  No Changes to `~/MasterThesis/Manifest.toml`
+   Resolving package versions...
+  No Changes to `~/MasterThesis/Project.toml`
+  No Changes to `~/MasterThesis/Manifest.toml`
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@hpc.dtu.dk>
+Subject: Job 24473407: <Distance_and_Matrix_file> in cluster <dcc> Done
+
+Job <Distance_and_Matrix_file> was submitted from host <hpclogin1> by user <s194351> in cluster <dcc> at Thu Mar 20 15:43:18 2025
+Job was executed on host(s) <8*n-62-21-12>, in queue <hpc>, as user <s194351> in cluster <dcc> at Thu Mar 20 15:43:19 2025
+</zhome/a7/e/146976> was used as the home directory.
+</zhome/a7/e/146976/MasterThesis> was used as the working directory.
+Started at Thu Mar 20 15:43:19 2025
+Terminated at Thu Mar 20 18:02:23 2025
+Results reported at Thu Mar 20 18:02:23 2025
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+submitfiles/submit_TimeAndDistanceMatrix.sh
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   120.76 sec.
+    Max Memory :                                 951 MB
+    Average Memory :                             321.18 MB
+    Total Requested Memory :                     65536.00 MB
+    Delta Memory :                               64585.00 MB
+    Max Swap :                                   -
+    Max Processes :                              5
+    Max Threads :                                8
+    Run time :                                   8344 sec.
+    Turnaround time :                            8345 sec.
+
+The output (if any) is above this job summary.
+
