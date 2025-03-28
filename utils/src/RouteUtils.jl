@@ -2,7 +2,7 @@ module RouteUtils
 
 using UnPack, domain, Printf, ..CostCalculator
 
-export printRoute,printSimpleRoute,insertRequest!,checkFeasibilityOfInsertionAtPosition,printRouteHorizontal,printSolution,updateRoute!
+export printRoute,printSimpleRoute,insertRequest!,checkFeasibilityOfInsertionAtPosition,printRouteHorizontal,printSolution,updateRoute!,checkFeasibilityOfInsertionInRoute
 
 #==
 # Method to print solution 
@@ -438,15 +438,15 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
     dropOffIdxInBlock = dropOffIdx+ 2 # Index as if pickup and dropoff is inserted
 
     # Check feasibility 
-    feasible, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete = checkFeasibilityOfInsertionInRoute(scenario,vehicleSchedule.totalIdleTime,request,route,pickUpIdxInBlock,dropOffIdxInBlock)
+    feasible, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete = checkFeasibilityOfInsertionInRoute(scenario.time,scenario.distance,scenario.serviceTimes,scenario.requests,vehicleSchedule.totalIdleTime,route,pickUpIdxInBlock = pickUpIdxInBlock,dropOffIdxInBlock = dropOffIdxInBlock,request = request)
     
     return  feasible, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete
 end
 
 
-function checkFeasibilityOfInsertionInRoute(scenario::Scenario,totalIdleTime::Int,request::Request,route::Vector{ActivityAssignment}, pickUpIdxInBlock::Int, dropOffIdxInBlock::Int)
-    @unpack time,serviceTimes ,requests = scenario 
-    nActivities = length(route) + 2 
+function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},idleTime::Int,route::Vector{ActivityAssignment}; pickUpIdxInBlock::Int=-1, dropOffIdxInBlock::Int=-1,request::Union{Request,Nothing}=nothing)
+    insertRequest = !isnothing(request)
+    nActivities = length(route) + 2*insertRequest
 
     # New service times 
     newStartOfServiceTimes = zeros(Int,nActivities)
@@ -465,6 +465,11 @@ function checkFeasibilityOfInsertionInRoute(scenario::Scenario,totalIdleTime::In
     newEndOfServiceTimes[1] = route[1].endOfServiceTime 
     newEndOfServiceTimes[end] = route[end].endOfServiceTime
 
+    # Keep track of KPIs 
+    totalDistance = 0.0 
+    totalIdleTime = 0 
+    totalCost = 0
+
     # Find maximum shift backward and forward
     maximumShiftBackward = route[1].startOfServiceTime - route[1].activity.timeWindow.startTime
 
@@ -480,11 +485,11 @@ function checkFeasibilityOfInsertionInRoute(scenario::Scenario,totalIdleTime::In
     detour = 0 
     if pickUpIdxInBlock == dropOffIdxInBlock - 1
         detour = findDetour(time,serviceTimes,route[pickUpIdxInBlock-1].activity.id,route[pickUpIdxInBlock].activity.id,request.pickUpActivity.id,request.dropOffActivity.id)
-    else
+    elseif pickUpIdxInBlock != -1 
         detour = findDetour(time,serviceTimes,route[pickUpIdxInBlock-1].activity.id,route[pickUpIdxInBlock].activity.id,request.pickUpActivity.id) + findDetour(time,serviceTimes,route[dropOffIdxInBlock-2].activity.id,route[dropOffIdxInBlock-2].activity.id,request.dropOffActivity.id) 
     end
 
-    if detour > totalIdleTime && detour > maximumShiftBackward + maximumShiftForward
+    if detour > idleTime && detour > maximumShiftBackward + maximumShiftForward
         return false, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete
     end
 
@@ -557,6 +562,9 @@ function checkFeasibilityOfInsertionInRoute(scenario::Scenario,totalIdleTime::In
                 if !feasible
                     return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete
                 end
+
+                # Update total idle time 
+                totalIdleTime += newEndOfServiceTimes[idx] - newStartOfServiceTimes[idx]
             end
         # Check if activity can be inserted
         else 
@@ -564,6 +572,9 @@ function checkFeasibilityOfInsertionInRoute(scenario::Scenario,totalIdleTime::In
             if !feasible
                 return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete
             end
+
+            # Update total distance 
+            totalDistance += distance[previousActivity.id,currentActivity.id]
         end
 
         # Check maximum ride time 
@@ -574,13 +585,18 @@ function checkFeasibilityOfInsertionInRoute(scenario::Scenario,totalIdleTime::In
             if newStartOfServiceTimes[idx] - newEndOfServiceTimes[pickUpIndexes[requestId]] > requests[requestId].maximumRideTime
                 return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete
             end
+
+            totalCost += getCostOfRequest(time,newEndOfServiceTimes[pickUpIndexes[requestId]],newStartOfServiceTimes[idx],requests[requestId].pickUpActivity.id,requests[requestId].dropOffActivity.id)
         end
 
         # Set current as previous activity
         previousActivity = currentActivity
     end
 
-    return true, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete
+    # Update total time 
+    totalTime = newEndOfServiceTimes[end] - newStartOfServiceTimes[1] 
+
+    return true, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime
 end
 
 
