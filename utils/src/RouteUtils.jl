@@ -172,17 +172,17 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
 
     # Check load 
     if any(numberOfWalking[pickUpIdx:dropOffIdx] .+ 1 .> vehicle.totalCapacity) # TODO: jas - check rigtigt 
-        return false, [], [], 0, 0
+        return false, [], [], [],0.0,0.0,0,0
     end
 
     # Check times for pick up 
     if route[pickUpIdx].activity.timeWindow.startTime > request.pickUpActivity.timeWindow.endTime || route[pickUpIdx+1].activity.timeWindow.endTime < request.pickUpActivity.timeWindow.startTime
-        return false, [], [], 0, 0
+        return false, [], [], [],0.0,0.0,0,0
     end
 
     # Check times for drop off
     if route[dropOffIdx].activity.timeWindow.startTime > request.dropOffActivity.timeWindow.endTime || route[dropOffIdx+1].activity.timeWindow.endTime < request.dropOffActivity.timeWindow.startTime
-        return false, [], [], 0, 0
+        return false, [], [], [],0.0,0.0,0,0
     end
 
     # Retrieve schedule block
@@ -242,7 +242,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
     end
 
     if detour > idleTime && detour > maximumShiftBackward + maximumShiftForward
-        return false, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete
+        return false, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0
     end
 
     # Find new service times 
@@ -265,7 +265,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                 pickUpIndexes[requestId] = idx
             elseif currentActivity.activityType == DROPOFF
                 if newStartOfServiceTimes[idx] - newEndOfServiceTimes[pickUpIndexes[requestId]] > requests[requestId].maximumRideTime
-                    return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete
+                    return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0
                 end
 
                 # Update total cost
@@ -320,7 +320,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
             else
                 feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
                 if !feasible
-                    return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete
+                    return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0
                 end
 
                 # Update total idle time 
@@ -330,7 +330,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
         else 
             feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
             if !feasible
-                return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete
+                return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0
             end
 
             # Update total distance 
@@ -343,7 +343,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
             pickUpIndexes[requestId] = idx
         elseif currentActivity.activityType == DROPOFF
             if newStartOfServiceTimes[idx] - newEndOfServiceTimes[pickUpIndexes[requestId]] > requests[requestId].maximumRideTime
-                return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete
+                return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0
             end
 
             # Update total cost
