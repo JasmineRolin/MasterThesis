@@ -5,11 +5,12 @@ using Random
 using StatsBase
 
 include("TransformKonsentraData.jl")
+include("GenerateLargeVehiclesKonsentra.jl")
 
 global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 2*60 # 2 hours buffer
-global nData = 1
+global nData = 10
 
 #==
 # Get old data
@@ -57,8 +58,8 @@ function getLocationDistribution(location_matrix::Array{Float64, 2}, x_range::Ve
     x_range = range(minimum(x_range), stop=maximum(x_range), length=200)
     y_range = range(minimum(y_range), stop=maximum(y_range), length=200)
     density_grid = [pdf(kde, x, y) for x in x_range, y in y_range]
-
-    # Sample indices from the grid (normalized to probabilities)
+    epsilon = 0.00001
+    density_grid = density_grid .+ epsilon
     probabilities = vec(density_grid) / sum(density_grid)    
 
     return probabilities, density_grid
@@ -79,11 +80,15 @@ function getRequestTimeDistribution(requestTimePickUp::Array{Int}, requestTimeDr
     # PICK UP TIME KDE
     kde_pickUpTime = KernelDensity.kde(requestTimePickUp)
     density_values_pickUp = [pdf(kde_pickUpTime, t) for t in time_range]
+    epsilon = 0.00001
+    density_values_pickUp = density_values_pickUp .+ epsilon
     probabilities_pickUpTime = density_values_pickUp / sum(density_values_pickUp)
 
     # DROP OFF TIME KDE
     kde_dropOffTime = KernelDensity.kde(requestTimeDropOff)
     density_values_dropOff = [pdf(kde_dropOffTime, t) for t in time_range]
+    epsilon = 0.0005
+    density_values_dropOff = density_values_dropOff .+ epsilon
     probabilities_dropOffTime = density_values_dropOff / sum(density_values_dropOff)
 
     # Get density
@@ -143,6 +148,7 @@ function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, p
     callTime(results, serviceWindow, callBuffer, preKnown)
 
     # Write results to CSV
+    mkpath(dirname(output_file))
     CSV.write(output_file, results)
 
     return results
@@ -161,6 +167,7 @@ location_matrix, requestTimePickUp, requestTimeDropOff = getOldData([
     "Data/Konsentra/TransformedData_Data.csv"
 ])
 
+
 # Set probabilities and time range
 time_range = collect(range(6*60,23*60))
 x_range = collect(range(minimum(location_matrix[:,1]), maximum(location_matrix[:,1]), length=200))  
@@ -169,13 +176,51 @@ y_range = collect(range(minimum(location_matrix[:,2]), maximum(location_matrix[:
 probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff = getRequestTimeDistribution(requestTimePickUp, requestTimeDropOff, time_range)
 probabilities_location, density_grid = getLocationDistribution(location_matrix, x_range, y_range)
 
-results = DataFrame(id = Int[],pickup_latitude = Float64[],pickup_longitude = Float64[],dropoff_latitude = Float64[],dropoff_longitude = Float64[],request_type = Int[],request_time = Int[],mobility_type = String[],call_time = Int[],direct_drive_time = Int[])
+df_list = []
 for i in 1:nData
+
     # Make requests and save to CSV
-    output_file = "Data/Konsentra/GeneratedRequests_" * string(i) * ".csv"
-    results = makeRequests(10, probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range, output_file)
+    output_file = "Data/Konsentra/300/GeneratedRequests_300_" * string(i) * ".csv"
+    retry_count = 0
+    while retry_count < 5
+        try
+            # Call the function that may throw the error
+            results = makeRequests(300, probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range, output_file)
+            
+            println("Request generation succeeded!")
+            push!(df_list,results)
+            break  # Exit the loop if successful
+    
+        catch e
+            if occursin("Degree of dynamism too low", sprint(showerror, e))
+                retry_count += 1
+                println("Error encountered: ", e)
+                println("Retrying... Attempt: ", retry_count)
+                sleep(1)  # Optional: Wait a second before retrying
+            else
+                rethrow(e)  # Let other errors propagate
+            end
+        end
+        if retry_count == 5
+            println("Failed after $max_retries attempts. Exiting.")
+        end
+    end
+
 end
 
+
+# Generate vehicles
+computeShiftCoverage!(shifts)
+average_demand_per_hour = generateAverageDemandPerHour(df_list)
+generateNumberOfVehiclesKonsentra!(average_demand_per_hour, shifts)
+locations = []
+total_nVehicles = sum(shift["nVehicles"] for shift in values(shifts))
+for i in 1:total_nVehicles
+    push!(locations,getNewLocations( probabilities_location,x_range, y_range)[1])
+end
+generateVehiclesKonsentra(shifts, locations,"Data/Konsentra/300/Vehicles_300.csv")
+
+#==
 # Visualize results 
 heatmap(x_range, y_range, -density_grid, xlabel="Longitude", ylabel="Latitude", title="Density Map",c = :RdYlGn,colorbar=false)
 scatter!(results.pickup_longitude, results.pickup_latitude, marker=:circle, label="New Locations", color=:blue)
@@ -198,3 +243,4 @@ histogram(requestTimeDropOff_hours, normalize=:pdf, label="Histogram of Given Da
 plot!(time_range_hours, probabilities_dropOffTime_scaled, label="Probability Distribution From KDE", linewidth=2, linestyle=:solid, color=:red)
 title!("Dropoff Time Distribution")
 xlabel!("Time (Hours)")
+==#

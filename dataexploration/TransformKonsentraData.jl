@@ -13,7 +13,7 @@ export preKnownRequests, callTime
 # ------
 sheets_5days = ["30.01", "06.02", "23.01", "16.01", "09.01"]
 sheets_data = ["Data"]
-DoD = 0.4 # Degree of dynamism
+DoD = 0.6 # Degree of dynamism
 ageLimit = 18
 serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 callBuffer = 2*60 # 2 hours buffer
@@ -23,7 +23,7 @@ callBuffer = 2*60 # 2 hours buffer
 # Function to determine pre-known requests
 # ------
 function preKnownRequests(df, DoD, serviceWindow, callBuffer)
-    totalNumberKnown = round(Int, DoD * nrow(df))
+    totalNumberKnown = round(Int, 1-(DoD * nrow(df)))
     numberKnownDueToTime = 0
     known_requests = fill(false, nrow(df))
     requestWithLaterTime = Int[]
@@ -123,8 +123,8 @@ function saveKeyNumbers(df,callBuffer,serviceWindow)
     key_numbers = DataFrame(
         n_requests = nrow(df),
         n_offline = sum(df[!,:call_time] .== 0),
-        naturalDOD = sum(df[!,:request_time] .< serviceWindow[1]+callBuffer) / nrow(df),
-        forcedDOD = sum(df[!,:call_time] .== 0) / nrow(df),
+        naturalDOD = 1-(sum(df[!,:request_time] .< serviceWindow[1]+callBuffer) / nrow(df)),
+        forcedDOD = 1-(sum(df[!,:call_time] .== 0) / nrow(df)),
     )
     return key_numbers
 end
