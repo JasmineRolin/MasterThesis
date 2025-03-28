@@ -322,6 +322,10 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
     schedule.totalCost = totalCost
     schedule.totalTime = totalTime
 
+    println("__________________________________")
+    println("Remove request from schedule")
+    printSimpleRoute(schedule.route)
+
     return
 end
 
