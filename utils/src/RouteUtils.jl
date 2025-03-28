@@ -258,7 +258,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
             currentActivity = route[idxActivityInSchedule].activity
         end 
 
-        # Check if we skipped one because we removed a waiting activity 
+        # Check if we skipped an activity because we removed a waiting activity 
         if newStartOfServiceTimes[idx] != 0 
             requestId = currentActivity.requestId
             if currentActivity.activityType == PICKUP
@@ -274,7 +274,6 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
             # Set previous as current activity
             previousActivity = currentActivity
-            
             continue
         end
 

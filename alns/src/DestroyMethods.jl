@@ -32,14 +32,14 @@ function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::A
     nRequests = length(assignedRequests)
 
     # Find number of requests to remove 
-    nRequestsToRemove = 1# findNumberOfRequestToRemove(minPercentToDestroy,maxPercentToDestroy,nAssignedRequests)
+    nRequestsToRemove = findNumberOfRequestToRemove(minPercentToDestroy,maxPercentToDestroy,nAssignedRequests)
     
     # Collect customers to remove
     requestsToRemove = Set{Int}()
 
     # Choose requests to remove  
     selectedIdx = randperm(nRequests)[1:nRequestsToRemove]
-    requestsToRemove = Set(6) #Set(assignedRequests[selectedIdx])
+    requestsToRemove = Set(assignedRequests[selectedIdx])
     append!(requestBank,requestsToRemove)
     setdiff!(assignedRequests, requestsToRemove)
     currentState.nAssignedRequests -= nRequestsToRemove
