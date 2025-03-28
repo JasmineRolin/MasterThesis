@@ -46,7 +46,10 @@ end
 #  Function to get total cost/excees ridetime of route
 ==#
 function getTotalCostRoute(scenario::Scenario,route::Vector{ActivityAssignment})
-    time = scenario.time
+    return getTotalCostRoute(scenario.time,route)
+end
+
+function getTotalCostRoute(time::Array{Int,2},route::Vector{ActivityAssignment})
     ratio = 0.0
     pickupTimes = Dict{Int, Int}()
     

@@ -90,7 +90,7 @@ Test ALNSFunctions
 end
 
 
-# TODO: update time and distance matrix 
+#TODO: update time and distance matrix 
 @testset "ALNS RUN test - Big Test" begin 
     requestFile = "tests/resources/RequestsBig.csv"
     vehiclesFile = "tests/resources/VehiclesBig.csv"
@@ -100,16 +100,16 @@ end
     scenarioName = "Big"
     alnsParameters = "tests/resources/ALNSParameters_Article.json"
 
-    # Read instance 
+    #Read instance 
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
     
-    # Choose destroy methods
+   # Choose destroy methods
     destroyMethods = Vector{GenericMethod}()
     addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
     addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
     addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
 
-    # Choose repair methods
+    #Choose repair methods
     repairMethods = Vector{GenericMethod}()
     addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
     addMethod!(repairMethods,"regretInsertion",regretInsertion)
@@ -138,7 +138,7 @@ end
     
     # Read instance 
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
-
+ 
     # Choose destroy methods
     destroyMethods = Vector{GenericMethod}()
     addMethod!(destroyMethods,"randomDestroy",randomDestroy!)

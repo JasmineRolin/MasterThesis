@@ -32,14 +32,14 @@ function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::A
     nRequests = length(assignedRequests)
 
     # Find number of requests to remove 
-    nRequestsToRemove = findNumberOfRequestToRemove(minPercentToDestroy,maxPercentToDestroy,nAssignedRequests)
+    nRequestsToRemove = 1# findNumberOfRequestToRemove(minPercentToDestroy,maxPercentToDestroy,nAssignedRequests)
     
     # Collect customers to remove
     requestsToRemove = Set{Int}()
 
     # Choose requests to remove  
     selectedIdx = randperm(nRequests)[1:nRequestsToRemove]
-    requestsToRemove = Set(assignedRequests[selectedIdx])
+    requestsToRemove = Set(6) #Set(assignedRequests[selectedIdx])
     append!(requestBank,requestsToRemove)
     setdiff!(assignedRequests, requestsToRemove)
     currentState.nAssignedRequests -= nRequestsToRemove
@@ -48,9 +48,6 @@ function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::A
 
     # Remove requests from solution
     removeRequestsFromSolution!(time,distance,serviceTimes,requests,currentSolution,requestsToRemove)
-
-    println("removed requests: ", requestsToRemove)
-
 end
 
 #==
@@ -100,7 +97,6 @@ function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::
         
     # Remove requests from solution
     removeRequestsFromSolution!(time, distance,serviceTimes,requests, currentSolution, requestsToRemove)
-    println("removed requests: ", requestsToRemove)
 end
 
 
@@ -161,7 +157,6 @@ function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::A
 
     # Remove requests 
     removeRequestsFromSolution!(time, distance, serviceTimes,requests,currentSolution, requestsToRemove)
-    println("removed requests: ", requestsToRemove)
 end
 
 #==
@@ -290,24 +285,32 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
     end
 
     # Repair route 
-    _, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime = checkFeasibilityOfInsertionInRoute(time,distance,serviceTimes,requests,-1,schedule.route)
+    feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime = checkFeasibilityOfInsertionInRoute(time,distance,serviceTimes,requests,-1,schedule.route)
 
     # Shift route
-    for (i,a) in enumerate(schedule.route)
-        a.startOfServiceTime = newStartOfServiceTimes[i]
-        a.endOfServiceTime = newEndOfServiceTimes[i]
+    if feasible 
+        for (i,a) in enumerate(schedule.route)
+            a.startOfServiceTime = newStartOfServiceTimes[i]
+            a.endOfServiceTime = newEndOfServiceTimes[i]
 
-        if a.activity.activityType == WAITING
-            a.activity.timeWindow.startTime = newStartOfServiceTimes[i]
-            a.activity.timeWindow.endTime = newEndOfServiceTimes[i]
+            if a.activity.activityType == WAITING
+                a.activity.timeWindow.startTime = newStartOfServiceTimes[i]
+                a.activity.timeWindow.endTime = newEndOfServiceTimes[i]
+            end
         end
+
+        # Delete waiting activities 
+        deleteat!(schedule.route,waitingActivitiesToDelete)   
+
+        # Update capacities 
+        deleteat!(schedule.numberOfWalking,waitingActivitiesToDelete)
+    else 
+        totalCost = getTotalCostRoute(time,schedule.route)
+        totalDistance = getTotalDistanceRoute(schedule.route,distance)
+        totalIdleTime = getTotalIdleTimeRoute(schedule.route)
+        totalTime = duration(schedule.activeTimeWindow)
     end
 
-    # Delete waiting activities 
-    deleteat!(schedule.route,waitingActivitiesToDelete)   
-
-    # Update capacities 
-    deleteat!(schedule.numberOfWalking,waitingActivitiesToDelete)
 
     # Update active time window 
     schedule.activeTimeWindow.startTime = schedule.route[1].startOfServiceTime
