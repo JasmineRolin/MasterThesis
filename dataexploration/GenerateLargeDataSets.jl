@@ -180,12 +180,12 @@ df_list = []
 for i in 1:nData
 
     # Make requests and save to CSV
-    output_file = "Data/Konsentra/300/GeneratedRequests_300_" * string(i) * ".csv"
+    output_file = "Data/Konsentra/100/GeneratedRequests_100_" * string(i) * ".csv"
     retry_count = 0
     while retry_count < 5
         try
             # Call the function that may throw the error
-            results = makeRequests(300, probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range, output_file)
+            results = makeRequests(100, probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range, output_file)
             
             println("Request generation succeeded!")
             push!(df_list,results)
@@ -202,7 +202,7 @@ for i in 1:nData
             end
         end
         if retry_count == 5
-            println("Failed after $max_retries attempts. Exiting.")
+            println("Failed after 5 attempts. Exiting.")
         end
     end
 
@@ -218,7 +218,7 @@ total_nVehicles = sum(shift["nVehicles"] for shift in values(shifts))
 for i in 1:total_nVehicles
     push!(locations,getNewLocations( probabilities_location,x_range, y_range)[1])
 end
-generateVehiclesKonsentra(shifts, locations,"Data/Konsentra/300/Vehicles_300.csv")
+generateVehiclesKonsentra(shifts, locations,"Data/Konsentra/100/Vehicles_100.csv")
 
 #==
 # Visualize results 

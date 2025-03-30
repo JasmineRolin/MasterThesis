@@ -23,7 +23,7 @@ callBuffer = 2*60 # 2 hours buffer
 # Function to determine pre-known requests
 # ------
 function preKnownRequests(df, DoD, serviceWindow, callBuffer)
-    totalNumberKnown = round(Int, 1-(DoD * nrow(df)))
+    totalNumberKnown = round(Int, (1-DoD) * nrow(df))
     numberKnownDueToTime = 0
     known_requests = fill(false, nrow(df))
     requestWithLaterTime = Int[]
