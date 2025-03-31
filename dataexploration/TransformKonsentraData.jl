@@ -97,7 +97,7 @@ end
 # Transform request type to right format
 # ------
 function transformRequestType(df)
-    df[!,:request_type] = map(row -> row == "PU" ? 1 : 0, df[!,:request_type])
+    df[!,:request_type] = map(row -> row == "PU" ? 0 : 1, df[!,:request_type])
 end
 
 # ------

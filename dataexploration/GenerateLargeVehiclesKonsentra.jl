@@ -107,7 +107,7 @@ function generateVehiclesKonsentra(shifts, locations,vehicle_file::String)
     for (shift, data) in shifts
         for _ in 1:data["nVehicles"]
             id += 1
-            location = rand(locations)
+            location = locations[id]
             push!(vehicles, [id, data["TimeWindow"][1], data["TimeWindow"][2],
                              Int(floor((data["TimeWindow"][2] - data["TimeWindow"][1]) * maxRideTimeRatio / 60)), nWalking, location[2], location[1]])
         end
