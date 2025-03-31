@@ -102,9 +102,10 @@ using utils
 # end
 
 
+using Plots
 # Create gant chart of vehicles and requests
-function createGantChartOfRequestsAndVehicles(vehicles, requests, requestBank)
-    p = plot(size=(900,500))
+function createGantChartOfRequestsAndVehicles(vehicles, requests, requestBank,titleString)
+    p = plot(size=(1600,900))
     yPositions = []
     yLabels = []
     yPos = 1
@@ -118,6 +119,11 @@ function createGantChartOfRequestsAndVehicles(vehicles, requests, requestBank)
         else
             plot!([tw.startTime, tw.endTime], [yPos, yPos], linewidth=5,label="", color=:blue)
         end
+
+        # Plot vertical dashed lines for start and end of time window
+        vline!([tw.startTime], linestyle=:dash, color=:grey, linewidth=2, label="")
+        vline!([tw.endTime], linestyle=:dash, color=:grey, linewidth=2, label="")
+
         push!(yPositions, yPos)
         push!(yLabels, "Vehicle $(vehicle.id)")
         yPos += 1
@@ -157,30 +163,27 @@ function createGantChartOfRequestsAndVehicles(vehicles, requests, requestBank)
     
     plot!(p, yticks=(yPositions, yLabels))
     xlabel!("Time (Minutes after Midnight)")
-    title!("Vehicle Availability and Request Time Windows")
+    title!(titleString)
 
     return p
 end
 
 
-
-# requestFile = "Data/Konsentra/100/GeneratedRequests_100_1.csv"
-# vehiclesFile = "Data/Konsentra/100/Vehicles_100.csv"
-# parametersFile = "tests/resources/Parameters.csv"
-# distanceMatrixFile = "Data/Matrices/100/GeneratedRequests_100_1_distance.txt"
-# timeMatrixFile = "Data/Matrices/100/GeneratedRequests_100_1_time.txt"
-# scenarioName = "Konsentra_Data_100"
-
-requestFile = "Data/Konsentra/TransformedData_Data.csv"
-vehiclesFile = "tests/resources/Vehicles.csv"
-parametersFile = "tests/resources/Parameters.csv"
-distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
-timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
-scenarioName = "Konsentra_Data"
-
-# Read instance 
-scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
-
-#display(createGantChartOfRequestsAndVehicles(scenario.vehicles, scenario.requests, []))
-
+n = 500
+for i in 1:10
+    requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
+    vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
+    parametersFile = "tests/resources/Parameters.csv"
+    distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
+    timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
+    scenarioName = string("Konsentra_Data_",n,"_",i)
+    
+    
+    # Read instance 
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
+    
+    display(createGantChartOfRequestsAndVehicles(scenario.vehicles, scenario.requests, [],scenarioName))
+    
+    
+end
 
