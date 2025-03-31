@@ -33,13 +33,15 @@ function getTimeDistanceMatrix(requestFile::String, vehicleFile::String,dataName
 
    distanceMatrix, timeMatrix = getDistanceAndTimeMatrixFromLocations(locations)
 
-    open("Data/Matrices/timeMatrix_" * string(dataName) * ".txt", "w") do file
+   mkpath(dirname(string(dataName) * "_time.txt"))
+   open(string(dataName) * "_time.txt", "w") do file
         for row in eachrow(timeMatrix)
             println(file, join(row, " "))  # Write each row as space-separated values
         end
     end
 
-    open("Data/Matrices/distanceMatrix_" * string(dataName) * ".txt", "w") do file
+    mkpath(dirname(string(dataName) * "_distance.txt"))
+    open(string(dataName) * "_distance.txt", "w") do file
         for row in eachrow(distanceMatrix)
             println(file, join(row, " "))  # Write each row as space-separated values
         end

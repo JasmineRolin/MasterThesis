@@ -14,6 +14,16 @@
 module load julia/1.10.2
 
 # Activate project 
-julia -e 'using Pkg; Pkg.activate("."); Pkg.add("DataFrames"); Pkg.add("CSV");Pkg.develop(path="domain"); Pkg.develop(path="utils");Pkg.develop(path="offlinesolution");Pkg.develop(path="onlinesolution");Pkg.develop(path="alns");Pkg.develop(path="simulationframework");'
+julia -e 'using Pkg; Pkg.activate("."), Pkg.add("DataFrames"); Pkg.add("CSV"),Pkg.develop(path="domain"); Pkg.develop(path="utils");Pkg.develop(path="offlinesolution");Pkg.develop(path="onlinesolution");Pkg.develop(path="alns");Pkg.develop(path="simulationframework");'
 
-julia dataexploration/MakeAndSaveDistanceAndTimeMatrix.jl "Data/Konsentra/TransformedData_Data.csv" "Data/Konsentra/Vehicles_0.5.csv" "Konsentra_Data_Data"
+julia dataexploration/MakeAndSaveDistanceAndTimeMatrix.jl "Data/Konsentra/20/GeneratedRequests_20_1.csv" "Data/Konsentra/20/Vehicles_20.csv" "Data/Matrices/20/GeneratedRequests_20_1"
+julia dataexploration/MakeAndSaveDistanceAndTimeMatrix.jl "Data/Konsentra/20/GeneratedRequests_20_2.csv" "Data/Konsentra/20/Vehicles_20.csv" "Data/Matrices/20/GeneratedRequests_20_2"
+julia dataexploration/MakeAndSaveDistanceAndTimeMatrix.jl "Data/Konsentra/20/GeneratedRequests_20_3.csv" "Data/Konsentra/20/Vehicles_20.csv" "Data/Matrices/20/GeneratedRequests_20_3"
+julia dataexploration/MakeAndSaveDistanceAndTimeMatrix.jl "Data/Konsentra/20/GeneratedRequests_20_4.csv" "Data/Konsentra/20/Vehicles_20.csv" "Data/Matrices/20/GeneratedRequests_20_4"
+julia dataexploration/MakeAndSaveDistanceAndTimeMatrix.jl "Data/Konsentra/20/GeneratedRequests_20_5.csv" "Data/Konsentra/20/Vehicles_20.csv" "Data/Matrices/20/GeneratedRequests_20_5"
+julia dataexploration/MakeAndSaveDistanceAndTimeMatrix.jl "Data/Konsentra/20/GeneratedRequests_20_6.csv" "Data/Konsentra/20/Vehicles_20.csv" "Data/Matrices/20/GeneratedRequests_20_6"
+julia dataexploration/MakeAndSaveDistanceAndTimeMatrix.jl "Data/Konsentra/20/GeneratedRequests_20_7.csv" "Data/Konsentra/20/Vehicles_20.csv" "Data/Matrices/20/GeneratedRequests_20_7"
+julia dataexploration/MakeAndSaveDistanceAndTimeMatrix.jl "Data/Konsentra/20/GeneratedRequests_20_8.csv" "Data/Konsentra/20/Vehicles_20.csv" "Data/Matrices/20/GeneratedRequests_20_8"
+julia dataexploration/MakeAndSaveDistanceAndTimeMatrix.jl "Data/Konsentra/20/GeneratedRequests_20_9.csv" "Data/Konsentra/20/Vehicles_20.csv" "Data/Matrices/20/GeneratedRequests_20_9"
+julia dataexploration/MakeAndSaveDistanceAndTimeMatrix.jl "Data/Konsentra/20/GeneratedRequests_20_10.csv" "Data/Konsentra/20/Vehicles_20.csv" "Data/Matrices/20/GeneratedRequests_20_10"
+
