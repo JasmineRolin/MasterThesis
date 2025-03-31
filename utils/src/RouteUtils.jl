@@ -170,7 +170,9 @@ function updateCapacities!(vehicleSchedule::VehicleSchedule,idxPickUp::Int,idxDr
 
 end
 
-
+#==
+ Method to check if it is feasible to insert a request in a vehicle schedule
+==#
 function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule::VehicleSchedule,pickUpIdx::Int,dropOffIdx::Int,scenario::Scenario)
 
     @unpack route,numberOfWalking, vehicle = vehicleSchedule
@@ -201,7 +203,10 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
     return  feasible, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime
 end
 
-
+#==
+ Method to check if it is feasible to insert request in route 
+==#
+# If pickUpIdxInBlock = dropOffIdxInBlock = -1 we are not inserting a request in route but repairing a route where some request has been removed 
 function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},idleTime::Int,route::Vector{ActivityAssignment}; pickUpIdxInBlock::Int=-1, dropOffIdxInBlock::Int=-1,request::Union{Request,Nothing}=nothing)  
     insertRequest = !isnothing(request)
     nActivities = length(route) + 2*insertRequest
@@ -394,7 +399,7 @@ function canActivityBeInserted(currentActivity::Activity,arrivalAtCurrentActivit
 
         return true, maximumShiftBackward, maximumShiftForward
     # Check if we can insert next activity by shifting route forward
-    elseif arrivalAtCurrentActivity <= currentActivity.timeWindow.startTime  && arrivalAtCurrentActivity + maximumShiftForward >= currentActivity.timeWindow.startTime
+    elseif arrivalAtCurrentActivity < currentActivity.timeWindow.startTime  && arrivalAtCurrentActivity + maximumShiftForward >= currentActivity.timeWindow.startTime
         # Service times for current activity
         newStartOfServiceTimes[idx] = currentActivity.timeWindow.startTime
         if currentActivity.activityType == DEPOT 
@@ -421,7 +426,7 @@ function canActivityBeInserted(currentActivity::Activity,arrivalAtCurrentActivit
         return true, maximumShiftBackward, maximumShiftForward
 
     # Check if we can insert next activity be shifting route backwards 
-    elseif  arrivalAtCurrentActivity >= currentActivity.timeWindow.endTime &&  arrivalAtCurrentActivity - maximumShiftBackward <= currentActivity.timeWindow.endTime
+    elseif  arrivalAtCurrentActivity > currentActivity.timeWindow.endTime &&  arrivalAtCurrentActivity - maximumShiftBackward <= currentActivity.timeWindow.endTime
         # Service times for current activity
         newStartOfServiceTimes[idx] = currentActivity.timeWindow.endTime
         if currentActivity.activityType == DEPOT 

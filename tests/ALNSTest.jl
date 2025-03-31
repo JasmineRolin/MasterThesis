@@ -164,7 +164,7 @@ end
 end
 
 
-# @testset "RUn all konsentra data sets " begin
+# @testset "Run all konsentra data sets " begin
 #     files = ["Data", "06.02","09.01","16.01","23.01","30.01"]
 
 #     for suff in files 

@@ -44,34 +44,9 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
 
         # Destroy trial solution  
         destroyIdx = destroy!(scenario,trialState,parameters,configuration)
-        feasible, msg = checkSolutionFeasibility(scenario,trialState.currentSolution,requests)
-        if !feasible
-            println("ALNS: INFEASIBLE SOLUTION IN ITERATION:", iteration)
-            #throw(msg) 
-             # Close file    
-            close(outputFile)
-            println("destroy:", configuration.destroyMethods[destroyIdx].name)
-            println("MSG: ",msg)
-
-           # printSolution(trialState.currentSolution,printRouteHorizontal)
-
-            println("--==---==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==-==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==")
-            #printSolution(currentState.currentSolution,printRouteHorizontal)
-            return trialState.currentSolution, trialState.requestBank
-        end
-        
+    
         # Repair trial solution 
         repairIdx = repair!(scenario,trialState,configuration)
-        feasible, msg = checkSolutionFeasibility(scenario,trialState.currentSolution,requests)
-        if !feasible
-            println("ALNS: INFEASIBLE SOLUTION IN ITERATION:", iteration)
-            #throw(msg) 
-             # Close file    
-            close(outputFile)
-            println("repair:", configuration.repairMethods[repairIdx].name)
-            println("MSG: ",msg)
-            return trialState.currentSolution, trialState.requestBank
-        end
 
         # Check if solution is improved
         # TODO: create hash table to check if solution has been visited before
