@@ -35,7 +35,7 @@ export getTotalCostRoute
 export getTotalTimeRoute
 export getTotalIdleTimeRoute
 export getTotalCostDistanceTimeOfSolution
-export getCostOfRequest
+export getCostOfRequest,getTaxiCostOfSolution
 
 
 #==
