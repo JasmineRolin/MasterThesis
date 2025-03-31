@@ -90,7 +90,7 @@ function onlineAlgorithm(event::Request, scenario::Scenario, oldSolution::Soluti
     initialSolution, requestBank = onlineInsertion(oldSolution,event,scenario)
 
     # Run ALNS # TODO ensure right input
-    finalSolution,requestBank,specification,KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",stage = "online", initialSolution, requestBank)
+    finalSolution,requestBank,specification,KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",stage = "online",initialSolution =  initialSolution, requestBank = requestBank)
 
     # Update time window for event
     updateTimeWindowsOnlineOne!(finalSolution,event,scenario)
