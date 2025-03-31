@@ -3,9 +3,9 @@ using utils
 using simulationframework
 
 
-# #==
-# # Test SimulationFrameworkUtils
-# ==#
+#==
+# Test SimulationFrameworkUtils
+==#
 @testset "test SimulationFrameworkUtils" begin 
     requestFile = "tests/resources/RequestsToTestSimulation.csv"
     vehiclesFile = "tests/resources/Vehicles.csv"

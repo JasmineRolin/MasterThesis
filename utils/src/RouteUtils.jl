@@ -83,6 +83,12 @@ function printSimpleRoute(schedule::VehicleSchedule)
     println(join(route_ids, " -> "))
 end
 
+function printSimpleRoute(route::Vector{ActivityAssignment})    
+    route_ids = [assignment.activity.id for assignment in route]
+    
+    println(join(route_ids, " -> "))
+end
+
 
 # ----------
 # Function to insert a request in a vehicle schedule
@@ -196,7 +202,7 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
 end
 
 
-function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},idleTime::Int,route::Vector{ActivityAssignment}; pickUpIdxInBlock::Int=-1, dropOffIdxInBlock::Int=-1,request::Union{Request,Nothing}=nothing)
+function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},idleTime::Int,route::Vector{ActivityAssignment}; pickUpIdxInBlock::Int=-1, dropOffIdxInBlock::Int=-1,request::Union{Request,Nothing}=nothing)  
     insertRequest = !isnothing(request)
     nActivities = length(route) + 2*insertRequest
 
@@ -206,6 +212,8 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
     # Keep track of waiting activities to delete 
     waitingActivitiesToDelete = Vector{Int}()
+    waitingActivitiesToDeleteId = Vector{Int}()
+    waitingActivitiesToKeep = Vector{Int}() # Keep track of waiting activities to keep
 
     # Keep track of ride times 
     pickUpIndexes = Dict{Int,Int}() # (RequestId, index)
@@ -258,7 +266,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
             currentActivity = route[idxActivityInSchedule].activity
         end 
 
-        # Check if we skipped an activity because we removed a waiting activity 
+        # Check if we skipped an activity because we removed a waiting activity
         if newStartOfServiceTimes[idx] != 0 
             requestId = currentActivity.requestId
             if currentActivity.activityType == PICKUP
@@ -306,6 +314,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
                 # Keep track of waiting activities to delete 
                 push!(waitingActivitiesToDelete,idx)
+                push!(waitingActivitiesToDeleteId, currentActivity.id)
 
                 # Give the next activity the service times of the waiting activity
                 if idx != nActivities
@@ -315,6 +324,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
                 # Update total distance 
                 totalDistance += distance[previousActivity.id,nextActivity.id]
+
             # Keep waiting activity     
             else
                 feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
@@ -325,6 +335,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                 # Update total idle time 
                 totalIdleTime += newEndOfServiceTimes[idx] - newStartOfServiceTimes[idx]
                 totalDistance += distance[previousActivity.id,currentActivity.id]
+                push!(waitingActivitiesToKeep,currentActivity.id)
             end
         # Check if activity can be inserted
         else 

@@ -329,7 +329,7 @@ end
     # Check route feasibility
     feasible, msg = checkRouteFeasibility(scenario,vehicleSchedule)
     @test feasible == false
-    @test msg == "ROUTE INFEASIBLE: Maximum ride time exceeded for drop-off 6 on vehicle 1"
+    @test msg == "ROUTE INFEASIBLE: Maximum ride time exceeded for drop-off 6 on vehicle 1, END PU/START DO: (465, 492), Ride time: 27, Maximum ride time: 20, direct drive time: 2"
    
 
 end
@@ -985,6 +985,7 @@ end
     request3.requestType = PICKUP_REQUEST
     request3.pickUpActivity.timeWindow = findTimeWindowOfRequestedPickUpTime(386)
     request3.directDriveTime = scenario.time[request1.pickUpActivity.id,request1.dropOffActivity.id]
+    scenario.time[request3.pickUpActivity.id,request3.dropOffActivity.id] = request3.directDriveTime
     request3.maximumRideTime = findMaximumRideTime(request1.directDriveTime,200,1) 
     request3.dropOffActivity.timeWindow = findTimeWindowOfDropOff(request1.pickUpActivity.timeWindow, scenario.time[1,6], request1.maximumRideTime)
 
