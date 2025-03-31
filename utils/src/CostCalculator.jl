@@ -69,6 +69,32 @@ function getTotalCostRoute(time::Array{Int,2},route::Vector{ActivityAssignment})
     return ratio*10.0
 end
 
+function getTotalCostRouteOnline(time::Array{Int,2},route::Vector{ActivityAssignment},visitedRoute::Dict{Int, Dict{String, Int}})
+    ratio = 0.0
+    pickupTimes = Dict{Int, Int}()
+    
+    for assignment in route
+        activity = assignment.activity
+        if activity.activityType == PICKUP
+            pickupTimes[activity.requestId] = assignment.endOfServiceTime
+        elseif activity.activityType == DROPOFF && haskey(pickupTimes, activity.requestId)
+            pickupTime = pickupTimes[activity.requestId]
+            dropoffTime = assignment.startOfServiceTime
+            directTime = Float64(time[activity.requestId, activity.id])
+            actualTime = Float64(dropoffTime - pickupTime)
+            ratio += actualTime/directTime
+        elseif activity.activityType == DROPOFF
+            pickupTime = visitedRoute[activity.requestId][PickUpServiceStart]
+            dropoffTime = assignment.startOfServiceTime
+            directTime = Float64(time[activity.requestId, activity.id])
+            actualTime = Float64(dropoffTime - pickupTime)
+            ratio += actualTime/directTime
+        end
+    end
+    
+    return ratio*10.0
+end
+
 #==
 # Function to get cost of request 
 =#

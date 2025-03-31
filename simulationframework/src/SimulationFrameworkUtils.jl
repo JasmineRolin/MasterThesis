@@ -13,6 +13,15 @@ export simulateScenario
 # Function to update current state if entire route has been served and vehicle is not available anymore
 # ------
 function updateCurrentScheduleNotAvailableAnymore!(currentState::State,schedule::VehicleSchedule,vehicle::Int)
+
+    # Update visited route
+    for i in 1:length(schedule.route)
+        if schedule.route[i].activity.activityType == PICKUP
+            currentState.visitedRoute[schedule.route[i].activity.requestId] = Dict("PickUpServiceStart" => schedule.route[i].startOfServiceTime, "DropOffServiceStart" => 0)
+        elseif schedule.route[i].activity.activityType == DROPOFF
+            currentState.visitedRoute[schedule.route[i].activity.requestId]["DropOffServiceStart"] = schedule.route[i].startOfServiceTime
+        end
+    end
    
     # Retrieve empty schedule and update it 
     currentSchedule = currentState.solution.vehicleSchedules[vehicle]
@@ -22,12 +31,18 @@ function updateCurrentScheduleNotAvailableAnymore!(currentState::State,schedule:
     currentSchedule.activeTimeWindow.startTime = schedule.route[end].endOfServiceTime
     currentSchedule.activeTimeWindow.endTime = schedule.route[end].endOfServiceTime
 
+    # Update current state
+    currentState.solution.totalDistance -= currentSchedule.totalDistance
+    currentState.solution.totalTime -= currentSchedule.totalTime
+    currentState.solution.totalCost -= currentSchedule.totalCost
+    currentState.solution.totalIdleTime -= currentSchedule.totalIdleTime
+
     # Update KPIs
     currentSchedule.totalDistance = 0.0
     currentSchedule.totalTime = 0
     currentSchedule.totalCost = 0.0
     currentSchedule.totalIdleTime = 0
-    currentSchedule.numberOfWalking = [0]
+    currentSchedule.numberOfWalking = [0] 
 
     # Index to split route into current and completed route 
     idx = length(schedule.route) - 1 
@@ -74,6 +89,15 @@ end
 # ------
 function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSchedule,vehicle::Int,currentState::State,idx::Int)
     
+    # Update visited route
+    for i in 1:idx
+        if schedule.route[i].activity.activityType == PICKUP
+            currentState.visitedRoute[schedule.route[i].activity.requestId] = Dict("PickUpServiceStart" => schedule.route[i].startOfServiceTime, "DropOffServiceStart" => 0)
+        elseif schedule.route[i].activity.activityType == DROPOFF
+            currentState.visitedRoutes[schedule.route[i].activity.requestId]["DropOffServiceStart"] = schedule.route[i].startOfServiceTime
+        end
+    end
+
     # Retrieve empty schedule to update it
     currentSchedule = currentState.solution.vehicleSchedules[vehicle]
 
@@ -84,12 +108,24 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
     currentSchedule.activeTimeWindow.startTime = schedule.route[idx+1].startOfServiceTime 
     currentSchedule.activeTimeWindow.endTime = currentSchedule.route[end].endOfServiceTime
 
+    # Update current state pre
+    currentState.solution.totalDistance -= currentSchedule.totalDistance
+    currentState.solution.totalTime -= currentSchedule.totalTime
+    currentState.solution.totalCost -= currentSchedule.totalCost
+    currentState.solution.totalIdleTime -= currentSchedule.totalIdleTime
+
     # Update KPIs
     currentSchedule.totalDistance = getTotalDistanceRoute(currentSchedule.route,scenario)
     currentSchedule.totalTime = getTotalTimeRoute(currentSchedule)
-    currentSchedule.totalCost = getTotalCostRoute(scenario,currentSchedule.route)
+    currentSchedule.totalCost = getTotalCostRouteOnline(scenario,currentSchedule.route)
     currentSchedule.totalIdleTime = getTotalIdleTimeRoute(currentSchedule.route)    
     currentSchedule.numberOfWalking = schedule.numberOfWalking[idx+1:end]
+
+    # Update current state pro
+    currentState.solution.totalDistance += currentSchedule.totalDistance
+    currentState.solution.totalTime += currentSchedule.totalTime
+    currentState.solution.totalCost += currentSchedule.totalCost
+    currentState.solution.totalIdleTime += currentSchedule.totalIdleTime
 
 
     return idx, currentSchedule.activeTimeWindow.startTime
@@ -194,6 +230,12 @@ function determineCurrentState(solution::Solution,event::Request,finalSolution::
 
     # Initialize current state
     currentState = State(scenario,event)
+    currentState.solution.vehicleSchedules = deepcopy(solution.vehicleSchedules)
+    currentState.solution.totalCost = solution.totalCost
+    currentState.solution.nTaxi = solution.nTaxi
+    currentState.solution.totalDistance = solution.totalDistance
+    currentState.solution.totalRideTime = solution.totalRideTime
+    currentState.solution.totalIdleTime = solution.totalIdleTime
     idx = -1
     splitTime = -1
 

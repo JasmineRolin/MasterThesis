@@ -20,7 +20,7 @@ using onlinesolution
     # Simulate scenario 
     solution = simulateScenario(scenario)
 
-    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.offlineRequests)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,solution,scenario.offlineRequests)
     @test feasible == true
     @test msg == ""
 end
