@@ -51,6 +51,12 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
              # Close file    
             close(outputFile)
             println("destroy:", configuration.destroyMethods[destroyIdx].name)
+            println("MSG: ",msg)
+
+           # printSolution(trialState.currentSolution,printRouteHorizontal)
+
+            println("--==---==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==-==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==--==")
+            #printSolution(currentState.currentSolution,printRouteHorizontal)
             return trialState.currentSolution, trialState.requestBank
         end
         
@@ -63,6 +69,7 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
              # Close file    
             close(outputFile)
             println("repair:", configuration.repairMethods[repairIdx].name)
+            println("MSG: ",msg)
             return trialState.currentSolution, trialState.requestBank
         end
 

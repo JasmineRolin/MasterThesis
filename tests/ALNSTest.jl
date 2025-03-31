@@ -6,29 +6,29 @@ Test ALNSFunctions
 ==#
 
 # @testset "ALNS test - Big Test" begin 
-#     requestFile = "tests/resources/RequestsBig.csv"
-#     vehiclesFile = "tests/resources/VehiclesBig.csv"
-#     parametersFile = "tests/resources/Parameters.csv"
-#     distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
-#     timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
-#     scenarioName = "Big"
+    # requestFile = "tests/resources/RequestsBig.csv"
+    # vehiclesFile = "tests/resources/VehiclesBig.csv"
+    # parametersFile = "tests/resources/Parameters.csv"
+    # distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
+    # timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
+    # scenarioName = "Big"
     
-#     # Read instance 
-#     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
+    # # Read instance 
+    # scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
     
-#     # Constuct solution 
-#     solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
-#     solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
-#     solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
+    # # Constuct solution 
+    # solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
+    # solution.nTaxi += length(scenario.onlineRequests) # TODO: Remove when online request are implemented
+    # solution.totalCost += length(scenario.onlineRequests) * scenario.taxiParameter # TODO: Remove when online request are implemented
 
-#     # Construct ALNS state
-#     currentState = ALNSState(solution,1,0,requestBank)
+    # # Construct ALNS state
+    # currentState = ALNSState(solution,1,0,requestBank)
 
-#     # Construct ALNS parameters
-#     parameters = ALNSParameters()
-#     setMinMaxValuesALNSParameters(parameters,scenario.time,scenario.requests)
-#     parameters.minPercentToDestroy = 0.1
-#     parameters.maxPercentToDestroy = 0.3
+    # # Construct ALNS parameters
+    # parameters = ALNSParameters()
+    # setMinMaxValuesALNSParameters(parameters,scenario.time,scenario.requests)
+    # parameters.minPercentToDestroy = 0.1
+    # parameters.maxPercentToDestroy = 0.3
     
 #     printSolution(currentState.currentSolution,printRouteHorizontal)
 
@@ -158,11 +158,12 @@ Test ALNSFunctions
     addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
     
-    finalSolution,requestBank,specification,KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;initialSolutionConstructor=simpleConstruction,parametersFile="tests/resources/ALNSParameters2.json")
+    finalSolution,requestBank,specification,KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;initialSolutionConstructor=simpleConstruction,parametersFile="tests/resources/ALNSParameters2.json",displayPlots=true,savePlots=true)
 
     feasible, msg = checkSolutionFeasibility(scenario,finalSolution,scenario.requests)
     @test feasible == true
     @test msg == ""
+    println(msg)
 
     println("FINAL SOLUTION")
     print("nTaxi: ",finalSolution.nTaxi)

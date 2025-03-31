@@ -266,7 +266,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
             currentActivity = route[idxActivityInSchedule].activity
         end 
 
-        # Check if we skipped an activity because we removed a waiting activity 
+        # Check if we skipped an activity because we removed a waiting activity
         if newStartOfServiceTimes[idx] != 0 
             requestId = currentActivity.requestId
             if currentActivity.activityType == PICKUP
@@ -367,12 +367,6 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
     # Update total time 
     totalTime = newStartOfServiceTimes[end] - newEndOfServiceTimes[1] 
-
-    printSimpleRoute(route)
-    println("Total idle time: ", totalIdleTime)
-    println("waitingActivitiesToDelete: ", waitingActivitiesToDeleteId)
-    println("KEEEP WAITING ACTIVITY :",waitingActivitiesToKeep)
-
 
     return true, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime
 end

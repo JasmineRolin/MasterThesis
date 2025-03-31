@@ -46,8 +46,8 @@ function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::A
     currentState.currentSolution.nTaxi += nRequestsToRemove
     currentState.currentSolution.totalCost += nRequestsToRemove*scenario.taxiParameter
 
-    # Remove requests from solution
     removeRequestsFromSolution!(time,distance,serviceTimes,requests,currentSolution,requestsToRemove)
+
 end
 
 #==
@@ -276,13 +276,21 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
             schedule.numberOfWalking[pickUpPosition:dropOffPosition-1] .-= 1
             if routeReductionPickUp == 1
                 deleteat!(schedule.numberOfWalking,pickUpPosition)
+            elseif routeReductionPickUp == 2
+                deleteat!(schedule.numberOfWalking,pickUpPosition) # Delete pickup activity
+                deleteat!(schedule.numberOfWalking,pickUpPosition) # Delete waiting activity after pick up 
             end
+
             if routeReductionDropOff == 1
                 deleteat!(schedule.numberOfWalking,dropOffPosition-routeReductionPickUp)
+            elseif routeReductionDropOff == 2
+                deleteat!(schedule.numberOfWalking,dropOffPosition-routeReductionPickUp) # Delete drop off activity
+                deleteat!(schedule.numberOfWalking,dropOffPosition-routeReductionPickUp) # Delete waiting activity after drop off 
             end 
 
         end
     end
+
 
     # Repair route 
     feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime = checkFeasibilityOfInsertionInRoute(time,distance,serviceTimes,requests,-1,schedule.route)
@@ -322,10 +330,6 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
     schedule.totalCost = totalCost
     schedule.totalTime = totalTime
 
-    println("__________________________________")
-    println("Remove request from schedule")
-    printSimpleRoute(schedule.route)
-
     return
 end
 
@@ -345,9 +349,22 @@ function removeActivityFromRoute!(time::Array{Int,2},schedule::VehicleSchedule,i
     routeReduction = 0
 
     # Remove activity 
-    # Extend waiting activity before activity to remove
-    if activityAssignmentBefore.activity.activityType == WAITING
+    # If there is a waiting activity both before and after 
+    if activityAssignmentBefore.activity.activityType == WAITING && activityAssignmentAfter.activity.activityType == WAITING
 
+        # Update waiting activity 
+        activityAssignemntAfterWaiting = route[idx+2]
+        activityAssignmentBefore.endOfServiceTime = activityAssignemntAfterWaiting.startOfServiceTime - time[activityAssignmentBefore.activity.id,activityAssignemntAfterWaiting.activity.id]
+        activityAssignmentBefore.activity.timeWindow.endTime = activityAssignmentBefore.endOfServiceTime
+
+        # Delete activity
+        deleteat!(route,idx) # Delete activity 
+        deleteat!(route,idx) # Delete waiting activity
+
+        routeReduction = 2
+
+    # Extend waiting activity before activity to remove
+    elseif activityAssignmentBefore.activity.activityType == WAITING
         # Update waiting activity 
         activityAssignmentBefore.endOfServiceTime = activityAssignmentAfter.startOfServiceTime - time[activityAssignmentBefore.activity.id,activityAssignmentAfter.activity.id]
         activityAssignmentBefore.activity.timeWindow.endTime = activityAssignmentBefore.endOfServiceTime
@@ -359,7 +376,6 @@ function removeActivityFromRoute!(time::Array{Int,2},schedule::VehicleSchedule,i
 
     # Extend waiting activity after activity to remove
     elseif activityAssignmentAfter.activity.activityType == WAITING
-
         # Update waiting activity
         activityAssignmentAfter.startOfServiceTime = activityAssignmentBefore.endOfServiceTime + time[activityAssignmentBefore.activity.id,activityAssignmentAfter.activity.id]
         activityAssignmentAfter.activity.timeWindow.startTime = activityAssignmentAfter.startOfServiceTime
@@ -370,12 +386,10 @@ function removeActivityFromRoute!(time::Array{Int,2},schedule::VehicleSchedule,i
         routeReduction = 1
 
     elseif activityAssignmentBefore.activity.activityType == DEPOT
-
         # Update depot 
         activityAssignmentBefore.startOfServiceTime = activityAssignmentAfter.startOfServiceTime - time[activityAssignmentBefore.activity.id,activityAssignmentAfter.activity.id]
         activityAssignmentBefore.endOfServiceTime = activityAssignmentBefore.startOfServiceTime
 
-        deltaActiveTime =  schedule.activeTimeWindow.startTime - activityAssignmentBefore.startOfServiceTime
         schedule.activeTimeWindow.startTime = activityAssignmentBefore.startOfServiceTime
         
         # Delete activity 

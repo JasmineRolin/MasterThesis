@@ -138,9 +138,9 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
                 return false, msg, Set{Int}()
             end
 
-            rideTime = endOfServiceTime - endOfServiceTimePickUps[pickUpId]
+            rideTime = startOfServiceTime - endOfServiceTimePickUps[pickUpId]
             if rideTime > requests[activity.requestId].maximumRideTime || rideTime < requests[activity.requestId].directDriveTime
-                msg = "ROUTE INFEASIBLE: Maximum ride time exceeded for drop-off $(activity.id) on vehicle $(vehicle.id)"
+                msg = "ROUTE INFEASIBLE: Maximum ride time exceeded for drop-off $(activity.id) on vehicle $(vehicle.id), END PU/START DO: ($startOfServiceTime, $(endOfServiceTimePickUps[pickUpId])), Ride time: $(rideTime), Maximum ride time: $(requests[activity.requestId].maximumRideTime)"
                 return false, msg, Set{Int}()
             end
 
