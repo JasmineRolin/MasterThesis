@@ -24,31 +24,31 @@ using alns, domain, utils, offlinesolution
     vehicleSchedule = VehicleSchedule(scenario.vehicles[1])
 
     # Insert request
-    insertRequest!(scenario.requests[1],vehicleSchedule,1,1,scenario)
+    newStartOfServiceTimes = [428,476,480,1380]
+    newEndOfServiceTimes = [428,478,482,1380]
+    insertRequest!(scenario.requests[1],vehicleSchedule,1,1,scenario,newStartOfServiceTimes,newEndOfServiceTimes,Vector{Int}())
 
     # Create requestBank
-   requestBank = [2]
-   assignedRequests = [1]
-   nAssignedRequests = 1
+    requestBank = [2]
+    assignedRequests = [1]
+    nAssignedRequests = 1
 
-   # Solution 
-   solution = Solution([vehicleSchedule],70.0,4,5,2,4)
+    # Solution 
+    solution = Solution([vehicleSchedule],70.0,4,5,2,4)
 
-   # Make ALNS state
-   state = ALNSState(Float64[2.0,3.5,2.0],Float64[1.0,3.0],[1.0,4.0,1.0],[4.0,1.0],[1,2,1],[2,0],solution,solution,requestBank,assignedRequests,nAssignedRequests)
+    # Make ALNS state
+    state = ALNSState(Float64[2.0,3.5,2.0],Float64[1.0,3.0],[1.0,4.0,1.0],[4.0,1.0],[1,2,1],[2,0],solution,solution,requestBank,assignedRequests,nAssignedRequests)
 
-   # Greedy repair 
-   greedyInsertion(state,scenario)
+    # Greedy repair 
+    greedyInsertion(state,scenario)
 
-   #printRouteHorizontal(state.currentSolution.vehicleSchedules[1])
+    #printRouteHorizontal(state.currentSolution.vehicleSchedules[1])
 
-   feasible, msg = checkRouteFeasibility(scenario, state.currentSolution.vehicleSchedules[1])
-   if !feasible
-       println(msg)
-   end
-   @test feasible == true
-
-
+    feasible, msg = checkRouteFeasibility(scenario, state.currentSolution.vehicleSchedules[1])
+    if !feasible
+        println(msg)
+    end
+    @test feasible == true
 end
 
 
@@ -79,7 +79,9 @@ end
    vehicleSchedule = VehicleSchedule(scenario.vehicles[1])
 
    # Insert request
-   insertRequest!(scenario.requests[1],vehicleSchedule,1,1,scenario)
+   newStartOfServiceTimes = [428,476,480,1380]
+   newEndOfServiceTimes = [428,478,482,1380]
+   insertRequest!(scenario.requests[1],vehicleSchedule,1,1,scenario,newStartOfServiceTimes,newEndOfServiceTimes,Vector{Int}())
 
    # Choose destroy methods
    destroyMethods = Vector{GenericMethod}()
@@ -108,6 +110,4 @@ end
 
    feasible, msg = checkRouteFeasibility(scenario, state.currentSolution.vehicleSchedules[1])
    @test feasible == true
-
-
 end

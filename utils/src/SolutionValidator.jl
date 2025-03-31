@@ -51,7 +51,7 @@ function checkSolutionFeasibility(scenario::Scenario,solution::Solution,requests
     # Check that all activities are serviced
     notServicedActivities = setdiff(activityIds, servicedActivities)
     if length(notServicedActivities) != 2*nTaxi # TODO: add check if we add list of activities serviced by taxi 
-        msg = "SOLUTION INFEASIBLE: Not all activities are serviced"
+        msg = "SOLUTION INFEASIBLE: Not all activities are serviced. Serviced: $(length(servicedActivities)), not serviced: $(length(notServicedActivities)), nTaxi: $(nTaxi)"
         return false, msg
     end
 
@@ -138,9 +138,9 @@ function checkRouteFeasibility(scenario::Scenario,vehicleSchedule::VehicleSchedu
                 return false, msg, Set{Int}()
             end
 
-            rideTime = endOfServiceTime - endOfServiceTimePickUps[pickUpId]
+            rideTime = startOfServiceTime - endOfServiceTimePickUps[pickUpId]
             if rideTime > requests[activity.requestId].maximumRideTime || rideTime < requests[activity.requestId].directDriveTime
-                msg = "ROUTE INFEASIBLE: Maximum ride time exceeded for drop-off $(activity.id) on vehicle $(vehicle.id)"
+                msg = "ROUTE INFEASIBLE: Maximum ride time exceeded for drop-off $(activity.id) on vehicle $(vehicle.id), END PU/START DO: ($(endOfServiceTimePickUps[pickUpId]), $(startOfServiceTime)), Ride time: $(rideTime), Maximum ride time: $(requests[activity.requestId].maximumRideTime), direct drive time: $(requests[activity.requestId].directDriveTime)"
                 return false, msg, Set{Int}()
             end
 
