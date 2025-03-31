@@ -17,6 +17,7 @@ function getDistanceAndTimeMatrix(distanceMatrixFile=""::String,timeMatrixFile="
 
     # Read time and distance file if given else calculate
     if distanceMatrixFile != "" && timeMatrixFile != ""
+        println("Reading distance and matrix files")
         lines = readlines(distanceMatrixFile)
         distance = [parse.(Float64, split(line)) for line in lines]
         distance = convert(Matrix{Float64}, hcat(distance...)')

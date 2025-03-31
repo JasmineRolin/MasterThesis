@@ -45,6 +45,7 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     
 
     # Get vehicles 
+    println("Reading vehicles")
     vehicles,depots, depotLocations = readVehicles(vehiclesDf,nRequests)
     nDepots = length(depots)
 
@@ -52,6 +53,7 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     distance, time = getDistanceAndTimeMatrix(distanceMatrixFile,timeMatrixFile,requestFile,collect(keys(depotLocations)))
 
     # Get requests 
+    println("Reading requests")
     requests = readRequests(requestsDf,nRequests,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time)
 
     # Split into offline and online requests
