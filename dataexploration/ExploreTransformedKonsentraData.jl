@@ -26,19 +26,33 @@ end
 # ------
 # Plot grid of histograms for request time
 # ------
-function plotHistogramsRequestTime(df_list,sheet_names)
-    # Create an array to store the plots
-    plots = []
 
-    for (idx,df) in enumerate(df_list)
-        # Create a histogram for call time and append to plots list
-        p = histogram(df[!,:request_time]/60, bins=24, title=string("Request Time Histogram: ",sheet_names[idx]), xlabel="Request Time (hours)", ylabel="Frequency")
-        push!(plots, p)
+function plotHistogramsRequestTime(df_list, sheet_names)
+    plots_pickup = []
+    plots_dropoff = []
+
+    for (idx, df) in enumerate(df_list)
+        # Filter data by request type
+        df_pickup = filter(row -> row.request_type == 0, df)
+        df_dropoff = filter(row -> row.request_type == 1, df)
+
+        # Create histograms for each request type
+        p_pickup = histogram(df_pickup.request_time / 60, bins=24, 
+                             title=string("Pickup Request Time: ", sheet_names[idx]), 
+                             xlabel="Request Time (hours)", ylabel="Frequency")
+        push!(plots_pickup, p_pickup)
+
+        p_dropoff = histogram(df_dropoff.request_time / 60, bins=24, 
+                              title=string("Dropoff Request Time: ", sheet_names[idx]), 
+                              xlabel="Request Time (hours)", ylabel="Frequency")
+        push!(plots_dropoff, p_dropoff)
     end
 
-    # Create grid layout for the plots
-    plot(plots..., layout=(3, 2), size=(1000, 1500))
+    # Create a layout with separate plots for Pickup and Dropoff
+    plot(plots_pickup..., layout=(length(df_list), 1), size=(1000, 1500))
+    #plot(plots_dropoff..., layout=(length(df_list), 1), size=(1000, 1500))
 end
+
 
 # ------
 # Plot gant chart of time between request time and call time for each request 
@@ -69,16 +83,16 @@ function plotGanttChart(df_list, sheet_names)
 
         rectangles_pickup = [
             rect(t[1], 1, t[2], t[3]) 
-            for t in zip(dfsorted.duration[dfsorted.request_type .== 1], 
-                         dfsorted[!,:call_time][dfsorted.request_type .== 1], 
-                         findall(dfsorted.request_type .== 1))
+            for t in zip(dfsorted.duration[dfsorted.request_type .== 0], 
+                         dfsorted[!,:call_time][dfsorted.request_type .== 0], 
+                         findall(dfsorted.request_type .== 0))
         ]
 
         rectangles_dropoff = [
             rect(t[1], 1, t[2], t[3]) 
-            for t in zip(dfsorted.duration[dfsorted.request_type .== 0], 
-                         dfsorted[!,:call_time][dfsorted.request_type .== 0], 
-                         findall(dfsorted.request_type .== 0))
+            for t in zip(dfsorted.duration[dfsorted.request_type .== 1], 
+                         dfsorted[!,:call_time][dfsorted.request_type .== 1], 
+                         findall(dfsorted.request_type .== 1))
         ]
 
         # Get every 5th label for yticks
@@ -157,6 +171,7 @@ function getKeyNumbers(df_list, sheet_names)
     return key_numbers
 end
 
+#==
 # ------
 # Open and load data
 # ------
@@ -181,4 +196,27 @@ display(plotHistogramsCallTime(df_list,sheet_names))
 display(plotHistogramsRequestTime(df_list,sheet_names))
 display(plotGeographicalData(df_list,sheet_names))
 display(plotGanttChart(df_list,sheet_names))
+#println(getKeyNumbers(df_list, sheet_names))
+==#
+
+
+# ------
+# Open and load data
+# ------
+df_list = []  # To store the transformed DataFrames
+sheet_names = []  # To store the sheet names
+sheets = ["1","2","3","4"]
+for sheet in sheets
+    df = CSV.read("Data/Konsentra/100/GeneratedRequests_100_$sheet.csv", DataFrame)
+    push!(df_list, df)
+    push!(sheet_names, sheet)
+end
+
+# ------
+# Plots
+# ------
+#display(plotHistogramsCallTime(df_list,sheet_names))
+display(plotHistogramsRequestTime(df_list,sheet_names))
+display(plotGeographicalData(df_list,sheet_names))
+#display(plotGanttChart(df_list,sheet_names))
 #println(getKeyNumbers(df_list, sheet_names))

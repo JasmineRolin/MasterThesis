@@ -46,7 +46,10 @@ end
 #  Function to get total cost/excees ridetime of route
 ==#
 function getTotalCostRoute(scenario::Scenario,route::Vector{ActivityAssignment})
-    time = scenario.time
+    return getTotalCostRoute(scenario.time,route)
+end
+
+function getTotalCostRoute(time::Array{Int,2},route::Vector{ActivityAssignment})
     ratio = 0.0
     pickupTimes = Dict{Int, Int}()
     
@@ -74,6 +77,13 @@ function getCostOfRequest(time::Array{Int,2},pickUpActivity::ActivityAssignment,
     actualTime = Float64(dropOffActivity.startOfServiceTime - pickUpActivity.endOfServiceTime)
     return  actualTime/directTime*10.0
 end
+
+function getCostOfRequest(time::Array{Int,2},endOfServiceTimePickUp::Int,startOfServiceTimeDropOff::Int,pickUpActivityId::Int,dropOffActivityId::Int)
+    directTime = Float64(time[pickUpActivityId,dropOffActivityId])
+    actualTime = Float64(startOfServiceTimeDropOff - endOfServiceTimePickUp)
+    return  actualTime/directTime*10.0
+end
+
 
 #==
 # Function to get total idle time of route 

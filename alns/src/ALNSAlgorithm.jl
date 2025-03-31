@@ -17,7 +17,7 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
     outputFile = open(fileName, "w")
     nDestroy = length(configuration.destroyMethods)
     nRepair = length(configuration.repairMethods)
-    write(outputFile,"Iteration,TotalCost,IsAccepted,IsImproved,IsNewBest,Temperature,",join(["DW$i" for i in 1:nDestroy], ","),",", join(["RW$i" for i in 1:nRepair], ","), "\n")
+    write(outputFile,"Iteration,TotalCost,IsAccepted,IsImproved,IsNewBest,Temperature,DM,RM,",join(["DW$i" for i in 1:nDestroy], ","),",", join(["RW$i" for i in 1:nRepair], ","), "\n")
 
 
     # Unpack parameters
@@ -44,7 +44,7 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
 
         # Destroy trial solution  
         destroyIdx = destroy!(scenario,trialState,parameters,configuration)
-        
+    
         # Repair trial solution 
         repairIdx = repair!(scenario,trialState,configuration)
 
@@ -88,7 +88,10 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
         feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution,requests)
         if !feasible
             println("ALNS: INFEASIBLE SOLUTION IN ITERATION:", iteration)
-            throw(msg) 
+            #throw(msg) 
+             # Close file    
+            close(outputFile)
+            return currentState.currentSolution, currentState.requestBank
         end
 
         # Write to file 
@@ -98,13 +101,15 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
                  string(isImproved), ",", 
                  string(isNewBest), ",", 
                  string(temperature), ",", 
-                 join(string.(currentState.destroyWeights), ","), ",", 
+                string(configuration.destroyMethods[destroyIdx].name), ",",
+                string(configuration.repairMethods[repairIdx].name), ",",
+                join(string.(currentState.destroyWeights), ","), ",", 
                  join(string.(currentState.repairWeights), ","), "\n")
 
 
         # Print 
         if iteration % printSegmentSize == 0
-            println("==> ALNS: Iteration: ", iteration, ", Current cost: ", currentState.currentSolution.totalCost, ", Best cost: ", currentState.bestSolution.totalCost,", Improvement from initial: ", (initialCost-currentState.bestSolution.totalCost)/initialCost, "%, Temperature: ", temperature)
+            println("==> ALNS: Iteration: ", iteration, ", Current cost: ", currentState.currentSolution.totalCost, ", Best cost: ", currentState.bestSolution.totalCost,", Improvement from initial: ", 100*(initialCost-currentState.bestSolution.totalCost)/initialCost, "%, Temperature: ", temperature)
         end
 
         # Update iteration

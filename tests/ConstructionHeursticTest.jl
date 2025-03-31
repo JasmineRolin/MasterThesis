@@ -47,7 +47,6 @@ end
     feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.offlineRequests)
     @test feasible == true
     @test msg == ""
-      
 end
 
 @testset "ConstructionHeurstic test - Big Test" begin 
