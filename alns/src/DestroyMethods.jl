@@ -379,6 +379,19 @@ function removeActivityFromRoute!(time::Array{Int,2},schedule::VehicleSchedule,i
 
         routeReduction = 1
 
+    elseif activityAssignmentAfter.activity.activityType == DEPOT
+        # Update depot 
+        activityAssignmentBefore.startOfServiceTime = activityAssignmentAfter.startOfServiceTime - time[activityAssignmentBefore.activity.id,activityAssignmentAfter.activity.id]
+        activityAssignmentBefore.endOfServiceTime = activityAssignmentBefore.startOfServiceTime
+
+        deltaActiveTime =  schedule.activeTimeWindow.startTime - activityAssignmentBefore.startOfServiceTime
+        schedule.activeTimeWindow.startTime = activityAssignmentBefore.startOfServiceTime
+        
+        # Delete activity 
+        deleteat!(route,idx)
+
+        routeReduction = 1
+
     # Insert waiting activity before activity to remove
     else
         # Create waiting activity 
