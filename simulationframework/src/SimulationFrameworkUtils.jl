@@ -293,12 +293,12 @@ function simulateScenario(scenario::Scenario)
         end        
 
         println("----------------")
-        println("Final solution: ")
+        println("Current solution: ")
         println("----------------")
-        printSolution(finalSolution,printRouteHorizontal)
+        printSolution(currentState.solution,printRouteHorizontal)
 
         # Get solution for online problem
-        solution = onlineAlgorithm(currentState, scenario, destroyMethods, repairMethods) 
+        solution, requestBank,_,_ = onlineAlgorithm(currentState, requestBank, scenario, destroyMethods, repairMethods) 
 
     end
 

@@ -12,7 +12,6 @@ export regretInsertion
 function regretInsertion(state::ALNSState,scenario::Scenario)
     #TODO should we implement noise?
     @unpack destroyWeights, repairWeights, destroyNumberOfUses, repairNumberOfUses, bestSolution, currentSolution, requestBank = state
-    newRequestBank = Int[]
     requests = scenario.requests
 
     # Define insertion matrix
@@ -42,7 +41,6 @@ function regretInsertion(state::ALNSState,scenario::Scenario)
                 end
             end
             if bestVehicleForRequest == -1
-                append!(newRequestBank, r)
                 continue
             end
             if (secondBestInsertion - bestInsertion) > bestRegret
@@ -79,7 +77,11 @@ function regretInsertion(state::ALNSState,scenario::Scenario)
         state.currentSolution.totalIdleTime += currentSolution.vehicleSchedules[overallBestVehicle].totalIdleTime
 
         # Remove request from requestBank
+        println("HERE!!!!!!!!")
+        println(bestRequest)
+        println(requestBank)
         setdiff!(requestBank,[bestRequest])
+        println(requestBank)
 
         # Recalculate insertion cost matrix
         reCalcCostMatrix!(overallBestVehicle, scenario, currentSolution, requestBank, insCostMatrix, compatibilityRequestVehicle)

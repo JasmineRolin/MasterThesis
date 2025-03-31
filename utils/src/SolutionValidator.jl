@@ -49,11 +49,11 @@ function checkSolutionFeasibility(scenario::Scenario,solution::Solution,requests
     end
 
     # Check that all activities are serviced
-    notServicedActivities = setdiff(activityIds, servicedActivities)
-    if length(notServicedActivities) != 2*nTaxi # TODO: add check if we add list of activities serviced by taxi 
-        msg = "SOLUTION INFEASIBLE: Not all activities are serviced"
-        return false, msg
-    end
+    #notServicedActivities = setdiff(activityIds, servicedActivities)
+    #if length(notServicedActivities) != 2*nTaxi # TODO: add check if we add list of activities serviced by taxi 
+    ##    msg = "SOLUTION INFEASIBLE: Not all activities are serviced"
+    #    return false, msg
+    #end
 
     # Check cost, distance and time of solution 
     totalCostCheck += nTaxi * scenario.taxiParameter

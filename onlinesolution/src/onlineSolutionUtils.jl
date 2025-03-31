@@ -1,6 +1,8 @@
 module onlineSolutionUtils
 
-using domain, alns
+using domain
+using alns
+using utils
 
 export updateTimeWindowsOnlineAll!, onlineAlgorithm
 
@@ -77,27 +79,51 @@ end
 ==#
 function onlineInsertion(solution::Solution, event::Request, scenario::Scenario)
 
-    # Create ALNS State
-    ALNSState = ALNSState(Vector{Float64}(),Vector{Float64}(),Vector{Float64}(),Vector{Float64}(),Vector{Int}(),Vector{Int}(),solution,solution,Vector{Int}(),Vector{Int}(),0)
+    state = ALNSState(Vector{Float64}(),Vector{Float64}(),Vector{Float64}(),Vector{Float64}(),Vector{Int}(),Vector{Int}(),solution,solution,[event.id],Vector{Int}(),0)
     regretInsertion(state,scenario)
 
-    return ALNSState.currentSolution, ALNSState.requestBank
+    return state.currentSolution, state.requestBank
 
 end
 
 #==
  Run online algorithm
 ==#
-function onlineAlgorithm(currentState::State, scenario::Scenario, destroyMethods::Vector{GenericMethod}, repairMethods::Vector{GenericMethod})
+function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario::Scenario, destroyMethods::Vector{GenericMethod}, repairMethods::Vector{GenericMethod})
 
     event, oldSolution = currentState.event, currentState.solution
 
     # Do intitial insertion
-    initialSolution, requestBank = onlineInsertion(oldSolution,event,scenario)
+    println("HERE1")
+    initialSolution, newrequestBankOnline = onlineInsertion(oldSolution,event,scenario)
+    append!(requestBank,newrequestBankOnline)
+    println("Solution after simple insertion")
+    printSolution(initialSolution,printRouteHorizontal)
+    currentOnlineRequest = Request[]
+    for r in scenario.onlineRequests
+        if r.id == event.id
+            push!(currentOnlineRequest, r)
+            break
+        end
+        push!(currentOnlineRequest, r)
+    end
+    allRequestsCurrently = scenario.offlineRequests
+    for r in currentOnlineRequest
+        push!(allRequestsCurrently, r)
+    end
+    feasible, msg = checkSolutionFeasibility(scenario,initialSolution,allRequestsCurrently)
+    println("TESSSST")
+    println(feasible)
+    println(msg)
+    println(requestBank)
+
+    
 
     # Run ALNS # TODO ensure right input
-    finalSolution,requestBank,specification,KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",stage = "online",initialSolution =  initialSolution, requestBank = requestBank)
+    println("HERE2")
 
+    finalSolution,requestBank,specification,KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",stage = "online",initialSolution =  initialSolution, requestBank = requestBank)
+    println("HERE3")
     # Update time window for event
     updateTimeWindowsOnlineOne!(finalSolution,event,scenario)
 

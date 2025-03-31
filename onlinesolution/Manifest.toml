@@ -2,7 +2,7 @@
 
 julia_version = "1.10.2"
 manifest_format = "2.0"
-project_hash = "c42c78805a594a2d3d55bbd51e23f7dc93018262"
+project_hash = "6c3056e6502370256cc19c990459bda2be0cd3b9"
 
 [[deps.AliasTables]]
 deps = ["PtrArrays", "Random"]
@@ -1253,7 +1253,7 @@ uuid = "3161d3a3-bdf6-5164-811a-617609db77b4"
 version = "1.5.7+1"
 
 [[deps.alns]]
-deps = ["CSV", "DataFrames", "Dates", "JSON", "JSON3", "LinearAlgebra", "Plots", "Random", "UnPack", "domain", "offlinesolution", "utils"]
+deps = ["CSV", "DataFrames", "Dates", "JSON", "JSON3", "LinearAlgebra", "Plots", "Random", "UnPack", "domain", "utils"]
 path = "../alns"
 uuid = "923737b8-2e4c-4886-b2ed-ac7b70d13e65"
 version = "0.1.0"
@@ -1345,12 +1345,6 @@ version = "1.1.6+0"
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
 version = "1.52.0+1"
-
-[[deps.offlinesolution]]
-deps = ["domain", "utils"]
-path = "../offlinesolution"
-uuid = "a9fb1b74-13ee-4d8c-9e56-7a41bc88c15d"
-version = "0.1.0"
 
 [[deps.p7zip_jll]]
 deps = ["Artifacts", "Libdl"]

@@ -298,7 +298,7 @@ function updateWaitingBeforeNode!(time::Array{Int,2},distance::Array{Float64,2},
     route[idx-1].activity.timeWindow.endTime = route[idx].startOfServiceTime - time[route[idx-1].activity.id,route[idx].activity.id]
     
     # Check if node should still be there
-    if route[idx-1].startOfServiceTime < route[idx-1].endOfServiceTime
+    if route[idx-1].startOfServiceTime <= route[idx-1].endOfServiceTime
         newIdleTime = route[idx-1].endOfServiceTime - route[idx-1].startOfServiceTime
 
         return 0, route[idx-1].activity.id, (newIdleTime-oldIdleTime)
@@ -307,7 +307,7 @@ function updateWaitingBeforeNode!(time::Array{Int,2},distance::Array{Float64,2},
         vehicleSchedule.totalDistance -= distance[route[idx-2].activity.id,route[idx-1].activity.id]
 
         deleteat!(route,idx-1)
-        deleteat!(vehicleSchedule.numberOfWalking,idx-1)
+        deleteat!(vehicleSchedule.numberOfWalking,idx-1)        
 
         # Check if a waiting node is still needed, but at location for node before 
         if route[idx-2].endOfServiceTime + time[route[idx-2].activity.id,route[idx-1].activity.id] < route[idx-1].startOfServiceTime
