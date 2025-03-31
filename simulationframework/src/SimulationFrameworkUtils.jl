@@ -5,6 +5,7 @@ using utils
 using domain
 using offlinesolution
 using onlinesolution
+using alns
 
 export simulateScenario
 
@@ -249,6 +250,17 @@ end
 # ------
 function simulateScenario(scenario::Scenario)
 
+    # Choose destroy methods
+    destroyMethods = Vector{GenericMethod}()
+    addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
+    addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
+    addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
+
+    # Choose repair methods
+    repairMethods = Vector{GenericMethod}()
+    addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
+    addMethod!(repairMethods,"regretInsertion",regretInsertion)
+
     # Initialize current state 
     initialVehicleSchedules = [VehicleSchedule(vehicle,true) for vehicle in scenario.vehicles] # TODO change constructor
     finalSolution = Solution(initialVehicleSchedules, 0.0, 0, 0, 0, 0) # TODO change constructor
@@ -286,8 +298,8 @@ function simulateScenario(scenario::Scenario)
         printSolution(finalSolution,printRouteHorizontal)
 
         # Get solution for online problem
-        # solution = onlineAlgorithm(currentState, event, scenario) # TODO: Change to right function name !!!!!!!!!!
-        solution = currentState.solution # Only for test as long as onlineAlgorithm is not implemented
+        solution = onlineAlgorithm(currentState, scenario, destroyMethods, repairMethods) 
+
     end
 
     # Update final solution with last state 

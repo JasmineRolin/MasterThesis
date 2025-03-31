@@ -77,14 +77,20 @@ end
 ==#
 function onlineInsertion(solution::Solution, event::Request, scenario::Scenario)
 
-    return initialSolution, requestBank
+    # Create ALNS State
+    ALNSState = ALNSState(Vector{Float64}(),Vector{Float64}(),Vector{Float64}(),Vector{Float64}(),Vector{Int}(),Vector{Int}(),solution,solution,Vector{Int}(),Vector{Int}(),0)
+    regretInsertion(state,scenario)
+
+    return ALNSState.currentSolution, ALNSState.requestBank
 
 end
 
 #==
  Run online algorithm
 ==#
-function onlineAlgorithm(event::Request, scenario::Scenario, oldSolution::Solution, destroyMethods::Vector{GenericMethod}, repairMethods::Vector{GenericMethod})
+function onlineAlgorithm(currentState::State, scenario::Scenario, destroyMethods::Vector{GenericMethod}, repairMethods::Vector{GenericMethod})
+
+    event, oldSolution = currentState.event, currentState.solution
 
     # Do intitial insertion
     initialSolution, requestBank = onlineInsertion(oldSolution,event,scenario)
