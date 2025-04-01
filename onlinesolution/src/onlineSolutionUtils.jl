@@ -91,33 +91,21 @@ end
 ==#
 function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario::Scenario, destroyMethods::Vector{GenericMethod}, repairMethods::Vector{GenericMethod})
 
-    event, oldSolution = currentState.event, currentState.solution
+    event, oldSolution, visitedRoute = currentState.event, currentState.solution, currentState.visitedRoute
 
     # Do intitial insertion
-    println("HERE1")
     initialSolution, newrequestBankOnline = onlineInsertion(oldSolution,event,scenario)
     append!(requestBank,newrequestBankOnline)
-    println("Solution after simple insertion")
-    printSolution(initialSolution,printRouteHorizontal)
-    currentOnlineRequest = Request[]
-    for r in scenario.onlineRequests
-        if r.id == event.id
-            push!(currentOnlineRequest, r)
-            break
-        end
-        push!(currentOnlineRequest, r)
-    end
-    allRequestsCurrently = scenario.offlineRequests
-    for r in currentOnlineRequest
-        push!(allRequestsCurrently, r)
-    end
-    feasible, msg = checkSolutionFeasibility(scenario,initialSolution,allRequestsCurrently)
+
+    # Check feasibility
+    newState = State(initialSolution,event,visitedRoute)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,initialSolution,visitedRoute)
     println("TESSSST")
     println(feasible)
     println(msg)
     println(requestBank)
 
-    
+
 
     # Run ALNS # TODO ensure right input
     println("HERE2")

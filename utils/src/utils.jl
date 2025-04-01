@@ -51,5 +51,6 @@ export printRoute,printSimpleRoute, insertRequest!,checkFeasibilityOfInsertionAt
 include("SolutionValidator.jl")
 using .SolutionValidator
 export checkSolutionFeasibility,checkRouteFeasibility
+export checkSolutionFeasibilityOnline,checkRouteFeasibilityOnline
 
 end 

@@ -33,15 +33,14 @@ function updateCurrentScheduleNotAvailableAnymore!(currentState::State,schedule:
 
     # Update current state
     currentState.solution.totalDistance -= currentSchedule.totalDistance
-    currentState.solution.totalTime -= currentSchedule.totalTime
     currentState.solution.totalCost -= currentSchedule.totalCost
     currentState.solution.totalIdleTime -= currentSchedule.totalIdleTime
 
     # Update KPIs
     currentSchedule.totalDistance = 0.0
-    currentSchedule.totalTime = 0
     currentSchedule.totalCost = 0.0
     currentSchedule.totalIdleTime = 0
+    currentSchedule.totalTime = 0
     currentSchedule.numberOfWalking = [0] 
 
     # Index to split route into current and completed route 
@@ -308,7 +307,7 @@ function simulateScenario(scenario::Scenario)
     finalSolution = Solution(initialVehicleSchedules, 0.0, 0, 0, 0, 0) # TODO change constructor
     currentState = State(scenario,Request())
 
-    # Get solution for initial solution (online problem)
+    # Get solution for initial solution (offline problem)
     # solution = offlineAlgorithm(scenario) # TODO: Change to right function name !!!!!!!!!!
     solution = Solution(scenario)
     solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)

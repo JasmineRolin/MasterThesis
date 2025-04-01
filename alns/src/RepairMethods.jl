@@ -77,11 +77,7 @@ function regretInsertion(state::ALNSState,scenario::Scenario)
         state.currentSolution.totalIdleTime += currentSolution.vehicleSchedules[overallBestVehicle].totalIdleTime
 
         # Remove request from requestBank
-        println("HERE!!!!!!!!")
-        println(bestRequest)
-        println(requestBank)
         setdiff!(requestBank,[bestRequest])
-        println(requestBank)
 
         # Recalculate insertion cost matrix
         reCalcCostMatrix!(overallBestVehicle, scenario, currentSolution, requestBank, insCostMatrix, compatibilityRequestVehicle)
