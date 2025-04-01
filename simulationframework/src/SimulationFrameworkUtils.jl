@@ -35,6 +35,7 @@ function updateCurrentScheduleNotAvailableAnymore!(currentState::State,schedule:
     currentState.solution.totalDistance -= currentSchedule.totalDistance
     currentState.solution.totalCost -= currentSchedule.totalCost
     currentState.solution.totalIdleTime -= currentSchedule.totalIdleTime
+    currentState.solution.totalRideTime -= currentSchedule.totalTime
 
     # Update KPIs
     currentSchedule.totalDistance = 0.0
@@ -109,7 +110,7 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
 
     # Update current state pre
     currentState.solution.totalDistance -= currentSchedule.totalDistance
-    currentState.solution.totalTime -= currentSchedule.totalTime
+    currentState.solution.totalRideTime -= currentSchedule.totalTime
     currentState.solution.totalCost -= currentSchedule.totalCost
     currentState.solution.totalIdleTime -= currentSchedule.totalIdleTime
 
@@ -122,10 +123,9 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
 
     # Update current state pro
     currentState.solution.totalDistance += currentSchedule.totalDistance
-    currentState.solution.totalTime += currentSchedule.totalTime
+    currentState.solution.totalRideTime += currentSchedule.totalTime
     currentState.solution.totalCost += currentSchedule.totalCost
     currentState.solution.totalIdleTime += currentSchedule.totalIdleTime
-
 
     return idx, currentSchedule.activeTimeWindow.startTime
 end
@@ -228,7 +228,7 @@ end
 function determineCurrentState(solution::Solution,event::Request,finalSolution::Solution,scenario::Scenario)
 
     # Initialize current state
-    currentState = State(scenario,event)
+    currentState = State(scenario,event,0)
     currentState.solution.vehicleSchedules = deepcopy(solution.vehicleSchedules)
     currentState.solution.totalCost = solution.totalCost
     currentState.solution.nTaxi = solution.nTaxi
@@ -280,6 +280,7 @@ function determineCurrentState(solution::Solution,event::Request,finalSolution::
 
         # Update final solution
         updateFinalSolution!(scenario,finalSolution,solution,vehicle,idx, splitTime)
+        currentState.totalNTaxi = finalSolution.nTaxi
         
     end
 
@@ -305,7 +306,7 @@ function simulateScenario(scenario::Scenario)
     # Initialize current state 
     initialVehicleSchedules = [VehicleSchedule(vehicle,true) for vehicle in scenario.vehicles] # TODO change constructor
     finalSolution = Solution(initialVehicleSchedules, 0.0, 0, 0, 0, 0) # TODO change constructor
-    currentState = State(scenario,Request())
+    currentState = State(scenario,Request(),0)
 
     # Get solution for initial solution (offline problem)
     # solution = offlineAlgorithm(scenario) # TODO: Change to right function name !!!!!!!!!!

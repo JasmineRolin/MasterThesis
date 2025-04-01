@@ -35,6 +35,7 @@ function checkSolutionFeasibility(scenario::Scenario,solution::Solution,requests
         for activity in servicedActivitiesInRoute
             if activity in servicedActivities
                 msg = "SOLUTION INFEASIBLE: Activity $(activity) is serviced more than once"
+                throw(msg)
                 return false, msg
             end
 
@@ -82,13 +83,13 @@ end
 #==
 # Function to check feasibility of online solution 
 ==#
-function checkSolutionFeasibilityOnline(scenario::Scenario,state::State,totalNTaxi::Int)
-    @unpack solution, event, visitedRoute = state
+function checkSolutionFeasibilityOnline(scenario::Scenario,state::State)
+    @unpack solution, event, visitedRoute, totalNTaxi = state
     @unpack vehicleSchedules, totalCost, nTaxi, totalRideTime, totalDistance, totalIdleTime = solution
 
     # Keep track of serviced activities assuming that activity 
     servicedActivities = Set{Int}()
-    push!(servicedActivities,key(visitedRoute))
+    union!(servicedActivities, keys(visitedRoute))
 
     # Keep track of cost, total distance and total time of solution
     totalCostCheck = 0.0 
@@ -109,6 +110,7 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,state::State,totalNTa
         for activity in servicedActivitiesInRoute
             if activity in servicedActivities
                 msg = "SOLUTION INFEASIBLE: Activity $(activity) is serviced more than once"
+                throw(msg)
                 return false, msg
             end
 
@@ -123,7 +125,7 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,state::State,totalNTa
     end
 
     # Check that all activities are serviced
-    if totalNTaxi + nTaxi + length(servicedActivities) == (scenario.offlineRequests + event.id - length(scenario.offlineRequests)) 
+    if totalNTaxi + nTaxi + length(servicedActivities) == (length(scenario.offlineRequests) + event.id - length(scenario.offlineRequests)) 
         msg = "SOLUTION INFEASIBLE: Not all activities are serviced"
         return false, msg
     end
@@ -161,6 +163,10 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
     @unpack requests, distance, time, serviceTimes, vehicleCostPrHour,vehicleStartUpCost  = scenario
     nRequests = length(requests)
 
+    if length(route) == 2 && route[1].activity.activityType == DEPOT && route[2].activity.activityType == DEPOT
+        return true, "", Set{Int}()
+    end
+
     # Check that active time window of vehicle is correct 
     if activeTimeWindow.startTime != route[1].startOfServiceTime || activeTimeWindow.endTime != route[end].endOfServiceTime
         msg = "ROUTE INFEASIBLE: Active time window of vehicle $(vehicle.id) is incorrect"
@@ -186,7 +192,6 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
         msg = "ROUTE INFEASIBLE: Route has only one activity, but it is not a depot"
         return false, msg, Set{Int}()
     end
-
     
     # Check cost and total time 
     durationActiveTimeWindow = duration(activeTimeWindow)
@@ -205,17 +210,18 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
     totalIdleTimeCheck = 0.0
     currentCapacities = 0
     hasBeenServiced = Vector{Int}() 
+    hasBeenServicedRequest = Vector{Int}() 
     endOfServiceTimePickUps = Dict{Int,Int}() # Keep track of end of service time for pick-ups
-    for (idx,activityAssignment) in zip(1:length(route-1), route[1:end-1]) # Do not check last depot 
+    for (idx,activityAssignment) in zip(1:length(route)-1, route[1:end-1]) # Do not check last depot 
         @unpack activity, startOfServiceTime, endOfServiceTime = activityAssignment
         
         # Check that pickup is serviced before drop-off and that maximum ride time is satisfied 
         if activity.activityType == PICKUP
-            push!(hasBeenServiced,activity.id)
+            push!(hasBeenServicedRequest,activity.id)
             endOfServiceTimePickUps[activity.id] = endOfServiceTime
         elseif activity.activityType == DROPOFF 
             pickUpId = findCorrespondingId(activity,nRequests)
-            if !(pickUpId in hasBeenServiced || pickUpId in visitedRoute) 
+            if !(pickUpId in hasBeenServicedRequest || pickUpId in visitedRoute) 
                 msg = "ROUTE INFEASIBLE: Drop-off $(activity.id) before pick-up, vehicle: $(vehicle.id)"
                 return false, msg, Set{Int}()
             end
@@ -226,7 +232,6 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
                 msg = "ROUTE INFEASIBLE: Maximum ride time exceeded for drop-off $(activity.id) on vehicle $(vehicle.id), END PU/START DO: ($(endOfServiceTimePickUp), $(startOfServiceTime)), Ride time: $(rideTime), Maximum ride time: $(requests[activity.requestId].maximumRideTime), direct drive time: $(requests[activity.requestId].directDriveTime)"
                 return false, msg, Set{Int}()
             end
-
         end
 
         # Check that time windows are respected
@@ -309,7 +314,7 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
     end
     
    
-    return true, "", hasBeenServiced
+    return true, "", hasBeenServicedRequest
     
 end
 
