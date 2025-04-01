@@ -141,9 +141,11 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,state::State)
     union!(considered, (r.id for r in scenario.offlineRequests))  
     println(event.id)
     if event.id != 0  
-        numNewRequests = event.id - length(scenario.offlineRequests)
-        for i in 1:numNewRequests
-            push!(considered, scenario.onlineRequests[i].id)
+        for onlineRequest in scenario.onlineRequests
+            push!(considered, onlineRequest.id)
+            if event.id == onlineRequest.id
+                break
+            end
         end
     end
     notServicedRequests = setdiff(considered, servicedPickUpActivities)

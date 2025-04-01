@@ -327,6 +327,7 @@ function simulateScenario(scenario::Scenario)
 
         # Determine current state
         currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario)
+        currentState.totalNTaxi = finalSolution.nTaxi
         printSolution(currentState.solution,printRouteHorizontal)
 
         if itr == 0

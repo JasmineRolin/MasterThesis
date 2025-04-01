@@ -8,7 +8,7 @@ export runALNS
  Module to run ALNS algorithm 
 ==#
 
-function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::Vector{GenericMethod},repairMethods::Vector{GenericMethod};outPutFileFolder="tests/output"::String,parametersFile=""::String,savePlots=true::Bool,displayPlots=true::Bool,plotFolder=""::String,initialSolution=Solution(scenario)::Solution, requestBank=Vector{Request}(),stage="offline"::String)
+function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::Vector{GenericMethod},repairMethods::Vector{GenericMethod};outPutFileFolder="tests/output"::String,parametersFile=""::String,savePlots=true::Bool,displayPlots=true::Bool,plotFolder=""::String,initialSolution=Solution(scenario)::Solution, requestBank=Vector{Request}(),stage="offline"::String,event = Request(), alreadyRejected = 0::Int)
 
     # Create time stamp and output file folder
     timeStamp = Dates.format(Dates.now(), "yyyy-mm-dd_HH_MM_SS.sss")
@@ -49,7 +49,7 @@ function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::
     ALNSOutputFileName = string(outputFileFolderWithDate,"ALNSOutput.csv")
 
     # Call ALNS 
-    solution, requestBank = ALNS(scenario,requests,initialSolution, requestBank,configuration,parameters, ALNSOutputFileName)
+    solution, requestBank = ALNS(scenario,requests,initialSolution, requestBank,configuration,parameters, ALNSOutputFileName, alreadyRejected = alreadyRejected,event = event)
 
     # Write KPIs to file 
     KPIFileName = string(outputFileFolderWithDate,"ALNSKPIs.json")

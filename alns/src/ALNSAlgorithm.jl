@@ -11,7 +11,7 @@ export ALNS
 #==
  Method to run ALNS algorithm
 ==#
-function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters,fileName::String) 
+function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters,fileName::String;alreadyRejected = 0,event = Request()) 
     
     # File 
     outputFile = open(fileName, "w")
@@ -85,7 +85,8 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
 
         # Check solution 
         # TODO: remove when ALNS is robust 
-        feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution,requests)
+        state = State(currentState.currentSolution,event,alreadyRejected)
+        feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
         if !feasible
             println("ALNS: INFEASIBLE SOLUTION IN ITERATION:", iteration)
             #throw(msg) 

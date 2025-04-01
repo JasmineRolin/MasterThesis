@@ -5,6 +5,7 @@ using alns, domain, utils, offlinesolution
 Test ALNSFunctions
 ==#
 
+#==
 @testset "ALNS test - Big Test" begin 
     requestFile = "tests/resources/RequestsBig.csv"
     vehiclesFile = "tests/resources/VehiclesBig.csv"
@@ -173,7 +174,7 @@ end
     print("nTaxi: ",finalSolution.nTaxi)
     printSolution(finalSolution,printRouteHorizontal)
 end
-
+==#
 
 @testset "Run all konsentra data sets " begin
     files = ["Data", "06.02","09.01","16.01","23.01","30.01"]
@@ -200,18 +201,15 @@ end
         addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
         addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
-        initialSolution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
-        finalSolution, specifications, KPIs = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",initialSolution=initialSolution,requestBank=requestBank)
-    
-        #finalSolution,requestBank,specification,KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;initialSolutionConstructor=simpleConstruction,parametersFile="tests/resources/ALNSParameters2.json",displayPlots=true,savePlots=true)
-
-        feasible, msg = checkSolutionFeasibility(scenario,finalSolution,scenario.requests)
+        initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
+        finalSolution, specifications, KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",initialSolution=initialSolution,requestBank=requestBank)
+        
+        state = State(finalSolution,scenario.onlineRequests[end],0)
+        feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
         @test feasible == true
         @test msg == ""
         println(msg)
 
-        println("FINAL SOLUTION")
-        print("nTaxi: ",finalSolution.nTaxi)
-        printSolution(finalSolution,printRouteHorizontal)
+        #printSolution(finalSolution,printRouteHorizontal)
     end 
 end

@@ -51,11 +51,9 @@ function updateTimeWindowsOnlineOne!(solution::Solution,event::Request,scenario:
     requestStartOfService = Dict{Int,Int}()
 
     for vehicleSchedule in solution.vehicleSchedules
-        for activityAssignment in vehicleSchedule.activityAssignments
-
-            request = scenario.requests[activityAssignment.activity.requestId]
+        for activityAssignment in vehicleSchedule.route
             
-            if request.id == event.id
+            if activityAssignment.activity.requestId > 0 && activityAssignment.activity.requestId == event.id
                 continue
             end
 
@@ -64,7 +62,7 @@ function updateTimeWindowsOnlineOne!(solution::Solution,event::Request,scenario:
                 requestStartOfService[activityAssignment.activity.requestId] = activityAssignment.startOfServiceTime
                 activityAssignment.activity.timeWindow = TimeWindow(activityAssignment.startOfServiceTime-MAX_EARLY_ARRIVAL,activityAssignment.startOfServiceTime+MAX_DELAY)
             # Update time windows for drop-off for pick-up requests
-            elseif activityAssignment.activity.activityType == DROPOFF && request.requestType == PICKUP_REQUEST
+            elseif activityAssignment.activity.activityType == DROPOFF && scenario.requests[activityAssignment.activity.requestId] == PICKUP_REQUEST
                 activityAssignment.activity.timeWindow = TimeWindow(activityAssignment.startOfServiceTime-MAX_EARLY_ARRIVAL+request.directDriveTime,activityAssignment.startOfServiceTime+MAX_DELAY+request.maximumRideTime)
             end
 
@@ -91,7 +89,7 @@ end
 ==#
 function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario::Scenario, destroyMethods::Vector{GenericMethod}, repairMethods::Vector{GenericMethod})
 
-    event, oldSolution, visitedRoute = currentState.event, currentState.solution, currentState.visitedRoute
+    event, oldSolution, visitedRoute, totalNTaxi = currentState.event, currentState.solution, currentState.visitedRoute, currentState.totalNTaxi
 
     # Do intitial insertion
     initialSolution, newrequestBankOnline = onlineInsertion(oldSolution,event,scenario)
@@ -103,7 +101,7 @@ function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario
     println(feasible)
 
     # Run ALNS
-    finalSolution,requestBank,specification,KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",stage = "online",initialSolution =  initialSolution, requestBank = requestBank)
+    finalSolution,requestBank,specification,KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",stage = "online",initialSolution =  initialSolution, requestBank = requestBank, event = event, alreadyRejected =  totalNTaxi)
 
     # Update time window for event
     updateTimeWindowsOnlineOne!(finalSolution,event,scenario)
