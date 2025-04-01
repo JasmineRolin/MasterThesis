@@ -52,17 +52,41 @@ end
 
 
 # Main execution to handle command-line arguments
-function main()
-    if length(ARGS) < 3
-        println("Usage: julia script.jl <request_file> <vehicle_file> <name>")
-        return
+# function main()
+#     if length(ARGS) < 3
+#         println("Usage: julia script.jl <request_file> <vehicle_file> <name>")
+#         return
+#     end
+
+#     requestFile = ARGS[1]
+#     vehicleFile = ARGS[2]
+#     dataName = ARGS[3]
+
+#     getTimeDistanceMatrix(requestFile, vehicleFile, dataName)
+# end
+
+# main()
+
+
+#nVec = [20,100,300,500]
+nVec = [20]
+
+for n in nVec
+    for i in 1:10
+        println("n = ",n," i = ",i)
+        requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
+        vehicleFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
+        dataName = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i)
+        
+        getTimeDistanceMatrix(requestFile, vehicleFile, dataName)
     end
-
-    requestFile = ARGS[1]
-    vehicleFile = ARGS[2]
-    dataName = ARGS[3]
-
-    getTimeDistanceMatrix(requestFile, vehicleFile, dataName)
 end
 
-main()
+
+# files = ["Data", "06.02","09.01","16.01","23.01","30.01"]
+# for suff in files 
+#     requestFile = string("Data/Konsentra/TransformedData_",suff,".csv")
+#     vehicleFile = "Data/Konsentra/Vehicles_0.5.csv"
+#     dataName = string("Data/Matrices/Konsentra_",suff)
+#     getTimeDistanceMatrix(requestFile, vehicleFile, dataName)
+# end

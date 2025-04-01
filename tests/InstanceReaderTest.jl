@@ -188,8 +188,8 @@ end
 #     requestFile = "Data/Konsentra/TransformedData_"*suff*".csv"
 #     vehiclesFile = vehicles
 #     parametersFile = "tests/resources/Parameters.csv"
-#     distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra_Data_"*suff*".txt"
-#     timeMatrixFile =  "Data/Matrices/timeMatrix_Konsentra_Data_"*suff*".txt"
+#     distanceMatrixFile =string("Data/Matrices/Konsentra_",suff,"_distance.txt")
+#     timeMatrixFile = string("Data/Matrices/Konsentra_",suff,"_time.txt")
 #     scenarioName = string("Konsentra_",suff)
     
     
@@ -203,8 +203,8 @@ end
 
 
 n = 300
-for i in 1:10
-#i = 1
+#for i in 1:10
+i = 1
     requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
     parametersFile = "tests/resources/Parameters.csv"
@@ -214,10 +214,10 @@ for i in 1:10
     
     
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName)#,distanceMatrixFile,timeMatrixFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
     
     display(createGantChartOfRequestsAndVehicles(scenario.vehicles, scenario.requests, [],scenarioName))
     
     
-end
+#end
 

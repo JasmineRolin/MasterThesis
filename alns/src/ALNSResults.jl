@@ -22,22 +22,22 @@ function ALNSResult(specificationsFile::String,ALNSKPISFile::String,ALNSOutputFi
     KPIsTable = createKPITable(KPIS)
 
     # Cost plot 
-    costPlot = createCostPlot(ALNSOutput)
+    costPlot = createCostPlot(ALNSOutput,scenario.name)
 
     # Repair weight plot
-    repairWeightPlot = createRepairWeightPlot(ALNSOutput,specifications)
+    repairWeightPlot = createRepairWeightPlot(ALNSOutput,specifications,scenario.name)
 
     # Destroy weight plot
-    destroyWeightPlot = createDestroyWeightPlot(ALNSOutput,specifications)
+    destroyWeightPlot = createDestroyWeightPlot(ALNSOutput,specifications,scenario.name)
 
     # Temperature plot
-    temperaturePlot = createTemperaturePlot(ALNSOutput)
+    temperaturePlot = createTemperaturePlot(ALNSOutput,scenario.name)
 
     # Gant chart 
-    gantChart = createGantChartOfRequestsAndVehicles(scenario.vehicles,requests,requestBank)
+    gantChart = createGantChartOfRequestsAndVehicles(scenario.vehicles,requests,requestBank,scenario.name)
 
     # Gant chart of solution 
-    gantChartSolution = createGantChartOfSolution(solution)
+    gantChartSolution = createGantChartOfSolution(solution,scenario.name)
 
     # Display and save plots
     if displayPlots
@@ -116,7 +116,7 @@ end
 #==
  Method create plot of cost of run 
 ==#
-function createCostPlot(df::DataFrame)
+function createCostPlot(df::DataFrame,scenarioName::String)
     # Extract relevant columns
     iterations = df.Iteration
     total_cost = df.TotalCost
@@ -128,7 +128,7 @@ function createCostPlot(df::DataFrame)
     onlyImproved = isImproved .& .!isNewBest
 
     # Create the line plot for total cost
-    p = plot(iterations, total_cost, label="Total Cost", linewidth=2, color=:darkgray, xlabel="Iteration", ylabel="Total Cost", title="ALNS Total Cost Over Iterations",size=(900,500))
+    p = plot(iterations, total_cost, label="Total Cost", linewidth=2, color=:darkgray, xlabel="Iteration", ylabel="Total Cost", title=string(scenarioName," - ALNS Total Cost Over Iterations"),size=(1500,900))
 
     # Add yellow dots for accepted solutions
     scatter!(iterations[isAccepted], total_cost[isAccepted], markershape=:circle, color=:yellow, label="Accepted")
@@ -145,7 +145,7 @@ end
 #==
  Method to create plot of repair weights 
 ==#
-function createRepairWeightPlot(df::DataFrame,specifications::Dict)
+function createRepairWeightPlot(df::DataFrame,specifications::Dict,scenarioName::String)
     # Extract iteration numbers
     iterations = df.Iteration
 
@@ -155,7 +155,7 @@ function createRepairWeightPlot(df::DataFrame,specifications::Dict)
     rw_columns = filter(col -> startswith(string(col), "RW"), names(df))
 
     # Create a plot
-    p = plot(title="RW Over Iterations", xlabel="Iteration", ylabel="RW")
+    p = plot(title=string(scenarioName," - RW Over Iterations"), xlabel="Iteration", ylabel="RW")
 
     # Plot each RW column
     for (idx,col) in enumerate(rw_columns)
@@ -168,7 +168,7 @@ end
 #==
  Method to create plot of destroy weights 
 ==#
-function createDestroyWeightPlot(df::DataFrame,specifications::Dict)
+function createDestroyWeightPlot(df::DataFrame,specifications::Dict,scenarioName::String)
     # Extract iteration numbers
     iterations = df.Iteration
 
@@ -178,7 +178,7 @@ function createDestroyWeightPlot(df::DataFrame,specifications::Dict)
     rw_columns = filter(col -> startswith(string(col), "DW"), names(df))
 
     # Create a plot
-    p = plot(title="DW Over Iterations", xlabel="Iteration", ylabel="DW")
+    p = plot(title=string(scenarioName," - DW Over Iterations"), xlabel="Iteration", ylabel="DW")
 
     # Plot each RW column
     for (idx,col) in enumerate(rw_columns)
@@ -191,21 +191,21 @@ end
 #==
  Method to create plot of temperature
 ==#
-function createTemperaturePlot(df::DataFrame)
+function createTemperaturePlot(df::DataFrame,scenarioName::String)
     # Extract iteration numbers
     iterations = df.Iteration
 
 
     # Create a plot
-    p = plot(title="Temperature", xlabel="Iteration", ylabel="Temperature")
+    p = plot(title=string(scenarioName," - Temperature"), xlabel="Iteration", ylabel="Temperature")
     plot!(p, iterations, df[!, "Temperature"])
 
     return p
 end
 
 # Create gant chart of vehicles and requests
-function createGantChartOfRequestsAndVehicles(vehicles, requests, requestBank)
-    p = plot(size=(900,500))
+function createGantChartOfRequestsAndVehicles(vehicles, requests, requestBank,scenarioName)
+    p = plot(size=(1500,900))
     yPositions = []
     yLabels = []
     yPos = 1
@@ -215,9 +215,9 @@ function createGantChartOfRequestsAndVehicles(vehicles, requests, requestBank)
         tw = vehicle.availableTimeWindow
 
         if idx == 1
-            plot!([tw.startTime, tw.endTime], [yPos, yPos], linewidth=5, label="Vehicle TW", color=:blue)
+            plot!([tw.startTime, tw.endTime], [yPos, yPos], linewidth=5, label="Vehicle TW", color=:black)
         else
-            plot!([tw.startTime, tw.endTime], [yPos, yPos], linewidth=5,label="", color=:blue)
+            plot!([tw.startTime, tw.endTime], [yPos, yPos], linewidth=5,label="", color=:black)
         end
         push!(yPositions, yPos)
         push!(yLabels, "Vehicle $(vehicle.id)")
@@ -232,7 +232,7 @@ function createGantChartOfRequestsAndVehicles(vehicles, requests, requestBank)
         
         # Determine color based on whether request is serviced
         unServiced = request.id in requestBank
-        colorPickup = unServiced ? :yellow : :green
+        colorPickup = unServiced ? :red : :blue
         colorDropoff = unServiced ? :orange : :purple
 
         # Plot pickup and dropoff window as a bar
@@ -258,14 +258,14 @@ function createGantChartOfRequestsAndVehicles(vehicles, requests, requestBank)
     
     plot!(p, yticks=(yPositions, yLabels))
     xlabel!("Time (Minutes after Midnight)")
-    title!("Vehicle Availability and Request Time Windows")
+    title!(string(scenarioName," - Vehicle Availability and Request Time Windows"))
 
     return p
 end
 
 # Plot vehicle schedules 
 # Define a function to plot activity assignments for each vehicle
-function createGantChartOfSolution(solution::Solution)
+function createGantChartOfSolution(solution::Solution,scenarioName::String)
     yPositions = []
     yLabels = []
     yPos = 1
@@ -294,7 +294,7 @@ function createGantChartOfSolution(solution::Solution)
     
     plot!(p, yticks=(yPositions, yLabels))
     xlabel!("Time (Minutes after Midnight)")
-    title!("Activity Assignments for Vehicles")
+    title!(string(scenarioName," - Activity Assignments for Vehicles"))
     
     return p
 end

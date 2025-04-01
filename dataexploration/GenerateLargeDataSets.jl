@@ -12,7 +12,7 @@ global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 2*60 # 2 hours buffer
 global nData = 10
-global nRequest = 500 
+global nRequest = 20 
 
 #==
 # Get old data
@@ -85,6 +85,7 @@ end
 #==
 # Get request time distribution
 ==#
+# TODO: adjust bandwith
 function getRequestTimeDistribution(requestTimePickUp::Vector{Int}, requestTimeDropOff::Vector{Int}, time_range::Vector{Int})
     # PICK UP TIME KDE
     kde_pickUpTime = KernelDensity.kde(requestTimePickUp)

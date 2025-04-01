@@ -180,12 +180,12 @@ end
 # ------
 # Process all sheets from both Excel files
 # ------
-# for sheet in sheets_5days
-#    dfTransformed = transformData(sheet, "Data/Konsentra/Data5DaysMarch2018.xlsx")
-#    CSV.write("Data/Konsentra/TransformedData_$sheet.csv", dfTransformed)
-# end
+for sheet in sheets_5days
+   dfTransformed = transformData(sheet, "Data/Konsentra/Data5DaysMarch2018.xlsx")
+   CSV.write("Data/Konsentra/TransformedData_$sheet.csv", dfTransformed)
+end
 
-# for sheet in sheets_data
-#    dfTransformed = transformData(sheet, "Data/Konsentra/Data.xlsx")
-#    CSV.write("Data/Konsentra/TransformedData_$sheet.csv", dfTransformed)
-# end
+for sheet in sheets_data
+   dfTransformed = transformData(sheet, "Data/Konsentra/Data.xlsx")
+   CSV.write("Data/Konsentra/TransformedData_$sheet.csv", dfTransformed)
+end

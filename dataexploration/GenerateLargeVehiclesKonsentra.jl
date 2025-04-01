@@ -9,7 +9,7 @@ using Random
 # Constants
 # --------
 global maxRideTimeRatio = 1
-global Gamma = 0.5
+global Gamma = 1
 global nWalking = 4
 
 # ------
