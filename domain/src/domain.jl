@@ -38,6 +38,8 @@ using .Requests
 export Request,RequestType,PICKUP,DROPOFF,WALKING
 export findTimeWindowOfRequestedPickUpTime, findTimeWindowOfDropOff, findTimeWindowOfRequestedDropOffTime, findTimeWindowOfPickUp
 export findMaximumRideTime
+export MAX_DELAY, MAX_EARLY_ARRIVAL
+
 
 
 #==

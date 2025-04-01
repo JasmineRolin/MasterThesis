@@ -1,6 +1,6 @@
 using Test 
 using Dates
-using utils 
+using utils, domain
 
 
 
@@ -105,7 +105,7 @@ using utils
 using Plots
 # Create gant chart of vehicles and requests
 function createGantChartOfRequestsAndVehicles(vehicles, requests, requestBank,titleString)
-    p = plot(size=(1600,900))
+    p = plot(size=(2000,1200))
     yPositions = []
     yLabels = []
     yPos = 1
@@ -136,22 +136,23 @@ function createGantChartOfRequestsAndVehicles(vehicles, requests, requestBank,ti
         dropoffTW = request.dropOffActivity.timeWindow
         
         # Determine color based on whether request is serviced
-        unServiced = request.id in requestBank
-        colorPickup = unServiced ? :yellow : :green
-        colorDropoff = unServiced ? :orange : :purple
+        offline = request.callTime == 0 #request.id in requestBank
+        colorPickup = offline ? :grey : :palegreen
+        colorDropoff = offline ? :black : :green
+        marker = request.requestType == PICKUP_REQUEST ? :circle : :square
 
         # Plot pickup and dropoff window as a bar
-        if unServiced && !legendUnserviced
+        if offline && !legendUnserviced
             legendUnserviced = true
-            plot!([pickupTW.startTime, pickupTW.endTime], [yPos, yPos], linewidth=5, label="Unserviced Pickup TW", color=colorPickup)
-            plot!([dropoffTW.startTime, dropoffTW.endTime], [yPos, yPos], linewidth=5, label="Unserviced Dropoff TW", color=colorDropoff)
-        elseif !unServiced && !legendServiced
+            plot!([pickupTW.startTime, pickupTW.endTime], [yPos, yPos], linewidth=5, label="offline Pickup TW", color=colorPickup,marker = marker)
+            plot!([dropoffTW.startTime, dropoffTW.endTime], [yPos, yPos], linewidth=5, label="offline Dropoff TW", color=colorDropoff, marker = marker)
+        elseif !offline && !legendServiced
             legendServiced = true
-            plot!([pickupTW.startTime, pickupTW.endTime], [yPos, yPos], linewidth=5, label="Serviced Pickup TW", color=colorPickup)
-            plot!([dropoffTW.startTime, dropoffTW.endTime], [yPos, yPos], linewidth=5, label="Serviced Dropoff TW", color=colorDropoff)
+            plot!([pickupTW.startTime, pickupTW.endTime], [yPos, yPos], linewidth=5, label="Online Pickup TW", color=colorPickup,marker = marker)
+            plot!([dropoffTW.startTime, dropoffTW.endTime], [yPos, yPos], linewidth=5, label="Online Dropoff TW", color=colorDropoff,marker = marker)
         else
-            plot!([pickupTW.startTime, pickupTW.endTime], [yPos, yPos], linewidth=5, label="", color=colorPickup)
-            plot!([dropoffTW.startTime, dropoffTW.endTime], [yPos, yPos], linewidth=5,label="", color=colorDropoff)
+            plot!([pickupTW.startTime, pickupTW.endTime], [yPos, yPos], linewidth=5, label="", color=colorPickup,marker = marker)
+            plot!([dropoffTW.startTime, dropoffTW.endTime], [yPos, yPos], linewidth=5,label="", color=colorDropoff,marker = marker)
         end 
 
       
@@ -170,19 +171,40 @@ end
 
 
 
-# requestFiles = [
-#     "Data/Konsentra/TransformedData_30.01.csv",
-#     "Data/Konsentra/TransformedData_06.02.csv",
-#     "Data/Konsentra/TransformedData_09.01.csv",
-#     "Data/Konsentra/TransformedData_16.01.csv",
-#     "Data/Konsentra/TransformedData_23.01.csv",
-#     "Data/Konsentra/TransformedData_Data.csv"
+# suffix = [
+#     "30.01",
+#     "06.02",
+#     "09.01",
+#     "16.01",
+#     "23.01",
+#     "Data"
 # ]
 
 # vehicles = "Data/Konsentra/Vehicles_0.5.csv"
 
- n = 100
+
+# n = 100
+# for suff in suffix
+#     requestFile = "Data/Konsentra/TransformedData_"*suff*".csv"
+#     vehiclesFile = vehicles
+#     parametersFile = "tests/resources/Parameters.csv"
+#     distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra_Data_"*suff*".txt"
+#     timeMatrixFile =  "Data/Matrices/timeMatrix_Konsentra_Data_"*suff*".txt"
+#     scenarioName = string("Konsentra_",suff)
+    
+    
+#     # Read instance 
+#     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
+    
+#     display(createGantChartOfRequestsAndVehicles(scenario.vehicles, scenario.requests, [],scenarioName))
+    
+    
+# end
+
+
+n = 500
 for i in 1:10
+#i = 1
     requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
     parametersFile = "tests/resources/Parameters.csv"
@@ -192,7 +214,7 @@ for i in 1:10
     
     
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName)#,distanceMatrixFile,timeMatrixFile)
     
     display(createGantChartOfRequestsAndVehicles(scenario.vehicles, scenario.requests, [],scenarioName))
     

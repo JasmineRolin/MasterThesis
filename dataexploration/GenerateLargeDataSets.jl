@@ -11,7 +11,7 @@ global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 2*60 # 2 hours buffer
 global nData = 10
-global nRequest = 100 
+global nRequest = 500 
 
 #==
 # Get old data
@@ -51,22 +51,29 @@ end
 #==
 # Function to get new locations from a kernel density estimate (KDE)
 ==#
-function getLocationDistribution(location_matrix::Array{Float64, 2}, x_range::Vector{Float64}, y_range::Vector{Float64})
+function getLocationDistribution(location_matrix::Array{Float64, 2})#, x_range::Vector{Float64}, y_range::Vector{Float64})
     # Perform Kernel Density Estimation (KDE) in 2D
-    kde = KernelDensity.kde(location_matrix)
+    kde = KernelDensity.kde((location_matrix[:,1], location_matrix[:,2]))
 
     # Create a density grid
-    x_range = range(minimum(x_range), stop=maximum(x_range), length=200)
-    y_range = range(minimum(y_range), stop=maximum(y_range), length=200)
-    density_grid = [pdf(kde, x, y) for x in x_range, y in y_range]
-    epsilon = 0 #0.0001
-    density_grid = density_grid .+ epsilon
-    probabilities = vec(density_grid) / sum(density_grid)    
+    # x_range = range(minimum(x_range), stop=maximum(x_range), length=200)
+    # y_range = range(minimum(y_range), stop=maximum(y_range), length=200)
 
-    return probabilities, density_grid
+    density_grid = kde.density' # Transpose #[pdf(kde, x, y) for x in x_range, y in y_range]
+
+    epsilon = 0.0001
+    density_grid = density_grid .+ epsilon
+    dx = step(kde.x)  # Difference between consecutive points
+    dy = step(kde.y)
+    probabilities = vec(density_grid) * dx * dy / sum(density_grid * dx * dy)
+
+    x_range = collect(kde.x)
+    y_range = collect(kde.y)
+
+    return probabilities, density_grid, x_range, y_range
 end
 
-function getNewLocations( probabilities::Vector{Float64},x_range::Vector{Float64}, y_range::Vector{Float64})
+function getNewLocations(probabilities::Vector{Float64},x_range::Vector{Float64}, y_range::Vector{Float64})
     # Sample locations based on probabilities
     sampled_indices = sample(1:length(probabilities), Weights(probabilities), 2)
     sampled_locations = [ (x_range[(i - 1) ÷ length(y_range) + 1], y_range[(i - 1) % length(y_range) + 1]) for i in sampled_indices]
@@ -77,11 +84,11 @@ end
 #==
 # Get request time distribution
 ==#
-function getRequestTimeDistribution(requestTimePickUp::Array{Int}, requestTimeDropOff::Array{Int}, time_range::Vector{Int})
+function getRequestTimeDistribution(requestTimePickUp::Vector{Int}, requestTimeDropOff::Vector{Int}, time_range::Vector{Int})
     # PICK UP TIME KDE
     kde_pickUpTime = KernelDensity.kde(requestTimePickUp)
     density_values_pickUp = [pdf(kde_pickUpTime, t) for t in time_range]
-    epsilon = 0.0007
+    epsilon = 0.0001
     density_values_pickUp = density_values_pickUp .+ epsilon
     probabilities_pickUpTime = density_values_pickUp / sum(density_values_pickUp)
 
@@ -92,11 +99,7 @@ function getRequestTimeDistribution(requestTimePickUp::Array{Int}, requestTimeDr
     density_values_dropOff = density_values_dropOff .+ epsilon
     probabilities_dropOffTime = density_values_dropOff / sum(density_values_dropOff)
 
-    # Get density
-    density_pickUp = [pdf(kde_pickUpTime, t) for t in time_range]
-    density_dropOff = [pdf(kde_dropOffTime, t) for t in time_range]
-
-    return probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff
+    return probabilities_pickUpTime, probabilities_dropOffTime, density_values_pickUp, density_values_dropOff
 end
 
 
@@ -119,23 +122,36 @@ function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, p
 
     # Loop to generate samples
     for i in 1:nSample
+        # Sample new location based on KDE probabilities
+        sampled_location = getNewLocations(probabilities_location, x_range, y_range)
+        pickup_longitude, pickup_latitude = sampled_location[1]
+        dropoff_longitude, dropoff_latitude = sampled_location[2]
+
+
         # Determine type of request
         if rand() < 0.5
             requestType = 0  # pick-up request
+
             sampled_indices = sample(1:length(probabilities_pickUpTime), Weights(probabilities_pickUpTime), 1)
             sampledTimePick = time_range[sampled_indices]
             requestTime = sampledTimePick[1]
         else
             requestType = 1  # drop-off request
-            sampled_indices = sample(1:length(probabilities_dropOffTime), Weights(probabilities_dropOffTime), 1)
-            sampledTimeDrop = time_range[sampled_indices]
+
+            # Direct drive time 
+            directDriveTime = ceil(haversine_distance(pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude)[2])
+
+            # Earliest request time 
+            earliestRequestTime = serviceWindow[1] + directDriveTime + MAX_DELAY
+            indices = time_range .>= earliestRequestTime
+            nTimes = sum(indices)
+
+            sampled_indices = sample(1:nTimes, Weights(probabilities_dropOffTime[indices]), 1)
+            sampledTimeDrop = time_range[indices][sampled_indices]
             requestTime = sampledTimeDrop[1]
         end
 
-        # Sample new location based on KDE probabilities
-        sampled_location = getNewLocations(probabilities_location, x_range, y_range)
-        pickup_longitude, pickup_latitude = sampled_location[1]
-        dropoff_longitude, dropoff_latitude = sampled_location[2]
+        
 
         # Append results for the request
         push!(results, (i, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, requestType, requestTime,"WALKING",0,0))
@@ -189,6 +205,8 @@ function generateDataSets(nRequest,probabilities_pickUpTime, probabilities_dropO
         end
 
     end
+
+    return newDataList, df_list
 end
 
 
@@ -205,6 +223,77 @@ function generateVehicles(shifts,df_list, probabilities_location, x_range, y_ran
     generateVehiclesKonsentra(shifts, locations,"Data/Konsentra/"*string(nRequest)*"/Vehicles_"*string(nRequest)*".csv")
 end
 
+
+#================================================#
+# Generate data 
+#================================================#
+# Load your old data locations and time
+location_matrix, requestTimePickUp, requestTimeDropOff = getOldData([
+    "Data/Konsentra/TransformedData_30.01.csv",
+    "Data/Konsentra/TransformedData_06.02.csv",
+    "Data/Konsentra/TransformedData_09.01.csv",
+    "Data/Konsentra/TransformedData_16.01.csv",
+    "Data/Konsentra/TransformedData_23.01.csv",
+    "Data/Konsentra/TransformedData_Data.csv"
+])
+
+# Set probabilities and time range
+time_range = collect(range(6*60,23*60))
+#x_range = collect(range(minimum(location_matrix[:,1]), maximum(location_matrix[:,1]), length=200))  
+#y_range = collect(range(minimum(location_matrix[:,2]), maximum(location_matrix[:,2]), length=200))  
+
+# Find time and location distributions
+probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff = getRequestTimeDistribution(requestTimePickUp, requestTimeDropOff, time_range)
+probabilities_location, density_grid, x_range, y_range = getLocationDistribution(location_matrix)#, x_range, y_range)
+
+# Generate request data 
+newDataList, df_list = generateDataSets(nRequest,probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range)
+
+
+# Generate vehicles
+shifts = Dict(
+    "Morning"    => Dict("TimeWindow" => [6*60, 10*60], "cost" => 2.0, "nVehicles" => 0, "y" => []),
+    "Noon"       => Dict("TimeWindow" => [9*60, 14*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
+    "Afternoon"  => Dict("TimeWindow" => [13*60, 19*60], "cost" => 3.0, "nVehicles" => 0, "y" => []),
+    "Evening"    => Dict("TimeWindow" => [18*60, 24*60], "cost" => 4.0, "nVehicles" => 0, "y" => [])
+)
+generateVehicles(shifts,df_list, probabilities_location, x_range, y_range)
+
+
+# Visualize results 
+p1 = heatmap(x_range, y_range, -density_grid, xlabel="Longitude", ylabel="Latitude", title="Location Density Map",c = :RdYlGn,colorbar=false)
+scatter!(location_matrix[:,1], location_matrix[:,2], marker=:circle, label="New Locations", color=:blue,markersize=2)
+display(p1)
+
+# Plot request time distribution 
+requestTimePickUp_hours = requestTimePickUp ./ 60
+time_range_hours = time_range ./ 60
+probabilities_pickUpTime_scaled = probabilities_pickUpTime .* 60
+p2 = histogram(requestTimePickUp_hours, normalize=:pdf, label="Histogram of Given Data", color=:blue)
+plot!(time_range_hours, probabilities_pickUpTime_scaled, label="Probability Distribution From KDE", linewidth=2, linestyle=:solid, color=:red)
+vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+title!("Pick-up Time Distribution")
+xlabel!("Time (Hours)")
+ylabel!("Probability Density")
+display(p2)
+
+# # Plot histogram and KDE for drop-off time
+requestTimeDropOff_hours = requestTimeDropOff ./ 60
+time_range_hours = time_range ./ 60
+probabilities_dropOffTime_scaled = probabilities_dropOffTime .* 60
+p3 = histogram(requestTimeDropOff_hours, normalize=:pdf, label="Histogram of Given Data", color=:blue)
+plot!(time_range_hours, probabilities_dropOffTime_scaled, label="Probability Distribution From KDE", linewidth=2, linestyle=:solid, color=:red)
+vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+title!("Drop-off Time Distribution")
+xlabel!("Time (Hours)")
+ylabel!("Probability Density")
+display(p3)
+
+#================================================#
+# New data 
+#================================================#
 # newDataList = [ "Data/Konsentra/100/GeneratedRequests_100_1.csv",
 # "Data/Konsentra/100/GeneratedRequests_100_2.csv",
 # "Data/Konsentra/100/GeneratedRequests_100_3.csv",
@@ -216,102 +305,43 @@ end
 # "Data/Konsentra/100/GeneratedRequests_100_9.csv",
 # "Data/Konsentra/100/GeneratedRequests_100_10.csv"]
 
-#================================================#
-# Generate data 
-#================================================#
-# Set probabilities and time range
-time_range = collect(range(6*60,23*60))
-x_range = collect(range(minimum(location_matrix[:,1]), maximum(location_matrix[:,1]), length=200))  
-y_range = collect(range(minimum(location_matrix[:,2]), maximum(location_matrix[:,2]), length=200))  
+location_matrix_new, requestTimePickUp_new, requestTimeDropOff_new = getOldData(newDataList)
+#x_range_new = collect(range(minimum(location_matrix_new[:,1]), maximum(location_matrix_new[:,1]), length=200))  
+#y_range_new = collect(range(minimum(location_matrix_new[:,2]), maximum(location_matrix_new[:,2]), length=200))  
 
-probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff = getRequestTimeDistribution(requestTimePickUp, requestTimeDropOff, time_range)
-probabilities_location, density_grid = getLocationDistribution(location_matrix, x_range, y_range)
-
-# Generate data 
-generateDataSets(nRequest,probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range)
-
-# Generate vehicles
-generateVehicles(shifts,df_list, probabilities_location, x_range, y_range)
-
-
-#== 
-# Generate requests and save to CSV
-==#
-# Load your old data locations and time
-location_matrix, requestTimePickUp, requestTimeDropOff = getOldData([
-    "Data/Konsentra/TransformedData_30.01.csv",
-    "Data/Konsentra/TransformedData_06.02.csv",
-    "Data/Konsentra/TransformedData_09.01.csv",
-    "Data/Konsentra/TransformedData_16.01.csv",
-    "Data/Konsentra/TransformedData_23.01.csv",
-    "Data/Konsentra/TransformedData_Data.csv"
-])
-
-
-
-# Visualize results 
-p1 = heatmap(x_range, y_range, -density_grid, xlabel="Longitude", ylabel="Latitude", title="Location Density Map",c = :RdYlGn,colorbar=false)
-scatter!(location_matrix[:,1], location_matrix[:,2], marker=:circle, label="New Locations", color=:blue)
-# scatter!(results.pickup_longitude, results.pickup_latitude, marker=:circle, label="New Locations", color=:blue)
-# scatter!(results.dropoff_longitude, results.dropoff_latitude, marker=:circle, label="New Locations", color=:red)
-display(p1)
+probabilities_pickUpTime_new, probabilities_dropOffTime_new, density_pickUp_new, density_dropOff_new = getRequestTimeDistribution(requestTimePickUp_new, requestTimeDropOff_new, time_range)
+probabilities_location_new, density_grid_new,x_range_new,y_range_new = getLocationDistribution(location_matrix_new)#, x_range_new, y_range_new)
 
 # Plot request time distribution 
-# requestTimePickUp_hours = requestTimePickUp ./ 60
-# time_range_hours = time_range ./ 60
-# #probabilities_pickUpTime_scaled = probabilities_pickUpTime .* 60
-# p2 = histogram(requestTimePickUp_hours, normalize=:pdf, label="Histogram of Given Data", color=:blue)
-# #plot!(time_range_hours, probabilities_pickUpTime_scaled, label="Probability Distribution From KDE", linewidth=2, linestyle=:solid, color=:red)
-# title!("Pick-up Time Distribution")
-# xlabel!("Time (Hours)")
-# ylabel!("Probability Density")
-# display(p2)
+requestTimePickUp_hours_new = requestTimePickUp_new ./ 60
+probabilities_pickUpTime_scaled_new = probabilities_pickUpTime_new .* 60
+p4 = histogram(requestTimePickUp_hours_new, normalize=:pdf, label="Histogram of Given Data", color=:blue)
+plot!(time_range_hours, probabilities_pickUpTime_scaled_new, label="Probability Distribution From KDE", linewidth=2, linestyle=:solid, color=:red)
+vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+title!("Pick-up Time Distribution NEW")
+xlabel!("Time (Hours)")
+ylabel!("Probability Density")
+display(p4)
 
-# # Plot histogram and KDE for drop-off time
-# requestTimeDropOff_hours = requestTimeDropOff ./ 60
-# time_range_hours = time_range ./ 60
-# #probabilities_dropOffTime_scaled = probabilities_dropOffTime .* 60
-# p3 = histogram(requestTimeDropOff_hours, normalize=:pdf, label="Histogram of Given Data", color=:blue)
-# #plot!(time_range_hours, probabilities_dropOffTime_scaled, label="Probability Distribution From KDE", linewidth=2, linestyle=:solid, color=:red)
-# title!("Drop-off Time Distribution")
-# xlabel!("Time (Hours)")
-# ylabel!("Probability Density")
-# display(p3)
-
-#================================================#
-# New data 
-#================================================#
-location_matrix_new, requestTimePickUpNew, requestTimeDropOffNew = getOldData(newDataList)
-x_range_new = collect(range(minimum(location_matrix_new[:,1]), maximum(location_matrix_new[:,1]), length=200))  
-y_range_new = collect(range(minimum(location_matrix_new[:,2]), maximum(location_matrix_new[:,2]), length=200))  
-probabilities_location_new, density_grid_new = getLocationDistribution(location_matrix_new, x_range_new, y_range_new)
-
-# Plot request time distribution 
-# requestTimePickUp_hours_new = requestTimePickUpNew ./ 60
-# #probabilities_pickUpTime_scaled = probabilities_pickUpTime .* 60
-# p4 = histogram(requestTimePickUp_hours_new, normalize=:pdf, label="Histogram of Given Data", color=:blue)
-# #plot!(time_range_hours, probabilities_pickUpTime_scaled, label="Probability Distribution From KDE", linewidth=2, linestyle=:solid, color=:red)
-# title!("Pick-up Time Distribution NEW")
-# xlabel!("Time (Hours)")
-# ylabel!("Probability Density")
-# display(p4)
-
-# # Plot histogram and KDE for drop-off time
-# requestTimeDropOff_hours_new = requestTimeDropOffNew ./ 60
-# #probabilities_dropOffTime_scaled = probabilities_dropOffTime .* 60
-# p5 = histogram(requestTimeDropOff_hours_new, normalize=:pdf, label="Histogram of Given Data", color=:blue)
-# #plot!(time_range_hours, probabilities_dropOffTime_scaled, label="Probability Distribution From KDE", linewidth=2, linestyle=:solid, color=:red)
-# title!("Drop-off Time Distribution NEW")
-# xlabel!("Time (Hours)")
-# ylabel!("Probability Density")
-# display(p5)
+# Plot histogram and KDE for drop-off time
+requestTimeDropOff_hours_new = requestTimeDropOff_new ./ 60
+probabilities_dropOffTime_scaled_new = probabilities_dropOffTime_new .* 60
+p5 = histogram(requestTimeDropOff_hours_new, normalize=:pdf, label="Histogram of Given Data", color=:blue)
+plot!(time_range_hours, probabilities_dropOffTime_scaled_new, label="Probability Distribution From KDE", linewidth=2, linestyle=:solid, color=:red)
+vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+title!("Drop-off Time Distribution NEW")
+xlabel!("Time (Hours)")
+ylabel!("Probability Density")
+display(p5)
 
 p6 = heatmap(x_range_new, y_range_new, -density_grid_new, xlabel="Longitude", ylabel="Latitude", title="Location Density Map NEW",c = :RdYlGn,colorbar=false)
-scatter!(location_matrix_new[:,1], location_matrix_new[:,2], marker=:circle, label="New Locations", color=:blue)
+scatter!(location_matrix_new[:,1], location_matrix_new[:,2], marker=:circle, label="New Locations", color=:blue,markersize=2)
 display(p6)
 
 
 
 
-p6 = heatmap(x_range, y_range, -density_grid, xlabel="Longitude", ylabel="Latitude", title="Location Density Map NEW",c = :RdYlGn,colorbar=false)
-scatter!(location_matrix_new[:,1], location_matrix_new[:,2], marker=:circle, label="New Locations", color=:blue)
+# p6 = heatmap(x_range, y_range, -density_grid, xlabel="Longitude", ylabel="Latitude", title="Location Density Map NEW",c = :RdYlGn,colorbar=false)
+# scatter!(location_matrix_new[:,1], location_matrix_new[:,2], marker=:circle, label="New Locations", color=:blue)

@@ -2,7 +2,7 @@ module DistanceUtils
 
 using PyCall, DataFrames, CSV,domain
 
-export getDistanceAndTimeMatrix,getDistanceAndTimeMatrixFromLocations
+export getDistanceAndTimeMatrix,getDistanceAndTimeMatrixFromLocations,haversine_distance
 
 #==
  Function to read or calculate distance and time matrix
