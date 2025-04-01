@@ -11,6 +11,7 @@ global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 2*60 # 2 hours buffer
 global nData = 10
+global nRequest = 100 
 
 #==
 # Get old data
@@ -58,7 +59,7 @@ function getLocationDistribution(location_matrix::Array{Float64, 2}, x_range::Ve
     x_range = range(minimum(x_range), stop=maximum(x_range), length=200)
     y_range = range(minimum(y_range), stop=maximum(y_range), length=200)
     density_grid = [pdf(kde, x, y) for x in x_range, y in y_range]
-    epsilon = 0.0001
+    epsilon = 0 #0.0001
     density_grid = density_grid .+ epsilon
     probabilities = vec(density_grid) / sum(density_grid)    
 
@@ -153,6 +154,86 @@ function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, p
     return results
 end
 
+
+function generateDataSets(nRequest,probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range)
+    df_list = []
+    newDataList = Vector{String}()  
+    for i in 1:nData
+
+        # Make requests and save to CSV
+        output_file = "Data/Konsentra/"*string(nRequest)*"/GeneratedRequests_"*string(nRequest)*"_" * string(i) * ".csv"
+        push!(newDataList, output_file)
+        retry_count = 0
+        while retry_count < 5
+            try
+                # Call the function that may throw the error
+                results = makeRequests(nRequest, probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range, output_file)
+                
+                println("Request generation succeeded!")
+                push!(df_list,results)
+                break  # Exit the loop if successful
+        
+            catch e
+                if occursin("Degree of dynamism too low", sprint(showerror, e))
+                    retry_count += 1
+                    println("Error encountered: ", e)
+                    println("Retrying... Attempt: ", retry_count)
+                    sleep(1)  # Optional: Wait a second before retrying
+                else
+                    rethrow(e)  # Let other errors propagate
+                end
+            end
+            if retry_count == 5
+                println("Failed after 5 attempts. Exiting.")
+            end
+        end
+
+    end
+end
+
+
+# Generate vehicles
+function generateVehicles(shifts,df_list, probabilities_location, x_range, y_range)
+    computeShiftCoverage!(shifts)
+    average_demand_per_hour = generateAverageDemandPerHour(df_list)
+    generateNumberOfVehiclesKonsentra!(average_demand_per_hour, shifts)
+    locations = []
+    total_nVehicles = sum(shift["nVehicles"] for shift in values(shifts))
+    for i in 1:total_nVehicles
+        push!(locations,getNewLocations(probabilities_location,x_range, y_range)[1])
+    end
+    generateVehiclesKonsentra(shifts, locations,"Data/Konsentra/"*string(nRequest)*"/Vehicles_"*string(nRequest)*".csv")
+end
+
+# newDataList = [ "Data/Konsentra/100/GeneratedRequests_100_1.csv",
+# "Data/Konsentra/100/GeneratedRequests_100_2.csv",
+# "Data/Konsentra/100/GeneratedRequests_100_3.csv",
+# "Data/Konsentra/100/GeneratedRequests_100_4.csv",
+# "Data/Konsentra/100/GeneratedRequests_100_5.csv",
+# "Data/Konsentra/100/GeneratedRequests_100_6.csv",
+# "Data/Konsentra/100/GeneratedRequests_100_7.csv",
+# "Data/Konsentra/100/GeneratedRequests_100_8.csv",
+# "Data/Konsentra/100/GeneratedRequests_100_9.csv",
+# "Data/Konsentra/100/GeneratedRequests_100_10.csv"]
+
+#================================================#
+# Generate data 
+#================================================#
+# Set probabilities and time range
+time_range = collect(range(6*60,23*60))
+x_range = collect(range(minimum(location_matrix[:,1]), maximum(location_matrix[:,1]), length=200))  
+y_range = collect(range(minimum(location_matrix[:,2]), maximum(location_matrix[:,2]), length=200))  
+
+probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff = getRequestTimeDistribution(requestTimePickUp, requestTimeDropOff, time_range)
+probabilities_location, density_grid = getLocationDistribution(location_matrix, x_range, y_range)
+
+# Generate data 
+generateDataSets(nRequest,probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range)
+
+# Generate vehicles
+generateVehicles(shifts,df_list, probabilities_location, x_range, y_range)
+
+
 #== 
 # Generate requests and save to CSV
 ==#
@@ -167,81 +248,70 @@ location_matrix, requestTimePickUp, requestTimeDropOff = getOldData([
 ])
 
 
-# Set probabilities and time range
-time_range = collect(range(6*60,23*60))
-x_range = collect(range(minimum(location_matrix[:,1]), maximum(location_matrix[:,1]), length=200))  
-y_range = collect(range(minimum(location_matrix[:,2]), maximum(location_matrix[:,2]), length=200))  
-
-probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff = getRequestTimeDistribution(requestTimePickUp, requestTimeDropOff, time_range)
-probabilities_location, density_grid = getLocationDistribution(location_matrix, x_range, y_range)
-
-df_list = []
-for i in 1:nData
-
-    # Make requests and save to CSV
-    output_file = "Data/Konsentra/100/GeneratedRequests_100_" * string(i) * ".csv"
-    retry_count = 0
-    while retry_count < 5
-        try
-            # Call the function that may throw the error
-            results = makeRequests(100, probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range, output_file)
-            
-            println("Request generation succeeded!")
-            push!(df_list,results)
-            break  # Exit the loop if successful
-    
-        catch e
-            if occursin("Degree of dynamism too low", sprint(showerror, e))
-                retry_count += 1
-                println("Error encountered: ", e)
-                println("Retrying... Attempt: ", retry_count)
-                sleep(1)  # Optional: Wait a second before retrying
-            else
-                rethrow(e)  # Let other errors propagate
-            end
-        end
-        if retry_count == 5
-            println("Failed after 5 attempts. Exiting.")
-        end
-    end
-
-end
-
-
-# Generate vehicles
-computeShiftCoverage!(shifts)
-average_demand_per_hour = generateAverageDemandPerHour(df_list)
-generateNumberOfVehiclesKonsentra!(average_demand_per_hour, shifts)
-locations = []
-total_nVehicles = sum(shift["nVehicles"] for shift in values(shifts))
-for i in 1:total_nVehicles
-    push!(locations,getNewLocations( probabilities_location,x_range, y_range)[1])
-end
-generateVehiclesKonsentra(shifts, locations,"Data/Konsentra/20/Vehicles_20.csv")
-
 
 # Visualize results 
-heatmap(x_range, y_range, -density_grid, xlabel="Longitude", ylabel="Latitude", title="Location Density Map",c = :RdYlGn,colorbar=false)
-#scatter!(results.pickup_longitude, results.pickup_latitude, marker=:circle, label="New Locations", color=:blue)
-#scatter!(results.dropoff_longitude, results.dropoff_latitude, marker=:circle, label="New Locations", color=:red)
-
+p1 = heatmap(x_range, y_range, -density_grid, xlabel="Longitude", ylabel="Latitude", title="Location Density Map",c = :RdYlGn,colorbar=false)
+scatter!(location_matrix[:,1], location_matrix[:,2], marker=:circle, label="New Locations", color=:blue)
+# scatter!(results.pickup_longitude, results.pickup_latitude, marker=:circle, label="New Locations", color=:blue)
+# scatter!(results.dropoff_longitude, results.dropoff_latitude, marker=:circle, label="New Locations", color=:red)
+display(p1)
 
 # Plot request time distribution 
-requestTimePickUp_hours = requestTimePickUp ./ 60
-time_range_hours = time_range ./ 60
-probabilities_pickUpTime_scaled = probabilities_pickUpTime .* 60
-histogram(requestTimePickUp_hours, normalize=:pdf, label="Histogram of Given Data", color=:blue)
-plot!(time_range_hours, probabilities_pickUpTime_scaled, label="Probability Distribution From KDE", linewidth=2, linestyle=:solid, color=:red)
-title!("Pick-up Time Distribution")
-xlabel!("Time (Hours)")
-ylabel!("Probability Density")
+# requestTimePickUp_hours = requestTimePickUp ./ 60
+# time_range_hours = time_range ./ 60
+# #probabilities_pickUpTime_scaled = probabilities_pickUpTime .* 60
+# p2 = histogram(requestTimePickUp_hours, normalize=:pdf, label="Histogram of Given Data", color=:blue)
+# #plot!(time_range_hours, probabilities_pickUpTime_scaled, label="Probability Distribution From KDE", linewidth=2, linestyle=:solid, color=:red)
+# title!("Pick-up Time Distribution")
+# xlabel!("Time (Hours)")
+# ylabel!("Probability Density")
+# display(p2)
 
-# Plot histogram and KDE for drop-off time
-requestTimeDropOff_hours = requestTimeDropOff ./ 60
-time_range_hours = time_range ./ 60
-probabilities_dropOffTime_scaled = probabilities_dropOffTime .* 60
-histogram(requestTimeDropOff_hours, normalize=:pdf, label="Histogram of Given Data", color=:blue)
-plot!(time_range_hours, probabilities_dropOffTime_scaled, label="Probability Distribution From KDE", linewidth=2, linestyle=:solid, color=:red)
-title!("Drop-off Time Distribution")
-xlabel!("Time (Hours)")
-ylabel!("Probability Density")
+# # Plot histogram and KDE for drop-off time
+# requestTimeDropOff_hours = requestTimeDropOff ./ 60
+# time_range_hours = time_range ./ 60
+# #probabilities_dropOffTime_scaled = probabilities_dropOffTime .* 60
+# p3 = histogram(requestTimeDropOff_hours, normalize=:pdf, label="Histogram of Given Data", color=:blue)
+# #plot!(time_range_hours, probabilities_dropOffTime_scaled, label="Probability Distribution From KDE", linewidth=2, linestyle=:solid, color=:red)
+# title!("Drop-off Time Distribution")
+# xlabel!("Time (Hours)")
+# ylabel!("Probability Density")
+# display(p3)
+
+#================================================#
+# New data 
+#================================================#
+location_matrix_new, requestTimePickUpNew, requestTimeDropOffNew = getOldData(newDataList)
+x_range_new = collect(range(minimum(location_matrix_new[:,1]), maximum(location_matrix_new[:,1]), length=200))  
+y_range_new = collect(range(minimum(location_matrix_new[:,2]), maximum(location_matrix_new[:,2]), length=200))  
+probabilities_location_new, density_grid_new = getLocationDistribution(location_matrix_new, x_range_new, y_range_new)
+
+# Plot request time distribution 
+# requestTimePickUp_hours_new = requestTimePickUpNew ./ 60
+# #probabilities_pickUpTime_scaled = probabilities_pickUpTime .* 60
+# p4 = histogram(requestTimePickUp_hours_new, normalize=:pdf, label="Histogram of Given Data", color=:blue)
+# #plot!(time_range_hours, probabilities_pickUpTime_scaled, label="Probability Distribution From KDE", linewidth=2, linestyle=:solid, color=:red)
+# title!("Pick-up Time Distribution NEW")
+# xlabel!("Time (Hours)")
+# ylabel!("Probability Density")
+# display(p4)
+
+# # Plot histogram and KDE for drop-off time
+# requestTimeDropOff_hours_new = requestTimeDropOffNew ./ 60
+# #probabilities_dropOffTime_scaled = probabilities_dropOffTime .* 60
+# p5 = histogram(requestTimeDropOff_hours_new, normalize=:pdf, label="Histogram of Given Data", color=:blue)
+# #plot!(time_range_hours, probabilities_dropOffTime_scaled, label="Probability Distribution From KDE", linewidth=2, linestyle=:solid, color=:red)
+# title!("Drop-off Time Distribution NEW")
+# xlabel!("Time (Hours)")
+# ylabel!("Probability Density")
+# display(p5)
+
+p6 = heatmap(x_range_new, y_range_new, -density_grid_new, xlabel="Longitude", ylabel="Latitude", title="Location Density Map NEW",c = :RdYlGn,colorbar=false)
+scatter!(location_matrix_new[:,1], location_matrix_new[:,2], marker=:circle, label="New Locations", color=:blue)
+display(p6)
+
+
+
+
+p6 = heatmap(x_range, y_range, -density_grid, xlabel="Longitude", ylabel="Latitude", title="Location Density Map NEW",c = :RdYlGn,colorbar=false)
+scatter!(location_matrix_new[:,1], location_matrix_new[:,2], marker=:circle, label="New Locations", color=:blue)

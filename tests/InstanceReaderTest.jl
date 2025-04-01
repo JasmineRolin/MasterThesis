@@ -169,7 +169,19 @@ function createGantChartOfRequestsAndVehicles(vehicles, requests, requestBank,ti
 end
 
 
-n = 500
+
+# requestFiles = [
+#     "Data/Konsentra/TransformedData_30.01.csv",
+#     "Data/Konsentra/TransformedData_06.02.csv",
+#     "Data/Konsentra/TransformedData_09.01.csv",
+#     "Data/Konsentra/TransformedData_16.01.csv",
+#     "Data/Konsentra/TransformedData_23.01.csv",
+#     "Data/Konsentra/TransformedData_Data.csv"
+# ]
+
+# vehicles = "Data/Konsentra/Vehicles_0.5.csv"
+
+ n = 100
 for i in 1:10
     requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")

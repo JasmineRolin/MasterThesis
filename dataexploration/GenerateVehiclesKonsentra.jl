@@ -32,10 +32,29 @@ sheets_data = ["Data"]
 # ------
 # Open and load data
 # ------
+# df_list = []
+# sheet_names = []
+# for sheet in vcat(sheets_5days, sheets_data)
+#     df = CSV.read("Data/Konsentra/TransformedData_$sheet.csv", DataFrame)
+#     push!(df_list, df)
+#     push!(sheet_names, sheet)
+# end
+
+newDataList = [ "Data/Konsentra/100/GeneratedRequests_100_1.csv",
+"Data/Konsentra/100/GeneratedRequests_100_2.csv",
+"Data/Konsentra/100/GeneratedRequests_100_3.csv",
+"Data/Konsentra/100/GeneratedRequests_100_4.csv",
+"Data/Konsentra/100/GeneratedRequests_100_5.csv",
+"Data/Konsentra/100/GeneratedRequests_100_6.csv",
+"Data/Konsentra/100/GeneratedRequests_100_7.csv",
+"Data/Konsentra/100/GeneratedRequests_100_8.csv",
+"Data/Konsentra/100/GeneratedRequests_100_9.csv",
+"Data/Konsentra/100/GeneratedRequests_100_10.csv"]
+
 df_list = []
 sheet_names = []
-for sheet in vcat(sheets_5days, sheets_data)
-    df = CSV.read("Data/Konsentra/TransformedData_$sheet.csv", DataFrame)
+for sheet in newDataList
+    df = CSV.read(sheet, DataFrame)
     push!(df_list, df)
     push!(sheet_names, sheet)
 end
