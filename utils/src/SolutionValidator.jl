@@ -52,7 +52,7 @@ function checkSolutionFeasibility(scenario::Scenario,solution::Solution,requests
     # Check that all activities are serviced
     notServicedActivities = setdiff(activityIds, servicedActivities)
     if length(notServicedActivities) != 2*nTaxi # TODO: add check if we add list of activities serviced by taxi 
-        msg = "SOLUTION INFEASIBLE: Not all activities are serviced"
+        msg = "SOLUTION INFEASIBLE: Not all activities are serviced. Serviced: $(length(servicedActivities)), not serviced: $(length(notServicedActivities)), nTaxi: $(nTaxi)"
         return false, msg
     end
 
@@ -89,7 +89,8 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,state::State)
 
     # Keep track of serviced activities assuming that activity 
     servicedActivities = Set{Int}()
-    union!(servicedActivities, keys(visitedRoute))
+    servicedPickUpActivities = Set{Int}()
+    union!(servicedPickUpActivities, keys(visitedRoute))
 
     # Keep track of cost, total distance and total time of solution
     totalCostCheck = 0.0 
@@ -99,7 +100,7 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,state::State)
 
     # Check all routes 
     for vehicleSchedule in vehicleSchedules
-        feasible, msg, servicedActivitiesInRoute = checkRouteFeasibilityOnline(scenario,vehicleSchedule,visitedRoute)
+        feasible, msg, servicedActivitiesInRoute, pickUpActivitiesInRoute = checkRouteFeasibilityOnline(scenario,vehicleSchedule,visitedRoute)
 
         # Return if route is not feasible 
         if !feasible
@@ -117,6 +118,17 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,state::State)
             push!(servicedActivities,activity)
         end
 
+        # Update serviced pick up
+        for activity in pickUpActivitiesInRoute
+            if activity in servicedPickUpActivities
+                msg = "SOLUTION INFEASIBLE: Pick up $(activity) is serviced more than once"
+                throw(msg)
+                return false, msg
+            end
+
+            push!(servicedPickUpActivities,activity)
+        end
+
         # Count KPIs
         totalRideTimeCheck += vehicleSchedule.totalTime
         totalDistanceCheck += vehicleSchedule.totalDistance
@@ -125,8 +137,18 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,state::State)
     end
 
     # Check that all activities are serviced
-    if totalNTaxi + nTaxi + length(servicedActivities) == (length(scenario.offlineRequests) + event.id - length(scenario.offlineRequests)) 
-        msg = "SOLUTION INFEASIBLE: Not all activities are serviced"
+    considered = Set{Int}()
+    union!(considered, (r.id for r in scenario.offlineRequests))  
+    println(event.id)
+    if event.id != 0  
+        numNewRequests = event.id - length(scenario.offlineRequests)
+        for i in 1:numNewRequests
+            push!(considered, scenario.onlineRequests[i].id)
+        end
+    end
+    notServicedRequests = setdiff(considered, servicedPickUpActivities)
+    if totalNTaxi + nTaxi != length(notServicedRequests) 
+        msg = "SOLUTION INFEASIBLE: Not all requests are serviced. Serviced: $(length(servicedPickUpActivities)), not serviced: $(length(notServicedRequests)), nTaxi: $(nTaxi)"
         return false, msg
     end
 
@@ -164,44 +186,44 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
     nRequests = length(requests)
 
     if length(route) == 2 && route[1].activity.activityType == DEPOT && route[2].activity.activityType == DEPOT
-        return true, "", Set{Int}()
+        return true, "", Set{Int}(), Set{Int}()
     end
 
     # Check that active time window of vehicle is correct 
     if activeTimeWindow.startTime != route[1].startOfServiceTime || activeTimeWindow.endTime != route[end].endOfServiceTime
         msg = "ROUTE INFEASIBLE: Active time window of vehicle $(vehicle.id) is incorrect"
-        return false, msg, Set{Int}()
+        return false, msg, Set{Int}(), Set{Int}()
     end
 
     # Check available time window of vehicle 
     if activeTimeWindow.startTime < vehicle.availableTimeWindow.startTime || activeTimeWindow.endTime > vehicle.availableTimeWindow.endTime
         msg = "ROUTE INFEASIBLE: Vehicle $(vehicle.id) is not available during the route"
-        return false, msg, Set{Int}() 
+        return false, msg, Set{Int}(), Set{Int}() 
     end
 
     # Special check if route is only 1 activity
     if length(route) == 1 && route[1].activity.activityType == DEPOT
-        return true, "", Set{Int}()
+        return true, "", Set{Int}(), Set{Int}()
 
         if !isapprox(totalTime,0) && !isapprox(totalDistance,0) && !isapprox(totalCost,0) && !isapprox(totalIdleTIme,0)
             msg = "ROUTE INFEASIBLE: Route has only depot, but time, distance and cost is not zero"
-            return false, msg, Set{Int}()
+            return false, msg, Set{Int}(), Set{Int}()
         end 
 
     elseif length(route) == 1
         msg = "ROUTE INFEASIBLE: Route has only one activity, but it is not a depot"
-        return false, msg, Set{Int}()
+        return false, msg, Set{Int}(), Set{Int}()
     end
     
     # Check cost and total time 
     durationActiveTimeWindow = duration(activeTimeWindow)
     if totalTime != durationActiveTimeWindow
         msg = "ROUTE INFEASIBLE: Total time is incorrect for vehicle $(vehicle.id). Calculated time $(durationActiveTimeWindow), actual time $(totalTime)"
-        return false, msg, Set{Int}()
+        return false, msg, Set{Int}(), Set{Int}()
     end
     if !isapprox(totalCost, getTotalCostRoute(scenario,route),atol=0.0001)
         msg = "ROUTE INFEASIBLE: Total cost is incorrect for vehicle $(vehicle.id). Calculated cost $(getTotalCostRouteOnline(scenario,route,visitedRoute)), actual cost $(totalCost)"
-        return false, msg, Set{Int}()
+        return false, msg, Set{Int}(), Set{Int}()
     end
 
     
@@ -223,21 +245,21 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
             pickUpId = findCorrespondingId(activity,nRequests)
             if !(pickUpId in hasBeenServicedRequest || pickUpId in visitedRoute) 
                 msg = "ROUTE INFEASIBLE: Drop-off $(activity.id) before pick-up, vehicle: $(vehicle.id)"
-                return false, msg, Set{Int}()
+                return false, msg, Set{Int}(), Set{Int}()
             end
 
             endOfservicePickUp = haskey(visitedRoute, pickUpId) ? visitedRoute[key]["PickUpServiceStart"] + scenario.serviceTimes : endOfServiceTimePickUps[pickUpId]
             rideTime = startOfServiceTime - endOfservicePickUp
             if rideTime > requests[activity.requestId].maximumRideTime || rideTime < requests[activity.requestId].directDriveTime
                 msg = "ROUTE INFEASIBLE: Maximum ride time exceeded for drop-off $(activity.id) on vehicle $(vehicle.id), END PU/START DO: ($(endOfServiceTimePickUp), $(startOfServiceTime)), Ride time: $(rideTime), Maximum ride time: $(requests[activity.requestId].maximumRideTime), direct drive time: $(requests[activity.requestId].directDriveTime)"
-                return false, msg, Set{Int}()
+                return false, msg, Set{Int}(), Set{Int}()
             end
         end
 
         # Check that time windows are respected
         if startOfServiceTime < activity.timeWindow.startTime || startOfServiceTime > activity.timeWindow.endTime
             msg = "ROUTE INFEASIBLE: Time window not respected for activity $(activity.id) on vehicle $(vehicle.id), Start/End of Service: ($startOfServiceTime, $endOfServiceTime), Time Window: ($(activity.timeWindow.startTime), $(activity.timeWindow.endTime))"
-            return false, msg, Set{Int}()
+            return false, msg, Set{Int}(), Set{Int}()
         end
 
         # Checks only relevant for non-waiting and non-depots nodes
@@ -245,7 +267,7 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
             # Check that activity is not visited more than once
             if activity.id in hasBeenServiced
                 msg = "ROUTE INFEASIBLE: Activity $(activity.id) visited more than once on vehicle $(vehicle.id)"
-                return false, msg, Set{Int}()
+                return false, msg, Set{Int}(), Set{Int}()
             else
                 push!(hasBeenServiced,activity.id)
             end
@@ -253,23 +275,23 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
             # Check that start of service and end of service are feasible 
             if idx > 1 && startOfServiceTime < route[idx-1].endOfServiceTime + time[route[idx-1].activity.id,activity.id]
                 msg = "ROUTE INFEASIBLE: Start of service time $(startOfServiceTime) of activity $(activity.id) is not correct on vehicle $(vehicle.id)"
-                return false, msg, Set{Int}()
+                return false, msg, Set{Int}(), Set{Int}()
             end
             if (endOfServiceTime != startOfServiceTime + serviceTimes)
                 msg = "ROUTE INFEASIBLE: End of service time $(endOfServiceTime) of activity $(activity.id) is not correct"
-                return false, msg, Set{Int}()
+                return false, msg, Set{Int}(), Set{Int}()
             end
 
             # Update and check current capacities
             currentCapacities += findLoadOfActivity(activity)
             if currentCapacities > vehicle.totalCapacity 
                 msg = "ROUTE INFEASIBLE: Capacities exceeded for vehicle $(vehicle.id)"
-                    return false, msg, Set{Int}()
+                    return false, msg, Set{Int}(), Set{Int}()
             end
 
             if currentCapacities != numberOfWalking[idx] 
                 msg = "ROUTE INFEASIBLE: Capacities not updated correctly for vehicle $(vehicle.id)"
-                return false, msg, Set{Int}() 
+                return false, msg, Set{Int}(), Set{Int}() 
             end
         elseif activity.activityType == WAITING
             totalIdleTimeCheck += endOfServiceTime - startOfServiceTime
@@ -287,7 +309,7 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
     # Check that total distance is correct
     if !isapprox(totalDistanceCheck, totalDistance,atol=0.0001)
         msg = "ROUTE INFEASIBLE: Total distance $(totalDistance) is incorrect. Calculated: $(totalDistanceCheck), vehicle: $(vehicle.id)"
-        return false, msg, Set{Int}() 
+        return false, msg, Set{Int}(), Set{Int}() 
     end
 
     # Check that waiting nodes are inserted correctly with respect to time
@@ -305,16 +327,16 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
 
     if totalTime != activeTime
         msg = "ROUTE INFEASIBLE: Total time based on waiting nodes $(totalTime) is incorrect compared to active time $(activeTime) for vehicle $(vehicle.id)"
-        return false, msg, Set{Int}()
+        return false, msg, Set{Int}(), Set{Int}()
     end
 
     if totalIdleTimeCheck != vehicleSchedule.totalIdleTime
         msg = "ROUTE INFEASIBLE: Total idle time $(totalIdleTimeCheck) is incorrect. Calculated: $(vehicleSchedule.totalIdleTime), vehicle: $(vehicle.id)"
-        return false, msg, Set{Int}()
+        return false, msg, Set{Int}(), Set{Int}()
     end
     
    
-    return true, "", hasBeenServicedRequest
+    return true, "", hasBeenServiced, hasBeenServicedRequest
     
 end
 

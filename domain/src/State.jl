@@ -17,6 +17,10 @@ mutable struct State
     function State(scenario::Scenario, event::Request, totalNTaxi::Int)
         return new(Solution(scenario), event, Dict{Int, Dict{String, Int}}(), totalNTaxi)
     end
+
+    function State(solution::Solution, event::Request, totalNTaxi::Int)
+        return new(solution, event, Dict{Int, Dict{String, Int}}(), totalNTaxi)
+    end
 end
 
 

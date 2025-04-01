@@ -100,18 +100,11 @@ function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario
     # Check feasibility
     currentState.solution = initialSolution
     feasible, msg = checkSolutionFeasibilityOnline(scenario,currentState)
-    println("TESSSST")
     println(feasible)
-    println(msg)
-    println(requestBank)
 
+    # Run ALNS
+    finalSolution,requestBank,specification,KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",stage = "online",initialSolution =  initialSolution, requestBank = requestBank)
 
-
-    # Run ALNS # TODO ensure right input
-    println("HERE2")
-
-    #finalSolution,requestBank,specification,KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",stage = "online",initialSolution =  initialSolution, requestBank = requestBank)
-    #println("HERE3")
     # Update time window for event
     updateTimeWindowsOnlineOne!(finalSolution,event,scenario)
 

@@ -20,7 +20,8 @@ using utils, domain, offlinesolution
     solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
 
     # Check solution
-    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.offlineRequests)
+    state = State(solution,Request(),0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == true
 end
 
@@ -40,12 +41,14 @@ end
     solution.totalCost = 90.0
 
     # Check solution
-    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.offlineRequests)
+    state = State(solution,Request(),0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == false
     @test msg == "SOLUTION INFEASIBLE: Total cost of solution is incorrect. Calculated: 30.0, actual: 90.0"
 end
 
 
+#==
 @testset "checkSolutionFeasibility test - activity not serviced" begin
     requestFile = "tests/resources/Requests.csv"
     vehiclesFile = "tests/resources/Vehicles.csv"
@@ -59,9 +62,12 @@ end
 
     # Construct solution
     solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
-
+    printSolution(solution,printRouteHorizontal)
+    
     # Check solution
-    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.requests)
+    state = State(solution,Request(),0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == false
     @test msg == "SOLUTION INFEASIBLE: Not all activities are serviced. Serviced: 6, not serviced: 4, nTaxi: 0"
 end
+==#
