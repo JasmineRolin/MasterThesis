@@ -202,7 +202,7 @@ end
 # end
 
 
-n = 500
+n = 300
 for i in 1:10
 #i = 1
     requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")

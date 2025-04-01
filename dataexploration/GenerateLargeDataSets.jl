@@ -3,6 +3,7 @@ using Plots
 using KernelDensity
 using Random
 using StatsBase
+using domain 
 
 include("TransformKonsentraData.jl")
 include("GenerateLargeVehiclesKonsentra.jl")
@@ -134,7 +135,7 @@ function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, p
 
             sampled_indices = sample(1:length(probabilities_pickUpTime), Weights(probabilities_pickUpTime), 1)
             sampledTimePick = time_range[sampled_indices]
-            requestTime = sampledTimePick[1]
+            requestTime = ceil(sampledTimePick[1])
         else
             requestType = 1  # drop-off request
 
@@ -148,7 +149,7 @@ function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, p
 
             sampled_indices = sample(1:nTimes, Weights(probabilities_dropOffTime[indices]), 1)
             sampledTimeDrop = time_range[indices][sampled_indices]
-            requestTime = sampledTimeDrop[1]
+            requestTime = ceil(sampledTimeDrop[1])
         end
 
         
@@ -221,6 +222,8 @@ function generateVehicles(shifts,df_list, probabilities_location, x_range, y_ran
         push!(locations,getNewLocations(probabilities_location,x_range, y_range)[1])
     end
     generateVehiclesKonsentra(shifts, locations,"Data/Konsentra/"*string(nRequest)*"/Vehicles_"*string(nRequest)*".csv")
+
+    return average_demand_per_hour
 end
 
 
@@ -252,12 +255,13 @@ newDataList, df_list = generateDataSets(nRequest,probabilities_pickUpTime, proba
 
 # Generate vehicles
 shifts = Dict(
-    "Morning"    => Dict("TimeWindow" => [6*60, 10*60], "cost" => 2.0, "nVehicles" => 0, "y" => []),
-    "Noon"       => Dict("TimeWindow" => [9*60, 14*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
-    "Afternoon"  => Dict("TimeWindow" => [13*60, 19*60], "cost" => 3.0, "nVehicles" => 0, "y" => []),
+    "Morning"    => Dict("TimeWindow" => [6*60, 12*60], "cost" => 2.0, "nVehicles" => 0, "y" => []),
+    "Noon"       => Dict("TimeWindow" => [10*60, 16*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
+    "Afternoon"  => Dict("TimeWindow" => [14*60, 20*60], "cost" => 3.0, "nVehicles" => 0, "y" => []),
     "Evening"    => Dict("TimeWindow" => [18*60, 24*60], "cost" => 4.0, "nVehicles" => 0, "y" => [])
 )
-generateVehicles(shifts,df_list, probabilities_location, x_range, y_range)
+average_demand_per_hour = generateVehicles(shifts,df_list, probabilities_location, x_range, y_range)
+plotDemandAndShifts(average_demand_per_hour,shifts)
 
 
 # Visualize results 
@@ -336,9 +340,23 @@ xlabel!("Time (Hours)")
 ylabel!("Probability Density")
 display(p5)
 
-p6 = heatmap(x_range_new, y_range_new, -density_grid_new, xlabel="Longitude", ylabel="Latitude", title="Location Density Map NEW",c = :RdYlGn,colorbar=false)
-scatter!(location_matrix_new[:,1], location_matrix_new[:,2], marker=:circle, label="New Locations", color=:blue,markersize=2)
+# Histogram of all request times 
+min_x = 5
+max_x = 24
+
+p6 = histogram(vcat(requestTimeDropOff_hours_new,requestTimePickUp_hours_new), normalize=:pdf, label="Histogram of Given Data", color=:blue,bins=15, size = (900,500))
+vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+title!("Request Time Distribution NEW")
+xlabel!("Time (Hours)")
+ylabel!("Probability Density")
+xtick_values = range(min_x, max_x, step=1)  # Adjust length for more ticks
+plot!(xticks=xtick_values)
 display(p6)
+
+p7 = heatmap(x_range_new, y_range_new, -density_grid_new, xlabel="Longitude", ylabel="Latitude", title="Location Density Map NEW",c = :RdYlGn,colorbar=false)
+scatter!(location_matrix_new[:,1], location_matrix_new[:,2], marker=:circle, label="New Locations", color=:blue,markersize=2)
+display(p7)
 
 
 

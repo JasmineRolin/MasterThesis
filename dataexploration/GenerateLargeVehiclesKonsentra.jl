@@ -118,3 +118,22 @@ function generateVehiclesKonsentra(shifts, locations,vehicle_file::String)
 end
 
 
+function plotDemandAndShifts(average_demand_per_hour, shifts)
+    hours = 1:24  # X-axis
+
+    # Create bar plot for demand
+    bar_plot = bar(hours, average_demand_per_hour, label="Avg Demand", xlabel="Hour", ylabel="Requests",
+                   title="Average Demand & Shift Coverage", legend=:topleft, alpha=0.6, color=:blue,size=(900,500))
+
+    # Overlay shifts as horizontal lines
+    for (shift, data) in shifts
+        start_hour = Int(floor(data["TimeWindow"][1] / 60)) + 1
+        end_hour = Int(floor(data["TimeWindow"][2] / 60))
+
+        # Plot shift as a horizontal line
+        plot!(hours[start_hour:end_hour], fill(data["nVehicles"], end_hour - start_hour + 1),
+              label=shift, lw=4, alpha=0.8)
+    end
+
+    display(bar_plot)
+end
