@@ -260,7 +260,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
     # Find new service times 
     idxActivityInSchedule = 1
-    for idx in 2:nActivities
+    for idx in 2:nActivities 
         # Find current activity
         if idx == pickUpIdxInBlock
             currentActivity = request.pickUpActivity
