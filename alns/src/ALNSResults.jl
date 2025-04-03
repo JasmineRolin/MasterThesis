@@ -270,7 +270,7 @@ function createGantChartOfSolution(solution::Solution,scenarioName::String)
     yLabels = []
     yPos = 1
     
-    p = plot(size=(1500,500))
+    p = plot(size=(1500,1000))
     
     for schedule in solution.vehicleSchedules
         for assignment in schedule.route

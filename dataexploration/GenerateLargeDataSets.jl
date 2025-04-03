@@ -13,8 +13,8 @@ include("MakeAndSaveDistanceAndTimeMatrix.jl")
 global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 2*60 # 2 hours buffer
-global nData = 1
-global nRequest = 100 
+global nData = 10
+global nRequest = 500 
 
 
 #==
@@ -38,7 +38,7 @@ end
 #==
 # Get old data
 ==#
-function getOldData(Data::Vector{String})
+function getOldData(Data::Vector{String};checkUnique=true)
     # Collect longitudes and latitudes as Float64
     longitudes = Float64[]
     latitudes = Float64[]
@@ -49,21 +49,26 @@ function getOldData(Data::Vector{String})
     for requestFile in Data
         requestsDF = CSV.read(requestFile, DataFrame)
 
+
         # Ensure we only use valid Float64 values
         for r in eachrow(requestsDF)
-            push!(latitudes, Float64(r.pickup_latitude))
-            push!(longitudes, Float64(r.pickup_longitude))
-            push!(latitudes, Float64(r.dropoff_latitude))
-            push!(longitudes, Float64(r.dropoff_longitude))
+            req = (r.request_type,Float64(r.pickup_latitude), Float64(r.pickup_longitude), Float64(r.dropoff_latitude), Float64(r.dropoff_longitude))
 
-            # Get request time for pick-up or drop-off
-            if r.request_type == 0
-                push!(requestTimePickUp, r.request_time)
-            else
-                push!(requestTimeDropOff, r.request_time)
+            if !checkUnique || !(req in requests)
+                push!(latitudes, Float64(r.pickup_latitude))
+                push!(longitudes, Float64(r.pickup_longitude))
+                push!(latitudes, Float64(r.dropoff_latitude))
+                push!(longitudes, Float64(r.dropoff_longitude))
+
+                # Get request time for pick-up or drop-off
+                if r.request_type == 0
+                    push!(requestTimePickUp, r.request_time)
+                else
+                    push!(requestTimeDropOff, r.request_time)
+                end
+
+                push!(requests, (r.request_type,Float64(r.pickup_latitude), Float64(r.pickup_longitude), Float64(r.dropoff_latitude), Float64(r.dropoff_longitude)))
             end
-
-            push!(requests, (r.request_type,Float64(r.pickup_latitude), Float64(r.pickup_longitude), Float64(r.dropoff_latitude), Float64(r.dropoff_longitude)))
         end
     end
 
@@ -256,7 +261,9 @@ end
 function generateVehicles(shifts,df_list, probabilities_location, x_range, y_range)
     computeShiftCoverage!(shifts)
     average_demand_per_hour = generateAverageDemandPerHour(df_list)
+
     generateNumberOfVehiclesKonsentra!(average_demand_per_hour, shifts)
+
     locations = []
     total_nVehicles = sum(shift["nVehicles"] for shift in values(shifts))
     for i in 1:total_nVehicles
@@ -465,7 +472,7 @@ prefix_new = "Gen. Data"
 
 # Generate plot for each new data set 
 for (idx,file) in enumerate(newDataList)
-    location_matrix_new, requestTimePickUp_new, requestTimeDropOff_new = getOldData([file])
+    location_matrix_new, requestTimePickUp_new, requestTimeDropOff_new = getOldData([file];checkUnique=false)
     probabilities_pickUpTime_new, probabilities_dropOffTime_new, density_pickUp_new, density_dropOff_new = getRequestTimeDistribution(requestTimePickUp_new, requestTimeDropOff_new, time_range)
     probabilities_location_new, density_grid_new,x_range_new,y_range_new = getLocationDistribution(location_matrix_new)
 
@@ -496,6 +503,8 @@ for (idx,file) in enumerate(newDataList)
     # Read instance 
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
     
-    display(createGantChartOfRequestsAndVehicles(scenario.vehicles, scenario.requests, [],scenarioName))
+    p2 = createGantChartOfRequestsAndVehicles(scenario.vehicles, scenario.requests, [],scenarioName)
+    display(p2)
+    savefig(p2, string("Plots/DataGeneration/GantChart_",nRequest,"_",idx,".svg"))
 
 end

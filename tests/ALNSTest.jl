@@ -204,9 +204,9 @@ Test ALNSFunctions
 #end
 
 
-n = 20
+n = 300
 #for i in 1:10
-i = 2
+i = 1
     requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
     parametersFile = "tests/resources/Parameters.csv"

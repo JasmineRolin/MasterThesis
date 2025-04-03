@@ -9,19 +9,19 @@ using Random
 # Constants
 # --------
 global maxRideTimeRatio = 1
-global Gamma = 1
+global Gamma = 0.9
 global nWalking = 4
 
 # ------
 # Define possible shifts
 # ------
-shiftTypes = ["Morning", "Noon", "Afternoon", "Evening"]
-shifts = Dict(
-    "Morning"    => Dict("TimeWindow" => [6*60, 10*60], "cost" => 2.0, "nVehicles" => 0, "y" => []),
-    "Noon"       => Dict("TimeWindow" => [9*60, 14*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
-    "Afternoon"  => Dict("TimeWindow" => [13*60, 19*60], "cost" => 3.0, "nVehicles" => 0, "y" => []),
-    "Evening"    => Dict("TimeWindow" => [18*60, 24*60], "cost" => 4.0, "nVehicles" => 0, "y" => [])
-)
+# shiftTypes = ["Morning", "Noon", "Afternoon", "Evening"]
+# shifts = Dict(
+#     "Morning"    => Dict("TimeWindow" => [6*60, 10*60], "cost" => 2.0, "nVehicles" => 0, "y" => []),
+#     "Noon"       => Dict("TimeWindow" => [9*60, 14*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
+#     "Afternoon"  => Dict("TimeWindow" => [13*60, 19*60], "cost" => 3.0, "nVehicles" => 0, "y" => []),
+#     "Evening"    => Dict("TimeWindow" => [18*60, 24*60], "cost" => 4.0, "nVehicles" => 0, "y" => [])
+# )
 
 # ------
 # Generate average demand per hour
@@ -63,7 +63,7 @@ end
 # ------
 # Make MILP model to generate number of vehicles
 # ------
-function generateNumberOfVehiclesKonsentra!(D, shifts)
+function generateNumberOfVehiclesKonsentra!(average_demand_per_hour, shifts)
     model = Model(HiGHS.Optimizer)
     set_silent(model)
 
@@ -79,7 +79,7 @@ function generateNumberOfVehiclesKonsentra!(D, shifts)
     @objective(model, Min, sum(x[i] * shifts[shift_names[i]]["cost"] for i in I))
 
     # Constraints
-    @constraint(model, [t in T], sum(x[i] * shifts[shift_names[i]]["y"][t] for i in I) >= Gamma * D[t])
+    @constraint(model, [t in T], sum(x[i] * shifts[shift_names[i]]["y"][t] for i in I) >= Gamma * average_demand_per_hour[t])
 
     # Optimize model
     optimize!(model)
