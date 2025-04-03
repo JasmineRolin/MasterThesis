@@ -47,7 +47,7 @@ end
 ==#
 function destroy!(scenario::Scenario,state::ALNSState,parameters::ALNSParameters, configuration::ALNSConfiguration)::Int
     # Select method 
-    destroyIdx = rouletteWheel(state.destroyWeights)
+    destroyIdx = rouletteWheel(state.destroyWeights) # TODO problem if index is 1
 
     #println("\t Destroy method: ", configuration.destroyMethods[destroyIdx].name)
 

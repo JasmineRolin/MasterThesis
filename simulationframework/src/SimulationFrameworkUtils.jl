@@ -117,7 +117,8 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
     # Update KPIs
     currentSchedule.totalDistance = getTotalDistanceRoute(currentSchedule.route,scenario)
     currentSchedule.totalTime = getTotalTimeRoute(currentSchedule)
-    currentSchedule.totalCost = getTotalCostRouteOnline(scenario,currentSchedule.route)
+    currentSchedule.totalCost = getTotalCostRouteOnline(scenario.time,currentSchedule.route,currentState.visitedRoute)
+    println("Total cost: ",currentSchedule.totalCost)
     currentSchedule.totalIdleTime = getTotalIdleTimeRoute(currentSchedule.route)    
     currentSchedule.numberOfWalking = schedule.numberOfWalking[idx+1:end]
 
@@ -225,10 +226,10 @@ end
 # ------
 # Function to determine current state
 # ------
-function determineCurrentState(solution::Solution,event::Request,finalSolution::Solution,scenario::Scenario)
+function determineCurrentState(solution::Solution,event::Request,finalSolution::Solution,scenario::Scenario,visitedRoute::Dict{Int,Dict{String,Int}})
 
     # Initialize current state
-    currentState = State(scenario,event,0)
+    currentState = State(scenario,event,visitedRoute,0)
     currentState.solution.vehicleSchedules = deepcopy(solution.vehicleSchedules)
     currentState.solution.totalCost = solution.totalCost
     currentState.solution.nTaxi = solution.nTaxi
@@ -280,9 +281,12 @@ function determineCurrentState(solution::Solution,event::Request,finalSolution::
 
         # Update final solution
         updateFinalSolution!(scenario,finalSolution,solution,vehicle,idx, splitTime)
-        currentState.totalNTaxi = finalSolution.nTaxi
         
     end
+
+    currentState.solution.nTaxi = 1 # Because of new event
+    currentState.solution.totalCost += scenario.taxiParameter*currentState.solution.nTaxi
+    currentState.totalNTaxi = finalSolution.nTaxi
 
     return currentState, finalSolution
 end
@@ -313,6 +317,8 @@ function simulateScenario(scenario::Scenario)
     solution = Solution(scenario)
     solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
 
+    visitedRoute = Dict{Int,Dict{String,Int}}()
+
     # Print routes
     println("------------------------------------------------------------------------------------------------------------------------------------------------")
     println("Intitial")
@@ -326,22 +332,42 @@ function simulateScenario(scenario::Scenario)
         println("----------------")
 
         # Determine current state
-        currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario)
+        currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario,visitedRoute)
         currentState.totalNTaxi = finalSolution.nTaxi
+        
+        println("----------------")
+        println("Current solution: ")
+        println("----------------")
         printSolution(currentState.solution,printRouteHorizontal)
+
+        println("----------------")
+        println("Final solution solution: ")
+        println("----------------")
+        printSolution(finalSolution,printRouteHorizontal)
+
+        # CHeck feasibility 
+        feasible, msg = checkSolutionFeasibilityOnline(scenario,currentState)
+        println("totalNTaxi: ",currentState.totalNTaxi)
+        if !feasible
+            println("INFEASIBLE SOLUTION IN ITERATION:", itr)
+            throw(msg)
+        end
 
         if itr == 0
             # Update time windows for all requests in solution
             updateTimeWindowsOnlineAll!(currentState.solution,scenario)
         end        
 
-        println("----------------")
-        println("Current solution: ")
-        println("----------------")
-        printSolution(currentState.solution,printRouteHorizontal)
 
         # Get solution for online problem
         solution, requestBank,_,_ = onlineAlgorithm(currentState, requestBank, scenario, destroyMethods, repairMethods) 
+
+        println("----------------")
+        println("Solution after online: ")
+        println("----------------")
+        printSolution(currentState.solution,printRouteHorizontal)
+
+        println("Request bank: ", requestBank)
 
     end
 
