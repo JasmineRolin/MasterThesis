@@ -64,7 +64,6 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,state::State)
     # Check that all activities are serviced
     considered = Set{Int}()
     union!(considered, (r.id for r in scenario.offlineRequests))  
-    println(event.id)
     if event.id != 0  
         for onlineRequest in scenario.onlineRequests
             push!(considered, onlineRequest.id)
@@ -113,6 +112,8 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
     nRequests = length(requests)
 
     if length(route) == 2 && route[1].activity.activityType == DEPOT && route[2].activity.activityType == DEPOT
+        return true, "", Set{Int}(), Set{Int}()
+    elseif length(route) == 0
         return true, "", Set{Int}(), Set{Int}()
     end
 

@@ -48,7 +48,6 @@ end
 end
 
 
-#==
 @testset "checkSolutionFeasibility test - activity not serviced" begin
     requestFile = "tests/resources/Requests.csv"
     vehiclesFile = "tests/resources/Vehicles.csv"
@@ -62,12 +61,37 @@ end
 
     # Construct solution
     solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
-    printSolution(solution,printRouteHorizontal)
+    solution.vehicleSchedules[4] = VehicleSchedule(solution.vehicleSchedules[4].vehicle,true)
     
     # Check solution
     state = State(solution,Request(),0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == false
-    @test msg == "SOLUTION INFEASIBLE: Not all activities are serviced. Serviced: 6, not serviced: 4, nTaxi: 0"
+    @test msg == "SOLUTION INFEASIBLE: Not all requests are serviced. Serviced: 2, not serviced: 1, nTaxi: 0"
 end
-==#
+
+@testset "checkSolutionFeasibility test - activity serviced and in final solution" begin
+    requestFile = "tests/resources/Requests.csv"
+    vehiclesFile = "tests/resources/Vehicles.csv"
+    parametersFile = "tests/resources/Parameters.csv"
+    distanceMatrixFile = "tests/resources/distanceMatrix_Small.txt"
+    timeMatrixFile = "tests/resources/timeMatrix_Small.txt"
+    scenarioName = "Small"
+
+    # Read instance 
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
+
+    # Construct solution
+    solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
+    solution.totalCost -= solution.vehicleSchedules[4].totalCost
+    solution.totalRideTime -= solution.vehicleSchedules[4].totalTime
+    solution.totalDistance -= solution.vehicleSchedules[4].totalDistance
+    solution.totalIdleTime -= solution.vehicleSchedules[4].totalIdleTime
+    solution.vehicleSchedules[4] = VehicleSchedule(solution.vehicleSchedules[4].vehicle,true)
+    
+    # Check solution
+    state = State(solution,Request(),1)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+    @test feasible == true
+    @test msg == ""
+end
