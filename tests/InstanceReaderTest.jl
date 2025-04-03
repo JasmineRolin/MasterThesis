@@ -202,9 +202,9 @@ end
 # end
 
 
-n = 300
-#for i in 1:10
-i = 1
+n = 20
+for i in 1:10
+#i = 1
     requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
     parametersFile = "tests/resources/Parameters.csv"
@@ -219,5 +219,5 @@ i = 1
     display(createGantChartOfRequestsAndVehicles(scenario.vehicles, scenario.requests, [],scenarioName))
     
     
-#end
+end
 
