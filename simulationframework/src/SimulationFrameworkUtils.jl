@@ -347,7 +347,6 @@ function simulateScenario(scenario::Scenario)
 
         # CHeck feasibility 
         feasible, msg = checkSolutionFeasibilityOnline(scenario,currentState)
-        println("totalNTaxi: ",currentState.totalNTaxi)
         if !feasible
             println("INFEASIBLE SOLUTION IN ITERATION:", itr)
             throw(msg)
