@@ -85,7 +85,7 @@ function getTotalCostRouteOnline(time::Array{Int,2},route::Vector{ActivityAssign
             actualTime = Float64(dropoffTime - pickupTime)
             ratio += actualTime/directTime
         elseif activity.activityType == DROPOFF
-            pickupTime = visitedRoute[activity.requestId][PickUpServiceStart]
+            pickupTime = visitedRoute[activity.requestId]["PickUpServiceStart"]
             dropoffTime = assignment.startOfServiceTime
             directTime = Float64(time[activity.requestId, activity.id])
             actualTime = Float64(dropoffTime - pickupTime)

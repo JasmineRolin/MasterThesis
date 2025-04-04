@@ -80,8 +80,8 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,state::State)
 
     # Check cost, distance and time of solution 
     totalCostCheck += nTaxi * scenario.taxiParameter
-    if !isapprox(totalCostCheck,totalCost,atol=0.0001)
-        msg = "SOLUTION INFEASIBLE: Total cost of solution is incorrect. Calculated: $(totalCostCheck), actual: $(totalCost)"
+    if !isapprox(totalCostCheck,totalCost,atol=0.0001) 
+        msg = "SOLUTION INFEASIBLE: Total cost of solution is incorrect. Calculated: $(totalCostCheck), actual: $(totalCost), diff: $(abs(totalCostCheck-totalCost))"
         return false, msg
     end
     if !isapprox(totalDistanceCheck,totalDistance,atol=0.0001)
@@ -149,8 +149,8 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
         msg = "ROUTE INFEASIBLE: Total time is incorrect for vehicle $(vehicle.id). Calculated time $(durationActiveTimeWindow), actual time $(totalTime)"
         return false, msg, Set{Int}(), Set{Int}()
     end
-    if !isapprox(totalCost, getTotalCostRoute(scenario,route),atol=0.0001)
-        msg = "ROUTE INFEASIBLE: Total cost is incorrect for vehicle $(vehicle.id). Calculated cost $(getTotalCostRouteOnline(scenario,route,visitedRoute)), actual cost $(totalCost)"
+    if !isapprox(totalCost, getTotalCostRouteOnline(scenario.time,route,visitedRoute),atol=0.0001) 
+        msg = "ROUTE INFEASIBLE: Total cost is incorrect for vehicle $(vehicle.id). Calculated cost $(getTotalCostRouteOnline(scenario.time,route,visitedRoute)), actual cost $(totalCost), diff $(abs(totalCost-getTotalCostRouteOnline(scenario.time,route,visitedRoute))), check $(abs(totalCost-getTotalCostRoute(scenario,route)) > 0.0001)"
         return false, msg, Set{Int}(), Set{Int}()
     end
 
@@ -171,12 +171,12 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
             endOfServiceTimePickUps[activity.id] = endOfServiceTime
         elseif activity.activityType == DROPOFF 
             pickUpId = findCorrespondingId(activity,nRequests)
-            if !(pickUpId in hasBeenServicedRequest || pickUpId in visitedRoute) 
+            if !(pickUpId in hasBeenServicedRequest || pickUpId in keys(visitedRoute)) 
                 msg = "ROUTE INFEASIBLE: Drop-off $(activity.id) before pick-up, vehicle: $(vehicle.id)"
                 return false, msg, Set{Int}(), Set{Int}()
             end
 
-            endOfservicePickUp = haskey(visitedRoute, pickUpId) ? visitedRoute[key]["PickUpServiceStart"] + scenario.serviceTimes : endOfServiceTimePickUps[pickUpId]
+            endOfservicePickUp = haskey(visitedRoute, pickUpId) ? visitedRoute[pickUpId]["PickUpServiceStart"] + scenario.serviceTimes : endOfServiceTimePickUps[pickUpId]
             rideTime = startOfServiceTime - endOfservicePickUp
             if rideTime > requests[activity.requestId].maximumRideTime || rideTime < requests[activity.requestId].directDriveTime
                 msg = "ROUTE INFEASIBLE: Maximum ride time exceeded for drop-off $(activity.id) on vehicle $(vehicle.id), END PU/START DO: ($(endOfServiceTimePickUp), $(startOfServiceTime)), Ride time: $(rideTime), Maximum ride time: $(requests[activity.requestId].maximumRideTime), direct drive time: $(requests[activity.requestId].directDriveTime)"
@@ -211,7 +211,9 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
             end
 
             # Update and check current capacities
-            currentCapacities += findLoadOfActivity(activity)
+            if !(activity.activityType == DROPOFF && activity.requestId in keys(visitedRoute))
+                currentCapacities += findLoadOfActivity(activity)
+            end
             if currentCapacities > vehicle.totalCapacity 
                 msg = "ROUTE INFEASIBLE: Capacities exceeded for vehicle $(vehicle.id)"
                     return false, msg, Set{Int}(), Set{Int}()

@@ -60,14 +60,14 @@ end
 #==
  Method to Repair  
 ==#
-function repair!(scenario::Scenario, state::ALNSState, configuration::ALNSConfiguration)::Int
+function repair!(scenario::Scenario, state::ALNSState, configuration::ALNSConfiguration;visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}())::Int
     # Select method 
     repairIdx = rouletteWheel(state.repairWeights)
 
     # println("\t Repair method: ", configuration.repairMethods[repairIdx].name)
 
     # Use method 
-    configuration.repairMethods[repairIdx].method(state,scenario)
+    configuration.repairMethods[repairIdx].method(state,scenario,visitedRoute=visitedRoute)
 
     return repairIdx
 end

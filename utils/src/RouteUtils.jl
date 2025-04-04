@@ -173,7 +173,7 @@ end
 #==
  Method to check if it is feasible to insert a request in a vehicle schedule
 ==#
-function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule::VehicleSchedule,pickUpIdx::Int,dropOffIdx::Int,scenario::Scenario)
+function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule::VehicleSchedule,pickUpIdx::Int,dropOffIdx::Int,scenario::Scenario;visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())
 
     @unpack route,numberOfWalking, vehicle = vehicleSchedule
     @unpack time,serviceTimes = scenario
@@ -198,7 +198,7 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
     dropOffIdxInBlock = dropOffIdx+ 2 # Index as if pickup and dropoff is inserted
 
     # Check feasibility 
-    feasible, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime = checkFeasibilityOfInsertionInRoute(scenario.time,scenario.distance,scenario.serviceTimes,scenario.requests,vehicleSchedule.totalIdleTime,route,pickUpIdxInBlock = pickUpIdxInBlock,dropOffIdxInBlock = dropOffIdxInBlock,request = request)
+    feasible, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime = checkFeasibilityOfInsertionInRoute(scenario.time,scenario.distance,scenario.serviceTimes,scenario.requests,vehicleSchedule.totalIdleTime,route,pickUpIdxInBlock = pickUpIdxInBlock,dropOffIdxInBlock = dropOffIdxInBlock,request = request,visitedRoute=visitedRoute)
     
     return  feasible, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime
 end
@@ -207,7 +207,7 @@ end
  Method to check if it is feasible to insert request in route 
 ==#
 # If pickUpIdxInBlock = dropOffIdxInBlock = -1 we are not inserting a request in route but repairing a route where some request has been removed 
-function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},idleTime::Int,route::Vector{ActivityAssignment}; pickUpIdxInBlock::Int=-1, dropOffIdxInBlock::Int=-1,request::Union{Request,Nothing}=nothing)  
+function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},idleTime::Int,route::Vector{ActivityAssignment}; pickUpIdxInBlock::Int=-1, dropOffIdxInBlock::Int=-1,request::Union{Request,Nothing}=nothing,visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())  
     insertRequest = !isnothing(request)
     nActivities = length(route) + 2*insertRequest
 
@@ -227,7 +227,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
     currentActivity = route[1].activity
     previousActivity = route[1].activity
     newStartOfServiceTimes[1] = route[1].startOfServiceTime
-    newEndOfServiceTimes[1] = route[1].endOfServiceTime 
+    newEndOfServiceTimes[1] = route[1].endOfServiceTime ### Spørg Jasmine: Hvorfor kan den ikke ændres fx hvis det er en witing node?
     newEndOfServiceTimes[end] = route[end].endOfServiceTime
 
     # Keep track of KPIs 
@@ -235,8 +235,17 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
     totalIdleTime = 0 
     totalCost = 0
 
+    # Check first activity in route
+    if route[1].activity.activityType == PICKUP
+        pickUpIndexes[route[1].activity.requestId] = 1
+    end
+    
     # Find maximum shift backward and forward
-    maximumShiftBackward = route[1].startOfServiceTime - route[1].activity.timeWindow.startTime
+    if route[1].activity.activityType == WAITING || route[1].activity.activityType == DEPOT
+        maximumShiftBackward = route[1].startOfServiceTime - route[1].activity.timeWindow.startTime
+    else
+        maximumShiftBackward = 0
+    end
 
     if route[end-1].activity.activityType == WAITING
         maximumShiftForward =  route[end-1].activity.timeWindow.endTime - route[end-1].startOfServiceTime
@@ -358,7 +367,8 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
         if currentActivity.activityType == PICKUP
             pickUpIndexes[requestId] = idx
         elseif currentActivity.activityType == DROPOFF
-            if newStartOfServiceTimes[idx] - newEndOfServiceTimes[pickUpIndexes[requestId]] > requests[requestId].maximumRideTime
+            newStartOfServiceTime = requestId in keys(visitedRoute) ? visitedRoute[requestId][PickUpServiceStart] + serviceTimes : newStartOfServiceTimes[idx]
+            if newStartOfServiceTime - newEndOfServiceTimes[pickUpIndexes[requestId]] > requests[requestId].maximumRideTime
                 return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0
             end
 

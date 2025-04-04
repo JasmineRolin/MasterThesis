@@ -118,7 +118,6 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
     currentSchedule.totalDistance = getTotalDistanceRoute(currentSchedule.route,scenario)
     currentSchedule.totalTime = getTotalTimeRoute(currentSchedule)
     currentSchedule.totalCost = getTotalCostRouteOnline(scenario.time,currentSchedule.route,currentState.visitedRoute)
-    println("Total cost: ",currentSchedule.totalCost)
     currentSchedule.totalIdleTime = getTotalIdleTimeRoute(currentSchedule.route)    
     currentSchedule.numberOfWalking = schedule.numberOfWalking[idx+1:end]
 
@@ -251,7 +250,12 @@ function determineCurrentState(solution::Solution,event::Request,finalSolution::
             idx, splitTime = updateCurrentScheduleNotAvailableYet(schedule,currentState,vehicle)
             print(" - not available yet or not started service yet \n")
 
-        # Check if entire route has been served and vehicle is not available anymore
+        # Check if entire route has been served and vehicle is not available anymore 
+        # Driving to depot
+        elseif length(schedule.route) == 1 && schedule.route[1].activity.activityType == DEPOT
+            idx, splitTime = updateCurrentScheduleNotAvailableAnymore!(currentState,schedule,vehicle)
+            print(" - not available anymore \n")
+        # Check if entire route has been served and vehicle is not available anymore 
         # Either vehicle is unavailable or we have completed the last activity and the vehicle is on-route to the depot 
         elseif schedule.vehicle.availableTimeWindow.endTime < currentTime || schedule.route[end-1].endOfServiceTime < currentTime
             idx, splitTime = updateCurrentScheduleNotAvailableAnymore!(currentState,schedule,vehicle)

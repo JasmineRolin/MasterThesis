@@ -10,7 +10,7 @@ export findFeasibleInsertionInSchedule
 # ----------
 # Construct a solution using a simple construction heuristic
 # ----------
-function simpleConstruction(scenario::Scenario,requests::Vector{Request})
+function simpleConstruction(scenario::Scenario,requests::Vector{Request};visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())
    
     # Initialize solution
     solution = Solution(scenario)
@@ -18,7 +18,7 @@ function simpleConstruction(scenario::Scenario,requests::Vector{Request})
 
     for request in requests
         # Determine closest feasible vehicle
-        closestVehicleIdx, idxPickUp, idxDropOff, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime  = getClosestFeasibleVehicle(request,solution,scenario)
+        closestVehicleIdx, idxPickUp, idxDropOff, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime  = getClosestFeasibleVehicle(request,solution,scenario,visitedRoute=visitedRoute)
 
         # Insert request
         if closestVehicleIdx != -1
@@ -43,7 +43,7 @@ end
 # ----------
 # Function to find the closest vehicle
 # ----------
-function getClosestFeasibleVehicle(request::Request, solution::Solution, scenario::Scenario)
+function getClosestFeasibleVehicle(request::Request, solution::Solution, scenario::Scenario; visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())
     closestVehicle = nothing
     minTravelTime = Inf
     closestVehicleIdx = -1
@@ -86,7 +86,7 @@ function getClosestFeasibleVehicle(request::Request, solution::Solution, scenari
         travelTime = scenario.time[vehicleLocationId, requestPickupId]
 
         # Determine if there is a feasible place to insert it
-        feasible, idxPickUp, idxDropOff, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime  = findFeasibleInsertionInSchedule(request,solution.vehicleSchedules[vehicleIdx],scenario)
+        feasible, idxPickUp, idxDropOff, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime  = findFeasibleInsertionInSchedule(request,solution.vehicleSchedules[vehicleIdx],scenario,visitedRoute=visitedRoute)
 
         # Update closest vehicle if a shorter travel time is found
         if feasible && travelTime < minTravelTime
@@ -112,7 +112,7 @@ end
 # ----------
 # Function to check feasibility of inserting a request in a vehicle schedule and returning feasible position
 # ----------
-function findFeasibleInsertionInSchedule(request::Request,vehicleSchedule::VehicleSchedule,scenario::Scenario)
+function findFeasibleInsertionInSchedule(request::Request,vehicleSchedule::VehicleSchedule,scenario::Scenario;visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())
 
     # Check inside available time window
     if vehicleSchedule.vehicle.availableTimeWindow.startTime > request.pickUpActivity.timeWindow.endTime || vehicleSchedule.vehicle.availableTimeWindow.endTime < request.dropOffActivity.timeWindow.startTime 
@@ -124,7 +124,7 @@ function findFeasibleInsertionInSchedule(request::Request,vehicleSchedule::Vehic
     for idxPickUp in 1:length(vehicleSchedule.route)-1
         for idxDropOff in idxPickUp:length(vehicleSchedule.route)-1
             # Check feasibility
-            feasible, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,idxPickUp,idxDropOff,scenario)
+            feasible, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,idxPickUp,idxDropOff,scenario,visitedRoute=visitedRoute)
             if feasible
                 return true, idxPickUp, idxDropOff, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime
             end

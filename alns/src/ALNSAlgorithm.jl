@@ -11,7 +11,7 @@ export ALNS
 #==
  Method to run ALNS algorithm
 ==#
-function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters,fileName::String;alreadyRejected = 0,event = Request()) 
+function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters,fileName::String;alreadyRejected = 0,event = Request(),visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}()) 
     
     # File 
     outputFile = open(fileName, "w")
@@ -46,7 +46,7 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
         destroyIdx = destroy!(scenario,trialState,parameters,configuration)
     
         # Repair trial solution 
-        repairIdx = repair!(scenario,trialState,configuration)
+        repairIdx = repair!(scenario,trialState,configuration,visitedRoute=visitedRoute)
 
         # Check if solution is improved
         # TODO: create hash table to check if solution has been visited before
@@ -85,7 +85,7 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
 
         # Check solution 
         # TODO: remove when ALNS is robust 
-        state = State(currentState.currentSolution,event,alreadyRejected)
+        state = State(currentState.currentSolution,event,visitedRoute,alreadyRejected)
         feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
         if !feasible
             println("ALNS: INFEASIBLE SOLUTION IN ITERATION:", iteration)
@@ -122,7 +122,8 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
     close(outputFile)
 
     # Check final solution
-    feasible, msg = checkSolutionFeasibility(scenario,currentState.bestSolution,requests)
+    state = State(currentState.currentSolution,event,visitedRoute,alreadyRejected)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     if !feasible
         println("ALNS: INFEASIBLE FINAL SOLUTION")
         throw(msg) 

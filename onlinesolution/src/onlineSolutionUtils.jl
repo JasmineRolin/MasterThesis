@@ -75,10 +75,10 @@ end
 #==
  Inital insertion of event
 ==#
-function onlineInsertion(solution::Solution, event::Request, scenario::Scenario)
+function onlineInsertion(solution::Solution, event::Request, scenario::Scenario; visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())
 
     state = ALNSState(Vector{Float64}(),Vector{Float64}(),Vector{Float64}(),Vector{Float64}(),Vector{Int}(),Vector{Int}(),solution,solution,[event.id],Vector{Int}(),0)
-    regretInsertion(state,scenario)
+    regretInsertion(state,scenario,visitedRoute=visitedRoute)
 
     return state.currentSolution, state.requestBank
 
@@ -92,16 +92,19 @@ function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario
     event, oldSolution, visitedRoute, totalNTaxi = currentState.event, currentState.solution, currentState.visitedRoute, currentState.totalNTaxi
 
     # Do intitial insertion
-    initialSolution, newrequestBankOnline = onlineInsertion(oldSolution,event,scenario)
+    initialSolution, newrequestBankOnline = onlineInsertion(oldSolution,event,scenario,visitedRoute = visitedRoute)
     append!(requestBank,newrequestBankOnline)
 
     # Check feasibility
     currentState.solution = initialSolution
+    printSolution(initialSolution,printRouteHorizontal)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,currentState)
-    println(feasible)
+    if !feasible
+        throw(msg)
+    end
 
     # Run ALNS
-    finalSolution,requestBank,specification,KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",stage = "online",initialSolution =  initialSolution, requestBank = requestBank, event = event, alreadyRejected =  totalNTaxi)
+    finalSolution,requestBank,specification,KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",stage = "online",initialSolution =  initialSolution, requestBank = requestBank, event = event, alreadyRejected =  totalNTaxi, visitedRoute = visitedRoute)
 
     # Update time window for event
     updateTimeWindowsOnlineOne!(finalSolution,event,scenario)
