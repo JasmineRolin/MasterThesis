@@ -48,7 +48,7 @@ end
 
     #== Check feasible route ==#
     # Update start depot 
-    startTime = 415
+    startTime = 445
     vehicleSchedule.route[1].startOfServiceTime = startTime
     vehicleSchedule.route[1].endOfServiceTime = startTime
 
@@ -86,7 +86,7 @@ end
     vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
     vehicleSchedule.totalCost = 10.0*(startOfServiceDropOff - endOfServiceTimePickUp)/scenario.time[request.pickUpActivity.id,request.dropOffActivity.id]
     vehicleSchedule.numberOfWalking = [0,1,1,0,0,0]
-    vehicleSchedule.totalIdleTime = 862.0
+    vehicleSchedule.totalIdleTime = 832
    
     # Check route feasibility
     feasible, msg = checkRouteFeasibility(scenario,vehicleSchedule)
@@ -172,7 +172,7 @@ end
 
     #== Check feasible route ==#
     # Update start depot 
-    startTime = 415
+    startTime = 435
     vehicleSchedule.route[1].startOfServiceTime = startTime
     vehicleSchedule.route[1].endOfServiceTime = startTime
     
@@ -208,7 +208,7 @@ end
     # Check route feasibility
     feasible, msg = checkRouteFeasibility(scenario,vehicleSchedule)
     @test feasible == false
-    @test msg == "ROUTE INFEASIBLE: Time window not respected for activity 6 on vehicle 1, Start/End of Service: (467, 469), Time Window: (480, 500)"
+    @test msg == "ROUTE INFEASIBLE: Time window not respected for activity 1 on vehicle 1, Start/End of Service: (483, 485), Time Window: (490, 510)"
    
 
 end
@@ -287,7 +287,7 @@ end
 
     #== Check feasible route ==#
     # Update start depot 
-    startTime = 415
+    startTime = 445
     vehicleSchedule.route[1].startOfServiceTime = startTime
     vehicleSchedule.route[1].endOfServiceTime = startTime
     
@@ -329,7 +329,7 @@ end
     # Check route feasibility
     feasible, msg = checkRouteFeasibility(scenario,vehicleSchedule)
     @test feasible == false
-    @test msg == "ROUTE INFEASIBLE: Maximum ride time exceeded for drop-off 6 on vehicle 1, END PU/START DO: (465, 492), Ride time: 27, Maximum ride time: 20, direct drive time: 2"
+    @test msg == "ROUTE INFEASIBLE: Maximum ride time exceeded for drop-off 6 on vehicle 1, END PU/START DO: (495, 522), Ride time: 27, Maximum ride time: 20, direct drive time: 2"
    
 
 end
@@ -346,7 +346,7 @@ end
 
     # Read instance 
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
-    scenario.time[9,1] = 30
+    scenario.time[9,1] = 50
     scenario.time[11,4] = 22
     scenario.time[1,6] = 20
 
@@ -356,7 +356,7 @@ end
 
     #== Check feasible route ==#
     # Update start depot 
-    startTime = 405 - scenario.time[vehicle.depotId,4]
+    startTime = 420 - scenario.time[vehicle.depotId,4]
     vehicleSchedule.route[1].startOfServiceTime = startTime
     vehicleSchedule.route[1].endOfServiceTime = startTime
 
@@ -399,17 +399,18 @@ end
     @test msg == ""
 
     # Insert pick up and drop off at end of schedule block 
-    feasible, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete= checkFeasibilityOfInsertionAtPosition(request1,vehicleSchedule,3,3,scenario)
+    feasible, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete= checkFeasibilityOfInsertionAtPosition(request1,vehicleSchedule,4,4,scenario)
     @test feasible == true
-    @test newStartOfServiceTimes[1] == 391
-    @test newStartOfServiceTimes[2] == 413 
-    @test newStartOfServiceTimes[3] == 428 
-    @test newStartOfServiceTimes[4] == 460
-    @test newStartOfServiceTimes[5] == 482
-    @test newStartOfServiceTimes[6] == 533
+    @test newStartOfServiceTimes[1] == 401
+    @test newStartOfServiceTimes[2] == 423 
+    @test newStartOfServiceTimes[3] == 438 
+    @test newStartOfServiceTimes[4] == 490
+    @test newStartOfServiceTimes[5] == 490
+    @test newStartOfServiceTimes[6] == 512
+    @test newStartOfServiceTimes[7] == 563
 
     # Insert request 
-    insertRequest!(request1,vehicleSchedule,3,3,scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete)
+    insertRequest!(request1,vehicleSchedule,4,4,scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete)
     feasible, msg = checkRouteFeasibility(scenario,vehicleSchedule)
     @test feasible == true
     @test msg == ""
@@ -429,7 +430,7 @@ end
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
     scenario.time[1,6] = 15
     scenario.time[11,4] = 40
-    scenario.time[9,1] = 31
+    scenario.time[9,1] = 40
 
     # Create VehicleSchedule
     vehicle = scenario.vehicles[1]
@@ -437,7 +438,7 @@ end
 
     #== Check feasible route ==#
     # Update start depot 
-    startTime = 466 - scenario.time[vehicle.depotId,1]
+    startTime = 490 - scenario.time[vehicle.depotId,1]
     vehicleSchedule.route[1].startOfServiceTime = startTime
     vehicleSchedule.route[1].endOfServiceTime = startTime
 
@@ -481,12 +482,13 @@ end
     # Inser pick up and drop off at beginning of schedule block 
     feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete = checkFeasibilityOfInsertionAtPosition(request2,vehicleSchedule,1,1,scenario)
     @test feasible == true
-    @test newStartOfServiceTimes[1] == 375 
-    @test newStartOfServiceTimes[2] == 415 
-    @test newStartOfServiceTimes[3] == 430 
-    @test newStartOfServiceTimes[4] == 463
-    @test newStartOfServiceTimes[5] == 480
-    @test newStartOfServiceTimes[6] == 531
+    @test newStartOfServiceTimes[1] == 400 
+    @test newStartOfServiceTimes[2] == 440 
+    @test newStartOfServiceTimes[3] == 455 
+    @test newStartOfServiceTimes[4] == 497
+    @test newStartOfServiceTimes[5] == 514
+    @test newStartOfServiceTimes[6] == 565
+    @test newStartOfServiceTimes[7] == 565
 
     # Insert request
     insertRequest!(request2,vehicleSchedule,1,1,scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete)
@@ -517,7 +519,7 @@ end
 
     #== Check feasible route ==#
     # Update start depot 
-    startTime = 466 - scenario.time[vehicle.depotId,1]
+    startTime = 490 - scenario.time[vehicle.depotId,1]
     vehicleSchedule.route[1].startOfServiceTime = startTime
     vehicleSchedule.route[1].endOfServiceTime = startTime
 
@@ -571,12 +573,13 @@ end
     request1.maximumRideTime = 40 
     feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete = checkFeasibilityOfInsertionAtPosition(request2,vehicleSchedule,1,2,scenario)
     @test feasible == true 
-    @test newStartOfServiceTimes[1] == 387
-    @test newStartOfServiceTimes[2] == 417 
-    @test newStartOfServiceTimes[3] == 454 
-    @test newStartOfServiceTimes[4] == 469
-    @test newStartOfServiceTimes[5] == 485
-    @test newStartOfServiceTimes[6] == 536
+    @test newStartOfServiceTimes[1] == 410
+    @test newStartOfServiceTimes[2] == 440 
+    @test newStartOfServiceTimes[3] == 477 
+    @test newStartOfServiceTimes[4] == 492
+    @test newStartOfServiceTimes[5] == 508
+    @test newStartOfServiceTimes[6] == 559
+    @test newStartOfServiceTimes[7] == 559
 
     # Insert request
     insertRequest!(request2,vehicleSchedule,1,2,scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete)
@@ -609,7 +612,7 @@ end
 
     #== Check feasible route ==#
     # Update start depot 
-    startTime = 405 - scenario.time[vehicle.depotId,4]
+    startTime = 420 - scenario.time[vehicle.depotId,4]
     vehicleSchedule.route[1].startOfServiceTime = startTime
     vehicleSchedule.route[1].endOfServiceTime = startTime
 
@@ -652,7 +655,7 @@ end
 
     # Case where waiting node is added in between pick-up and drop-off 
     request1.requestType = PICKUP_REQUEST
-    request1.pickUpActivity.timeWindow = findTimeWindowOfRequestedPickUpTime(386)
+    request1.pickUpActivity.timeWindow = findTimeWindowOfRequestedPickUpTime(421)
     request1.directDriveTime = scenario.time[request1.pickUpActivity.id,request1.dropOffActivity.id]
     request1.maximumRideTime = findMaximumRideTime(request1.directDriveTime,200,1) 
     request1.dropOffActivity.timeWindow = findTimeWindowOfDropOff(request1.pickUpActivity.timeWindow, scenario.time[2,7], request1.maximumRideTime)
@@ -690,7 +693,7 @@ end
 
     #== Check feasible route ==#
     # Update start depot 
-    startTime = 466 - scenario.time[vehicle.depotId,1]
+    startTime = 490 - scenario.time[vehicle.depotId,1]
     vehicleSchedule.route[1].startOfServiceTime = startTime
     vehicleSchedule.route[1].endOfServiceTime = startTime
 
@@ -741,62 +744,17 @@ end
    @test feasible == true 
 
     # Insert request
-   copyVehicleSchedule = deepcopy(vehicleSchedule)
-   insertRequest!(request2,copyVehicleSchedule,1,3,scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete)
-   feasible, msg = checkRouteFeasibility(scenario,copyVehicleSchedule)
-   @test feasible == true
-   @test msg == ""
-
-    # Shift back wards when inserting pick up and drop off  
-    request2.dropOffActivity.timeWindow.startTime = 455 
-    request2.dropOffActivity.timeWindow.endTime = 465
-    request1.dropOffActivity.timeWindow.startTime = 467
-    request1.maximumRideTime = 80
-    request2.maximumRideTime = 80
-    scenario.time[9,6] = 8
-    feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete = checkFeasibilityOfInsertionAtPosition(request2,vehicleSchedule,1,2,scenario)
-    @test feasible == true 
-
-    # Insert request
     copyVehicleSchedule = deepcopy(vehicleSchedule)
-    insertRequest!(request2,copyVehicleSchedule,1,2,scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete)
+    insertRequest!(request2,copyVehicleSchedule,1,3,scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete)
     feasible, msg = checkRouteFeasibility(scenario,copyVehicleSchedule)
     @test feasible == true
     @test msg == ""
-
-    # Shift forwards when inserting pick up and drop off  
-    request2.dropOffActivity.timeWindow.startTime = 460
-    request2.dropOffActivity.timeWindow.endTime = 465
-    request1.dropOffActivity.timeWindow.startTime = 467
-    scenario.time[9,6] = 8
-    scenario.time[1,9] = 2
-    feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete = checkFeasibilityOfInsertionAtPosition(request2,vehicleSchedule,1,2,scenario)
-    @test feasible == false 
-
-    # Shift R2 backwards and R1 forwards
-    request2.dropOffActivity.timeWindow.startTime = 455
-    request2.dropOffActivity.timeWindow.endTime = 465
-    request1.dropOffActivity.timeWindow.startTime = 467
-    request1.dropOffActivity.timeWindow.endTime = 500
-    scenario.time[9,6] = 35
-    vehicleSchedule.route[1].activity.timeWindow.startTime = 250
-    feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete = checkFeasibilityOfInsertionAtPosition(request2,vehicleSchedule,1,2,scenario)
-    @test feasible == true 
-
-    # Insert request
-    copyVehicleSchedule = deepcopy(vehicleSchedule)
-    insertRequest!(request2,copyVehicleSchedule,1,2,scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete)
-    feasible, msg = checkRouteFeasibility(scenario,copyVehicleSchedule)
-    @test feasible == true
-    @test msg == ""
-
 end
 
 
 
 
 @testset "Check feasibility of insertion: W - ROUTE - P - ROUTE- D  - W" begin 
-    
     requestFile = "tests/resources/Requests.csv"
     vehiclesFile = "tests/resources/Vehicles.csv"
     parametersFile = "tests/resources/Parameters.csv"
@@ -827,7 +785,7 @@ end
 
     #== Check feasible route ==#
     # Update start depot 
-    startTime = 398 - scenario.time[vehicle.depotId,4]
+    startTime = 420 - scenario.time[vehicle.depotId,4]
     vehicleSchedule.route[1].startOfServiceTime = startTime
     vehicleSchedule.route[1].endOfServiceTime = startTime
 
@@ -841,7 +799,7 @@ end
     endOfServiceTimePickUp = startOfServicePickUp + scenario.serviceTimes
     request2.maximumRideTime = findMaximumRideTime(request2.directDriveTime,2000,1) 
 
-    startOfServiceDropOff = 422
+    startOfServiceDropOff = 444
     endOfServiceTimeDropOff = startOfServiceDropOff + scenario.serviceTimes
 
     pickUpActivity = ActivityAssignment(request2.pickUpActivity, vehicleSchedule.vehicle, startOfServicePickUp, endOfServiceTimePickUp)
@@ -859,13 +817,13 @@ end
 
     # Add another request
     request1.requestType = PICKUP_REQUEST
-    request1.pickUpActivity.timeWindow = findTimeWindowOfRequestedPickUpTime(386)
+    request1.pickUpActivity.timeWindow = findTimeWindowOfRequestedPickUpTime(421)
     request1.directDriveTime = scenario.time[request1.pickUpActivity.id,request1.dropOffActivity.id]
     request1.maximumRideTime = findMaximumRideTime(request1.directDriveTime,2000,1) 
     request1.dropOffActivity.timeWindow = findTimeWindowOfDropOff(request1.pickUpActivity.timeWindow, scenario.time[2,7], request1.maximumRideTime)
 
-    insert!(vehicleSchedule.route,3,ActivityAssignment(request1.pickUpActivity, vehicleSchedule.vehicle, 401, 403))
-    insert!(vehicleSchedule.route,4,ActivityAssignment(request1.dropOffActivity, vehicleSchedule.vehicle, 419, 421))
+    insert!(vehicleSchedule.route,3,ActivityAssignment(request1.pickUpActivity, vehicleSchedule.vehicle, 423, 425))
+    insert!(vehicleSchedule.route,4,ActivityAssignment(request1.dropOffActivity, vehicleSchedule.vehicle, 441, 443))
 
     # Update vehicle schedule
     vehicleSchedule.activeTimeWindow.startTime = startTime
@@ -882,7 +840,7 @@ end
 
     # Add another request
     request3.requestType = PICKUP_REQUEST
-    request3.pickUpActivity.timeWindow = findTimeWindowOfRequestedPickUpTime(394)
+    request3.pickUpActivity.timeWindow = findTimeWindowOfRequestedPickUpTime(426)
     request3.directDriveTime = scenario.time[request1.pickUpActivity.id,request1.dropOffActivity.id]
     request3.maximumRideTime = findMaximumRideTime(request1.directDriveTime,2000,1) 
     request3.dropOffActivity.timeWindow = findTimeWindowOfDropOff(request1.pickUpActivity.timeWindow, scenario.time[1,6], request1.maximumRideTime)
@@ -925,9 +883,9 @@ end
     vehicle.totalCapacity = 4
     vehicleSchedule = VehicleSchedule(vehicle)
 
-    #== Check feasible route ==#
+   #== Check feasible route ==#
     # Update start depot 
-    startTime = 398 - scenario.time[vehicle.depotId,4]
+    startTime = 420 - scenario.time[vehicle.depotId,4]
     vehicleSchedule.route[1].startOfServiceTime = startTime
     vehicleSchedule.route[1].endOfServiceTime = startTime
 
@@ -939,8 +897,9 @@ end
     # Insert request 2 
     startOfServicePickUp = startTime + scenario.time[vehicle.depotId,request2.pickUpActivity.id] 
     endOfServiceTimePickUp = startOfServicePickUp + scenario.serviceTimes
+    request2.maximumRideTime = findMaximumRideTime(request2.directDriveTime,2000,1) 
 
-    startOfServiceDropOff = 422
+    startOfServiceDropOff = 444
     endOfServiceTimeDropOff = startOfServiceDropOff + scenario.serviceTimes
 
     pickUpActivity = ActivityAssignment(request2.pickUpActivity, vehicleSchedule.vehicle, startOfServicePickUp, endOfServiceTimePickUp)
@@ -958,13 +917,13 @@ end
 
     # Add another request
     request1.requestType = PICKUP_REQUEST
-    request1.pickUpActivity.timeWindow = findTimeWindowOfRequestedPickUpTime(386)
+    request1.pickUpActivity.timeWindow = findTimeWindowOfRequestedPickUpTime(421)
     request1.directDriveTime = scenario.time[request1.pickUpActivity.id,request1.dropOffActivity.id]
-    request1.maximumRideTime = findMaximumRideTime(request1.directDriveTime,200,1) 
+    request1.maximumRideTime = findMaximumRideTime(request1.directDriveTime,2000,1) 
     request1.dropOffActivity.timeWindow = findTimeWindowOfDropOff(request1.pickUpActivity.timeWindow, scenario.time[2,7], request1.maximumRideTime)
 
-    insert!(vehicleSchedule.route,3,ActivityAssignment(request1.pickUpActivity, vehicleSchedule.vehicle, 401, 403))
-    insert!(vehicleSchedule.route,4,ActivityAssignment(request1.dropOffActivity, vehicleSchedule.vehicle, 419, 421))
+    insert!(vehicleSchedule.route,3,ActivityAssignment(request1.pickUpActivity, vehicleSchedule.vehicle, 423, 425))
+    insert!(vehicleSchedule.route,4,ActivityAssignment(request1.dropOffActivity, vehicleSchedule.vehicle, 441, 443))
 
     # Update vehicle schedule
     vehicleSchedule.activeTimeWindow.startTime = startTime
@@ -983,7 +942,7 @@ end
 
     # Add another request
     request3.requestType = PICKUP_REQUEST
-    request3.pickUpActivity.timeWindow = findTimeWindowOfRequestedPickUpTime(386)
+    request3.pickUpActivity.timeWindow = findTimeWindowOfRequestedPickUpTime(426)
     request3.directDriveTime = scenario.time[request1.pickUpActivity.id,request1.dropOffActivity.id]
     scenario.time[request3.pickUpActivity.id,request3.dropOffActivity.id] = request3.directDriveTime
     request3.maximumRideTime = findMaximumRideTime(request1.directDriveTime,200,1) 
