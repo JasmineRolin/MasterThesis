@@ -130,7 +130,7 @@ Test ALNSFunctions
 
 # @testset "ALNS RUN test - Konsentra Test" begin 
 #     requestFile = "Data/Konsentra/TransformedData_Data.csv"
-#     vehiclesFile = "Data/Konsentra/Vehicles_0.5.csv"
+#     vehiclesFile = "Data/Konsentra/Vehicles_0.9.csv"
 #     parametersFile = "tests/resources/Parameters.csv"
 #     distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra_Data_NewVehicles.txt"
 #     timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra_Data_NewVehicles.txt"
@@ -169,7 +169,7 @@ Test ALNSFunctions
 
     # for suff in files 
     #     requestFile = string("Data/Konsentra/TransformedData_",suff,".csv")
-    #     vehiclesFile = "Data/Konsentra/Vehicles_0.5.csv"
+    #     vehiclesFile = "Data/Konsentra/Vehicles_0.9.csv"
     #     parametersFile = "tests/resources/Parameters.csv"
     #     distanceMatrixFile =string("Data/Matrices/Konsentra_",suff,"_distance.txt")
     #     timeMatrixFile = string("Data/Matrices/Konsentra_",suff,"_time.txt")
@@ -204,9 +204,8 @@ Test ALNSFunctions
 #end
 
 
-n = 300
-#for i in 1:10
-i = 1
+n = 20
+for i in 10:10
     requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
     parametersFile = "tests/resources/Parameters.csv"
@@ -239,4 +238,4 @@ i = 1
 
     
     
-#end
+end

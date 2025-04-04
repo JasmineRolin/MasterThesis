@@ -128,7 +128,7 @@ function createCostPlot(df::DataFrame,scenarioName::String)
     onlyImproved = isImproved .& .!isNewBest
 
     # Create the line plot for total cost
-    p = plot(iterations, total_cost, label="Total Cost", linewidth=2, color=:darkgray, xlabel="Iteration", ylabel="Total Cost", title=string(scenarioName," - ALNS Total Cost Over Iterations"),size=(1500,900))
+    p = plot(iterations, total_cost, label="Total Cost", linewidth=2, color=:darkgray, xlabel="Iteration", ylabel="Total Cost", title=string(scenarioName," - ALNS Total Cost Over Iterations"),size=(2000,1000))
 
     # Add yellow dots for accepted solutions
     scatter!(iterations[isAccepted], total_cost[isAccepted], markershape=:circle, color=:yellow, label="Accepted")
@@ -155,7 +155,7 @@ function createRepairWeightPlot(df::DataFrame,specifications::Dict,scenarioName:
     rw_columns = filter(col -> startswith(string(col), "RW"), names(df))
 
     # Create a plot
-    p = plot(title=string(scenarioName," - RW Over Iterations"), xlabel="Iteration", ylabel="RW")
+    p = plot(title=string(scenarioName," - RW Over Iterations"), xlabel="Iteration", ylabel="RW",size=(2000,1000))
 
     # Plot each RW column
     for (idx,col) in enumerate(rw_columns)
@@ -178,7 +178,7 @@ function createDestroyWeightPlot(df::DataFrame,specifications::Dict,scenarioName
     rw_columns = filter(col -> startswith(string(col), "DW"), names(df))
 
     # Create a plot
-    p = plot(title=string(scenarioName," - DW Over Iterations"), xlabel="Iteration", ylabel="DW")
+    p = plot(title=string(scenarioName," - DW Over Iterations"), xlabel="Iteration", ylabel="DW",size=(2000,1000))
 
     # Plot each RW column
     for (idx,col) in enumerate(rw_columns)
@@ -205,23 +205,30 @@ end
 
 # Create gant chart of vehicles and requests
 function createGantChartOfRequestsAndVehicles(vehicles, requests, requestBank,scenarioName)
-    p = plot(size=(1500,900))
+    p = plot(size=(2000,2100))
     yPositions = []
     yLabels = []
     yPos = 1
+
+    linewidth = 11.5
     
     for (idx,vehicle) in enumerate(vehicles)
         # Vehicle availability window
         tw = vehicle.availableTimeWindow
 
         if idx == 1
-            plot!([tw.startTime, tw.endTime], [yPos, yPos], linewidth=5, label="Vehicle TW", color=:black)
+            plot!([tw.startTime, tw.endTime], [yPos, yPos], linewidth=linewidth, label="Vehicle TW", color=:black,seriestype=:step)
         else
-            plot!([tw.startTime, tw.endTime], [yPos, yPos], linewidth=5,label="", color=:black)
+            plot!([tw.startTime, tw.endTime], [yPos, yPos], linewidth=linewidth,label="", color=:black,seriestype=:step)
         end
         push!(yPositions, yPos)
         push!(yLabels, "Vehicle $(vehicle.id)")
-        yPos += 1
+
+        scatter!([tw.startTime, tw.endTime], [yPos, yPos], marker=:square, markersize=6, color=:black, label="",markerstrokewidth=0)
+
+        hline!([yPos - 2], linewidth=1, color=:gray, label="")
+
+        yPos += 4
     end
     
     legendServiced = false 
@@ -232,28 +239,30 @@ function createGantChartOfRequestsAndVehicles(vehicles, requests, requestBank,sc
         
         # Determine color based on whether request is serviced
         unServiced = request.id in requestBank
-        colorPickup = unServiced ? :red : :blue
-        colorDropoff = unServiced ? :orange : :purple
+        colorPickup = unServiced ? :orange : :green
+        colorDropoff = unServiced ? :red : :palegreen
 
         # Plot pickup and dropoff window as a bar
         if unServiced && !legendUnserviced
             legendUnserviced = true
-            plot!([pickupTW.startTime, pickupTW.endTime], [yPos, yPos], linewidth=5, label="Unserviced Pickup TW", color=colorPickup)
-            plot!([dropoffTW.startTime, dropoffTW.endTime], [yPos, yPos], linewidth=5, label="Unserviced Dropoff TW", color=colorDropoff)
+            plot!([pickupTW.startTime, pickupTW.endTime], [yPos, yPos], linewidth=linewidth, label="Unserviced Pickup TW", color=colorPickup,seriestype=:step)
+            plot!([dropoffTW.startTime, dropoffTW.endTime], [yPos, yPos], linewidth=linewidth, label="Unserviced Dropoff TW", color=colorDropoff,seriestype=:step)
         elseif !unServiced && !legendServiced
             legendServiced = true
-            plot!([pickupTW.startTime, pickupTW.endTime], [yPos, yPos], linewidth=5, label="Serviced Pickup TW", color=colorPickup)
-            plot!([dropoffTW.startTime, dropoffTW.endTime], [yPos, yPos], linewidth=5, label="Serviced Dropoff TW", color=colorDropoff)
+            plot!([pickupTW.startTime, pickupTW.endTime], [yPos, yPos], linewidth=linewidth, label="Serviced Pickup TW", color=colorPickup,seriestype=:step)
+            plot!([dropoffTW.startTime, dropoffTW.endTime], [yPos, yPos], linewidth=linewidth, label="Serviced Dropoff TW", color=colorDropoff,seriestype=:step)
         else
-            plot!([pickupTW.startTime, pickupTW.endTime], [yPos, yPos], linewidth=5, label="", color=colorPickup)
-            plot!([dropoffTW.startTime, dropoffTW.endTime], [yPos, yPos], linewidth=5,label="", color=colorDropoff)
+            plot!([pickupTW.startTime, pickupTW.endTime], [yPos, yPos], linewidth=linewidth, label="", color=colorPickup,seriestype=:step)
+            plot!([dropoffTW.startTime, dropoffTW.endTime], [yPos, yPos], linewidth=linewidth,label="", color=colorDropoff,seriestype=:step)
         end 
 
-      
-        
+        scatter!([pickupTW.startTime, pickupTW.endTime], [yPos, yPos], marker=:square, markersize=6, color=colorPickup, label="",markerstrokewidth=0)
+        scatter!([dropoffTW.startTime, dropoffTW.endTime], [yPos, yPos], marker=:square, markersize=6, color=colorDropoff, label="",markerstrokewidth=0)
+        hline!([yPos - 2], linewidth=1, color=:gray, label="")
+
         push!(yPositions, yPos)
         push!(yLabels, "Request $(request.id)")
-        yPos += 1
+        yPos += 4
     end
     
     plot!(p, yticks=(yPositions, yLabels))
@@ -270,26 +279,42 @@ function createGantChartOfSolution(solution::Solution,scenarioName::String)
     yLabels = []
     yPos = 1
     
-    p = plot(size=(1500,1000))
+    p = plot(size=(2000,1000))
     
     for schedule in solution.vehicleSchedules
         for assignment in schedule.route
             offset = 0 # TO offset waiting activities visually 
             if assignment.activity.activityType == PICKUP
-                color = :green 
+                color = :lightgreen 
+                markersize = 10
+                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
+
             elseif assignment.activity.activityType == DROPOFF
-                color = :purple
+                color = :tomato
+                markersize = 10
+
+                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
+
             elseif assignment.activity.activityType == DEPOT
-                color = :red
+                color = :black
+                markersize = 7
+
+                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:circle,markerstrokewidth=0,markersize=markersize)
+
             else
-                offset = 2
-                color = :gray
+                offset = 0
+                color = :gray67
+                markersize = 10
+
+                plot!(p, [assignment.startOfServiceTime, assignment.endOfServiceTime], [yPos, yPos], linewidth=19.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
+
             end
-            plot!(p, [assignment.startOfServiceTime+offset, assignment.endOfServiceTime-offset], [yPos, yPos], linewidth=10, label="", color=color)
         end
+        hline!([yPos - 1], linewidth=1, color=:gray, label="")
+
         push!(yPositions, yPos)
         push!(yLabels, "Vehicle $(schedule.vehicle.id)")
-        yPos += 1
+        yPos += 2
     end
     
     plot!(p, yticks=(yPositions, yLabels))
