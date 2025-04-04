@@ -210,6 +210,9 @@ function createGantChartOfRequestsAndVehicles(vehicles, requests, requestBank,sc
     yLabels = []
     yPos = 1
 
+    xPositions = range(5*60,24*60,step=60)
+    xLabels = string.(Int.(collect(xPositions)/60))
+
     linewidth = 11.5
     
     for (idx,vehicle) in enumerate(vehicles)
@@ -266,7 +269,9 @@ function createGantChartOfRequestsAndVehicles(vehicles, requests, requestBank,sc
     end
     
     plot!(p, yticks=(yPositions, yLabels))
-    xlabel!("Time (Minutes after Midnight)")
+    plot!(p, xticks=(xPositions, xLabels))
+
+    xlabel!("Time (Hours)")
     title!(string(scenarioName," - Vehicle Availability and Request Time Windows"))
 
     return p
@@ -278,8 +283,11 @@ function createGantChartOfSolution(solution::Solution,scenarioName::String)
     yPositions = []
     yLabels = []
     yPos = 1
+
+    xPositions = range(6*60,24*60,step=60)
+    xLabels = string.(Int.(collect(xPositions)/60))
     
-    p = plot(size=(2000,1000))
+    p = plot(size=(2000,2000))
     
     for schedule in solution.vehicleSchedules
         for assignment in schedule.route
@@ -318,7 +326,8 @@ function createGantChartOfSolution(solution::Solution,scenarioName::String)
     end
     
     plot!(p, yticks=(yPositions, yLabels))
-    xlabel!("Time (Minutes after Midnight)")
+    plot!(p, xticks=(xPositions, xLabels))
+    xlabel!("Time (Hour)")
     title!(string(scenarioName," - Activity Assignments for Vehicles"))
     
     return p

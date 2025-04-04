@@ -74,5 +74,6 @@ main()
 #     requestFile = string("Data/Konsentra/TransformedData_",suff,".csv")
 #     vehicleFile = "Data/Konsentra/Vehicles_0.9.csv"
 #     dataName = string("Data/Matrices/Konsentra_",suff)
-#     getTimeDistanceMatrix(requestFile, vehicleFile, dataName)
+#  
 # end
+
