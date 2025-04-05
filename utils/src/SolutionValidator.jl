@@ -73,6 +73,11 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,state::State)
         end
     end
     notServicedRequests = setdiff(considered, servicedPickUpActivities)
+    #println("totalNTaxi: $(totalNTaxi)")
+    #println("considered: $(considered)")
+    #println("serviced: $(servicedPickUpActivities)")
+    #println("not serviced: $(notServicedRequests)")
+    
     if totalNTaxi + nTaxi != length(notServicedRequests) 
         msg = "SOLUTION INFEASIBLE: Not all requests are serviced. Serviced: $(length(servicedPickUpActivities)), not serviced: $(length(notServicedRequests)), nTaxi: $(nTaxi)"
         return false, msg
@@ -149,8 +154,8 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
         msg = "ROUTE INFEASIBLE: Total time is incorrect for vehicle $(vehicle.id). Calculated time $(durationActiveTimeWindow), actual time $(totalTime)"
         return false, msg, Set{Int}(), Set{Int}()
     end
-    if !isapprox(totalCost, getTotalCostRouteOnline(scenario.time,route,visitedRoute),atol=0.0001) 
-        msg = "ROUTE INFEASIBLE: Total cost is incorrect for vehicle $(vehicle.id). Calculated cost $(getTotalCostRouteOnline(scenario.time,route,visitedRoute)), actual cost $(totalCost), diff $(abs(totalCost-getTotalCostRouteOnline(scenario.time,route,visitedRoute))), check $(abs(totalCost-getTotalCostRoute(scenario,route)) > 0.0001)"
+    if !isapprox(totalCost, getTotalCostRouteOnline(scenario.time,route,visitedRoute,scenario.serviceTimes),atol=0.0001) 
+        msg = "ROUTE INFEASIBLE: Total cost is incorrect for vehicle $(vehicle.id). Calculated cost $(getTotalCostRouteOnline(scenario.time,route,visitedRoute,scenario.serviceTimes)), actual cost $(totalCost), diff $(abs(totalCost-getTotalCostRouteOnline(scenario.time,route,visitedRoute,scenario.serviceTimes))))"
         return false, msg, Set{Int}(), Set{Int}()
     end
 

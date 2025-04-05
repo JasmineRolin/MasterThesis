@@ -24,7 +24,7 @@ function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::A
     @unpack minPercentToDestroy, maxPercentToDestroy = parameters
 
     if nAssignedRequests == 0
-        println("Warning: No requests available to remove.")
+        #println("Warning: No requests available to remove.")
         return
     end
     
@@ -70,7 +70,7 @@ function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::
     
     # Find number of requests currently in solution
     if nAssignedRequests == 0
-        println("Warning: No requests available to remove.")
+        #println("Warning: No requests available to remove.")
         return
     end
 
@@ -128,7 +128,7 @@ function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::A
 
     # Find number of requests currently in solution
     if nAssignedRequests == 0
-        println("Warning: No requests available to remove.")
+        #println("Warning: No requests available to remove.")
         return
     end
 
