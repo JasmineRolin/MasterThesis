@@ -381,7 +381,16 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
     end
 
     # Update total time 
-    totalTime = newStartOfServiceTimes[end] - newEndOfServiceTimes[1] 
+    totalTime = newEndOfServiceTimes[end] - newStartOfServiceTimes[1]
+    println("newStartOfServiceTimes: ", newStartOfServiceTimes)
+    println("newEndOfServiceTimes: ", newEndOfServiceTimes)
+    if isapprox(totalTime,80,atol=0.01) && route[end].activity.id==66
+        println("=========LOOK HERE=========")
+        println("Total time: ", totalTime)
+        printSimpleRoute(route)
+        throw("Error")
+    end
+    
 
     return true, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime
 end

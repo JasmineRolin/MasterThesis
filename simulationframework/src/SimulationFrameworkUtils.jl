@@ -94,7 +94,7 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
         if schedule.route[i].activity.activityType == PICKUP
             currentState.visitedRoute[schedule.route[i].activity.requestId] = Dict("PickUpServiceStart" => schedule.route[i].startOfServiceTime, "DropOffServiceStart" => 0)
         elseif schedule.route[i].activity.activityType == DROPOFF
-            currentState.visitedRoutes[schedule.route[i].activity.requestId]["DropOffServiceStart"] = schedule.route[i].startOfServiceTime
+            currentState.visitedRoute[schedule.route[i].activity.requestId]["DropOffServiceStart"] = schedule.route[i].startOfServiceTime
         end
     end
 
@@ -146,7 +146,7 @@ end
 # ------
 # Function to update final solution for given vehicle 
 # ------
-function updateFinalSolution!(scenario::Scenario,finalSolution::Solution,solution::Solution,vehicle::Int,idx::Int,splitTime::Int)
+function updateFinalSolution!(scenario::Scenario,finalSolution::Solution,solution::Solution,vehicle::Int,idx::Int,splitTime::Int,visitedRoute::Dict{Int,Dict{String,Int}})
     # Return if no completed route 
     if idx == 0
         return
@@ -165,21 +165,19 @@ function updateFinalSolution!(scenario::Scenario,finalSolution::Solution,solutio
     finalSolution.vehicleSchedules[vehicle].activeTimeWindow.endTime = splitTime
    
     # Update KPIs of route
-    println("-----Vehicle: ",vehicle)
-    println(finalSolution.vehicleSchedules[vehicle].totalCost)
     totalTimeOfNewCompletedRoute = splitTime - newCompletedRoute[1].startOfServiceTime
-    finalSolution.vehicleSchedules[vehicle].totalTime += totalTimeOfNewCompletedRoute
+    finalSolution.vehicleSchedules[vehicle].totalTime += totalTimeOfNewCompletedRoute #?
     finalSolution.vehicleSchedules[vehicle].totalDistance += getTotalDistanceRoute(solution.vehicleSchedules[vehicle].route[1:idx+1],scenario)
-    finalSolution.vehicleSchedules[vehicle].totalCost += getTotalCostRoute(scenario,newCompletedRoute) 
+    finalSolution.vehicleSchedules[vehicle].totalCost += getTotalCostRouteOnline(scenario.time,newCompletedRoute,visitedRoute,scenario.serviceTimes) 
     finalSolution.vehicleSchedules[vehicle].totalIdleTime += getTotalIdleTimeRoute(newCompletedRoute)
     append!(finalSolution.vehicleSchedules[vehicle].numberOfWalking,solution.vehicleSchedules[vehicle].numberOfWalking[1:idx])
-    println(finalSolution.vehicleSchedules[vehicle].totalCost)
 
     # # Update KPIs of solution
     finalSolution.totalRideTime += totalTimeOfNewCompletedRoute
     finalSolution.totalDistance += getTotalDistanceRoute(solution.vehicleSchedules[vehicle].route[1:idx+1],scenario)
-    finalSolution.totalCost += getTotalCostRoute(scenario,newCompletedRoute)
+    finalSolution.totalCost += getTotalCostRouteOnline(scenario.time,newCompletedRoute,visitedRoute,scenario.serviceTimes) 
     finalSolution.totalIdleTime += getTotalIdleTimeRoute(newCompletedRoute)
+
 end
 
 
@@ -222,6 +220,10 @@ function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,currentStat
         finalSolution.totalIdleTime += newIdleTime
         finalSolution.totalCost += newCost 
     end
+
+    finalSolution.nTaxi += currentState.solution.nTaxi
+    finalSolution.totalCost += scenario.taxiParameter*finalSolution.nTaxi
+
 end
 
 
@@ -234,7 +236,7 @@ function determineCurrentState(solution::Solution,event::Request,finalSolution::
     currentState = State(scenario,event,visitedRoute,0)
     currentState.solution.vehicleSchedules = deepcopy(solution.vehicleSchedules)
     currentState.solution.totalCost = solution.totalCost
-    currentState.solution.nTaxi = solution.nTaxi
+    currentState.solution.nTaxi = 0 #?solution.nTaxi
     currentState.solution.totalDistance = solution.totalDistance
     currentState.solution.totalRideTime = solution.totalRideTime
     currentState.solution.totalIdleTime = solution.totalIdleTime
@@ -287,13 +289,14 @@ function determineCurrentState(solution::Solution,event::Request,finalSolution::
         end
 
         # Update final solution
-        updateFinalSolution!(scenario,finalSolution,solution,vehicle,idx, splitTime)
+        updateFinalSolution!(scenario,finalSolution,solution,vehicle,idx, splitTime,visitedRoute)
         
     end
 
+    finalSolution.nTaxi += solution.nTaxi
     currentState.solution.nTaxi = 1 # Because of new event
     currentState.solution.totalCost += scenario.taxiParameter*currentState.solution.nTaxi
-    currentState.totalNTaxi = finalSolution.nTaxi
+    currentState.totalNTaxi = finalSolution.nTaxi 
 
     return currentState, finalSolution
 end
@@ -341,6 +344,7 @@ function simulateScenario(scenario::Scenario)
         # Determine current state
         currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario,visitedRoute)
         currentState.totalNTaxi = finalSolution.nTaxi
+        println("Total N Taxi2: ", currentState.totalNTaxi)
         
         println("----------------")
         println("Current solution: ")
@@ -374,6 +378,10 @@ function simulateScenario(scenario::Scenario)
         printSolution(currentState.solution,printRouteHorizontal)
 
         println("Request bank: ", requestBank)
+        println("Solution nTaxi: ", solution.nTaxi)
+        println("finalSolution nTaxi: ", finalSolution.nTaxi)
+        println("Total N Taxi: ", currentState.totalNTaxi)
+        println("Length of over request bank: ", length(requestBank))
 
 
 

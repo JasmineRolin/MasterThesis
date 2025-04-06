@@ -22,6 +22,7 @@ function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::A
     @unpack currentSolution, assignedRequests, nAssignedRequests, requestBank = currentState
     @unpack time, distance, serviceTimes,requests = scenario
     @unpack minPercentToDestroy, maxPercentToDestroy = parameters
+    println("--RANDOM DESTROY--")
 
     if nAssignedRequests == 0
         #println("Warning: No requests available to remove.")
@@ -67,7 +68,8 @@ function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::
     @unpack currentSolution, assignedRequests, nAssignedRequests, requestBank = currentState
     @unpack time, distance, serviceTimes,requests = scenario
     @unpack p, minPercentToDestroy, maxPercentToDestroy = parameters
-    
+    println("--WORST DESTROY--")
+
     # Find number of requests currently in solution
     if nAssignedRequests == 0
         #println("Warning: No requests available to remove.")
@@ -125,6 +127,7 @@ function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::A
     @unpack currentSolution, assignedRequests, nAssignedRequests, requestBank = currentState
     @unpack time, distance, requests,serviceTimes,requests = scenario
     @unpack p, minPercentToDestroy, maxPercentToDestroy, shawRemovalPhi, shawRemovalXi, minDriveTime, maxDriveTime, minStartOfTimeWindowPickUp, maxStartOfTimeWindowPickUp, minStartOfTimeWindowDropOff, maxStartOfTimeWindowDropOff = parameters
+    println("--SHAW DESTROY--")
 
     # Find number of requests currently in solution
     if nAssignedRequests == 0

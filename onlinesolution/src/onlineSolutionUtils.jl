@@ -93,7 +93,6 @@ function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario
 
     # Do intitial insertion
     initialSolution, newrequestBankOnline = onlineInsertion(oldSolution,event,scenario,visitedRoute = visitedRoute)
-    append!(requestBank,newrequestBankOnline)
 
     # Check feasibility
     currentState.solution = initialSolution
@@ -104,7 +103,8 @@ function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario
     end
 
     # Run ALNS
-    finalSolution,requestBank,specification,KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",stage = "online",initialSolution =  initialSolution, requestBank = requestBank, event = event, alreadyRejected =  totalNTaxi, visitedRoute = visitedRoute)
+    finalSolution,finalOnlineRequestBank,specification,KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",stage = "online",initialSolution =  initialSolution, requestBank = newrequestBankOnline, event = event, alreadyRejected =  totalNTaxi, visitedRoute = visitedRoute)
+    append!(requestBank,finalOnlineRequestBank)
 
     # Update time window for event
     updateTimeWindowsOnlineOne!(finalSolution,event,scenario)

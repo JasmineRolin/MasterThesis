@@ -67,14 +67,6 @@ function getTotalCostRoute(time::Array{Int,2},route::Vector{ActivityAssignment})
         end
     end
     
-    if isapprox(ratio*10.0,12.22222,atol=0.01)
-        println("=========LOOK HERE=========")
-        println("Ratio: ", ratio*10.0)
-        println(pickupTimes)
-        println("Pickup times: ", pickupTimes)
-        println("Test")
-    end
-    
     return ratio*10.0
 end
 
@@ -99,14 +91,6 @@ function getTotalCostRouteOnline(time::Array{Int,2},route::Vector{ActivityAssign
             actualTime = Float64(dropoffTime - pickupTime)
             ratio += actualTime/directTime
         end
-    end
-
-    if isapprox(ratio*10.0,12.22222,atol=0.01)
-        println("=========LOOK HERE2=========")
-        println("Ratio: ", ratio*10.0)
-        println(pickupTimes)
-        println("Pickup times: ", pickupTimes)
-        println("Test")
     end
     
     return ratio*10.0

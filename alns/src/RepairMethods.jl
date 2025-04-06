@@ -10,9 +10,17 @@ export regretInsertion
     Method that performs regret insertion of requests
 ==#
 function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())
+    println("--REGRET INSERTION--")
+
     #TODO should we implement noise?
     @unpack destroyWeights, repairWeights, destroyNumberOfUses, repairNumberOfUses, bestSolution, currentSolution, requestBank = state
     requests = scenario.requests
+
+    if length(requestBank) != state.currentSolution.nTaxi
+        println(requestBank)
+        throw("Error: requestBank length does not match currentSolution.nTaxi")
+        return
+    end
 
     # Define insertion matrix
     insCostMatrix = zeros(Float64, length(requests), length(scenario.vehicles))
@@ -124,6 +132,13 @@ end
 function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())
     @unpack destroyWeights, repairWeights, destroyNumberOfUses, repairNumberOfUses, bestSolution, currentSolution, requestBank = state
     newRequestBank = Int[]
+    println("--GREEDY INSERTION--")
+
+    if length(requestBank) != state.currentSolution.nTaxi
+        println(requestBank)
+        throw("Error: requestBank length does not match currentSolution.nTaxi")
+        return
+    end
 
     for r in requestBank
         request = scenario.requests[r]
