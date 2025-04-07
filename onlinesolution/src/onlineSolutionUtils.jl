@@ -96,7 +96,6 @@ function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario
 
     # Check feasibility
     currentState.solution = initialSolution
-    printSolution(initialSolution,printRouteHorizontal)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,currentState)
     if !feasible
         throw(msg)

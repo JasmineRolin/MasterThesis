@@ -85,6 +85,9 @@ function getTotalCostRouteOnline(time::Array{Int,2},route::Vector{ActivityAssign
             actualTime = Float64(dropoffTime - pickupTime)
             ratio += actualTime/directTime
         elseif activity.activityType == DROPOFF
+            if !haskey(visitedRoute, activity.requestId)
+                throw(ArgumentError("RequestId not found in visitedRoute"))
+            end
             pickupTime = visitedRoute[activity.requestId]["PickUpServiceStart"] + serviceTime
             dropoffTime = assignment.startOfServiceTime
             directTime = Float64(time[activity.requestId, activity.id])

@@ -117,7 +117,10 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
     # Update KPIs
     currentSchedule.totalDistance = getTotalDistanceRoute(currentSchedule.route,scenario)
     currentSchedule.totalTime = getTotalTimeRoute(currentSchedule)
+    println("---------------HERE-------------")
+    println("Visited route: ", currentState.visitedRoute)
     currentSchedule.totalCost = getTotalCostRouteOnline(scenario.time,currentSchedule.route,currentState.visitedRoute,scenario.serviceTimes)
+    println(currentSchedule.totalCost)
     currentSchedule.totalIdleTime = getTotalIdleTimeRoute(currentSchedule.route)    
     currentSchedule.numberOfWalking = schedule.numberOfWalking[idx+1:end]
 
@@ -344,7 +347,6 @@ function simulateScenario(scenario::Scenario)
         # Determine current state
         currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario,visitedRoute)
         currentState.totalNTaxi = finalSolution.nTaxi
-        println("Total N Taxi2: ", currentState.totalNTaxi)
         
         println("----------------")
         println("Current solution: ")
@@ -376,12 +378,6 @@ function simulateScenario(scenario::Scenario)
         println("Solution after online: ")
         println("----------------")
         printSolution(currentState.solution,printRouteHorizontal)
-
-        println("Request bank: ", requestBank)
-        println("Solution nTaxi: ", solution.nTaxi)
-        println("finalSolution nTaxi: ", finalSolution.nTaxi)
-        println("Total N Taxi: ", currentState.totalNTaxi)
-        println("Length of over request bank: ", length(requestBank))
 
 
 

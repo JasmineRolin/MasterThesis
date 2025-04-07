@@ -45,14 +45,14 @@ end
 #==
  Method to Destroy 
 ==#
-function destroy!(scenario::Scenario,state::ALNSState,parameters::ALNSParameters, configuration::ALNSConfiguration)::Int
+function destroy!(scenario::Scenario,state::ALNSState,parameters::ALNSParameters, configuration::ALNSConfiguration,visitedRoute::Dict{Int, Dict{String, Int}})::Int
     # Select method 
     destroyIdx = rouletteWheel(state.destroyWeights)
 
     #println("\t Destroy method: ", configuration.destroyMethods[destroyIdx].name)
 
     # Use method 
-    configuration.destroyMethods[destroyIdx].method(scenario,state,parameters)
+    configuration.destroyMethods[destroyIdx].method(scenario,state,parameters,visitedRoute)
 
     return destroyIdx
 end

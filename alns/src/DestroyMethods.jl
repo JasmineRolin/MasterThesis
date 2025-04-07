@@ -18,11 +18,10 @@ end
 #==
  Random removal 
 ==#
-function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::ALNSParameters)
+function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::ALNSParameters,visitedRoute::Dict{Int, Dict{String, Int}})
     @unpack currentSolution, assignedRequests, nAssignedRequests, requestBank = currentState
     @unpack time, distance, serviceTimes,requests = scenario
     @unpack minPercentToDestroy, maxPercentToDestroy = parameters
-    println("--RANDOM DESTROY--")
 
     if nAssignedRequests == 0
         #println("Warning: No requests available to remove.")
@@ -56,7 +55,7 @@ function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::A
     currentState.currentSolution.nTaxi += nRequestsToRemove
     currentState.currentSolution.totalCost += nRequestsToRemove*scenario.taxiParameter
 
-    removeRequestsFromSolution!(time,distance,serviceTimes,requests,currentSolution,requestsToRemove)
+    removeRequestsFromSolution!(time,distance,serviceTimes,requests,currentSolution,requestsToRemove,visitedRoute)
 
 end
 
@@ -64,11 +63,10 @@ end
  Worst removal
 ==#
 # TODO: check how often it is not idx == 1
-function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::ALNSParameters)
+function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::ALNSParameters,visitedRoute::Dict{Int, Dict{String, Int}})
     @unpack currentSolution, assignedRequests, nAssignedRequests, requestBank = currentState
     @unpack time, distance, serviceTimes,requests = scenario
     @unpack p, minPercentToDestroy, maxPercentToDestroy = parameters
-    println("--WORST DESTROY--")
 
     # Find number of requests currently in solution
     if nAssignedRequests == 0
@@ -115,7 +113,7 @@ function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::
     currentState.currentSolution.totalCost += nRequestsToRemove *scenario.taxiParameter
         
     # Remove requests from solution
-    removeRequestsFromSolution!(time, distance,serviceTimes,requests, currentSolution, requestsToRemove)
+    removeRequestsFromSolution!(time, distance,serviceTimes,requests, currentSolution, requestsToRemove,visitedRoute)
 end
 
 
@@ -123,15 +121,14 @@ end
 #==
  Shaw removal
 ==#
-function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::ALNSParameters)
+function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::ALNSParameters,visitedRoute::Dict{Int, Dict{String, Int}})
     @unpack currentSolution, assignedRequests, nAssignedRequests, requestBank = currentState
     @unpack time, distance, requests,serviceTimes,requests = scenario
     @unpack p, minPercentToDestroy, maxPercentToDestroy, shawRemovalPhi, shawRemovalXi, minDriveTime, maxDriveTime, minStartOfTimeWindowPickUp, maxStartOfTimeWindowPickUp, minStartOfTimeWindowDropOff, maxStartOfTimeWindowDropOff = parameters
-    println("--SHAW DESTROY--")
 
     # Find number of requests currently in solution
     if nAssignedRequests == 0
-        #println("Warning: No requests available to remove.")
+        #println("Warning: No requests available to remove.") #TODO Do we want it to be commented?
         return
     end
 
@@ -187,7 +184,7 @@ function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::A
     currentState.currentSolution.totalCost += nRequestsToRemove *scenario.taxiParameter
 
     # Remove requests 
-    removeRequestsFromSolution!(time, distance, serviceTimes,requests,currentSolution, requestsToRemove)
+    removeRequestsFromSolution!(time, distance, serviceTimes,requests,currentSolution, requestsToRemove,visitedRoute)
 end
 
 #==
@@ -232,7 +229,7 @@ end
 #==
  Method to remove requests
 ==#
-function removeRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},solution::Solution,requestsToRemove::Set{Int})   
+function removeRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},solution::Solution,requestsToRemove::Set{Int},visitedRoute::Dict{Int, Dict{String, Int}})   
 
     # Create a mutable copy of requestsToRemove
     remainingRequests = copy(requestsToRemove)
@@ -254,7 +251,7 @@ function removeRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,
             solution.totalRideTime -= schedule.totalTime
 
             # Remove requests from schedule 
-            removeRequestsFromSchedule!(time,distance,serviceTimes,requests,schedule,requestsToRemoveInSchedule) 
+            removeRequestsFromSchedule!(time,distance,serviceTimes,requests,schedule,requestsToRemoveInSchedule,visitedRoute) 
 
             # Update solution KPIs
             solution.totalDistance += schedule.totalDistance
@@ -271,7 +268,7 @@ end
 #==
  Method to remove list of requests from schedule
 ==#
-function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},schedule::VehicleSchedule,requestsToRemove::Vector{Int})
+function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},schedule::VehicleSchedule,requestsToRemove::Vector{Int},visitedRoute::Dict{Int, Dict{String, Int}})
 
     # Remove requests from schedule
     for requestToRemove in requestsToRemove
@@ -344,7 +341,7 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
         # Update capacities 
         deleteat!(schedule.numberOfWalking,waitingActivitiesToDelete)
     else 
-        totalCost = getTotalCostRoute(time,schedule.route)
+        totalCost = getTotalCostRouteOnline(time,schedule.route,visitedRoute,serviceTimes)
         totalDistance = getTotalDistanceRoute(schedule.route,distance)
         totalIdleTime = getTotalIdleTimeRoute(schedule.route)
         totalTime = duration(schedule.activeTimeWindow)

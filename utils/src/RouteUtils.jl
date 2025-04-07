@@ -99,7 +99,7 @@ end
 #==
     New insert request 
 ==#
-function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPickUp::Int,idxDropOff::Int,scenario::Scenario,newStartOfServiceTimes::Vector{Int},newEndOfServiceTimes::Vector{Int},waitingActivitiesToDelete::Vector{Int};totalCost::Float64=-1.0,totalDistance::Float64=-1.0,totalIdleTime::Int=-1,totalTime::Int=-1)
+function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPickUp::Int,idxDropOff::Int,scenario::Scenario,newStartOfServiceTimes::Vector{Int},newEndOfServiceTimes::Vector{Int},waitingActivitiesToDelete::Vector{Int};totalCost::Float64=-1.0,totalDistance::Float64=-1.0,totalIdleTime::Int=-1,totalTime::Int=-1,visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())
 
     route = vehicleSchedule.route
     vehicle = vehicleSchedule.vehicle
@@ -143,7 +143,7 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPic
         vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
 
         # Update total cost
-        vehicleSchedule.totalCost = getTotalCostRoute(scenario,route)
+        vehicleSchedule.totalCost = getTotalCostRouteOnline(scenario.time,route,visitedRoute,scenario.serviceTimes)
 
         #Update total distance
         vehicleSchedule.totalDistance = getTotalDistanceRoute(route,scenario.distance)
@@ -382,15 +382,6 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
     # Update total time 
     totalTime = newEndOfServiceTimes[end] - newStartOfServiceTimes[1]
-    println("newStartOfServiceTimes: ", newStartOfServiceTimes)
-    println("newEndOfServiceTimes: ", newEndOfServiceTimes)
-    if isapprox(totalTime,80,atol=0.01) && route[end].activity.id==66
-        println("=========LOOK HERE=========")
-        println("Total time: ", totalTime)
-        printSimpleRoute(route)
-        throw("Error")
-    end
-    
 
     return true, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime
 end

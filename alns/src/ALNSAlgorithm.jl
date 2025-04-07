@@ -43,7 +43,7 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
         trialState = deepcopy(currentState)
 
         # Destroy trial solution  
-        destroyIdx = destroy!(scenario,trialState,parameters,configuration)
+        destroyIdx = destroy!(scenario,trialState,parameters,configuration,visitedRoute)
     
         # Repair trial solution 
         repairIdx = repair!(scenario,trialState,configuration,visitedRoute=visitedRoute)
