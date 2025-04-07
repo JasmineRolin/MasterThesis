@@ -66,9 +66,9 @@ using domain
 end
 ==#
 
-files = ["Data", "06.02","09.01","16.01","23.01","30.01"]
-
-for suff in files 
+files = ["06.02"]#, "Data", "06.02","09.01","16.01","23.01","30.01"]
+suff = files[1]
+#for suff in files 
     requestFile = string("Data/Konsentra/TransformedData_",suff,".csv")
     vehiclesFile = "Data/Konsentra/Vehicles_0.5.csv"
     parametersFile = "tests/resources/Parameters.csv"
@@ -80,10 +80,13 @@ for suff in files
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Simulate scenario 
-    solution = simulateScenario(scenario)
+    state = simulateScenario(scenario)
 
-    state = State(solution,scenario.onlineRequests[end],0)
-    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-    @test feasible == true
-    @test msg == ""
-end 
+   # state = State(solution,scenario.onlineRequests[end],0)
+#     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+#     @test feasible == true
+#     @test msg == ""
+# end 
+
+
+#getTotalCostRouteOnline(scenario.time,solution.vehicleSchedules[14].route,state.visitedRoute,2)

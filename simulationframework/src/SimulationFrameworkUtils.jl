@@ -54,9 +54,26 @@ end
 # Function to update current state if entire route has been served and vehicle is still available
 # ------
 function updateCurrentScheduleRouteCompleted!(currentState::State,schedule::VehicleSchedule,vehicle::Int)
+
+     # Update visited route
+     for i in 1:length(schedule.route)
+        if schedule.route[i].activity.activityType == PICKUP
+            currentState.visitedRoute[schedule.route[i].activity.requestId] = Dict("PickUpServiceStart" => schedule.route[i].startOfServiceTime, "DropOffServiceStart" => 0)
+        elseif schedule.route[i].activity.activityType == DROPOFF
+            currentState.visitedRoute[schedule.route[i].activity.requestId]["DropOffServiceStart"] = schedule.route[i].startOfServiceTime
+        end
+    end
+
    
     # Retrieve empty schedule and update it 
     currentSchedule = currentState.solution.vehicleSchedules[vehicle]
+
+    # Update KPIs of current state pre  
+    currentState.solution.totalDistance -= currentSchedule.totalDistance
+    currentState.solution.totalRideTime -= currentSchedule.totalTime
+    currentState.solution.totalCost -= currentSchedule.totalCost
+    currentState.solution.totalIdleTime -= currentSchedule.totalIdleTime
+
 
     arrivalAtDepot = schedule.route[end].startOfServiceTime
     endOfAvailableTimeWindow = schedule.vehicle.availableTimeWindow.endTime
@@ -65,20 +82,32 @@ function updateCurrentScheduleRouteCompleted!(currentState::State,schedule::Vehi
     waitingActivityCompletedRoute = ActivityAssignment(Activity(schedule.vehicle.depotId,-1,WAITING, schedule.vehicle.depotLocation,TimeWindow(arrivalAtDepot,endOfAvailableTimeWindow)), schedule.vehicle,arrivalAtDepot,endOfAvailableTimeWindow)
 
     # Update schedule with only  depots for  vehicle 
-    currentSchedule.route[1] = waitingActivityCompletedRoute
+    currentSchedule.route = [waitingActivityCompletedRoute,currentSchedule.route[end]]
     currentSchedule.route[end].activity.timeWindow = TimeWindow(arrivalAtDepot,endOfAvailableTimeWindow)
+    currentSchedule.route[end].startOfServiceTime = endOfAvailableTimeWindow
+    currentSchedule.route[end].endOfServiceTime = endOfAvailableTimeWindow
     currentSchedule.activeTimeWindow.startTime = arrivalAtDepot
     currentSchedule.activeTimeWindow.endTime = endOfAvailableTimeWindow
 
     # Update KPIs
     currentSchedule.totalDistance = 0.0
-    currentSchedule.totalTime = 0
+    currentSchedule.totalTime = getTotalTimeRoute(currentSchedule)
     currentSchedule.totalCost = 0.0
     currentSchedule.totalIdleTime = endOfAvailableTimeWindow - arrivalAtDepot
     currentSchedule.numberOfWalking = [0,0]
 
+    # Update current state pro
+    currentState.solution.totalDistance += currentSchedule.totalDistance
+    currentState.solution.totalRideTime += currentSchedule.totalTime
+    currentState.solution.totalCost += currentSchedule.totalCost
+    currentState.solution.totalIdleTime += currentSchedule.totalIdleTime
+
+
     # Index to split route into current and completed route 
-    idx = length(schedule.route)-1
+    idx = length(schedule.route) - 1
+
+    println("===========================> Length currentSchedule: ", length(currentSchedule.route))
+    println("==============================> arrival at depot: ",arrivalAtDepot)
 
     return idx, arrivalAtDepot
 end
@@ -251,7 +280,7 @@ function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,currentStat
 
         finalSolution.vehicleSchedules[vehicle].totalDistance += newDistance
         finalSolution.vehicleSchedules[vehicle].totalTime += newDuration
-        finalSolution.vehicleSchedules[vehicle].totalCost = getTotalCostRoute(scenario,finalSolution.vehicleSchedules[vehicle].route) # += newCost # TODO: change
+        finalSolution.vehicleSchedules[vehicle].totalCost = getTotalCostRoute(scenario,finalSolution.vehicleSchedules[vehicle].route) # += newCost # TODO: jas - change
         finalSolution.vehicleSchedules[vehicle].totalIdleTime += newIdleTime
 
 
@@ -261,7 +290,7 @@ function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,currentStat
         finalSolution.totalRideTime += newDuration
         finalSolution.totalDistance += newDistance
         finalSolution.totalIdleTime += newIdleTime
-        finalSolution.totalCost += getTotalCostRoute(scenario,finalSolution.vehicleSchedules[vehicle].route)#  newCost # TODO: change
+        finalSolution.totalCost += getTotalCostRoute(scenario,finalSolution.vehicleSchedules[vehicle].route)#  newCost # TODO: jas - change
     end
 
     finalSolution.nTaxi += currentState.solution.nTaxi
@@ -292,10 +321,6 @@ function determineCurrentState(solution::Solution,event::Request,finalSolution::
     # Update vehicle schedule
     for (vehicle,schedule) in enumerate(solution.vehicleSchedules)
         print("UPDATING SCHEDULE: ",vehicle)
-
-        if vehicle == 11 
-            println("")
-        end
 
         # Check if vehicle is not available yet or has not started service yet
         if schedule.vehicle.availableTimeWindow.startTime > currentTime || schedule.route[1].startOfServiceTime > currentTime
@@ -367,16 +392,9 @@ function simulateScenario(scenario::Scenario)
 
     # Get solution for initial solution (offline problem)
     # solution = offlineAlgorithm(scenario) # TODO: Change to right function name !!!!!!!!!!
+    # TODO: jas - skal alns ikke køres ? 
     solution = Solution(scenario)
     solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests) 
-
-    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.offlineRequests)
-
-    # Update final solution with initial solution
-    finalSolution.nTaxi += length(requestBank) 
-    finalSolution.totalCost = getTaxiCostOfSolution(scenario,finalSolution)
-
-    println("Request bank: ", requestBank)
 
     visitedRoute = Dict{Int,Dict{String,Int}}()
 
@@ -403,16 +421,17 @@ function simulateScenario(scenario::Scenario)
      
 
 
-        println("----------------")
-        println("Final solution solution: ")
-        println("----------------")
-        printSolution(finalSolution,printRouteHorizontal)
+        # println("----------------")
+        # println("Final solution solution: ")
+        # println("----------------")
+       # printSolution(finalSolution,printRouteHorizontal)
 
         # CHeck feasibility 
         feasible, msg = checkSolutionFeasibilityOnline(scenario,currentState)
         if !feasible
             println("INFEASIBLE SOLUTION IN ITERATION:", itr)
-            throw(msg)
+            println(msg)
+            return currentState
         end
 
         if itr == 0
@@ -422,12 +441,16 @@ function simulateScenario(scenario::Scenario)
 
 
         # Get solution for online problem
-        solution, requestBank,_,_ = onlineAlgorithm(currentState, requestBank, scenario, destroyMethods, repairMethods) 
+        # TODO: jas - hvorfor returnerer den npget her ? 
+        solution, requestBank = onlineAlgorithm(currentState, requestBank, scenario, destroyMethods, repairMethods) 
+        if requestBank == []
+            return solution 
+        end
 
-        println("----------------")
-        println("Solution after online: ")
-        println("----------------")
-        printSolution(currentState.solution,printRouteHorizontal)
+        # println("----------------")
+        # println("Solution after online: ")
+        # println("----------------")
+        # printSolution(currentState.solution,printRouteHorizontal)
 
 
 

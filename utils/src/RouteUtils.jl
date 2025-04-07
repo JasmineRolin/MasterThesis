@@ -238,6 +238,9 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
     # Check first activity in route
     if route[1].activity.activityType == PICKUP
         pickUpIndexes[route[1].activity.requestId] = 1
+    elseif route[1].activity.activityType == DROPOFF
+        requestId = route[1].activity.requestId
+        totalCost += getCostOfRequest(time,visitedRoute[requestId]["PickUpServiceStart"]+serviceTimes,route[1].startOfServiceTime,requestId,route[1].activity.id)
     end
     
     # Find maximum shift backward and forward
@@ -249,9 +252,11 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
     if route[end-1].activity.activityType == WAITING
         maximumShiftForward =  route[end-1].activity.timeWindow.endTime - route[end-1].startOfServiceTime
-    elseif length(route) == 2
+    elseif length(route) == 2 && route[1].activity.activityType == DEPOT && route[2].activity.activityType == DEPOT
         maximumShiftForward = route[1].activity.timeWindow.endTime - route[1].activity.timeWindow.startTime
-    else
+    elseif route[1].activity.activityType == DROPOFF || route[1].activity.activityType == PICKUP
+        maximumShiftForward = 0
+    else # Depot but non-empty route 
         maximumShiftForward = route[1].startOfServiceTime - route[1].activity.timeWindow.startTime
     end
 
@@ -291,6 +296,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                 end
 
                 # Update total cost
+                # TODO: jas - check if this is correct
                 totalCost += getCostOfRequest(time,newEndOfServiceTimes[pickUpIndexes[requestId]],newStartOfServiceTimes[idx],requests[requestId].pickUpActivity.id,requests[requestId].dropOffActivity.id)
             end
 
@@ -373,6 +379,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
             end
 
             # Update total cost
+            # TODO: jas - ret til også at bruge visited route 
             totalCost += getCostOfRequest(time,newEndOfServiceTimes[pickUpIndexes[requestId]],newStartOfServiceTimes[idx],requests[requestId].pickUpActivity.id,requests[requestId].dropOffActivity.id)
         end
 

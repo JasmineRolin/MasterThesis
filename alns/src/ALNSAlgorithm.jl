@@ -12,7 +12,6 @@ export ALNS
  Method to run ALNS algorithm
 ==#
 function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters,fileName::String;alreadyRejected = 0,event = Request(),visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}()) 
-    
     # File 
     outputFile = open(fileName, "w")
     nDestroy = length(configuration.destroyMethods)
@@ -43,10 +42,32 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
         trialState = deepcopy(currentState)
 
         # Destroy trial solution  
-        destroyIdx = destroy!(scenario,trialState,parameters,configuration,visitedRoute)
+        destroyIdx = destroy!(scenario,trialState,parameters,configuration,visitedRoute = visitedRoute)
+        state = State(trialState.currentSolution,event,visitedRoute,alreadyRejected)
+        feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+        if !feasible
+            println("ALNS: AFTER DESTROY INFEASIBLE SOLUTION IN ITERATION:", iteration)
+            println(configuration.destroyMethods[destroyIdx].name)
+            println(msg) 
+             # Close file    
+            close(outputFile)
+            return currentState.currentSolution, currentState.requestBank
+        end
+
+        
     
         # Repair trial solution 
         repairIdx = repair!(scenario,trialState,configuration,visitedRoute=visitedRoute)
+        state = State(trialState.currentSolution,event,visitedRoute,alreadyRejected)
+        feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+        if !feasible
+            println("ALNS: AFTER REPAIR INFEASIBLE SOLUTION IN ITERATION:", iteration)
+            println(configuration.repairMethods[repairIdx].name)
+            println(msg) 
+             # Close file    
+            close(outputFile)
+            return currentState.currentSolution, currentState.requestBank
+        end
 
         # Check if solution is improved
         # TODO: create hash table to check if solution has been visited before

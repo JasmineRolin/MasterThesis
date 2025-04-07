@@ -45,14 +45,14 @@ end
 #==
  Method to Destroy 
 ==#
-function destroy!(scenario::Scenario,state::ALNSState,parameters::ALNSParameters, configuration::ALNSConfiguration,visitedRoute::Dict{Int, Dict{String, Int}})::Int
+function destroy!(scenario::Scenario,state::ALNSState,parameters::ALNSParameters, configuration::ALNSConfiguration;visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}() )::Int
     # Select method 
     destroyIdx = rouletteWheel(state.destroyWeights)
 
     #println("\t Destroy method: ", configuration.destroyMethods[destroyIdx].name)
 
     # Use method 
-    configuration.destroyMethods[destroyIdx].method(scenario,state,parameters,visitedRoute)
+    configuration.destroyMethods[destroyIdx].method(scenario,state,parameters,visitedRoute = visitedRoute)
 
     return destroyIdx
 end
@@ -60,7 +60,7 @@ end
 #==
  Method to Repair  
 ==#
-function repair!(scenario::Scenario, state::ALNSState, configuration::ALNSConfiguration;visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}())::Int
+function repair!(scenario::Scenario, state::ALNSState, configuration::ALNSConfiguration;visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}())::Int  
     # Select method 
     repairIdx = rouletteWheel(state.repairWeights)
 

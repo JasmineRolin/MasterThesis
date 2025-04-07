@@ -10,9 +10,8 @@ export regretInsertion
     Method that performs regret insertion of requests
 ==#
 function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())
-
     #TODO should we implement noise?
-    @unpack destroyWeights, repairWeights, destroyNumberOfUses, repairNumberOfUses, bestSolution, currentSolution, requestBank = state
+    @unpack currentSolution, requestBank = state
     requests = scenario.requests
 
     #TODO remove when stable also in oter palces
@@ -130,7 +129,7 @@ end
     Method that performs greedy insertion of requests
 ==#
 function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())
-    @unpack destroyWeights, repairWeights, destroyNumberOfUses, repairNumberOfUses, bestSolution, currentSolution, requestBank = state
+    @unpack currentSolution, requestBank = state
     newRequestBank = Int[]
 
         #TODO remove when stable also in other places

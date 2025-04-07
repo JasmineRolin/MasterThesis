@@ -10,6 +10,10 @@ export checkSolutionFeasibility,checkRouteFeasibility, checkSolutionFeasibilityO
 ==#
 function checkSolutionFeasibilityOnline(scenario::Scenario,state::State)
     @unpack solution, event, visitedRoute, totalNTaxi = state
+    checkSolutionFeasibilityOnline(scenario,solution,event,visitedRoute,totalNTaxi)
+end
+
+function checkSolutionFeasibilityOnline(scenario::Scenario,solution::Solution,event::Request,visitedRoute::Dict{Int, Dict{String, Int}}, totalNTaxi::Int)
     @unpack vehicleSchedules, totalCost, nTaxi, totalRideTime, totalDistance, totalIdleTime = solution
 
     # Keep track of serviced activities assuming that activity 

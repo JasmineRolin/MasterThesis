@@ -16,6 +16,7 @@ MAX_EARLY_ARRIVAL = 5
 #==
  Update time windows for all requests in solution
 ==#
+# TODO: jas - hvad er forskellen ? 
 function updateTimeWindowsOnlineAll!(solution::Solution,scenario::Scenario)
 
     # Remember start of service
@@ -80,7 +81,7 @@ function onlineInsertion(solution::Solution, event::Request, scenario::Scenario;
     state = ALNSState(Vector{Float64}(),Vector{Float64}(),Vector{Float64}(),Vector{Float64}(),Vector{Int}(),Vector{Int}(),solution,solution,[event.id],Vector{Int}(),0)
     regretInsertion(state,scenario,visitedRoute=visitedRoute)
 
-    return state.currentSolution, state.requestBank
+    return state.requestBank
 
 end
 
@@ -89,26 +90,35 @@ end
 ==#
 function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario::Scenario, destroyMethods::Vector{GenericMethod}, repairMethods::Vector{GenericMethod})
 
-    event, oldSolution, visitedRoute, totalNTaxi = currentState.event, currentState.solution, currentState.visitedRoute, currentState.totalNTaxi
+    event, currentSolution, totalNTaxi = currentState.event, deepcopy(currentState.solution), currentState.totalNTaxi
 
     # Do intitial insertion
-    initialSolution, newrequestBankOnline = onlineInsertion(oldSolution,event,scenario,visitedRoute = visitedRoute)
+    newrequestBankOnline = onlineInsertion(currentSolution,event,scenario,visitedRoute = currentState.visitedRoute)
 
     # Check feasibility
-    currentState.solution = initialSolution
-    feasible, msg = checkSolutionFeasibilityOnline(scenario,currentState)
+    # currentState.solution = initialSolution
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,currentSolution, event, currentState.visitedRoute,totalNTaxi)
     if !feasible
         throw(msg)
     end
 
     # Run ALNS
-    finalSolution,finalOnlineRequestBank,specification,KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",stage = "online",initialSolution =  initialSolution, requestBank = newrequestBankOnline, event = event, alreadyRejected =  totalNTaxi, visitedRoute = visitedRoute)
+    println("VISITED ROUTE : ", currentState.visitedRoute)
+    finalSolution,finalOnlineRequestBank,_,_ = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",stage = "online",initialSolution =  currentSolution, requestBank = newrequestBankOnline, event = event, alreadyRejected =  totalNTaxi, visitedRoute = currentState.visitedRoute,displayPlots = false, savePlots = false)
     append!(requestBank,finalOnlineRequestBank)
+
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,finalSolution, event, currentState.visitedRoute,totalNTaxi)
+    if !feasible
+        println(" WRONG AFTER ALNS")
+        println(msg)
+        printSolution(finalSolution,printRouteHorizontal)
+        return finalSolution, []
+    end
 
     # Update time window for event
     updateTimeWindowsOnlineOne!(finalSolution,event,scenario)
 
-    return finalSolution,requestBank,specification,KPIs
+    return finalSolution,requestBank
 
 end
 

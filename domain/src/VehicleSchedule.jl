@@ -77,11 +77,7 @@ end
  Method to check if vehicle schedule is empty 
 ==#
 function isVehicleScheduleEmpty(vehicleSchedule::VehicleSchedule)
-    if length(vehicleSchedule.route) == 2 && vehicleSchedule.route[1].activity.activityType == DEPOT && vehicleSchedule.route[2].activity.activityType == DEPOT
-       return true 
-    end
-
-    if all(a -> a.activity.activityType == WAITING, vehicleSchedule.route[2:end-1])
+    if all(a -> (a.activity.activityType == WAITING || a.activity.activityType == DEPOT), vehicleSchedule.route[1:end])
         return true
     end
 

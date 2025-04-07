@@ -75,16 +75,22 @@ function getTotalCostRouteOnline(time::Array{Int,2},route::Vector{ActivityAssign
     pickupTimes = Dict{Int, Int}()
     
     for assignment in route
+       # println(pickupTimes)
         activity = assignment.activity
+        #println("activity: ",activity.id, " request id: ", activity.requestId)
         if activity.activityType == PICKUP
+           # println("==> PICKUP")
             pickupTimes[activity.requestId] = assignment.endOfServiceTime
         elseif activity.activityType == DROPOFF && haskey(pickupTimes, activity.requestId)
+          # println("==> DROPOFF")
             pickupTime = pickupTimes[activity.requestId]
             dropoffTime = assignment.startOfServiceTime
             directTime = Float64(time[activity.requestId, activity.id])
             actualTime = Float64(dropoffTime - pickupTime)
             ratio += actualTime/directTime
+          #  println("ratio: ", ratio)
         elseif activity.activityType == DROPOFF
+           # println("==> DROPOFF 2")
             if !haskey(visitedRoute, activity.requestId)
                 throw(ArgumentError("RequestId not found in visitedRoute"))
             end
@@ -93,6 +99,7 @@ function getTotalCostRouteOnline(time::Array{Int,2},route::Vector{ActivityAssign
             directTime = Float64(time[activity.requestId, activity.id])
             actualTime = Float64(dropoffTime - pickupTime)
             ratio += actualTime/directTime
+           # println("ratio: ", ratio)
         end
     end
     
