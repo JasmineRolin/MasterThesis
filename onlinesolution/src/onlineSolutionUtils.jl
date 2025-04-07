@@ -103,16 +103,14 @@ function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario
     end
 
     # Run ALNS
-    println("VISITED ROUTE : ", currentState.visitedRoute)
     finalSolution,finalOnlineRequestBank,_,_ = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",stage = "online",initialSolution =  currentSolution, requestBank = newrequestBankOnline, event = event, alreadyRejected =  totalNTaxi, visitedRoute = currentState.visitedRoute,displayPlots = false, savePlots = false)
     append!(requestBank,finalOnlineRequestBank)
 
     feasible, msg = checkSolutionFeasibilityOnline(scenario,finalSolution, event, currentState.visitedRoute,totalNTaxi)
     if !feasible
         println(" WRONG AFTER ALNS")
-        println(msg)
         printSolution(finalSolution,printRouteHorizontal)
-        return finalSolution, []
+        throw(msg)
     end
 
     # Update time window for event

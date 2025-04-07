@@ -10,6 +10,8 @@ export regretInsertion
     Method that performs regret insertion of requests
 ==#
 function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())
+    #println("regretInsertion: ", visitedRoute)
+
     #TODO should we implement noise?
     @unpack currentSolution, requestBank = state
     requests = scenario.requests
@@ -24,7 +26,7 @@ function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{
     # Define insertion matrix
     insCostMatrix = zeros(Float64, length(requests), length(scenario.vehicles))
     compatibilityRequestVehicle = ones(Bool, length(requests), length(scenario.vehicles))
-    fillInsertionCostMatrix!(scenario, currentSolution, requestBank, insCostMatrix, compatibilityRequestVehicle)
+    fillInsertionCostMatrix!(scenario, currentSolution, requestBank, insCostMatrix, compatibilityRequestVehicle,visitedRoute)
 
     # Insert requests
     while !isempty(requestBank)
@@ -87,17 +89,17 @@ function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{
         setdiff!(requestBank,[bestRequest])
 
         # Recalculate insertion cost matrix
-        reCalcCostMatrix!(overallBestVehicle, scenario, currentSolution, requestBank, insCostMatrix, compatibilityRequestVehicle)
+        reCalcCostMatrix!(overallBestVehicle, scenario, currentSolution, requestBank, insCostMatrix, compatibilityRequestVehicle,visitedRoute)
 
     end
 
 
 end
 
-function fillInsertionCostMatrix!(scenario::Scenario, currentSolution::Solution, requestBank::Vector{Int}, insCostMatrix::Array{Float64,2}, compatibilityRequestVehicle::Array{Bool,2})
+function fillInsertionCostMatrix!(scenario::Scenario, currentSolution::Solution, requestBank::Vector{Int}, insCostMatrix::Array{Float64,2}, compatibilityRequestVehicle::Array{Bool,2},visitedRoute::Dict{Int, Dict{String, Int}})
     for r in requestBank
         for v in 1:length(scenario.vehicles)
-            status, _, _, _, _,_, bestCost, _, _, _ = findBestFeasibleInsertionRoute(scenario.requests[r], currentSolution.vehicleSchedules[v], scenario)
+            status, _, _, _, _,_, bestCost, _, _, _ = findBestFeasibleInsertionRoute(scenario.requests[r], currentSolution.vehicleSchedules[v], scenario,visitedRoute = visitedRoute)
             if status
                 insCostMatrix[r,v] = bestCost - currentSolution.vehicleSchedules[v].totalCost
             else
@@ -109,10 +111,10 @@ function fillInsertionCostMatrix!(scenario::Scenario, currentSolution::Solution,
     
 end
 
-function reCalcCostMatrix!(v::Int,scenario::Scenario, currentSolution::Solution, requestBank::Vector{Int}, insCostMatrix::Array{Float64,2}, compatibilityRequestVehicle::Array{Bool,2})
+function reCalcCostMatrix!(v::Int,scenario::Scenario, currentSolution::Solution, requestBank::Vector{Int}, insCostMatrix::Array{Float64,2}, compatibilityRequestVehicle::Array{Bool,2},visitedRoute::Dict{Int, Dict{String, Int}})
     for r in requestBank
         if compatibilityRequestVehicle[r,v]
-            status, _, _, _, _,_, bestCost, _, _, _ = findBestFeasibleInsertionRoute(scenario.requests[r], currentSolution.vehicleSchedules[v], scenario)
+            status, _, _, _, _,_, bestCost, _, _, _ = findBestFeasibleInsertionRoute(scenario.requests[r], currentSolution.vehicleSchedules[v], scenario,visitedRoute = visitedRoute)
             if status
                 insCostMatrix[r,v] = bestCost - currentSolution.vehicleSchedules[v].totalCost
             else
@@ -129,6 +131,8 @@ end
     Method that performs greedy insertion of requests
 ==#
 function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())
+    #println("greedyInsertion: ", visitedRoute)
+
     @unpack currentSolution, requestBank = state
     newRequestBank = Int[]
 

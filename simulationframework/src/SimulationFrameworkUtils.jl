@@ -414,10 +414,10 @@ function simulateScenario(scenario::Scenario)
         currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario,visitedRoute)
         currentState.totalNTaxi = finalSolution.nTaxi
         
-        println("----------------")
-        println("Current solution: ")
-        println("----------------")
-        printSolution(currentState.solution,printRouteHorizontal)
+        # println("----------------")
+        # println("Current solution: ")
+        # println("----------------")
+        # printSolution(currentState.solution,printRouteHorizontal)
      
 
 
@@ -443,10 +443,7 @@ function simulateScenario(scenario::Scenario)
         # Get solution for online problem
         # TODO: jas - hvorfor returnerer den npget her ? 
         solution, requestBank = onlineAlgorithm(currentState, requestBank, scenario, destroyMethods, repairMethods) 
-        if requestBank == []
-            return solution 
-        end
-
+    
         # println("----------------")
         # println("Solution after online: ")
         # println("----------------")

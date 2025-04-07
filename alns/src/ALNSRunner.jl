@@ -9,6 +9,9 @@ export runALNS
 ==#
 
 function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::Vector{GenericMethod},repairMethods::Vector{GenericMethod};outPutFileFolder="tests/output"::String,parametersFile=""::String,savePlots=true::Bool,displayPlots=true::Bool,plotFolder=""::String,initialSolution=Solution(scenario)::Solution, requestBank=Vector{Request}(),stage="offline"::String,event = Request(), alreadyRejected = 0::Int, visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}())
+
+    println("runALNS: ", visitedRoute)
+
     # Create time stamp and output file folder
     timeStamp = Dates.format(Dates.now(), "yyyy-mm-dd_HH_MM_SS.sss")
     outputFileFolderWithDate = string(outPutFileFolder,"/",timeStamp,"/")

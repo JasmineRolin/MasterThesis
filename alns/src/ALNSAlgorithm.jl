@@ -12,6 +12,10 @@ export ALNS
  Method to run ALNS algorithm
 ==#
 function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters,fileName::String;alreadyRejected = 0,event = Request(),visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}()) 
+    
+    println("ALNS: ", visitedRoute)
+
+
     # File 
     outputFile = open(fileName, "w")
     nDestroy = length(configuration.destroyMethods)
@@ -49,9 +53,11 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
             println("ALNS: AFTER DESTROY INFEASIBLE SOLUTION IN ITERATION:", iteration)
             println(configuration.destroyMethods[destroyIdx].name)
             println(msg) 
+            println(visitedRoute)
              # Close file    
             close(outputFile)
-            return currentState.currentSolution, currentState.requestBank
+            printSolution(trialState.currentSolution,printRouteHorizontal)
+            throw(msg)
         end
 
         
@@ -66,7 +72,9 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
             println(msg) 
              # Close file    
             close(outputFile)
-            return currentState.currentSolution, currentState.requestBank
+            printSolution(trialState.currentSolution,printRouteHorizontal)
+
+            throw(msg)
         end
 
         # Check if solution is improved
