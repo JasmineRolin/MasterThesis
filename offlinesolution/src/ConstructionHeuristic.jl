@@ -31,7 +31,6 @@ function simpleConstruction(scenario::Scenario,requests::Vector{Request};visited
 
     # Update solution
     solution.nTaxi = length(requestBank)
-    # TODO: burde det her ikke bare løbende blive opdateret i insertRequest! ?
     solution.totalCost, solution.totalDistance, solution.totalRideTime, solution.totalIdleTime = getTotalCostDistanceTimeOfSolution(scenario,solution)
     
     
