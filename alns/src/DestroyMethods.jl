@@ -139,15 +139,19 @@ function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::A
             push!(notMoveRequests, schedule.route[1].activity.requestId)
         end
     end
+    possibleToMove = setdiff(assignedRequests, notMoveRequests)
+    if length(possibleToMove) == 0
+        #println("Warning: No requests available to remove.") #TODO Do we want it to be commented?
+        return
+    end
 
     # Find number of requests to remove 
-    nRequestsToRemove = findNumberOfRequestToRemove(minPercentToDestroy, maxPercentToDestroy, nAssignedRequests-length(notMoveRequests))
+    nRequestsToRemove = min(length(possibleToMove),findNumberOfRequestToRemove(minPercentToDestroy, maxPercentToDestroy, nAssignedRequests-length(notMoveRequests)))
      
     # Requests to remove 
     requestsToRemove = Set{Int}()
 
     # Randomly select a request to remove
-    possibleToMove = setdiff(assignedRequests, notMoveRequests)
     chosenRequestId = rand(possibleToMove)
     chosenRequest = requests[chosenRequestId]
 
