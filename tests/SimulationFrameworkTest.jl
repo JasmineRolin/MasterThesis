@@ -93,7 +93,7 @@ end
 #getTotalCostRouteOnline(scenario.time,solution.vehicleSchedules[14].route,state.visitedRoute,2)
 
 function main()
-    n = Int(ARGS[1])
+    n = parse(Int,ARGS[1])
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
     parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters2.json"
