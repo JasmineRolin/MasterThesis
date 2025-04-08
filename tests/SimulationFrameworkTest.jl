@@ -66,23 +66,24 @@ using domain
 end
 ==#
 
-files = [ "16.01"]#, "Data", "06.02","09.01","16.01","23.01","30.01"]
-suff = files[1]
-#for suff in files 
-    requestFile = string("Data/Konsentra/TransformedData_",suff,".csv")
-    vehiclesFile = "Data/Konsentra/Vehicles_0.5.csv"
-    parametersFile = "tests/resources/Parameters.csv"
-    distanceMatrixFile = string("Data/Matrices/distanceMatrix_Konsentra_Data_",suff,".txt")
-    timeMatrixFile = string("Data/Matrices/timeMatrix_Konsentra_Data_",suff,".txt")
-    scenarioName = string("Konsentra_",suff)
+# files = ["30.01"]#["Data", "06.02","09.01","16.01","23.01","30.01"]
+# suff = files[1]
+# for suff in files 
+#     println("====> SCENARIO: ",suff)
+#     requestFile = string("Data/Konsentra/TransformedData_",suff,".csv")
+#     vehiclesFile = "Data/Konsentra/Vehicles_0.9.csv"
+#     parametersFile = "tests/resources/Parameters.csv"
+#     distanceMatrixFile = string("Data/Matrices/Konsentra_",suff,"_distance.txt")
+#     timeMatrixFile = string("Data/Matrices/Konsentra_",suff,"_time.txt")
+#     scenarioName = string("Konsentra_",suff)
     
-    # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
+#     # Read instance 
+#     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
-    # Simulate scenario 
-    state = simulateScenario(scenario)
+#     # Simulate scenario 
+#     solution = simulateScenario(scenario)
 
-   # state = State(solution,scenario.onlineRequests[end],0)
+#     state = State(solution,scenario.onlineRequests[end],0)
 #     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
 #     @test feasible == true
 #     @test msg == ""
@@ -90,3 +91,33 @@ suff = files[1]
 
 
 #getTotalCostRouteOnline(scenario.time,solution.vehicleSchedules[14].route,state.visitedRoute,2)
+
+
+
+n = 100
+vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
+parametersFile = "tests/resources/Parameters.csv"
+alnsParameters = "tests/resources/ALNSParameters2.json"
+
+for i in 1:10
+    requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
+    distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
+    timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
+    scenarioName = string("Konsentra_Data_",n,"_",i)
+    
+    println("====> SCENARIO: ",scenarioName)
+
+    # Read instance 
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
+    
+    # Read instance 
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
+
+    # Simulate scenario 
+    solution = simulateScenario(scenario)
+
+    state = State(solution,scenario.onlineRequests[end],0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+    @test feasible == true
+    @test msg == ""
+end

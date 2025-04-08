@@ -84,23 +84,25 @@ function getClosestFeasibleVehicle(request::Request, solution::Solution, scenari
         # Compute travel time from the determined vehicle location to the pickup location
         travelTime = scenario.time[vehicleLocationId, requestPickupId]
 
-        # Determine if there is a feasible place to insert it
-        feasible, idxPickUp, idxDropOff, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime  = findFeasibleInsertionInSchedule(request,solution.vehicleSchedules[vehicleIdx],scenario,visitedRoute=visitedRoute)
+        if travelTime < minTravelTime
+            # Determine if there is a feasible place to insert it
+            feasible, idxPickUp, idxDropOff, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime  = findFeasibleInsertionInSchedule(request,solution.vehicleSchedules[vehicleIdx],scenario,visitedRoute=visitedRoute)
 
-        # Update closest vehicle if a shorter travel time is found
-        if feasible && travelTime < minTravelTime
-            minTravelTime = travelTime
-            closestVehicle = vehicle
-            closestVehicleIdx = vehicleIdx
-            bestPickUpIdx = idxPickUp
-            bestDropOffIdx = idxDropOff
-            bestNewStartOfServiceTimes = deepcopy(newStartOfServiceTimes)
-            bestNewEndOfServiceTimes = deepcopy(newEndOfServiceTimes)
-            bestWaitingActivitiesToDelete = deepcopy(waitingActivitiesToDelete)
-            bestCost = totalCost
-            bestDistance = totalDistance
-            bestIdleTime = totalIdleTime
-            bestTime = totalTime
+            # Update closest vehicle if a shorter travel time is found
+            if feasible 
+                minTravelTime = travelTime
+                closestVehicle = vehicle
+                closestVehicleIdx = vehicleIdx
+                bestPickUpIdx = idxPickUp
+                bestDropOffIdx = idxDropOff
+                bestNewStartOfServiceTimes = deepcopy(newStartOfServiceTimes)
+                bestNewEndOfServiceTimes = deepcopy(newEndOfServiceTimes)
+                bestWaitingActivitiesToDelete = deepcopy(waitingActivitiesToDelete)
+                bestCost = totalCost
+                bestDistance = totalDistance
+                bestIdleTime = totalIdleTime
+                bestTime = totalTime
+            end
         end
     end
     
@@ -115,7 +117,7 @@ function findFeasibleInsertionInSchedule(request::Request,vehicleSchedule::Vehic
 
     # Check inside available time window
     if vehicleSchedule.vehicle.availableTimeWindow.startTime > request.pickUpActivity.timeWindow.endTime || vehicleSchedule.vehicle.availableTimeWindow.endTime < request.dropOffActivity.timeWindow.startTime 
-        println("Infeasible: Outside available time window")
+        #println("Infeasible: Outside available time window")
         return false, -1, -1, [],[],[],-1.0,-1.0,-1,-1
     end
 

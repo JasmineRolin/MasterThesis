@@ -210,6 +210,7 @@ end
 function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},idleTime::Int,route::Vector{ActivityAssignment}; pickUpIdxInBlock::Int=-1, dropOffIdxInBlock::Int=-1,request::Union{Request,Nothing}=nothing,visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())  
     insertRequest = !isnothing(request)
     nActivities = length(route) + 2*insertRequest
+    visitedRouteIds = keys(visitedRoute)
 
     # New service times 
     newStartOfServiceTimes = zeros(Int,nActivities)
@@ -240,7 +241,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
         pickUpIndexes[route[1].activity.requestId] = 1
     elseif route[1].activity.activityType == DROPOFF
         requestId = route[1].activity.requestId
-        totalCost += getCostOfRequest(time,visitedRoute[requestId]["PickUpServiceStart"]+serviceTimes,route[1].startOfServiceTime,requestId,route[1].activity.id)
+        totalCost += getCostOfRequest(time,visitedRoute[requestId]["PickUpServiceStart"] + serviceTimes,route[1].startOfServiceTime,requestId,route[1].activity.id)
     elseif route[1].activity.activityType == WAITING
         totalIdleTime = route[1].endOfServiceTime - route[1].startOfServiceTime
     end
@@ -252,13 +253,13 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
         maximumShiftBackward = 0
     end
 
-    if route[1].activity.activityType == DROPOFF || route[1].activity.activityType == PICKUP
+    if route[1].activity.activityType == DROPOFF || route[1].activity.activityType == PICKUP 
         maximumShiftForward = 0
-    elseif route[end-1].activity.activityType == WAITING
+    elseif route[end-1].activity.activityType == WAITING && length(route) != 2 # Waiting activity but not in route with only [waiting,depot]
         maximumShiftForward =  route[end-1].activity.timeWindow.endTime - route[end-1].startOfServiceTime
-    elseif length(route) == 2 && route[1].activity.activityType == DEPOT && route[2].activity.activityType == DEPOT
+    elseif length(route) == 2 && route[1].activity.activityType == DEPOT && route[2].activity.activityType == DEPOT # EMpty route 
         maximumShiftForward = route[1].activity.timeWindow.endTime - route[1].activity.timeWindow.startTime
-    else # Depot but non-empty route 
+    else # Depot but non-empty route or [waiting,depot]
         maximumShiftForward = route[1].startOfServiceTime - route[1].activity.timeWindow.startTime
     end
 
@@ -275,12 +276,12 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
     end
 
     # TODO: remove 
-    printB = (route[1].activity.activityType == DROPOFF || route[1].activity.activityType == PICKUP) && (pickUpIdxInBlock == -1)
-    if printB && (maximumShiftBackward != 0 || maximumShiftForward != 0)
-        printSimpleRoute(route)
-        println("MAXIMUM SHIFT BACKWARD: ", maximumShiftBackward)
-        println("MAXIMUM SHIFT FORWARD: ", maximumShiftForward)
-    end
+    # printB = (route[1].activity.activityType == WAITING && (pickUpIdxInBlock == -1))
+    # if printB
+    #     printSimpleRoute(route)
+    #     println("MAXIMUM SHIFT BACKWARD: ", maximumShiftBackward)
+    #     println("MAXIMUM SHIFT FORWARD: ", maximumShiftForward)
+    # end
 
     # Find new service times 
     idxActivityInSchedule = 1
@@ -301,13 +302,15 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
             if currentActivity.activityType == PICKUP
                 pickUpIndexes[requestId] = idx
             elseif currentActivity.activityType == DROPOFF
-                if newStartOfServiceTimes[idx] - newEndOfServiceTimes[pickUpIndexes[requestId]] > requests[requestId].maximumRideTime
+                newEndOfServiceTimePickUp = requestId in visitedRouteIds ? visitedRoute[requestId]["PickUpServiceStart"] + serviceTimes : newEndOfServiceTimes[pickUpIndexes[requestId]]
+
+                if newStartOfServiceTimes[idx] - newEndOfServiceTimePickUp > requests[requestId].maximumRideTime
                     return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0
                 end
 
                 # Update total cost
                 # TODO: jas - check if this is correct
-                totalCost += getCostOfRequest(time,newEndOfServiceTimes[pickUpIndexes[requestId]],newStartOfServiceTimes[idx],requests[requestId].pickUpActivity.id,requests[requestId].dropOffActivity.id)
+                totalCost += getCostOfRequest(time,newEndOfServiceTimePickUp,newStartOfServiceTimes[idx],requests[requestId].pickUpActivity.id,requests[requestId].dropOffActivity.id)
             end
 
             # Set previous as current activity
@@ -383,24 +386,24 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
         if currentActivity.activityType == PICKUP
             pickUpIndexes[requestId] = idx
         elseif currentActivity.activityType == DROPOFF
-            newStartOfServiceTime = requestId in keys(visitedRoute) ? visitedRoute[requestId][PickUpServiceStart] + serviceTimes : newStartOfServiceTimes[idx]
-            if newStartOfServiceTime - newEndOfServiceTimes[pickUpIndexes[requestId]] > requests[requestId].maximumRideTime
+            newEndOfServiceTimePickUp = requestId in visitedRouteIds ? visitedRoute[requestId]["PickUpServiceStart"] + serviceTimes : newEndOfServiceTimes[pickUpIndexes[requestId]]
+            if newStartOfServiceTimes[idx] - newEndOfServiceTimePickUp > requests[requestId].maximumRideTime
                 return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0
             end
 
             # Update total cost
             # TODO: jas - ret til også at bruge visited route 
-            totalCost += getCostOfRequest(time,newEndOfServiceTimes[pickUpIndexes[requestId]],newStartOfServiceTimes[idx],requests[requestId].pickUpActivity.id,requests[requestId].dropOffActivity.id)
+            totalCost += getCostOfRequest(time,newEndOfServiceTimePickUp,newStartOfServiceTimes[idx],requests[requestId].pickUpActivity.id,requests[requestId].dropOffActivity.id)
         end
 
         # Set current as previous activity
         previousActivity = currentActivity
 
-        if printB && (maximumShiftBackward != 0 || maximumShiftForward != 0)
-            println("IDX: ", idx)
-            println("MAXIMUM SHIFT BACKWARD: ", maximumShiftBackward)
-            println("MAXIMUM SHIFT FORWARD: ", maximumShiftForward)
-        end
+        # if printB 
+        #     println("IDX: ", idx)
+        #     println("MAXIMUM SHIFT BACKWARD: ", maximumShiftBackward)
+        #     println("MAXIMUM SHIFT FORWARD: ", maximumShiftForward)
+        # end
     end
 
     # Update total time 

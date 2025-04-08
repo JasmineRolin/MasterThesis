@@ -106,8 +106,8 @@ function updateCurrentScheduleRouteCompleted!(currentState::State,schedule::Vehi
     # Index to split route into current and completed route 
     idx = length(schedule.route) - 1
 
-    println("===========================> Length currentSchedule: ", length(currentSchedule.route))
-    println("==============================> arrival at depot: ",arrivalAtDepot)
+    # println("===========================> Length currentSchedule: ", length(currentSchedule.route))
+    # println("==============================> arrival at depot: ",arrivalAtDepot)
 
     return idx, arrivalAtDepot
 end
@@ -179,10 +179,10 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
     # Update KPIs
     currentSchedule.totalDistance = getTotalDistanceRoute(currentSchedule.route,scenario)
     currentSchedule.totalTime = getTotalTimeRoute(currentSchedule)
-    println("---------------HERE-------------")
-    println("Visited route: ", currentState.visitedRoute)
+    # println("---------------HERE-------------")
+    # println("Visited route: ", currentState.visitedRoute)
     currentSchedule.totalCost = getTotalCostRouteOnline(scenario.time,currentSchedule.route,currentState.visitedRoute,scenario.serviceTimes)
-    println(currentSchedule.totalCost)
+    #println(currentSchedule.totalCost)
     currentSchedule.totalIdleTime = getTotalIdleTimeRoute(currentSchedule.route)    
     currentSchedule.numberOfWalking = schedule.numberOfWalking[idx+1:end]
 
@@ -320,24 +320,24 @@ function determineCurrentState(solution::Solution,event::Request,finalSolution::
 
     # Update vehicle schedule
     for (vehicle,schedule) in enumerate(solution.vehicleSchedules)
-        print("UPDATING SCHEDULE: ",vehicle)
+      #  print("UPDATING SCHEDULE: ",vehicle)
 
         # Check if vehicle is not available yet or has not started service yet
         if schedule.vehicle.availableTimeWindow.startTime > currentTime || schedule.route[1].startOfServiceTime > currentTime
             idx, splitTime = updateCurrentScheduleNotAvailableYet(schedule,currentState,vehicle)
-            print(" - not available yet or not started service yet \n")
+            #print(" - not available yet or not started service yet \n")
         # Check if entire route has been served and vehicle is not available anymore
         elseif schedule.vehicle.availableTimeWindow.endTime < currentTime 
             idx, splitTime = updateCurrentScheduleNotAvailableAnymore!(currentState,schedule,vehicle)
-            print(" - not available anymore \n")
+           # print(" - not available anymore \n")
         # We have completed the last activity and the vehicle is on-route to the depot but still available 
         elseif schedule.route[end-1].activity.activityType != DEPOT && schedule.route[end-1].endOfServiceTime < currentTime
             idx,splitTime = updateCurrentScheduleRouteCompleted!(currentState,schedule,vehicle)
-            print("- completed route but still available \n")
+          #  print("- completed route but still available \n")
         # Check if vehicle has not been assigned yet
         elseif length(schedule.route) == 2 && schedule.route[1].activity.activityType == DEPOT
             idx, splitTime = updateCurrentScheduleNoAssignement!(vehicle,currentTime,currentState)
-            print(" - no assignments \n")
+           # print(" - no assignments \n")
         else
             # Determine index to split
             didSplit = false
@@ -345,14 +345,14 @@ function determineCurrentState(solution::Solution,event::Request,finalSolution::
                if assignment.endOfServiceTime < currentTime && schedule.route[split + 1].endOfServiceTime > currentTime
                     idx, splitTime  = updateCurrentScheduleAtSplit!(scenario,schedule,vehicle,currentState,split)
                     didSplit = true
-                    print(" - still available, split at ",split, ", \n")
+                  #  print(" - still available, split at ",split, ", \n")
                     break
                 end
             end
 
             if didSplit == false
                 idx, splitTime = updateCurrentScheduleAvailableKeepEntireRoute(schedule,currentState,vehicle)
-                print(" - still available, keep entire route, \n")
+              #  print(" - still available, keep entire route, \n")
             end
         end
 
@@ -399,10 +399,10 @@ function simulateScenario(scenario::Scenario)
     visitedRoute = Dict{Int,Dict{String,Int}}()
 
     # Print routes
-    println("------------------------------------------------------------------------------------------------------------------------------------------------")
-    println("Intitial")
-    println("----------------")
-    printSolution(solution,printRouteHorizontal)
+    # println("------------------------------------------------------------------------------------------------------------------------------------------------")
+    # println("Intitial")
+    # println("----------------")
+    # printSolution(solution,printRouteHorizontal)
 
     # Get solution for online problem
     for (itr,event) in enumerate(scenario.onlineRequests)
@@ -414,18 +414,18 @@ function simulateScenario(scenario::Scenario)
         currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario,visitedRoute)
         currentState.totalNTaxi = finalSolution.nTaxi
         
-        println("----------------")
-        println("Current solution: ")
-        println("----------------")
-        println(visitedRoute)
-        printSolution(currentState.solution,printRouteHorizontal)
+        # println("----------------")
+        # println("Current solution: ")
+        # println("----------------")
+        # println(visitedRoute)
+        # printSolution(currentState.solution,printRouteHorizontal)
      
 
 
-        println("----------------")
-        println("Final solution solution: ")
-        println("----------------")
-        printSolution(finalSolution,printRouteHorizontal)
+        # println("----------------")
+        # println("Final solution solution: ")
+        # println("----------------")
+        # printSolution(finalSolution,printRouteHorizontal)
 
         # CHeck feasibility 
         feasible, msg = checkSolutionFeasibilityOnline(scenario,currentState)
@@ -454,10 +454,10 @@ function simulateScenario(scenario::Scenario)
 
     end
 
-    println("----------------")
-    println("Final Solution before merge: ")
-    println("----------------")
-    printSolution(finalSolution,printRouteHorizontal)
+    # println("----------------")
+    # println("Final Solution before merge: ")
+    # println("----------------")
+    # printSolution(finalSolution,printRouteHorizontal)
 
     # Update final solution with last state 
     mergeCurrentStateIntoFinalSolution!(finalSolution,currentState,scenario)
@@ -468,8 +468,6 @@ function simulateScenario(scenario::Scenario)
     printSolution(finalSolution,printRouteHorizontal)
 
     println("Request bank: ", requestBank)
-
-
     return finalSolution
 
 end

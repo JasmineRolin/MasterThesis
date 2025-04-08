@@ -297,7 +297,6 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
             schedule.route[end].activity.timeWindow.startTime = schedule.vehicle.availableTimeWindow.startTime
             schedule.route[end].activity.timeWindow.endTime = schedule.vehicle.availableTimeWindow.endTime
             schedule.route = [schedule.route[1],schedule.route[end]]
-
             return
         else
             schedule.numberOfWalking[pickUpPosition:dropOffPosition-1] .-= 1
