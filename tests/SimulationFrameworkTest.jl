@@ -92,32 +92,34 @@ end
 
 #getTotalCostRouteOnline(scenario.time,solution.vehicleSchedules[14].route,state.visitedRoute,2)
 
+function main()
+    n = Int(ARGS[1])
+    vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
+    parametersFile = "tests/resources/Parameters.csv"
+    alnsParameters = "tests/resources/ALNSParameters2.json"
 
+    for i in 1:10
+        requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
+        distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
+        timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
+        scenarioName = string("Konsentra_Data_",n,"_",i)
+        
+        println("====> SCENARIO: ",scenarioName)
 
-n = 100
-vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
-parametersFile = "tests/resources/Parameters.csv"
-alnsParameters = "tests/resources/ALNSParameters2.json"
+        # Read instance 
+        scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
+        
+        # Read instance 
+        scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
-for i in 1:10
-    requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
-    distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
-    timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
-    scenarioName = string("Konsentra_Data_",n,"_",i)
-    
-    println("====> SCENARIO: ",scenarioName)
+        # Simulate scenario 
+        solution = simulateScenario(scenario)
 
-    # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
-    
-    # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
-
-    # Simulate scenario 
-    solution = simulateScenario(scenario)
-
-    state = State(solution,scenario.onlineRequests[end],0)
-    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-    @test feasible == true
-    @test msg == ""
+        state = State(solution,scenario.onlineRequests[end],0)
+        feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+        @test feasible == true
+        @test msg == ""
+    end
 end
+
+main()
