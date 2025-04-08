@@ -228,7 +228,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
     previousActivity = route[1].activity
     newStartOfServiceTimes[1] = route[1].startOfServiceTime
     newEndOfServiceTimes[1] = route[1].endOfServiceTime ### Spørg Jasmine: Hvorfor kan den ikke ændres fx hvis det er en witing node?
-    newEndOfServiceTimes[end] = route[end].endOfServiceTime
+    #newEndOfServiceTimes[end] = route[end].endOfServiceTime
 
     # Keep track of KPIs 
     totalDistance = 0.0 
@@ -241,6 +241,8 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
     elseif route[1].activity.activityType == DROPOFF
         requestId = route[1].activity.requestId
         totalCost += getCostOfRequest(time,visitedRoute[requestId]["PickUpServiceStart"]+serviceTimes,route[1].startOfServiceTime,requestId,route[1].activity.id)
+    elseif route[1].activity.activityType == WAITING
+        totalIdleTime = route[1].endOfServiceTime - route[1].startOfServiceTime
     end
     
     # Find maximum shift backward and forward
@@ -250,12 +252,12 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
         maximumShiftBackward = 0
     end
 
-    if route[end-1].activity.activityType == WAITING
+    if route[1].activity.activityType == DROPOFF || route[1].activity.activityType == PICKUP
+        maximumShiftForward = 0
+    elseif route[end-1].activity.activityType == WAITING
         maximumShiftForward =  route[end-1].activity.timeWindow.endTime - route[end-1].startOfServiceTime
     elseif length(route) == 2 && route[1].activity.activityType == DEPOT && route[2].activity.activityType == DEPOT
         maximumShiftForward = route[1].activity.timeWindow.endTime - route[1].activity.timeWindow.startTime
-    elseif route[1].activity.activityType == DROPOFF || route[1].activity.activityType == PICKUP
-        maximumShiftForward = 0
     else # Depot but non-empty route 
         maximumShiftForward = route[1].startOfServiceTime - route[1].activity.timeWindow.startTime
     end
@@ -270,6 +272,14 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
     if detour > idleTime && detour > maximumShiftBackward + maximumShiftForward
         return false, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0
+    end
+
+    # TODO: remove 
+    printB = (route[1].activity.activityType == DROPOFF || route[1].activity.activityType == PICKUP) && (pickUpIdxInBlock == -1)
+    if printB && (maximumShiftBackward != 0 || maximumShiftForward != 0)
+        printSimpleRoute(route)
+        println("MAXIMUM SHIFT BACKWARD: ", maximumShiftBackward)
+        println("MAXIMUM SHIFT FORWARD: ", maximumShiftForward)
     end
 
     # Find new service times 
@@ -385,6 +395,12 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
         # Set current as previous activity
         previousActivity = currentActivity
+
+        if printB && (maximumShiftBackward != 0 || maximumShiftForward != 0)
+            println("IDX: ", idx)
+            println("MAXIMUM SHIFT BACKWARD: ", maximumShiftBackward)
+            println("MAXIMUM SHIFT FORWARD: ", maximumShiftForward)
+        end
     end
 
     # Update total time 

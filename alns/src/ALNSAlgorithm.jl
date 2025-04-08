@@ -12,9 +12,6 @@ export ALNS
  Method to run ALNS algorithm
 ==#
 function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters,fileName::String;alreadyRejected = 0,event = Request(),visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}()) 
-    
-    println("ALNS: ", visitedRoute)
-
 
     # File 
     outputFile = open(fileName, "w")

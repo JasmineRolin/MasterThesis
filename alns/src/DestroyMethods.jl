@@ -55,7 +55,7 @@ function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::A
     currentState.currentSolution.nTaxi += nRequestsToRemove
     currentState.currentSolution.totalCost += nRequestsToRemove*scenario.taxiParameter
 
-    removeRequestsFromSolution!(time,distance,serviceTimes,requests,currentSolution,requestsToRemove,visitedRoute = visitedRoute)
+    removeRequestsFromSolution!(time,distance,serviceTimes,requests,currentSolution,requestsToRemove,visitedRoute = visitedRoute,scenario = scenario)
 
 end
 
@@ -113,7 +113,7 @@ function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::
     currentState.currentSolution.totalCost += nRequestsToRemove *scenario.taxiParameter
         
     # Remove requests from solution
-    removeRequestsFromSolution!(time, distance,serviceTimes,requests, currentSolution, requestsToRemove,visitedRoute=visitedRoute)
+    removeRequestsFromSolution!(time, distance,serviceTimes,requests, currentSolution, requestsToRemove,visitedRoute=visitedRoute,scenario=scenario)
 end
 
 
@@ -184,7 +184,7 @@ function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::A
     currentState.currentSolution.totalCost += nRequestsToRemove *scenario.taxiParameter
 
     # Remove requests 
-    removeRequestsFromSolution!(time, distance, serviceTimes,requests,currentSolution, requestsToRemove,visitedRoute = visitedRoute)
+    removeRequestsFromSolution!(time, distance, serviceTimes,requests,currentSolution, requestsToRemove,visitedRoute = visitedRoute,scenario = scenario)
 end
 
 #==
@@ -229,7 +229,7 @@ end
 #==
  Method to remove requests
 ==#
-function removeRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},solution::Solution,requestsToRemove::Set{Int};visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}())   
+function removeRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},solution::Solution,requestsToRemove::Set{Int};visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}(),scenario::Scenario=Scenario())   
     # Create a mutable copy of requestsToRemove
     remainingRequests = copy(requestsToRemove)
 
@@ -250,7 +250,7 @@ function removeRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,
             solution.totalRideTime -= schedule.totalTime
 
             # Remove requests from schedule 
-            removeRequestsFromSchedule!(time,distance,serviceTimes,requests,schedule,requestsToRemoveInSchedule,visitedRoute) 
+            removeRequestsFromSchedule!(time,distance,serviceTimes,requests,schedule,requestsToRemoveInSchedule,visitedRoute,scenario) 
 
             # Update solution KPIs
             solution.totalDistance += schedule.totalDistance
@@ -267,7 +267,7 @@ end
 #==
  Method to remove list of requests from schedule
 ==#
-function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},schedule::VehicleSchedule,requestsToRemove::Vector{Int},visitedRoute::Dict{Int, Dict{String, Int}})
+function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},schedule::VehicleSchedule,requestsToRemove::Vector{Int},visitedRoute::Dict{Int, Dict{String, Int}},scenario::Scenario)
 
     # Remove requests from schedule
     for requestToRemove in requestsToRemove
@@ -318,6 +318,29 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
         end
     end
 
+    # TODO: remocve 
+    totalCost = getTotalCostRouteOnline(time,schedule.route,visitedRoute,serviceTimes)
+    totalDistance = getTotalDistanceRoute(schedule.route,distance)
+    totalIdleTime = getTotalIdleTimeRoute(schedule.route)
+    totalTime = duration(schedule.activeTimeWindow)
+
+    # Update active time window 
+    schedule.activeTimeWindow.startTime = schedule.route[1].startOfServiceTime
+    schedule.activeTimeWindow.endTime = schedule.route[end].endOfServiceTime
+
+    # Update KPIs 
+    schedule.totalDistance = totalDistance 
+    schedule.totalIdleTime = totalIdleTime
+    schedule.totalCost = totalCost
+    schedule.totalTime = totalTime
+
+    feasible,_ = checkRouteFeasibilityOnline(scenario,schedule,visitedRoute)
+    if !feasible
+        println("remove requestr from schedule before update")
+        printRouteHorizontal(schedule)
+    end
+
+    copyScehdule = deepcopy(schedule)
 
     # Repair route 
     feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime = checkFeasibilityOfInsertionInRoute(time,distance,serviceTimes,requests,-1,schedule.route,visitedRoute = visitedRoute)
@@ -329,6 +352,12 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
             a.endOfServiceTime = newEndOfServiceTimes[i]
 
             if a.activity.activityType == WAITING
+                if newStartOfServiceTimes[i] == 360 && newEndOfServiceTimes[i] == 360
+                   printRouteHorizontal(schedule)
+                   println(newStartOfServiceTimes)
+                   println(newEndOfServiceTimes)
+                end
+
                 a.activity.timeWindow.startTime = newStartOfServiceTimes[i]
                 a.activity.timeWindow.endTime = newEndOfServiceTimes[i]
             end
@@ -356,6 +385,18 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
     schedule.totalIdleTime = totalIdleTime
     schedule.totalCost = totalCost
     schedule.totalTime = totalTime
+
+    feasible,_ = checkRouteFeasibilityOnline(scenario,schedule,visitedRoute)
+    if !feasible
+        println("remove requestr from schedule after update")
+        println(newStartOfServiceTimes)
+        println(newEndOfServiceTimes)
+        printRouteHorizontal(schedule)
+
+        println("===>>>> BEFORE UPDATE")
+        printRouteHorizontal(copyScehdule)
+    end
+
 
     return
 end

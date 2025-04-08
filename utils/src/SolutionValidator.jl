@@ -166,6 +166,15 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
     totalDistanceCheck = 0.0
     totalIdleTimeCheck = 0.0
     currentCapacities = 0
+
+    # Determine initial current capacity 
+    visitedRouteIds = keys(visitedRoute)
+    for activityAssignment in route 
+        if activityAssignment.activity.activityType == DROPOFF && activityAssignment.activity.requestId in visitedRouteIds
+            currentCapacities += 1
+        end
+    end
+
     hasBeenServiced = Vector{Int}() 
     hasBeenServicedRequest = Vector{Int}() 
     endOfServiceTimePickUps = Dict{Int,Int}() # Keep track of end of service time for pick-ups
@@ -217,17 +226,17 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
                 return false, msg, Set{Int}(), Set{Int}()
             end
 
+            
             # Update and check current capacities
-            if !(activity.activityType == DROPOFF && activity.requestId in keys(visitedRoute))
-                currentCapacities += findLoadOfActivity(activity)
-            end
+            currentCapacities += findLoadOfActivity(activity)
+
             if currentCapacities > vehicle.totalCapacity 
                 msg = "ROUTE INFEASIBLE: Capacities exceeded for vehicle $(vehicle.id)"
                     return false, msg, Set{Int}(), Set{Int}()
             end
 
             if currentCapacities != numberOfWalking[idx] 
-                msg = "ROUTE INFEASIBLE: Capacities not updated correctly for vehicle $(vehicle.id)"
+                msg = "ROUTE INFEASIBLE: Capacities not updated correctly for vehicle $(vehicle.id), current capacities $(currentCapacities), number of walking $(numberOfWalking[idx])"
                 return false, msg, Set{Int}(), Set{Int}() 
             end
         elseif activity.activityType == WAITING
