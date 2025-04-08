@@ -38,13 +38,18 @@ function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::A
             push!(notMoveRequests, schedule.route[1].activity.requestId)
         end
     end
+    possibleToRemove = setdiff(assignedRequests, notMoveRequests)
+    if length(possibleToRemove) == 0
+        #println("Warning: No requests available to remove.") #TODO Do we want it to be commented?
+        return
+    end
+
 
     # Find number of requests to remove 
     nRequestsToRemove = findNumberOfRequestToRemove(minPercentToDestroy,maxPercentToDestroy,nAssignedRequests-length(notMoveRequests))
     
     # Collect customers to remove
     requestsToRemove = Set{Int}()
-    possibleToRemove = setdiff(assignedRequests, notMoveRequests)
 
     # Choose requests to remove  
     selectedIdx = randperm(nRequests-length(notMoveRequests))[1:nRequestsToRemove]
@@ -81,6 +86,9 @@ function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::
             push!(notMoveRequests, schedule.route[1].activity.requestId)
         end
     end
+    if length(notMoveRequests) == nAssignedRequests
+        return
+    end
     
     # Find number of requests to remove
     nRequestsToRemove = findNumberOfRequestToRemove(minPercentToDestroy, maxPercentToDestroy, nAssignedRequests-length(notMoveRequests))
@@ -95,7 +103,7 @@ function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::
             end
         end
     end
-    
+ 
     # Sort requests by descending cost
     sortedRequests = [x[1] for x in sort(collect(costImpacts), by=x -> -x[2])]  # Sort by cost, highest first
     
@@ -139,31 +147,31 @@ function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::A
             push!(notMoveRequests, schedule.route[1].activity.requestId)
         end
     end
-    possibleToMove = setdiff(assignedRequests, notMoveRequests)
-    if length(possibleToMove) == 0
+    possibleToRemove = setdiff(assignedRequests, notMoveRequests)
+    if length(possibleToRemove) == 0
         #println("Warning: No requests available to remove.") #TODO Do we want it to be commented?
         return
     end
 
     # Find number of requests to remove 
-    nRequestsToRemove = min(length(possibleToMove),findNumberOfRequestToRemove(minPercentToDestroy, maxPercentToDestroy, nAssignedRequests-length(notMoveRequests)))
+    nRequestsToRemove = findNumberOfRequestToRemove(minPercentToDestroy, maxPercentToDestroy, nAssignedRequests-length(notMoveRequests))
      
     # Requests to remove 
     requestsToRemove = Set{Int}()
 
     # Randomly select a request to remove
-    chosenRequestId = rand(possibleToMove)
+    chosenRequestId = rand(possibleToRemove)
     chosenRequest = requests[chosenRequestId]
 
     push!(requestsToRemove,chosenRequestId)
-    setdiff!(possibleToMove, [chosenRequestId])
+    setdiff!(possibleToRemove, [chosenRequestId])
     setdiff!(assignedRequests, [chosenRequestId])
 
     while length(requestsToRemove) < nRequestsToRemove
 
         # Find relatedness measure for all assigned requests 
         relatednessMeasures = Dict{Int,Float64}()
-        for requestId in possibleToMove
+        for requestId in possibleToRemove
             relatednessMeasures[requestId] = relatednessMeasure(shawRemovalPhi,shawRemovalXi,time,maxDriveTime,minDriveTime,minStartOfTimeWindowPickUp,maxStartOfTimeWindowPickUp,minStartOfTimeWindowDropOff,maxStartOfTimeWindowDropOff,chosenRequest,requests[requestId]) 
         end
 
@@ -175,7 +183,7 @@ function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::A
 
         # Update lists 
         push!(requestsToRemove,requestId)
-        setdiff!(possibleToMove, [requestId])
+        setdiff!(possibleToRemove, [requestId])
         setdiff!(assignedRequests, [requestId])
 
         # Choose request 
