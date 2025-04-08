@@ -12,7 +12,7 @@ export minutesSinceMidnight
 ==#
 include("DistanceUtils.jl")
 using .DistanceUtils 
-export getDistanceAndTimeMatrix, getDistanceAndTimeMatrixFromLocations
+export getDistanceAndTimeMatrix, getDistanceAndTimeMatrixFromLocations,haversine_distance
 
 #==
  Export from InstanceReaders module

@@ -32,12 +32,12 @@ end
 
 @testset "ConstructionHeurstic test - Konsentra" begin 
     requestFile = "Data/Konsentra/TransformedData_Data.csv"
-    vehiclesFile = "tests/resources/Vehicles.csv"
+    vehiclesFile = "Data/Konsentra/Vehicles_0.9.csv"
     parametersFile = "tests/resources/Parameters.csv"
-    distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
-    timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
-    scenarioName = "Konsentra"
-
+    distanceMatrixFile = "Data/Matrices/Konsentra_Data_distance.txt"
+    timeMatrixFile = "Data/Matrices/Konsentra_Data_time.txt"
+    scenarioName = "Big"
+    
     
     # Read instance 
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
@@ -55,8 +55,8 @@ end
     requestFile = "tests/resources/RequestsBig.csv"
     vehiclesFile = "tests/resources/VehiclesBig.csv"
     parametersFile = "tests/resources/Parameters.csv"
-    distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
-    timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
+    distanceMatrixFile = "tests/resources/Big_distance.txt"
+    timeMatrixFile = "tests/resources/Big_time.txt"
     scenarioName = "Konsentra"
     
     # Read instance 

@@ -136,7 +136,7 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
 
         # Print 
         if iteration % printSegmentSize == 0
-            println("==> ALNS: Iteration: ", iteration, ", Current cost: ", currentState.currentSolution.totalCost, ", Best cost: ", currentState.bestSolution.totalCost,", Improvement from initial: ", 100*(initialCost-currentState.bestSolution.totalCost)/initialCost, "%, Temperature: ", temperature)
+            println("==> ALNS: Iteration: ", iteration, ", Current cost: ", currentState.currentSolution.totalCost," current request bank: ",currentState.currentSolution.nTaxi, ", Best cost: ", currentState.bestSolution.totalCost," best request bank: ",currentState.bestSolution.nTaxi,", Improvement from initial: ", 100*(initialCost-currentState.bestSolution.totalCost)/initialCost, "%, Temperature: ", temperature)
         end
 
         # Update iteration

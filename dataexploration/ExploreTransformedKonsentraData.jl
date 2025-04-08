@@ -207,7 +207,7 @@ df_list = []  # To store the transformed DataFrames
 sheet_names = []  # To store the sheet names
 sheets = ["1","2","3","4"]
 for sheet in sheets
-    df = CSV.read("Data/Konsentra/100/GeneratedRequests_100_$sheet.csv", DataFrame)
+    df = CSV.read("Data/Konsentra/500/GeneratedRequests_500_$sheet.csv", DataFrame)
     push!(df_list, df)
     push!(sheet_names, sheet)
 end
@@ -218,5 +218,5 @@ end
 #display(plotHistogramsCallTime(df_list,sheet_names))
 display(plotHistogramsRequestTime(df_list,sheet_names))
 display(plotGeographicalData(df_list,sheet_names))
-#display(plotGanttChart(df_list,sheet_names))
+display(plotGanttChart(df_list,sheet_names))
 #println(getKeyNumbers(df_list, sheet_names))

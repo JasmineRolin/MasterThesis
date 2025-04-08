@@ -9,19 +9,19 @@ using Random
 # Constants
 # --------
 global maxRideTimeRatio = 1
-global Gamma = 0.5
+global Gamma = 0.9
 global nWalking = 4
 
 # ------
 # Define possible shifts
 # ------
-shiftTypes = ["Morning", "Noon", "Afternoon", "Evening"]
-shifts = Dict(
-    "Morning"    => Dict("TimeWindow" => [6*60, 10*60], "cost" => 2.0, "nVehicles" => 0, "y" => []),
-    "Noon"       => Dict("TimeWindow" => [9*60, 14*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
-    "Afternoon"  => Dict("TimeWindow" => [13*60, 19*60], "cost" => 3.0, "nVehicles" => 0, "y" => []),
-    "Evening"    => Dict("TimeWindow" => [18*60, 24*60], "cost" => 4.0, "nVehicles" => 0, "y" => [])
-)
+# shiftTypes = ["Morning", "Noon", "Afternoon", "Evening"]
+# shifts = Dict(
+#     "Morning"    => Dict("TimeWindow" => [6*60, 10*60], "cost" => 2.0, "nVehicles" => 0, "y" => []),
+#     "Noon"       => Dict("TimeWindow" => [9*60, 14*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
+#     "Afternoon"  => Dict("TimeWindow" => [13*60, 19*60], "cost" => 3.0, "nVehicles" => 0, "y" => []),
+#     "Evening"    => Dict("TimeWindow" => [18*60, 24*60], "cost" => 4.0, "nVehicles" => 0, "y" => [])
+# )
 
 # ------
 # Generate average demand per hour
@@ -63,7 +63,7 @@ end
 # ------
 # Make MILP model to generate number of vehicles
 # ------
-function generateNumberOfVehiclesKonsentra!(D, shifts)
+function generateNumberOfVehiclesKonsentra!(average_demand_per_hour, shifts)
     model = Model(HiGHS.Optimizer)
     set_silent(model)
 
@@ -79,7 +79,7 @@ function generateNumberOfVehiclesKonsentra!(D, shifts)
     @objective(model, Min, sum(x[i] * shifts[shift_names[i]]["cost"] for i in I))
 
     # Constraints
-    @constraint(model, [t in T], sum(x[i] * shifts[shift_names[i]]["y"][t] for i in I) >= Gamma * D[t])
+    @constraint(model, [t in T], sum(x[i] * shifts[shift_names[i]]["y"][t] for i in I) >= Gamma * average_demand_per_hour[t])
 
     # Optimize model
     optimize!(model)
@@ -118,3 +118,22 @@ function generateVehiclesKonsentra(shifts, locations,vehicle_file::String)
 end
 
 
+function plotDemandAndShifts(average_demand_per_hour, shifts)
+    hours = 1:24  # X-axis
+
+    # Create bar plot for demand
+    bar_plot = bar(hours, average_demand_per_hour, label="Avg Demand", xlabel="Hour", ylabel="Requests",
+                   title="Average Demand & Shift Coverage", legend=:topleft, alpha=0.6, color=:blue,size=(900,500))
+
+    # Overlay shifts as horizontal lines
+    for (shift, data) in shifts
+        start_hour = Int(floor(data["TimeWindow"][1] / 60)) + 1
+        end_hour = Int(floor(data["TimeWindow"][2] / 60))
+
+        # Plot shift as a horizontal line
+        plot!(hours[start_hour:end_hour], fill(data["nVehicles"], end_hour - start_hour + 1),
+              label=shift, lw=4, alpha=0.8)
+    end
+
+    display(bar_plot)
+end

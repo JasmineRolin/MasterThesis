@@ -28,7 +28,7 @@ using offlinesolution
     @test feasible == true
 
     # Construct ALNS state
-    currentState = ALNSState(solution,1,0)
+    currentState = ALNSState(solution,1,0,requestBank)
 
     # Construct ALNS parameters
     parameters = ALNSParameters()
@@ -44,8 +44,8 @@ using offlinesolution
     feasible1, msg1 = checkSolutionFeasibilityOnline(scenario,state)
     @test msg1 == ""
     @test feasible1 == true
-    @test length(currentState.requestBank) == 1
-    @test length(currentState.assignedRequests) == 4
+    @test length(currentState.requestBank) == 2
+    @test length(currentState.assignedRequests) == 3
 
     # Destroy
     randomDestroy!(scenario,currentState,parameters)
@@ -55,18 +55,9 @@ using offlinesolution
     feasible2, msg2 = checkSolutionFeasibilityOnline(scenario,state)
     @test msg2 == ""
     @test feasible2 == true
-    @test length(currentState.requestBank) == 2
-    @test length(currentState.assignedRequests) == 3
-
-
-    randomDestroy!(scenario,currentState,parameters)
-    # Check Solution 
-    state = State(currentState.currentSolution,scenario.onlineRequests[end],0)
-    feasible3, msg3 = checkSolutionFeasibilityOnline(scenario,state)
-    @test msg3 == ""
-    @test feasible3 == true
     @test length(currentState.requestBank) == 3
     @test length(currentState.assignedRequests) == 2
+
 
     randomDestroy!(scenario,currentState,parameters)
     # Check Solution 
@@ -77,7 +68,6 @@ using offlinesolution
     @test length(currentState.requestBank) == 4
     @test length(currentState.assignedRequests) == 1
 
-
     randomDestroy!(scenario,currentState,parameters)
     # Check Solution 
     state = State(currentState.currentSolution,scenario.onlineRequests[end],0)
@@ -86,6 +76,7 @@ using offlinesolution
     @test feasible3 == true
     @test length(currentState.requestBank) == 5
     @test length(currentState.assignedRequests) == 0
+
 end 
 
 
@@ -93,8 +84,8 @@ end
     requestFile = "Data/Konsentra/TransformedData_Data.csv"
     vehiclesFile = "tests/resources/Vehicles.csv"
     parametersFile = "tests/resources/Parameters.csv"
-    distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
-    timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
+    distanceMatrixFile = "Data/Matrices/Konsentra_Data_distance.txt"
+    timeMatrixFile = "Data/Matrices/Konsentra_Data_time.txt"
     scenarioName = "Konsentra"
 
     # Read instance 
@@ -104,7 +95,7 @@ end
     solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
 
     # Construct ALNS state
-    currentState = ALNSState(solution,1,0)
+    currentState = ALNSState(solution,1,0,requestBank)
 
     # Construct ALNS parameters
     parameters = ALNSParameters()
@@ -116,7 +107,7 @@ end
     state = State(currentState.currentSolution,Request(),0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == true
-    @test length(currentState.assignedRequests) == 6
+    @test length(currentState.assignedRequests) == 8
 
     # Destroy 
     randomDestroy!(scenario,currentState,parameters)
@@ -124,7 +115,7 @@ end
     feasible1, msg1 = checkSolutionFeasibilityOnline(scenario,state)
     @test msg1 == ""
     @test feasible1 == true
-    @test length(currentState.requestBank) == 4
+    @test length(currentState.requestBank) == 15
     @test length(currentState.assignedRequests) == 2
 end
 
@@ -151,7 +142,7 @@ end
     @test feasible == true
 
     # Construct ALNS state
-    currentState = ALNSState(solution,1,0)
+    currentState = ALNSState(solution,1,0,requestBank)
 
     # Construct ALNS parameters
     parameters = ALNSParameters()
@@ -168,6 +159,7 @@ end
     @test length(currentState.requestBank) == 4
     @test length(currentState.assignedRequests) == 1
 
+    # Destroy 
     worstRemoval!(scenario,currentState,parameters)
     state = State(currentState.currentSolution,scenario.onlineRequests[end],0)
     feasible2, msg2 = checkSolutionFeasibilityOnline(scenario,state)
@@ -183,8 +175,8 @@ end
     requestFile = "Data/Konsentra/TransformedData_Data.csv"
     vehiclesFile = "tests/resources/Vehicles.csv"
     parametersFile = "tests/resources/Parameters.csv"
-    distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
-    timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
+    distanceMatrixFile = "Data/Matrices/Konsentra_Data_distance.txt"
+    timeMatrixFile = "Data/Matrices/Konsentra_Data_time.txt"
     scenarioName = "Konsentra"
 
     # Read instance 
@@ -194,7 +186,7 @@ end
     solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
 
     # Construct ALNS state
-    currentState = ALNSState(solution,1,0)
+    currentState = ALNSState(solution,1,0,requestBank)
 
     # Construct ALNS parameters
     parameters = ALNSParameters()
@@ -205,7 +197,7 @@ end
     state = State(solution,Request(),0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == true
-    @test length(currentState.assignedRequests) == 6
+    @test length(currentState.assignedRequests) == 8
 
     printSolution(currentState.currentSolution,printRouteHorizontal)
 
@@ -215,7 +207,7 @@ end
     feasible1, msg1 = checkSolutionFeasibilityOnline(scenario,state)
     @test msg1 == ""
     @test feasible1 == true
-    @test length(currentState.requestBank) == 4
+    @test length(currentState.requestBank) == 15
     @test length(currentState.assignedRequests) == 2
 end
 
@@ -244,7 +236,7 @@ end
 
 
     # Construct ALNS state
-    currentState = ALNSState(solution,1,0)
+    currentState = ALNSState(solution,1,0,requestBank)
 
     # Construct ALNS parameters
     parameters = ALNSParameters()
@@ -275,8 +267,8 @@ end
     requestFile = "Data/Konsentra/TransformedData_Data.csv"
     vehiclesFile = "tests/resources/Vehicles.csv"
     parametersFile = "tests/resources/Parameters.csv"
-    distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
-    timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
+    distanceMatrixFile = "Data/Matrices/Konsentra_Data_distance.txt"
+    timeMatrixFile = "Data/Matrices/Konsentra_Data_time.txt"
     scenarioName = "Konsentra"
 
     # Read instance 
@@ -285,7 +277,7 @@ end
     solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
 
     # Construct ALNS state
-    currentState = ALNSState(solution,1,0)
+    currentState = ALNSState(solution,1,0,requestBank)
 
     # Construct ALNS parameters
     parameters = ALNSParameters()
@@ -299,7 +291,7 @@ end
     feasible1, msg1 = checkSolutionFeasibilityOnline(scenario,state)
     @test msg1 == ""
     @test feasible1 == true
-    @test length(currentState.requestBank) == 4
+    @test length(currentState.requestBank) == 15
     @test length(currentState.assignedRequests) == 2
 
     shawRemoval!(scenario,currentState,parameters)
@@ -307,6 +299,6 @@ end
     feasible2, msg2 = checkSolutionFeasibilityOnline(scenario,state)
     @test msg2 == ""
     @test feasible2 == true
-    @test length(currentState.requestBank) == 5
+    @test length(currentState.requestBank) == 16
     @test length(currentState.assignedRequests) == 1
 end
