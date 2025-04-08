@@ -414,17 +414,18 @@ function simulateScenario(scenario::Scenario)
         currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario,visitedRoute)
         currentState.totalNTaxi = finalSolution.nTaxi
         
-        # println("----------------")
-        # println("Current solution: ")
-        # println("----------------")
-        # printSolution(currentState.solution,printRouteHorizontal)
+        println("----------------")
+        println("Current solution: ")
+        println("----------------")
+        println(visitedRoute)
+        printSolution(currentState.solution,printRouteHorizontal)
      
 
 
-        # println("----------------")
-        # println("Final solution solution: ")
-        # println("----------------")
-       # printSolution(finalSolution,printRouteHorizontal)
+        println("----------------")
+        println("Final solution solution: ")
+        println("----------------")
+        printSolution(finalSolution,printRouteHorizontal)
 
         # CHeck feasibility 
         feasible, msg = checkSolutionFeasibilityOnline(scenario,currentState)

@@ -66,7 +66,7 @@ using domain
 end
 ==#
 
-files = ["06.02"]#, "Data", "06.02","09.01","16.01","23.01","30.01"]
+files = [ "06.02"]#, "Data", "06.02","09.01","16.01","23.01","30.01"]
 suff = files[1]
 #for suff in files 
     requestFile = string("Data/Konsentra/TransformedData_",suff,".csv")
