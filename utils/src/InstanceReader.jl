@@ -132,7 +132,7 @@ function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maxim
         dropOffLocation = Location(string("DO R",id),row.dropoff_latitude,row.dropoff_longitude) 
 
         # Read request type 
-        requestType = row.request_type == 1 ? PICKUP_REQUEST : DROPOFF_REQUEST
+        requestType = row.request_type == 0 ? PICKUP_REQUEST : DROPOFF_REQUEST
 
         # Read call time 
         callTime = Int(floor(row.call_time))

@@ -66,8 +66,8 @@ end
    requestFile = "tests/resources/RequestsRepair.csv"
    vehiclesFile = "tests/resources/Vehicles.csv"
    parametersFile = "tests/resources/Parameters.csv"
-   distanceMatrixFile = "Data/Matrices/distanceMatrix_Konsentra.txt"
-   timeMatrixFile = "Data/Matrices/timeMatrix_Konsentra.txt"
+   distanceMatrixFile = "Data/Matrices/Konsentra_Data_distance.txt"
+   timeMatrixFile = "Data/Matrices/Konsentra_Data_time.txt"
    alnsParametersFile = "tests/resources/ALNSParameters.json"
    scenarioName = "Konsentra"
 

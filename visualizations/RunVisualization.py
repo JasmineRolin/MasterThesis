@@ -3,7 +3,7 @@ import Visualization as V
 
 
 # Read data 
-file_path = "/Users/jasminerolin/Documents/GitHub/MasterThesis/Data/Konsentra/TransformedData_Data.csv" #Data/Konsentra/TransformedData_Data.csv"
+file_path = "/Users/jasminerolin/Documents/GitHub/MasterThesis/Data/Konsentra/500/GeneratedRequests_500_1.csv" #Data/Konsentra/TransformedData_Data.csv"
 df = pd.read_csv(file_path)
 
 # Initialize an empty dictionary for the customers
@@ -32,7 +32,7 @@ customerAssignment = {}
 # Initialize an empty dictionary for the customers
 depots = {}
 
-file_path = "/Users/jasminerolin/Documents/GitHub/MasterThesis/Data/Konsentra/Vehicles_0.5.csv" #Data/Konsentra/Vehicles.csv"
+file_path = "/Users/jasminerolin/Documents/GitHub/MasterThesis/Data/Konsentra/500/Vehicles_500.csv" #Data/Konsentra/Vehicles.csv"
 df = pd.read_csv(file_path)
 
 # Loop over the rows of the dataframe and populate the customers dictionary
