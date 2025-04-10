@@ -48,7 +48,7 @@ function printRouteHorizontal(schedule::VehicleSchedule)
     println("Total Distance: $(schedule.totalDistance) km, Total Time: $(schedule.totalTime) min,  Total Idle Time: $(schedule.totalIdleTime) min Total Cost: \$$(schedule.totalCost)")
     
     println("------------------------------------------------------------------------------------------------------------")
-    println("| Step | Activity Type |  Id |  Location  | Start/End Service | Time Window | (Walking) |")
+    println("| Step | Activity Type |  Id |  Location  | Start/End Service | Time Window | Load |")
     println("------------------------------------------------------------------------------------------------------------")
 
     for (i, assignment) in enumerate(schedule.route)

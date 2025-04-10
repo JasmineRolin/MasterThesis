@@ -91,16 +91,16 @@ end
 #==
  Method to copy vehicle schedule
 ==#
-function copyVehicleSchedule(original::VehicleSchedule)
+function copyVehicleSchedule(vehicleSchedule::VehicleSchedule)
     return VehicleSchedule(
-        original.vehicle,  # Assuming Vehicle is immutable or already deeply copied
-        deepcopy(original.route),
-        deepcopy(original.activeTimeWindow),
-        original.totalDistance,
-        original.totalTime,
-        original.totalCost,
-        original.totalIdleTime,
-        deepcopy(original.numberOfWalking),
+        vehicleSchedule.vehicle,  # Assuming Vehicle is immutable or already deeply copied
+        [copyActivityAssignment(assignment) for assignment in vehicleSchedule.route],  # Deep copy of route
+        deepcopy(vehicleSchedule.activeTimeWindow),
+        vehicleSchedule.totalDistance,
+        vehicleSchedule.totalTime,
+        vehicleSchedule.totalCost,
+        vehicleSchedule.totalIdleTime,
+        deepcopy(vehicleSchedule.numberOfWalking),
     )
 end
 

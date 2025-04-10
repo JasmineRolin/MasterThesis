@@ -12,7 +12,7 @@ export GenericMethod
 export ALNSParameters, readParameters
 export ALNSConfiguration
 export ALNSState
-export setMinMaxValuesALNSParameters,ALNSParametersToDict
+export setMinMaxValuesALNSParameters,ALNSParametersToDict,copyALNSState
 
 #== 
  Import from ALNSFunctions 

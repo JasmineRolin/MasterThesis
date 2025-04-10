@@ -9,12 +9,6 @@ export findTimeWindowOfRequestedPickUpTime, findTimeWindowOfDropOff, findTimeWin
 export findMaximumRideTime
 export MAX_DELAY, MAX_EARLY_ARRIVAL
 
-#==
- Allowed delay/early arrival
-==#
-MAX_DELAY = 15
-MAX_EARLY_ARRIVAL = 5
-
 #== 
  Struct that defines request 
 ==#
@@ -41,8 +35,8 @@ end
 #==
  Method to find time window for requested pick-up time 
 ==#
-function findTimeWindowOfRequestedPickUpTime(requestTime::Int)::TimeWindow
-    return TimeWindow(requestTime-MAX_EARLY_ARRIVAL,requestTime + MAX_DELAY)
+function findTimeWindowOfRequestedPickUpTime(requestTime::Int,maxDelay::Int,maxEarlyArrival::Int)::TimeWindow
+    return TimeWindow(requestTime - maxEarlyArrival,requestTime + maxDelay)
 end
 
 #==
@@ -55,8 +49,8 @@ end
 #==
  Method to find time window for requested drop-off time 
 ==#
-function findTimeWindowOfRequestedDropOffTime(requestTime::Int)::TimeWindow
-    return TimeWindow(requestTime-MAX_DELAY,requestTime + MAX_EARLY_ARRIVAL)
+function findTimeWindowOfRequestedDropOffTime(requestTime::Int,maxDelay::Int,maxEarlyArrival::Int)::TimeWindow
+    return TimeWindow(requestTime - maxDelay,requestTime + maxEarlyArrival)
 end
 
 #==

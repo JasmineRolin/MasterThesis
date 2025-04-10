@@ -329,30 +329,6 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
         end
     end
 
-    # TODO: remocve 
-    totalCost = getTotalCostRouteOnline(time,schedule.route,visitedRoute,serviceTimes)
-    totalDistance = getTotalDistanceRoute(schedule.route,distance)
-    totalIdleTime = getTotalIdleTimeRoute(schedule.route)
-    totalTime = duration(schedule.activeTimeWindow)
-
-    # Update active time window 
-    schedule.activeTimeWindow.startTime = schedule.route[1].startOfServiceTime
-    schedule.activeTimeWindow.endTime = schedule.route[end].endOfServiceTime
-
-    # Update KPIs 
-    schedule.totalDistance = totalDistance 
-    schedule.totalIdleTime = totalIdleTime
-    schedule.totalCost = totalCost
-    schedule.totalTime = totalTime
-
-    feasible,_ = checkRouteFeasibilityOnline(scenario,schedule,visitedRoute)
-    if !feasible
-        println("remove requestr from schedule before update")
-        printRouteHorizontal(schedule)
-    end
-
-    copyScehdule = deepcopy(schedule)
-
     # Repair route 
     feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime = checkFeasibilityOfInsertionInRoute(time,distance,serviceTimes,requests,-1,schedule.route,visitedRoute = visitedRoute)
 
@@ -363,12 +339,6 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
             a.endOfServiceTime = newEndOfServiceTimes[i]
 
             if a.activity.activityType == WAITING
-                if newStartOfServiceTimes[i] == 360 && newEndOfServiceTimes[i] == 360
-                   printRouteHorizontal(schedule)
-                   println(newStartOfServiceTimes)
-                   println(newEndOfServiceTimes)
-                end
-
                 a.activity.timeWindow.startTime = newStartOfServiceTimes[i]
                 a.activity.timeWindow.endTime = newEndOfServiceTimes[i]
             end
@@ -396,18 +366,6 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
     schedule.totalIdleTime = totalIdleTime
     schedule.totalCost = totalCost
     schedule.totalTime = totalTime
-
-    feasible,_ = checkRouteFeasibilityOnline(scenario,schedule,visitedRoute)
-    if !feasible
-        println("remove requestr from schedule after update")
-        println(newStartOfServiceTimes)
-        println(newEndOfServiceTimes)
-        printRouteHorizontal(schedule)
-
-        println("===>>>> BEFORE UPDATE")
-        printRouteHorizontal(copyScehdule)
-    end
-
 
     return
 end

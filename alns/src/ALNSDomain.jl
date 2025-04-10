@@ -6,7 +6,7 @@ export GenericMethod
 export ALNSParameters
 export ALNSConfiguration
 export ALNSState
-export setMinMaxValuesALNSParameters, ALNSParametersToDict
+export setMinMaxValuesALNSParameters, ALNSParametersToDict,copyALNSState
 
 #==
  Struct to describe destroy or repair method 
@@ -124,7 +124,8 @@ mutable struct ALNSState
     repairScores::Vector{Float64}
     destroyNumberOfUses::Vector{Int} # Number of times method has been used in current segment 
     repairNumberOfUses::Vector{Int} # Number of times method has been used in current segment 
-    bestSolution::Solution 
+    bestSolution::Solution
+    bestRequestBank::Vector{Int} 
     currentSolution::Solution
     requestBank::Vector{Int}
     assignedRequests::Vector{Int}
@@ -142,7 +143,7 @@ mutable struct ALNSState
 
         assignedRequests = collect(assignedRequestsSet)
 
-        return new(ones(nDestroy)./nDestroy,ones(nRepair)./nRepair,zeros(nDestroy),zeros(nRepair),zeros(Int,nDestroy),zeros(Int,nRepair),currentSolution,currentSolution,Vector{Int}(),assignedRequests,length(assignedRequests))
+        return new(ones(nDestroy)./nDestroy,ones(nRepair)./nRepair,zeros(nDestroy),zeros(nRepair),zeros(Int,nDestroy),zeros(Int,nRepair),copySolution(currentSolution),Vector{Int}(),currentSolution,Vector{Int}(),assignedRequests,length(assignedRequests))
     end
 
     function ALNSState(currentSolution::Solution,nDestroy::Int,nRepair::Int,requestBank::Vector{Int})
@@ -157,7 +158,7 @@ mutable struct ALNSState
 
         assignedRequests = collect(assignedRequestsSet)
 
-        return new(ones(nDestroy)./nDestroy,ones(nRepair)./nRepair,zeros(nDestroy),zeros(nRepair),zeros(Int,nDestroy),zeros(Int,nRepair),currentSolution,currentSolution,requestBank,assignedRequests,length(assignedRequests))
+        return new(ones(nDestroy)./nDestroy,ones(nRepair)./nRepair,zeros(nDestroy),zeros(nRepair),zeros(Int,nDestroy),zeros(Int,nRepair),copySolution(currentSolution),deepcopy(requestBank),currentSolution,requestBank,assignedRequests,length(assignedRequests))
     end
 
     # All-argument constructor
@@ -169,15 +170,36 @@ mutable struct ALNSState
         destroyNumberOfUses::Vector{Int}, 
         repairNumberOfUses::Vector{Int}, 
         bestSolution::Solution, 
+        bestRequestBank::Vector{Int},
         currentSolution::Solution, 
         requestBank::Vector{Int}, 
         assignedRequests::Vector{Int},
         nAssignedRequests::Int
     )
-        return new(destroyWeights, repairWeights,destroyScores,repairScores, destroyNumberOfUses, repairNumberOfUses, bestSolution, currentSolution, requestBank, assignedRequests, nAssignedRequests)
+        return new(destroyWeights, repairWeights,destroyScores,repairScores, destroyNumberOfUses, repairNumberOfUses, bestSolution,bestRequestBank, currentSolution, requestBank, assignedRequests, nAssignedRequests)
     end
 
 
+end
+
+#==
+ Method to copy ALNS state
+==#
+function copyALNSState(alnsState::ALNSState)
+    return ALNSState(
+        deepcopy(alnsState.destroyWeights),
+        deepcopy(alnsState.repairWeights),
+        deepcopy(alnsState.destroyScores),
+        deepcopy(alnsState.repairScores),
+        deepcopy(alnsState.destroyNumberOfUses),
+        deepcopy(alnsState.repairNumberOfUses),
+        copySolution(alnsState.bestSolution),
+        deepcopy(alnsState.bestRequestBank),
+        copySolution(alnsState.currentSolution),
+        deepcopy(alnsState.requestBank),
+        deepcopy(alnsState.assignedRequests),
+        alnsState.nAssignedRequests
+    )
 end
 
 
