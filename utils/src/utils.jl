@@ -54,4 +54,12 @@ using .SolutionValidator
 export checkSolutionFeasibility,checkRouteFeasibility
 export checkSolutionFeasibilityOnline,checkRouteFeasibilityOnline
 
+#==
+    Export from HashingUtils module   
+==#
+include("HashingUtils.jl")
+using .HashingUtils
+export hashSolution
+
+
 end 

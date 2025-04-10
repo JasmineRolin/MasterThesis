@@ -21,7 +21,7 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
 
 
     # Unpack parameters
-    @unpack timeLimit, w, coolingRate, segmentSize, reactionFactor, scoreAccepted, scoreImproved, scoreNewBest, printSegmentSize  = parameters
+    @unpack timeLimit, w, coolingRate, segmentSize, reactionFactor, scoreAccepted, scoreImproved, scoreNewBest, printSegmentSize, maxNumberOfIterationsWithoutImprovement = parameters
 
     # Create ALNS state
     currentState = ALNSState(initialSolution, length(configuration.destroyMethods), length(configuration.repairMethods), requestBank)
@@ -31,10 +31,11 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
     temperature = findStartTemperature(w,currentState.currentSolution,scenario.taxiParameter)
 
     iteration = 0
+    numberOfIterationsSinceLastImprovement = 0
     startTime = time()
 
     # Iterate while time limit is not reached 
-    while !termination(startTime,timeLimit)
+    while !(termination(startTime,timeLimit) || numberOfIterationsSinceLastImprovement > maxNumberOfIterationsWithoutImprovement)
         isAccepted = false 
         isImproved = false
         isNewBest = false
@@ -75,8 +76,15 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
         end
 
         # Check if solution is improved
-        # TODO: create hash table to check if solution has been visited before
-        if trialState.currentSolution.totalCost < currentState.currentSolution.totalCost
+        #hashKeySolution = 
+        hashKeySolution = hashSolution(trialState.currentSolution)
+        seenBefore = hashKeySolution in currentState.seenSolutions
+        if !seenBefore
+            popfirst!(currentState.seenSolutions)
+            push!(currentState.seenSolutions, hashKeySolution)
+        end
+
+        if trialState.currentSolution.totalCost < currentState.currentSolution.totalCost && !seenBefore
             isImproved = true
             isAccepted = true
             currentState.currentSolution = deepcopy(trialState.currentSolution)
@@ -92,7 +100,7 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
 
             end
         # Check if solution is accepted
-        elseif accept(temperature,trialState.currentSolution.totalCost - currentState.currentSolution.totalCost)
+        elseif accept(temperature,trialState.currentSolution.totalCost - currentState.currentSolution.totalCost) && !seenBefore
             isAccepted = true
             currentState.currentSolution = deepcopy(trialState.currentSolution)
             currentState.requestBank = deepcopy(trialState.requestBank)
@@ -141,6 +149,12 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
 
         # Update iteration
         iteration += 1
+
+        if isImproved
+            numberOfIterationsSinceLastImprovement = 0
+        else
+            numberOfIterationsSinceLastImprovement += 1
+        end
 
     end
 

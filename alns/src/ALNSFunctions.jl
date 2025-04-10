@@ -30,7 +30,8 @@ export termination, findStartTemperature, accept, updateScoreAndCount, updateWei
         Float64(jsonData["maxPercentToDestroy"]),
         Float64(jsonData["p"]),
         Float64(jsonData["shawRemovalPhi"]),
-        Float64(jsonData["shawRemovalXi"])
+        Float64(jsonData["shawRemovalXi"]),
+        Float64(jsonData["maxNumberOfIterationsWithoutImprovement"]),
         )
 end
 
