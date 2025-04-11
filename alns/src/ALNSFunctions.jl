@@ -13,8 +13,7 @@ export termination, findStartTemperature, accept, updateScoreAndCount, updateWei
 #==
  Method to read parameters from file  
 ==#
- # TODO: Implement function to read parameters 
- function readALNSParameters(parametersFile::String)::ALNSParameters
+function readALNSParameters(parametersFile::String)::ALNSParameters
     jsonData = JSON3.read(read(parametersFile, String))  # Read JSON file as a string and parse it
     return ALNSParameters(
         Float64(jsonData["timeLimit"]),

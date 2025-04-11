@@ -23,12 +23,12 @@ using offlinesolution
     solution, requestBank = simpleConstruction(scenario,scenario.requests)
 
     # Check Solution 
-    state = State(solution,scenario.onlineRequests[end],solution.nTaxi)
+    state = State(solution,scenario.onlineRequests[end],0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == true
 
     # Construct ALNS state
-    currentState = ALNSState(solution,1,0,requestBank)
+    currentState = ALNSState(solution,solution.nTaxi,0,requestBank)
 
     # Construct ALNS parameters
     parameters = ALNSParameters()

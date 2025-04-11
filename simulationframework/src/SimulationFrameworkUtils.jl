@@ -106,9 +106,6 @@ function updateCurrentScheduleRouteCompleted!(currentState::State,schedule::Vehi
     # Index to split route into current and completed route 
     idx = length(schedule.route) - 1
 
-    # println("===========================> Length currentSchedule: ", length(currentSchedule.route))
-    # println("==============================> arrival at depot: ",arrivalAtDepot)
-
     return idx, arrivalAtDepot
 end
 
@@ -179,10 +176,7 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
     # Update KPIs
     currentSchedule.totalDistance = getTotalDistanceRoute(currentSchedule.route,scenario)
     currentSchedule.totalTime = getTotalTimeRoute(currentSchedule)
-    # println("---------------HERE-------------")
-    # println("Visited route: ", currentState.visitedRoute)
     currentSchedule.totalCost = getTotalCostRouteOnline(scenario.time,currentSchedule.route,currentState.visitedRoute,scenario.serviceTimes)
-    #println(currentSchedule.totalCost)
     currentSchedule.totalIdleTime = getTotalIdleTimeRoute(currentSchedule.route)    
     currentSchedule.numberOfWalking = schedule.numberOfWalking[idx+1:end]
 
@@ -275,12 +269,9 @@ function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,currentStat
         newCost = schedule.totalCost 
         newIdleTime = schedule.totalIdleTime
 
-        finalSolution.totalCost -= finalSolution.vehicleSchedules[vehicle].totalCost # TODO: change
-
-
         finalSolution.vehicleSchedules[vehicle].totalDistance += newDistance
         finalSolution.vehicleSchedules[vehicle].totalTime += newDuration
-        finalSolution.vehicleSchedules[vehicle].totalCost = getTotalCostRoute(scenario,finalSolution.vehicleSchedules[vehicle].route) # += newCost # TODO: jas - change
+        finalSolution.vehicleSchedules[vehicle].totalCost += newCost
         finalSolution.vehicleSchedules[vehicle].totalIdleTime += newIdleTime
 
 
@@ -290,7 +281,7 @@ function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,currentStat
         finalSolution.totalRideTime += newDuration
         finalSolution.totalDistance += newDistance
         finalSolution.totalIdleTime += newIdleTime
-        finalSolution.totalCost += getTotalCostRoute(scenario,finalSolution.vehicleSchedules[vehicle].route)#  newCost # TODO: jas - change
+        finalSolution.totalCost += newCost
     end
 
     finalSolution.nTaxi += currentState.solution.nTaxi
@@ -306,12 +297,9 @@ function determineCurrentState(solution::Solution,event::Request,finalSolution::
 
     # Initialize current state
     currentState = State(scenario,event,visitedRoute,0)
-    currentState.solution.vehicleSchedules = deepcopy(solution.vehicleSchedules)
-    currentState.solution.totalCost = solution.totalCost
-    currentState.solution.nTaxi = 0 #?solution.nTaxi
-    currentState.solution.totalDistance = solution.totalDistance
-    currentState.solution.totalRideTime = solution.totalRideTime
-    currentState.solution.totalIdleTime = solution.totalIdleTime
+    currentState.solution = copySolution(solution)
+
+    # Initialize 
     idx = -1
     splitTime = -1
 
@@ -372,7 +360,7 @@ end
 # ------
 # Function to simulate a scenario
 # ------
-function simulateScenario(scenario::Scenario)
+function simulateScenario(scenario::Scenario;printResults::Bool = false)
 
     # Choose destroy methods
     destroyMethods = Vector{GenericMethod}()
@@ -387,22 +375,36 @@ function simulateScenario(scenario::Scenario)
 
     # Initialize current state 
     initialVehicleSchedules = [VehicleSchedule(vehicle,true) for vehicle in scenario.vehicles] # TODO change constructor
-    finalSolution = Solution(initialVehicleSchedules, 0.0, 0, 0, 0, 0) # TODO change constructor
+    finalSolution = Solution(initialVehicleSchedules, 0.0, 0, 0, 0.0, 0) # TODO change constructor
     currentState = State(scenario,Request(),0)
 
     # Get solution for initial solution (offline problem)
-    # solution = offlineAlgorithm(scenario) # TODO: Change to right function name !!!!!!!!!!
-    # TODO: jas - skal alns ikke køres ? 
-    solution = Solution(scenario)
-    solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests) 
+    initialSolution, initialRequestBank = simpleConstruction(scenario,scenario.offlineRequests) 
+    
+    if printResults
+        println("------------------------------------------------------------------------------------------------------------------------------------------------")
+        println("Intitial before  ALNS")
+        println("----------------")
+        printSolution(initialSolution,printRouteHorizontal)
+    end
 
-    visitedRoute = Dict{Int,Dict{String,Int}}()
+    # Run ALNS for offline solution 
+    # TODO: set correct parameters for alns
+    solution,requestBank,_,_ = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",initialSolution =  initialSolution, requestBank = initialRequestBank, displayPlots = false, savePlots = false)
+
+    # Update time windows 
+    updateTimeWindowsOnline!(solution,scenario)
 
     # Print routes
-    # println("------------------------------------------------------------------------------------------------------------------------------------------------")
-    # println("Intitial")
-    # println("----------------")
-    # printSolution(solution,printRouteHorizontal)
+    if printResults
+        println("------------------------------------------------------------------------------------------------------------------------------------------------")
+        println("Intitial after ALNS")
+        println("----------------")
+        printSolution(solution,printRouteHorizontal)
+    end
+
+    # Initialize visited routes 
+    visitedRoute = Dict{Int,Dict{String,Int}}()
 
     # Get solution for online problem
     for (itr,event) in enumerate(scenario.onlineRequests)
@@ -412,21 +414,20 @@ function simulateScenario(scenario::Scenario)
 
         # Determine current state
         currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario,visitedRoute)
-        currentState.totalNTaxi = finalSolution.nTaxi
         
-        # println("----------------")
-        # println("Current solution: ")
-        # println("----------------")
-        # println(visitedRoute)
-        # printSolution(currentState.solution,printRouteHorizontal)
+        if printResults
+            println("------------------------------------------------------------------------------------------------------------------------------------------------")
+            println("Current solution: ")
+            println("----------------")
+            printSolution(currentState.solution,printRouteHorizontal)
+
+            println("------------------------------------------------------------------------------------------------------------------------------------------------")
+            println("Final solution: ")
+            println("----------------")
+            printSolution(finalSolution,printRouteHorizontal)
+        end
      
-
-
-        # println("----------------")
-        # println("Final solution solution: ")
-        # println("----------------")
-        # printSolution(finalSolution,printRouteHorizontal)
-
+        
         # CHeck feasibility 
         feasible, msg = checkSolutionFeasibilityOnline(scenario,currentState)
         if !feasible
@@ -435,39 +436,31 @@ function simulateScenario(scenario::Scenario)
             return currentState
         end
 
-        if itr == 0
-            # Update time windows for all requests in solution
-            updateTimeWindowsOnlineAll!(currentState.solution,scenario)
-        end        
-
-
+  
         # Get solution for online problem
-        # TODO: jas - hvorfor returnerer den npget her ? 
         solution, requestBank = onlineAlgorithm(currentState, requestBank, scenario, destroyMethods, repairMethods) 
     
-        # println("----------------")
-        # println("Solution after online: ")
-        # println("----------------")
-        # printSolution(currentState.solution,printRouteHorizontal)
-
-
+        if printResults
+            println("------------------------------------------------------------------------------------------------------------------------------------------------")
+            println("Solution after online: ")
+            println("----------------")
+            printSolution(currentState.solution,printRouteHorizontal)
+        end
 
     end
-
-    # println("----------------")
-    # println("Final Solution before merge: ")
-    # println("----------------")
-    # printSolution(finalSolution,printRouteHorizontal)
 
     # Update final solution with last state 
     mergeCurrentStateIntoFinalSolution!(finalSolution,currentState,scenario)
 
-    println("------------------------------------------------------------------------------------------------------------------------------------------------")
-    println("Final solution after merge: ")
-    println("----------------")
-    printSolution(finalSolution,printRouteHorizontal)
+    if printResults
+        println("------------------------------------------------------------------------------------------------------------------------------------------------")
+        println("Final solution after merge: ")
+        println("----------------")
+        printSolution(finalSolution,printRouteHorizontal)
+        println("Request bank: ", requestBank)
 
-    println("Request bank: ", requestBank)
+    end
+
     return finalSolution
 
 end

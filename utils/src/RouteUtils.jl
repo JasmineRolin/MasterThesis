@@ -48,7 +48,7 @@ function printRouteHorizontal(schedule::VehicleSchedule)
     println("Total Distance: $(schedule.totalDistance) km, Total Time: $(schedule.totalTime) min,  Total Idle Time: $(schedule.totalIdleTime) min Total Cost: \$$(schedule.totalCost)")
     
     println("------------------------------------------------------------------------------------------------------------")
-    println("| Step | Activity Type |  Id |  Location  | Start/End Service | Time Window | (Walking) |")
+    println("| Step | Activity Type |  Id |  Location  | Start/End Service | Time Window | Load |")
     println("------------------------------------------------------------------------------------------------------------")
 
     for (i, assignment) in enumerate(schedule.route)
@@ -179,7 +179,7 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
     @unpack time,serviceTimes = scenario
 
     # Check load 
-    if any(numberOfWalking[pickUpIdx:dropOffIdx] .+ 1 .> vehicle.totalCapacity) # TODO: jas - check rigtigt 
+    if any(numberOfWalking[pickUpIdx:dropOffIdx] .+ 1 .> vehicle.totalCapacity) 
         return false, [], [], [],0.0,0.0,0,0
     end
 
@@ -229,7 +229,6 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
     previousActivity = route[1].activity
     newStartOfServiceTimes[1] = route[1].startOfServiceTime
     newEndOfServiceTimes[1] = route[1].endOfServiceTime ### Spørg Jasmine: Hvorfor kan den ikke ændres fx hvis det er en witing node?
-    #newEndOfServiceTimes[end] = route[end].endOfServiceTime
 
     # Keep track of KPIs 
     totalDistance = 0.0 
@@ -275,13 +274,6 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
         return false, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0
     end
 
-    # TODO: remove 
-    # printB = (route[1].activity.activityType == WAITING && (pickUpIdxInBlock == -1))
-    # if printB
-    #     printSimpleRoute(route)
-    #     println("MAXIMUM SHIFT BACKWARD: ", maximumShiftBackward)
-    #     println("MAXIMUM SHIFT FORWARD: ", maximumShiftForward)
-    # end
 
     # Find new service times 
     idxActivityInSchedule = 1
@@ -309,7 +301,6 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                 end
 
                 # Update total cost
-                # TODO: jas - check if this is correct
                 totalCost += getCostOfRequest(time,newEndOfServiceTimePickUp,newStartOfServiceTimes[idx],requests[requestId].pickUpActivity.id,requests[requestId].dropOffActivity.id)
             end
 
@@ -360,15 +351,31 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
             # Keep waiting activity     
             else
-                feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
-                if !feasible
-                    return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0
-                end
+                # Check if we can minimize waiting node
+                # earliestArrivalFromCurrent = currentActivity.startOfServiceTime + time[currentActivity.id,nextActivity.id]
+                # latestArrival = currentActivity.endOfServiceTime + time[previousActivity.id,nextActivity.id]
+                # earliestArrival= max(earliestArrivalFromCurrent,nextActivity.timeWindow.startTime)
+                
+                # if earliestArrival < latestArrival && earliestArrival < nextActivity.timeWindow.endTime 
+                #     newEndOfServiceTimes[idx] = earliestArrival - time[currentActivity.id,nextActivity.id]
+                #     newStartOfServiceTimes[idx] = currentActivity.timeWindow.startTime
+                #     totalIdleTime += newEndOfServiceTimes[idx] - newStartOfServiceTimes[idx]
+                #     totalDistance += distance[previousActivity.id,currentActivity.id]
 
-                # Update total idle time 
-                totalIdleTime += newEndOfServiceTimes[idx] - newStartOfServiceTimes[idx]
-                totalDistance += distance[previousActivity.id,currentActivity.id]
-                push!(waitingActivitiesToKeep,currentActivity.id)
+                #     push!(waitingActivitiesToKeep,currentActivity.id)
+               # else
+                    # Keep waiting activity byt try to shift route
+                    feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
+                    if !feasible
+                        return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0
+                    end
+
+                    # Update total idle time 
+                    totalIdleTime += newEndOfServiceTimes[idx] - newStartOfServiceTimes[idx]
+                    totalDistance += distance[previousActivity.id,currentActivity.id]
+                    push!(waitingActivitiesToKeep,currentActivity.id)
+              #  end
+              
             end
         # Check if activity can be inserted
         else 
@@ -392,18 +399,11 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
             end
 
             # Update total cost
-            # TODO: jas - ret til også at bruge visited route 
             totalCost += getCostOfRequest(time,newEndOfServiceTimePickUp,newStartOfServiceTimes[idx],requests[requestId].pickUpActivity.id,requests[requestId].dropOffActivity.id)
         end
 
         # Set current as previous activity
         previousActivity = currentActivity
-
-        # if printB 
-        #     println("IDX: ", idx)
-        #     println("MAXIMUM SHIFT BACKWARD: ", maximumShiftBackward)
-        #     println("MAXIMUM SHIFT FORWARD: ", maximumShiftForward)
-        # end
     end
 
     # Update total time 

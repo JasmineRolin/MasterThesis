@@ -2,7 +2,7 @@ module onlinesolution
 
 include("onlineSolutionUtils.jl")
 using .onlineSolutionUtils
-export updateTimeWindowsOnlineAll! 
+export updateTimeWindowsOnline! 
 export onlineAlgorithm
 
 end

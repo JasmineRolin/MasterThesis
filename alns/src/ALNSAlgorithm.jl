@@ -11,7 +11,9 @@ export ALNS
 #==
  Method to run ALNS algorithm
 ==#
-function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters,fileName::String;alreadyRejected = 0,event = Request(),visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}()) 
+function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters,fileName::String;alreadyRejected = 0,event = Request(),visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}()) 
+    # Retrieve event id 
+    eventId = event.id 
 
     # File 
     outputFile = open(fileName, "w")
@@ -41,42 +43,16 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
         isNewBest = false
 
         # Create copy of current state
-        trialState = deepcopy(currentState)
+        trialState = copyALNSState(currentState)
 
         # Destroy trial solution  
         destroyIdx = destroy!(scenario,trialState,parameters,configuration,visitedRoute = visitedRoute)
-        state = State(trialState.currentSolution,event,visitedRoute,alreadyRejected)
-        feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-        if !feasible
-            println("ALNS: AFTER DESTROY INFEASIBLE SOLUTION IN ITERATION:", iteration)
-            println(configuration.destroyMethods[destroyIdx].name)
-            println(msg) 
-            println(visitedRoute)
-             # Close file    
-            close(outputFile)
-            printSolution(trialState.currentSolution,printRouteHorizontal)
-            throw(msg)
-        end
-
-        
-    
+       
         # Repair trial solution 
         repairIdx = repair!(scenario,trialState,configuration,visitedRoute=visitedRoute)
-        state = State(trialState.currentSolution,event,visitedRoute,alreadyRejected)
-        feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-        if !feasible
-            println("ALNS: AFTER REPAIR INFEASIBLE SOLUTION IN ITERATION:", iteration)
-            println(configuration.repairMethods[repairIdx].name)
-            println(msg) 
-             # Close file    
-            close(outputFile)
-            printSolution(trialState.currentSolution,printRouteHorizontal)
-
-            throw(msg)
-        end
+    
 
         # Check if solution is improved
-        #hashKeySolution = 
         hashKeySolution = hashSolution(trialState.currentSolution)
         seenBefore = hashKeySolution in currentState.seenSolutions
         if !seenBefore
@@ -84,10 +60,17 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
             push!(currentState.seenSolutions, hashKeySolution)
         end
 
-        if trialState.currentSolution.totalCost < currentState.currentSolution.totalCost && !seenBefore
+
+        # Check if we can accept solution when trying to insert event 
+        #    Is true when we are in offline phase: eventId == 0 
+        #    Is true when we are in online phase and the request bank is empty
+        #    Is true when we are in online phase and the event is the only request in the request bank
+        acceptOnlinePhase = (eventId == 0) || (length(trialState.requestBank) == 0) || (eventId in trialState.requestBank && length(trialState.requestBank) == 1)
+
+        if acceptOnlinePhase && !seenBefore && (trialState.currentSolution.totalCost < currentState.currentSolution.totalCost)
             isImproved = true
             isAccepted = true
-            currentState.currentSolution = deepcopy(trialState.currentSolution)
+            currentState.currentSolution = copySolution(trialState.currentSolution)
             currentState.requestBank = deepcopy(trialState.requestBank)
             currentState.assignedRequests = deepcopy(trialState.assignedRequests)
             currentState.nAssignedRequests = trialState.nAssignedRequests
@@ -96,13 +79,14 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
             # Check if new best solution
             if trialState.currentSolution.totalCost < currentState.bestSolution.totalCost
                 isNewBest = true
-                currentState.bestSolution = deepcopy(trialState.currentSolution)
+                currentState.bestSolution = copySolution(trialState.currentSolution)
+                currentState.bestRequestBank = deepcopy(trialState.requestBank)
 
             end
         # Check if solution is accepted
-        elseif accept(temperature,trialState.currentSolution.totalCost - currentState.currentSolution.totalCost) && !seenBefore
+        elseif acceptOnlinePhase && !seenBefore && (accept(temperature,trialState.currentSolution.totalCost - currentState.currentSolution.totalCost))
             isAccepted = true
-            currentState.currentSolution = deepcopy(trialState.currentSolution)
+            currentState.currentSolution = copySolution(trialState.currentSolution)
             currentState.requestBank = deepcopy(trialState.requestBank)
             currentState.assignedRequests = deepcopy(trialState.assignedRequests)
             currentState.nAssignedRequests = trialState.nAssignedRequests
@@ -117,18 +101,6 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
         # Update temperature and iteration
         temperature = coolingRate*temperature
 
-        # Check solution 
-        # TODO: remove when ALNS is robust 
-        state = State(currentState.currentSolution,event,visitedRoute,alreadyRejected)
-        feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-        if !feasible
-            println("ALNS: INFEASIBLE SOLUTION IN ITERATION:", iteration)
-            #throw(msg) 
-             # Close file    
-            close(outputFile)
-            return currentState.currentSolution, currentState.requestBank
-        end
-
         # Write to file 
         write(outputFile, string(iteration), ",", 
                  string(trialState.currentSolution.totalCost), ",", 
@@ -140,6 +112,17 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
                 string(configuration.repairMethods[repairIdx].name), ",",
                 join(string.(currentState.destroyWeights), ","), ",", 
                  join(string.(currentState.repairWeights), ","), "\n")
+
+
+        # Check solution 
+        # TODO: remove when ALNS is robust 
+        state = State(currentState.currentSolution,event,visitedRoute,alreadyRejected)
+        feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+        if !feasible
+            println("ALNS: INFEASIBLE SOLUTION IN ITERATION:", iteration)  
+            close(outputFile)
+            throw(msg) 
+        end
 
 
         # Print 
@@ -162,14 +145,14 @@ function ALNS(scenario::Scenario, requests::Vector{Request},initialSolution::Sol
     close(outputFile)
 
     # Check final solution
-    state = State(currentState.currentSolution,event,visitedRoute,alreadyRejected)
+    state = State(currentState.bestSolution,event,visitedRoute,alreadyRejected)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     if !feasible
         println("ALNS: INFEASIBLE FINAL SOLUTION")
         throw(msg) 
     end
 
-    return currentState.bestSolution, currentState.requestBank
+    return currentState.bestSolution, currentState.bestRequestBank
 end 
 
 end
