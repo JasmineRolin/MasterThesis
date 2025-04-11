@@ -3,6 +3,12 @@ using Dates
 using utils, domain
 
 
+#==
+ Allowed delay/early arrival
+==#
+global MAX_DELAY = 15
+global MAX_EARLY_ARRIVAL = 5
+
 
 #==
  Test InstanceReader 
@@ -43,34 +49,34 @@ using utils, domain
 
     # Time windows 
     requestTime1 = 495 
-    @test scenario.requests[1].pickUpActivity.timeWindow.startTime == requestTime1 - 5
-    @test scenario.requests[1].pickUpActivity.timeWindow.endTime == requestTime1 + 15
-    @test scenario.requests[1].dropOffActivity.timeWindow.startTime == requestTime1 - 5 + 2
-    @test scenario.requests[1].dropOffActivity.timeWindow.endTime == requestTime1 + 15 + 20
+    @test scenario.requests[1].pickUpActivity.timeWindow.startTime == requestTime1 - MAX_EARLY_ARRIVAL
+    @test scenario.requests[1].pickUpActivity.timeWindow.endTime == requestTime1 + MAX_DELAY
+    @test scenario.requests[1].dropOffActivity.timeWindow.startTime == requestTime1 - MAX_EARLY_ARRIVAL + 2
+    @test scenario.requests[1].dropOffActivity.timeWindow.endTime == requestTime1 + MAX_DELAY + 20
 
     requestTime2 = 870 
-    @test scenario.requests[2].pickUpActivity.timeWindow.startTime == requestTime2 - 15 - 27
-    @test scenario.requests[2].pickUpActivity.timeWindow.endTime == requestTime2 + 5 - 9 
-    @test scenario.requests[2].dropOffActivity.timeWindow.startTime == requestTime2 - 15 
-    @test scenario.requests[2].dropOffActivity.timeWindow.endTime == requestTime2 + 5
+    @test scenario.requests[2].pickUpActivity.timeWindow.startTime == requestTime2 - MAX_DELAY - 27
+    @test scenario.requests[2].pickUpActivity.timeWindow.endTime == requestTime2 + MAX_EARLY_ARRIVAL - 9 
+    @test scenario.requests[2].dropOffActivity.timeWindow.startTime == requestTime2 - MAX_DELAY 
+    @test scenario.requests[2].dropOffActivity.timeWindow.endTime == requestTime2 + MAX_EARLY_ARRIVAL
     
     requestTime3 = 530
-    @test scenario.requests[3].pickUpActivity.timeWindow.startTime == requestTime3 - 5
-    @test scenario.requests[3].pickUpActivity.timeWindow.endTime == requestTime3 + 15 
-    @test scenario.requests[3].dropOffActivity.timeWindow.startTime == requestTime3 - 5 + 8
-    @test scenario.requests[3].dropOffActivity.timeWindow.endTime == requestTime3 + 15 + 24
+    @test scenario.requests[3].pickUpActivity.timeWindow.startTime == requestTime3 - MAX_EARLY_ARRIVAL
+    @test scenario.requests[3].pickUpActivity.timeWindow.endTime == requestTime3 + MAX_DELAY 
+    @test scenario.requests[3].dropOffActivity.timeWindow.startTime == requestTime3 - MAX_EARLY_ARRIVAL + 8
+    @test scenario.requests[3].dropOffActivity.timeWindow.endTime == requestTime3 + MAX_DELAY + 24
 
     requestTime4 = 425
-    @test scenario.requests[4].pickUpActivity.timeWindow.startTime == requestTime4 - 5
-    @test scenario.requests[4].pickUpActivity.timeWindow.endTime == requestTime4 + 15 
-    @test scenario.requests[4].dropOffActivity.timeWindow.startTime == requestTime4 - 5 + 13
-    @test scenario.requests[4].dropOffActivity.timeWindow.endTime == requestTime4 + 15 + 39
+    @test scenario.requests[4].pickUpActivity.timeWindow.startTime == requestTime4 - MAX_EARLY_ARRIVAL
+    @test scenario.requests[4].pickUpActivity.timeWindow.endTime == requestTime4 + MAX_DELAY 
+    @test scenario.requests[4].dropOffActivity.timeWindow.startTime == requestTime4 - MAX_EARLY_ARRIVAL + 13
+    @test scenario.requests[4].dropOffActivity.timeWindow.endTime == requestTime4 + MAX_DELAY + 39
 
     requestTime5 = 990 
-    @test scenario.requests[5].pickUpActivity.timeWindow.startTime == requestTime5 - 15 - 39
-    @test scenario.requests[5].pickUpActivity.timeWindow.endTime == requestTime5 + 5 - 13 
-    @test scenario.requests[5].dropOffActivity.timeWindow.startTime == requestTime5 - 15
-    @test scenario.requests[5].dropOffActivity.timeWindow.endTime == requestTime5 + 5 
+    @test scenario.requests[5].pickUpActivity.timeWindow.startTime == requestTime5 - MAX_DELAY - 39
+    @test scenario.requests[5].pickUpActivity.timeWindow.endTime == requestTime5 + MAX_EARLY_ARRIVAL - 13 
+    @test scenario.requests[5].dropOffActivity.timeWindow.startTime == requestTime5 - MAX_DELAY
+    @test scenario.requests[5].dropOffActivity.timeWindow.endTime == requestTime5 + MAX_EARLY_ARRIVAL 
 
     # Check online and offline requests
     for (i,request) in enumerate(scenario.requests)

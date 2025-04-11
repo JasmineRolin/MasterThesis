@@ -21,14 +21,14 @@ using offlinesolution
     
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario,scenario.requests)
-    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.requests)
+
+    # Check Solution 
+    state = State(solution,scenario.onlineRequests[end],0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == true
 
-    
-    printSolution(solution,printRouteHorizontal)
-
     # Construct ALNS state
-    currentState = ALNSState(solution,1,0,requestBank)
+    currentState = ALNSState(solution,solution.nTaxi,0,requestBank)
 
     # Construct ALNS parameters
     parameters = ALNSParameters()
@@ -38,14 +38,21 @@ using offlinesolution
 
     # Destroy 
     randomDestroy!(scenario,currentState,parameters)
-    feasible1, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.requests)
+
+    # Check Solution 
+    state = State(currentState.currentSolution,scenario.onlineRequests[end],0)
+    feasible1, msg1 = checkSolutionFeasibilityOnline(scenario,state)
     @test msg1 == ""
     @test feasible1 == true
     @test length(currentState.requestBank) == 2
     @test length(currentState.assignedRequests) == 3
 
+    # Destroy
     randomDestroy!(scenario,currentState,parameters)
-    feasible2, msg2 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.requests)
+
+    # Check Solution 
+    state = State(currentState.currentSolution,scenario.onlineRequests[end],0)
+    feasible2, msg2 = checkSolutionFeasibilityOnline(scenario,state)
     @test msg2 == ""
     @test feasible2 == true
     @test length(currentState.requestBank) == 3
@@ -53,14 +60,18 @@ using offlinesolution
 
 
     randomDestroy!(scenario,currentState,parameters)
-    feasible3, msg3 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.requests)
+    # Check Solution 
+    state = State(currentState.currentSolution,scenario.onlineRequests[end],0)
+    feasible3, msg3 = checkSolutionFeasibilityOnline(scenario,state)
     @test msg3 == ""
     @test feasible3 == true
     @test length(currentState.requestBank) == 4
     @test length(currentState.assignedRequests) == 1
 
     randomDestroy!(scenario,currentState,parameters)
-    feasible3, msg3 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.requests)
+    # Check Solution 
+    state = State(currentState.currentSolution,scenario.onlineRequests[end],0)
+    feasible3, msg3 = checkSolutionFeasibilityOnline(scenario,state)
     @test msg3 == ""
     @test feasible3 == true
     @test length(currentState.requestBank) == 5
@@ -92,13 +103,16 @@ end
     parameters.minPercentToDestroy = 0.7
     parameters.maxPercentToDestroy = 0.7
 
-    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
+    # Check Solution 
+    state = State(currentState.currentSolution,Request(),0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == true
     @test length(currentState.assignedRequests) == 8
 
     # Destroy 
     randomDestroy!(scenario,currentState,parameters)
-    feasible1, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
+    state = State(currentState.currentSolution,Request(),0)
+    feasible1, msg1 = checkSolutionFeasibilityOnline(scenario,state)
     @test msg1 == ""
     @test feasible1 == true
     @test length(currentState.requestBank) == 15
@@ -123,7 +137,8 @@ end
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario,scenario.requests)
    
-    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.requests)
+    state = State(solution,scenario.onlineRequests[end],0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == true
 
     # Construct ALNS state
@@ -137,7 +152,8 @@ end
 
     # Destroy 
     worstRemoval!(scenario,currentState,parameters)
-    feasible1, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.requests)
+    state = State(currentState.currentSolution,scenario.onlineRequests[end],0)
+    feasible1, msg1 = checkSolutionFeasibilityOnline(scenario,state)
     @test msg1 == ""
     @test feasible1 == true
     @test length(currentState.requestBank) == 4
@@ -145,7 +161,8 @@ end
 
     # Destroy 
     worstRemoval!(scenario,currentState,parameters)
-    feasible2, msg2 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.requests)
+    state = State(currentState.currentSolution,scenario.onlineRequests[end],0)
+    feasible2, msg2 = checkSolutionFeasibilityOnline(scenario,state)
     @test msg2 == ""
     @test feasible2 == true
     @test length(currentState.requestBank) == 5
@@ -177,15 +194,17 @@ end
     parameters.minPercentToDestroy = 0.7
     parameters.maxPercentToDestroy = 0.7
 
-    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
+    state = State(solution,Request(),0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == true
     @test length(currentState.assignedRequests) == 8
 
     printSolution(currentState.currentSolution,printRouteHorizontal)
 
     # Destroy 
-     worstRemoval!(scenario,currentState,parameters)
-    feasible1, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
+    worstRemoval!(scenario,currentState,parameters)
+    state = State(currentState.currentSolution,Request(),0)
+    feasible1, msg1 = checkSolutionFeasibilityOnline(scenario,state)
     @test msg1 == ""
     @test feasible1 == true
     @test length(currentState.requestBank) == 15
@@ -211,7 +230,8 @@ end
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario,scenario.requests)
 
-    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.requests)
+    state = State(solution,scenario.onlineRequests[end],0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == true
 
 
@@ -226,14 +246,16 @@ end
 
     # Destroy 
     shawRemoval!(scenario,currentState,parameters)
-    feasible1, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.requests)
+    state = State(currentState.currentSolution,scenario.onlineRequests[end],0)
+    feasible1, msg1 = checkSolutionFeasibilityOnline(scenario,state)
     @test msg1 == ""
     @test feasible1 == true
     @test length(currentState.requestBank) == 4
     @test length(currentState.assignedRequests) == 1
 
     shawRemoval!(scenario,currentState,parameters)
-    feasible2, msg2 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.requests)
+    state = State(currentState.currentSolution,scenario.onlineRequests[end],0)
+    feasible2, msg2 = checkSolutionFeasibilityOnline(scenario,state)
     @test msg2 == ""
     @test feasible2 == true
     @test length(currentState.requestBank) == 5
@@ -265,14 +287,16 @@ end
 
     # Destroy 
     shawRemoval!(scenario,currentState,parameters)
-    feasible1, msg1 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
+    state = State(currentState.currentSolution,Request(),0)
+    feasible1, msg1 = checkSolutionFeasibilityOnline(scenario,state)
     @test msg1 == ""
     @test feasible1 == true
     @test length(currentState.requestBank) == 15
     @test length(currentState.assignedRequests) == 2
 
     shawRemoval!(scenario,currentState,parameters)
-    feasible2, msg2 = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
+    state = State(currentState.currentSolution,Request(),0)
+    feasible2, msg2 = checkSolutionFeasibilityOnline(scenario,state)
     @test msg2 == ""
     @test feasible2 == true
     @test length(currentState.requestBank) == 16

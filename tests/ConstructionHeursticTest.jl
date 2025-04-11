@@ -24,7 +24,8 @@ using utils, domain, offlinesolution
     printSolution(solution,printRouteHorizontal)
 
     # Check solution
-    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.offlineRequests)
+    state = State(solution,Request(),0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     println(msg)
     @test feasible == true
 end
@@ -44,7 +45,8 @@ end
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
   
-    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.offlineRequests)
+    state = State(solution,Request(),0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == true
     @test msg == ""
 end
@@ -63,7 +65,8 @@ end
     # Constuct solution 
     solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
 
-    feasible, msg = checkSolutionFeasibility(scenario,solution,scenario.offlineRequests)
+    state = State(solution,Request(),0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == true
     @test msg == ""
       

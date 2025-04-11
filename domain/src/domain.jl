@@ -54,7 +54,7 @@ export Vehicle
 ==#
 include("ActivityAssignment.jl")
 using .ActivityAssignments
-export ActivityAssignment
+export ActivityAssignment,copyActivityAssignment
 
 #==
  Export from VehicleSchedule module 
@@ -75,7 +75,7 @@ export Scenario
 ==#
 include("Solution.jl")
 using .Solutions
-export Solution
+export Solution, copySolution
 
 
 #==

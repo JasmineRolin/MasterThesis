@@ -3,7 +3,7 @@ module Solutions
 using ..VehicleSchedules 
 using ..Scenarios
 
-export Solution
+export Solution,copySolution
 
 mutable struct Solution 
     vehicleSchedules::Vector{VehicleSchedule}
@@ -20,9 +20,20 @@ mutable struct Solution
     end
 
     # All-argument constructor
-    function Solution(vehicleSchedules::Vector{VehicleSchedule}, totalCost::Float64, nTaxi::Int, totalRideTime::Int, totalDistance::Int, totalIdleTime::Int)
+    function Solution(vehicleSchedules::Vector{VehicleSchedule}, totalCost::Float64, nTaxi::Int, totalRideTime::Int, totalDistance::Float64, totalIdleTime::Int)
         new(vehicleSchedules, totalCost, nTaxi, totalRideTime, totalDistance, totalIdleTime)
     end
 end
+
+#==
+ Method to copy solution 
+==#
+function copySolution(solution::Solution)
+    # Create a deep copy of the vehicle schedules
+    vehicleSchedulesCopy = [copyVehicleSchedule(schedule) for schedule in solution.vehicleSchedules]
+    
+    # Create a new Solution object with the copied vehicle schedules
+    return Solution(vehicleSchedulesCopy, solution.totalCost, solution.nTaxi, solution.totalRideTime, solution.totalDistance, solution.totalIdleTime)
+end 
 
 end

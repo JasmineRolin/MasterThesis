@@ -35,7 +35,8 @@ export getTotalCostRoute
 export getTotalTimeRoute
 export getTotalIdleTimeRoute
 export getTotalCostDistanceTimeOfSolution
-export getCostOfRequest
+export getTotalCostRouteOnline
+export getCostOfRequest,getTaxiCostOfSolution
 
 
 #==
@@ -51,5 +52,14 @@ export printRoute,printSimpleRoute, insertRequest!,checkFeasibilityOfInsertionAt
 include("SolutionValidator.jl")
 using .SolutionValidator
 export checkSolutionFeasibility,checkRouteFeasibility
+export checkSolutionFeasibilityOnline,checkRouteFeasibilityOnline
+
+#==
+    Export from HashingUtils module   
+==#
+include("HashingUtils.jl")
+using .HashingUtils
+export hashSolution
+
 
 end 

@@ -10,6 +10,13 @@ export readRequests
 export splitRequests
 
 #==
+ Allowed delay/early arrival
+==#
+global MAX_DELAY = 15
+global MAX_EARLY_ARRIVAL = 5
+
+
+#==
  Function to read instance 
  Takes request, vehicles and parameters .csv as input 
 ==#
@@ -157,10 +164,10 @@ function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maxim
         dropOffTimeWindow = TimeWindow(0,0)
 
         if requestType == PICKUP_REQUEST
-            pickUpTimeWindow = findTimeWindowOfRequestedPickUpTime(requestTime)
+            pickUpTimeWindow = findTimeWindowOfRequestedPickUpTime(requestTime,MAX_DELAY,MAX_EARLY_ARRIVAL)
             dropOffTimeWindow = findTimeWindowOfDropOff(pickUpTimeWindow,directDriveTime,maximumRideTime)
         else
-            dropOffTimeWindow = findTimeWindowOfRequestedDropOffTime(requestTime)
+            dropOffTimeWindow = findTimeWindowOfRequestedDropOffTime(requestTime,MAX_DELAY,MAX_EARLY_ARRIVAL)
             pickUpTimeWindow = findTimeWindowOfPickUp(dropOffTimeWindow,directDriveTime,maximumRideTime)
         end
 

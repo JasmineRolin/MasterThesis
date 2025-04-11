@@ -32,7 +32,8 @@ Test ALNSFunctions
     # Shaw Destroy 
     shawRemoval!(scenario,currentState,parameters)
 
-    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
+    state = State(currentState.currentSolution,Request(),0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     if !feasible
         println(msg)
     end
@@ -41,7 +42,8 @@ Test ALNSFunctions
     # Regret Repair
     regretInsertion(currentState,scenario)
 
-    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
+    state = State(currentState.currentSolution,Request(),0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     if !feasible
         println(msg)
     end
@@ -50,7 +52,8 @@ Test ALNSFunctions
     # Random destroy
     randomDestroy!(scenario,currentState,parameters)
 
-    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
+    state = State(currentState.currentSolution,Request(),0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     if !feasible
         println(msg)
     end
@@ -59,7 +62,8 @@ Test ALNSFunctions
     # Greedy repair
     greedyInsertion(currentState,scenario)
 
-    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
+    state = State(currentState.currentSolution,Request(),0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     if !feasible
         println(msg)
     end
@@ -68,7 +72,8 @@ Test ALNSFunctions
     # Worst removal
     worstRemoval!(scenario,currentState,parameters)
 
-    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
+    state = State(currentState.currentSolution,Request(),0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     if !feasible
         println(msg)
     end
@@ -77,7 +82,8 @@ Test ALNSFunctions
     # Greedy repair
     greedyInsertion(currentState,scenario)
 
-    feasible, msg = checkSolutionFeasibility(scenario,currentState.currentSolution,scenario.offlineRequests)
+    state = State(currentState.currentSolution,Request(),0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     if !feasible
         println(msg)
     end
@@ -110,10 +116,13 @@ end
     addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
     addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
-    
-    finalSolution, specifications, KPIs = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters)
+  
+    initialSolution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
 
-    feasible, msg = checkSolutionFeasibility(scenario,finalSolution,scenario.offlineRequests)
+    finalSolution, specifications, KPIs = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
+
+    state = State(finalSolution,Request(),0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == true
     @test msg == ""
 
@@ -136,22 +145,28 @@ end
 #         timeMatrixFile = string("Data/Matrices/Konsentra_",suff,"_time.txt")
 #         scenarioName = string("Konsentra_",suff)
         
-#         # Read instance 
-#         scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
+        # # Read instance 
+        # scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
-#         # Choose destroy methods
-#         destroyMethods = Vector{GenericMethod}()
-#         addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
-#         addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
-#         addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
+        # # Choose destroy methods
+        # destroyMethods = Vector{GenericMethod}()
+        # addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
+        # addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
+        # addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
 
-#         # Choose repair methods
-#         repairMethods = Vector{GenericMethod}()
-#         addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
-#         addMethod!(repairMethods,"regretInsertion",regretInsertion)
+        # # Choose repair methods
+        # repairMethods = Vector{GenericMethod}()
+        # addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
+        # addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
+        # initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
+        # finalSolution, specifications, KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",initialSolution=initialSolution,requestBank=requestBank)
         
-#         finalSolution,requestBank,specification,KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;initialSolutionConstructor=simpleConstruction,parametersFile="tests/resources/ALNSParameters2.json",displayPlots=true,savePlots=true)
+        # state = State(finalSolution,scenario.onlineRequests[end],0)
+        # feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+        # @test feasible == true
+        # @test msg == ""
+        # println(msg)
 
 #         feasible, msg = checkSolutionFeasibility(scenario,finalSolution,scenario.requests)
 #         @test feasible == true

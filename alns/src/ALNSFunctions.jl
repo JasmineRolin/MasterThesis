@@ -13,8 +13,7 @@ export termination, findStartTemperature, accept, updateScoreAndCount, updateWei
 #==
  Method to read parameters from file  
 ==#
- # TODO: Implement function to read parameters 
- function readALNSParameters(parametersFile::String)::ALNSParameters
+function readALNSParameters(parametersFile::String)::ALNSParameters
     jsonData = JSON3.read(read(parametersFile, String))  # Read JSON file as a string and parse it
     return ALNSParameters(
         Float64(jsonData["timeLimit"]),
@@ -30,7 +29,8 @@ export termination, findStartTemperature, accept, updateScoreAndCount, updateWei
         Float64(jsonData["maxPercentToDestroy"]),
         Float64(jsonData["p"]),
         Float64(jsonData["shawRemovalPhi"]),
-        Float64(jsonData["shawRemovalXi"])
+        Float64(jsonData["shawRemovalXi"]),
+        Int(jsonData["maxNumberOfIterationsWithoutImprovement"])
         )
 end
 
@@ -45,14 +45,14 @@ end
 #==
  Method to Destroy 
 ==#
-function destroy!(scenario::Scenario,state::ALNSState,parameters::ALNSParameters, configuration::ALNSConfiguration)::Int
+function destroy!(scenario::Scenario,state::ALNSState,parameters::ALNSParameters, configuration::ALNSConfiguration;visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}() )::Int
     # Select method 
     destroyIdx = rouletteWheel(state.destroyWeights)
 
     #println("\t Destroy method: ", configuration.destroyMethods[destroyIdx].name)
 
     # Use method 
-    configuration.destroyMethods[destroyIdx].method(scenario,state,parameters)
+    configuration.destroyMethods[destroyIdx].method(scenario,state,parameters,visitedRoute = visitedRoute)
 
     return destroyIdx
 end
@@ -60,14 +60,14 @@ end
 #==
  Method to Repair  
 ==#
-function repair!(scenario::Scenario, state::ALNSState, configuration::ALNSConfiguration)::Int
+function repair!(scenario::Scenario, state::ALNSState, configuration::ALNSConfiguration;visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}())::Int  
     # Select method 
     repairIdx = rouletteWheel(state.repairWeights)
 
     # println("\t Repair method: ", configuration.repairMethods[repairIdx].name)
 
     # Use method 
-    configuration.repairMethods[repairIdx].method(state,scenario)
+    configuration.repairMethods[repairIdx].method(state,scenario,visitedRoute=visitedRoute)
 
     return repairIdx
 end

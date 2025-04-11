@@ -7,7 +7,8 @@ export getTotalCostRoute
 export getTotalTimeRoute
 export getTotalIdleTimeRoute
 export getTotalCostDistanceTimeOfSolution
-export getCostOfRequest
+export getTotalCostRouteOnline
+export getCostOfRequest,getTaxiCostOfSolution
 
 
 #==
@@ -69,19 +70,48 @@ function getTotalCostRoute(time::Array{Int,2},route::Vector{ActivityAssignment})
     return ratio*10.0
 end
 
+function getTotalCostRouteOnline(time::Array{Int,2},route::Vector{ActivityAssignment},visitedRoute::Dict{Int, Dict{String, Int}},serviceTime::Int)
+    ratio = 0.0
+    pickupTimes = Dict{Int, Int}()
+    
+    for assignment in route
+        activity = assignment.activity
+        if activity.activityType == PICKUP
+            pickupTimes[activity.requestId] = assignment.endOfServiceTime
+        elseif activity.activityType == DROPOFF && haskey(pickupTimes, activity.requestId)
+            pickupTime = pickupTimes[activity.requestId]
+            dropoffTime = assignment.startOfServiceTime
+            directTime = Float64(time[activity.requestId, activity.id])
+            actualTime = Float64(dropoffTime - pickupTime)
+            ratio += actualTime/directTime
+        elseif activity.activityType == DROPOFF
+            if !haskey(visitedRoute, activity.requestId)
+                throw(ArgumentError("RequestId not found in visitedRoute"))
+            end
+            pickupTime = visitedRoute[activity.requestId]["PickUpServiceStart"] + serviceTime
+            dropoffTime = assignment.startOfServiceTime
+            directTime = Float64(time[activity.requestId, activity.id])
+            actualTime = Float64(dropoffTime - pickupTime)
+            ratio += actualTime/directTime
+        end
+    end
+    
+    return ratio*10.0
+end
+
 #==
 # Function to get cost of request 
 =#
 function getCostOfRequest(time::Array{Int,2},pickUpActivity::ActivityAssignment,dropOffActivity::ActivityAssignment)
     directTime = Float64(time[pickUpActivity.activity.id,dropOffActivity.activity.id])
     actualTime = Float64(dropOffActivity.startOfServiceTime - pickUpActivity.endOfServiceTime)
-    return  actualTime/directTime*10.0
+    return (actualTime/directTime)*10.0
 end
 
 function getCostOfRequest(time::Array{Int,2},endOfServiceTimePickUp::Int,startOfServiceTimeDropOff::Int,pickUpActivityId::Int,dropOffActivityId::Int)
     directTime = Float64(time[pickUpActivityId,dropOffActivityId])
     actualTime = Float64(startOfServiceTimeDropOff - endOfServiceTimePickUp)
-    return  actualTime/directTime*10.0
+    return (actualTime/directTime)*10.0
 end
 
 
@@ -123,5 +153,13 @@ function getTotalCostDistanceTimeOfSolution(scenario::Scenario,solution::Solutio
 
     return totalCost, totalDistance, totalTime, totalIdleTime
 end
+
+#== 
+ Function to get taxi cost of solution 
+==#
+function getTaxiCostOfSolution(scenario::Scenario,solution::Solution)
+    return solution.nTaxi * scenario.taxiParameter
+end
+
 
 end

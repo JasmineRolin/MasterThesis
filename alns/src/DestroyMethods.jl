@@ -18,67 +18,88 @@ end
 #==
  Random removal 
 ==#
-function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::ALNSParameters)
+function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::ALNSParameters;visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}())
     @unpack currentSolution, assignedRequests, nAssignedRequests, requestBank = currentState
     @unpack time, distance, serviceTimes,requests = scenario
     @unpack minPercentToDestroy, maxPercentToDestroy = parameters
 
     if nAssignedRequests == 0
-        println("Warning: No requests available to remove.")
         return
     end
     
     # Find number of requests currently in solution 
     nRequests = length(assignedRequests)
 
+    # Determine number of requests that cannot be moved
+    notMoveRequests = Set{Int}()
+    for schedule in currentSolution.vehicleSchedules
+        if schedule.route[1].activity.activityType == PICKUP
+            push!(notMoveRequests, schedule.route[1].activity.requestId)
+        end
+    end
+    possibleToRemove = setdiff(assignedRequests, notMoveRequests)
+    if length(possibleToRemove) == 0
+        return
+    end
+
+
     # Find number of requests to remove 
-    nRequestsToRemove = findNumberOfRequestToRemove(minPercentToDestroy,maxPercentToDestroy,nAssignedRequests)
+    nRequestsToRemove = findNumberOfRequestToRemove(minPercentToDestroy,maxPercentToDestroy,nAssignedRequests-length(notMoveRequests))
     
     # Collect customers to remove
     requestsToRemove = Set{Int}()
 
     # Choose requests to remove  
-    selectedIdx = randperm(nRequests)[1:nRequestsToRemove]
-    requestsToRemove = Set(assignedRequests[selectedIdx])
+    selectedIdx = randperm(nRequests-length(notMoveRequests))[1:nRequestsToRemove]
+    requestsToRemove = Set(possibleToRemove[selectedIdx])
     append!(requestBank,requestsToRemove)
     setdiff!(assignedRequests, requestsToRemove)
     currentState.nAssignedRequests -= nRequestsToRemove
     currentState.currentSolution.nTaxi += nRequestsToRemove
     currentState.currentSolution.totalCost += nRequestsToRemove*scenario.taxiParameter
 
-    removeRequestsFromSolution!(time,distance,serviceTimes,requests,currentSolution,requestsToRemove)
+    removeRequestsFromSolution!(time,distance,serviceTimes,requests,currentSolution,requestsToRemove,visitedRoute = visitedRoute,scenario = scenario)
 
 end
 
 #==
  Worst removal
 ==#
-# TODO: check how often it is not idx == 1
-function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::ALNSParameters)
+function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::ALNSParameters;visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}())
     @unpack currentSolution, assignedRequests, nAssignedRequests, requestBank = currentState
     @unpack time, distance, serviceTimes,requests = scenario
     @unpack p, minPercentToDestroy, maxPercentToDestroy = parameters
-    
+
     # Find number of requests currently in solution
     if nAssignedRequests == 0
-        println("Warning: No requests available to remove.")
+        return
+    end
+
+    # Determine number of requests that cannot be moved
+    notMoveRequests = Set{Int}()
+    for schedule in currentSolution.vehicleSchedules
+        if schedule.route[1].activity.activityType == PICKUP
+            push!(notMoveRequests, schedule.route[1].activity.requestId)
+        end
+    end
+    if length(notMoveRequests) == nAssignedRequests
         return
     end
     
     # Find number of requests to remove
-    nRequestsToRemove = findNumberOfRequestToRemove(minPercentToDestroy, maxPercentToDestroy, nAssignedRequests)
+    nRequestsToRemove = findNumberOfRequestToRemove(minPercentToDestroy, maxPercentToDestroy, nAssignedRequests-length(notMoveRequests))
     
     # Compute cost impact for each request
     costImpacts = Dict()
     for schedule in currentSolution.vehicleSchedules
         for activityAssignment in schedule.route
-            if activityAssignment.activity.activityType == PICKUP
+            if activityAssignment.activity.activityType == PICKUP && !(activityAssignment.activity.requestId in notMoveRequests)
                 pickUpPosition, dropOffPosition = findPositionOfRequest(schedule, activityAssignment.activity.requestId)
                 costImpacts[activityAssignment.activity.requestId] = getCostOfRequest(time, schedule.route[pickUpPosition], schedule.route[dropOffPosition])   
             end
         end
     end
-    
+ 
     # Sort requests by descending cost
     sortedRequests = [x[1] for x in sort(collect(costImpacts), by=x -> -x[2])]  # Sort by cost, highest first
     
@@ -96,7 +117,7 @@ function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::
     currentState.currentSolution.totalCost += nRequestsToRemove *scenario.taxiParameter
         
     # Remove requests from solution
-    removeRequestsFromSolution!(time, distance,serviceTimes,requests, currentSolution, requestsToRemove)
+    removeRequestsFromSolution!(time, distance,serviceTimes,requests, currentSolution, requestsToRemove,visitedRoute=visitedRoute,scenario=scenario)
 end
 
 
@@ -104,35 +125,47 @@ end
 #==
  Shaw removal
 ==#
-function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::ALNSParameters)
+function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::ALNSParameters;visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}())
     @unpack currentSolution, assignedRequests, nAssignedRequests, requestBank = currentState
     @unpack time, distance, requests,serviceTimes,requests = scenario
     @unpack p, minPercentToDestroy, maxPercentToDestroy, shawRemovalPhi, shawRemovalXi, minDriveTime, maxDriveTime, minStartOfTimeWindowPickUp, maxStartOfTimeWindowPickUp, minStartOfTimeWindowDropOff, maxStartOfTimeWindowDropOff = parameters
 
     # Find number of requests currently in solution
     if nAssignedRequests == 0
-        println("Warning: No requests available to remove.")
+        return
+    end
+
+    # Determine number of requests that cannot be moved
+    notMoveRequests = Set{Int}()
+    for schedule in currentSolution.vehicleSchedules
+        if schedule.route[1].activity.activityType == PICKUP
+            push!(notMoveRequests, schedule.route[1].activity.requestId)
+        end
+    end
+    possibleToRemove = setdiff(assignedRequests, notMoveRequests)
+    if length(possibleToRemove) == 0
         return
     end
 
     # Find number of requests to remove 
-    nRequestsToRemove = findNumberOfRequestToRemove(minPercentToDestroy, maxPercentToDestroy, nAssignedRequests)
+    nRequestsToRemove = findNumberOfRequestToRemove(minPercentToDestroy, maxPercentToDestroy, nAssignedRequests-length(notMoveRequests))
      
     # Requests to remove 
     requestsToRemove = Set{Int}()
 
     # Randomly select a request to remove
-    chosenRequestId = rand(assignedRequests)
+    chosenRequestId = rand(possibleToRemove)
     chosenRequest = requests[chosenRequestId]
 
     push!(requestsToRemove,chosenRequestId)
+    setdiff!(possibleToRemove, [chosenRequestId])
     setdiff!(assignedRequests, [chosenRequestId])
 
     while length(requestsToRemove) < nRequestsToRemove
 
         # Find relatedness measure for all assigned requests 
         relatednessMeasures = Dict{Int,Float64}()
-        for requestId in assignedRequests
+        for requestId in possibleToRemove
             relatednessMeasures[requestId] = relatednessMeasure(shawRemovalPhi,shawRemovalXi,time,maxDriveTime,minDriveTime,minStartOfTimeWindowPickUp,maxStartOfTimeWindowPickUp,minStartOfTimeWindowDropOff,maxStartOfTimeWindowDropOff,chosenRequest,requests[requestId]) 
         end
 
@@ -144,6 +177,7 @@ function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::A
 
         # Update lists 
         push!(requestsToRemove,requestId)
+        setdiff!(possibleToRemove, [requestId])
         setdiff!(assignedRequests, [requestId])
 
         # Choose request 
@@ -156,7 +190,7 @@ function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::A
     currentState.currentSolution.totalCost += nRequestsToRemove *scenario.taxiParameter
 
     # Remove requests 
-    removeRequestsFromSolution!(time, distance, serviceTimes,requests,currentSolution, requestsToRemove)
+    removeRequestsFromSolution!(time, distance, serviceTimes,requests,currentSolution, requestsToRemove,visitedRoute = visitedRoute,scenario = scenario)
 end
 
 #==
@@ -201,8 +235,7 @@ end
 #==
  Method to remove requests
 ==#
-function removeRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},solution::Solution,requestsToRemove::Set{Int})   
-
+function removeRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},solution::Solution,requestsToRemove::Set{Int};visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}(),scenario::Scenario=Scenario())   
     # Create a mutable copy of requestsToRemove
     remainingRequests = copy(requestsToRemove)
 
@@ -223,7 +256,7 @@ function removeRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,
             solution.totalRideTime -= schedule.totalTime
 
             # Remove requests from schedule 
-            removeRequestsFromSchedule!(time,distance,serviceTimes,requests,schedule,requestsToRemoveInSchedule) 
+            removeRequestsFromSchedule!(time,distance,serviceTimes,requests,schedule,requestsToRemoveInSchedule,visitedRoute,scenario) 
 
             # Update solution KPIs
             solution.totalDistance += schedule.totalDistance
@@ -240,7 +273,7 @@ end
 #==
  Method to remove list of requests from schedule
 ==#
-function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},schedule::VehicleSchedule,requestsToRemove::Vector{Int})
+function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},schedule::VehicleSchedule,requestsToRemove::Vector{Int},visitedRoute::Dict{Int, Dict{String, Int}},scenario::Scenario)
 
     # Remove requests from schedule
     for requestToRemove in requestsToRemove
@@ -270,7 +303,6 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
             schedule.route[end].activity.timeWindow.startTime = schedule.vehicle.availableTimeWindow.startTime
             schedule.route[end].activity.timeWindow.endTime = schedule.vehicle.availableTimeWindow.endTime
             schedule.route = [schedule.route[1],schedule.route[end]]
-
             return
         else
             schedule.numberOfWalking[pickUpPosition:dropOffPosition-1] .-= 1
@@ -291,9 +323,8 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
         end
     end
 
-
     # Repair route 
-    feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime = checkFeasibilityOfInsertionInRoute(time,distance,serviceTimes,requests,-1,schedule.route)
+    feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime = checkFeasibilityOfInsertionInRoute(time,distance,serviceTimes,requests,-1,schedule.route,visitedRoute = visitedRoute)
 
     # Shift route
     if feasible 
@@ -313,7 +344,7 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
         # Update capacities 
         deleteat!(schedule.numberOfWalking,waitingActivitiesToDelete)
     else 
-        totalCost = getTotalCostRoute(time,schedule.route)
+        totalCost = getTotalCostRouteOnline(time,schedule.route,visitedRoute,serviceTimes)
         totalDistance = getTotalDistanceRoute(schedule.route,distance)
         totalIdleTime = getTotalIdleTimeRoute(schedule.route)
         totalTime = duration(schedule.activeTimeWindow)

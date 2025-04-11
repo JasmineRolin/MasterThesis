@@ -117,9 +117,9 @@ end
     vehicleSchedule = VehicleSchedule(vehicle)
 
     # Solution 
-    solution = Solution([vehicleSchedule],70.0,4,5,2,4)
+    solution = Solution([vehicleSchedule],70.0,4,5,2.0,4)
     
-    state = ALNSState(Float64[2.0,3.5],Float64[1.0,3.0],[1.0,4.0],[4.0,1.0],[1,2],[2,0],solution,solution,Vector{Int}(),Vector{Int}(),0)
+    state = ALNSState(Float64[2.0,3.5],Float64[1.0,3.0],[1.0,4.0],[4.0,1.0],[1,2],[2,0],solution,Vector{Int}(),solution,Vector{Int}(),Vector{Int}(),0)
 
     # Update weights 
     updateWeights!(state.destroyWeights,state.destroyScores,state.destroyNumberOfUses,parameters.reactionFactor)
@@ -136,10 +136,10 @@ end
 
 @testset "destroy! and repair! test" begin
     # Dummy methods
-    function dest1(scenario::Scenario,state::ALNSState,parameters::ALNSParameters)
+    function dest1(scenario::Scenario,state::ALNSState,parameters::ALNSParameters;visitedRoute=Dict{Int, Dict{String, Int}}())
         solution.totalCost = 900       
     end
-    function rep1(state::ALNSState,scenario::Scenario)
+    function rep1(state::ALNSState,scenario::Scenario;visitedRoute=Dict{Int, Dict{String, Int}}())
         state.currentSolution.totalCost = 500        
     end
 
@@ -170,9 +170,9 @@ end
     vehicleSchedule = VehicleSchedule(vehicle)
 
     # Solution 
-    solution = Solution([vehicleSchedule],70.0,4,5,2,4)
+    solution = Solution([vehicleSchedule],70.0,4,5,2.0,4)
     
-    state = ALNSState(Float64[2.0],Float64[3.0],[1.0],[1.0],[1],[2],solution,solution,Vector{Int}(),Vector{Int}(),0)
+    state = ALNSState(Float64[2.0],Float64[3.0],[1.0],[1.0],[1],[2],solution,Vector{Int}(),solution,Vector{Int}(),Vector{Int}(),0)
 
     # Destroy 
     destroyIdx = destroy!(Scenario(),state,parameters,configuration)
@@ -223,7 +223,7 @@ end
     vehicleSchedule = VehicleSchedule(vehicle)
 
     # Solution 
-    solution = Solution([vehicleSchedule],70.0,4,5,2,4)
+    solution = Solution([vehicleSchedule],70.0,4,5,2.0,4)
     
     # Update weights 
     startTemperature = findStartTemperature(parameters.w,solution,0.0)
@@ -267,9 +267,9 @@ end
     vehicleSchedule = VehicleSchedule(vehicle)
 
     # Solution 
-    solution = Solution([vehicleSchedule],70.0,4,5,2,4)
+    solution = Solution([vehicleSchedule],70.0,4,5,2.0,4)
     
-    state = ALNSState(Float64[2.0,3.5],Float64[1.0,3.0],[1.0,4.0],[4.0,1.0],[1,2],[2,0],solution,solution,Vector{Int}(),Vector{Int}(),0)
+    state = ALNSState(Float64[2.0,3.5],Float64[1.0,3.0],[1.0,4.0],[4.0,1.0],[1,2],[2,0],solution,Vector{Int}(),solution,Vector{Int}(),Vector{Int}(),0)
 
     # Update before end of segment 
     updateWeightsAfterEndOfSegment(parameters.segmentSize,state,parameters.reactionFactor,3)

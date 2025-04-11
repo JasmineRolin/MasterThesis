@@ -9,16 +9,24 @@ export regretInsertion
 #== 
     Method that performs regret insertion of requests
 ==#
-function regretInsertion(state::ALNSState,scenario::Scenario)
+function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())
+    #println("regretInsertion: ", visitedRoute)
+
     #TODO should we implement noise?
-    @unpack destroyWeights, repairWeights, destroyNumberOfUses, repairNumberOfUses, bestSolution, currentSolution, requestBank = state
-    newRequestBank = Int[]
+    @unpack currentSolution, requestBank = state
     requests = scenario.requests
+
+    #TODO remove when stable also in oter palces
+    if length(requestBank) != state.currentSolution.nTaxi
+        println(requestBank)
+        throw("Error: requestBank length does not match currentSolution.nTaxi")
+        return
+    end
 
     # Define insertion matrix
     insCostMatrix = zeros(Float64, length(requests), length(scenario.vehicles))
     compatibilityRequestVehicle = ones(Bool, length(requests), length(scenario.vehicles))
-    fillInsertionCostMatrix!(scenario, currentSolution, requestBank, insCostMatrix, compatibilityRequestVehicle)
+    fillInsertionCostMatrix!(scenario, currentSolution, requestBank, insCostMatrix, compatibilityRequestVehicle,visitedRoute)
 
     # Insert requests
     while !isempty(requestBank)
@@ -42,7 +50,6 @@ function regretInsertion(state::ALNSState,scenario::Scenario)
                 end
             end
             if bestVehicleForRequest == -1
-                append!(newRequestBank, r)
                 continue
             end
             if (secondBestInsertion - bestInsertion) > bestRegret
@@ -57,7 +64,7 @@ function regretInsertion(state::ALNSState,scenario::Scenario)
         end
 
         # Find best insertion position
-        status, pickUp, dropOff, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime  = findBestFeasibleInsertionRoute(requests[bestRequest], currentSolution.vehicleSchedules[overallBestVehicle], scenario)
+        status, pickUp, dropOff, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime  = findBestFeasibleInsertionRoute(requests[bestRequest], currentSolution.vehicleSchedules[overallBestVehicle], scenario, visitedRoute=visitedRoute)
 
         # Update solution pre
         state.currentSolution.totalCost -= currentSolution.vehicleSchedules[overallBestVehicle].totalCost
@@ -66,7 +73,7 @@ function regretInsertion(state::ALNSState,scenario::Scenario)
         state.currentSolution.totalIdleTime -= currentSolution.vehicleSchedules[overallBestVehicle].totalIdleTime
 
         # Insert request
-        insertRequest!(requests[bestRequest], currentSolution.vehicleSchedules[overallBestVehicle], pickUp, dropOff, scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete,totalCost = totalCost, totalDistance = totalDistance, totalIdleTime = totalIdleTime, totalTime = totalTime)
+        insertRequest!(requests[bestRequest], currentSolution.vehicleSchedules[overallBestVehicle], pickUp, dropOff, scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete,totalCost = totalCost, totalDistance = totalDistance, totalIdleTime = totalIdleTime, totalTime = totalTime,visitedRoute=visitedRoute)
         append!(state.assignedRequests, bestRequest)
 
         # Update solution pro
@@ -82,17 +89,17 @@ function regretInsertion(state::ALNSState,scenario::Scenario)
         setdiff!(requestBank,[bestRequest])
 
         # Recalculate insertion cost matrix
-        reCalcCostMatrix!(overallBestVehicle, scenario, currentSolution, requestBank, insCostMatrix, compatibilityRequestVehicle)
+        reCalcCostMatrix!(overallBestVehicle, scenario, currentSolution, requestBank, insCostMatrix, compatibilityRequestVehicle,visitedRoute)
 
     end
 
 
 end
 
-function fillInsertionCostMatrix!(scenario::Scenario, currentSolution::Solution, requestBank::Vector{Int}, insCostMatrix::Array{Float64,2}, compatibilityRequestVehicle::Array{Bool,2})
+function fillInsertionCostMatrix!(scenario::Scenario, currentSolution::Solution, requestBank::Vector{Int}, insCostMatrix::Array{Float64,2}, compatibilityRequestVehicle::Array{Bool,2},visitedRoute::Dict{Int, Dict{String, Int}})
     for r in requestBank
         for v in 1:length(scenario.vehicles)
-            status, _, _, _, _,_, bestCost, _, _, _ = findBestFeasibleInsertionRoute(scenario.requests[r], currentSolution.vehicleSchedules[v], scenario)
+            status, _, _, _, _,_, bestCost, _, _, _ = findBestFeasibleInsertionRoute(scenario.requests[r], currentSolution.vehicleSchedules[v], scenario,visitedRoute = visitedRoute)
             if status
                 insCostMatrix[r,v] = bestCost - currentSolution.vehicleSchedules[v].totalCost
             else
@@ -104,10 +111,10 @@ function fillInsertionCostMatrix!(scenario::Scenario, currentSolution::Solution,
     
 end
 
-function reCalcCostMatrix!(v::Int,scenario::Scenario, currentSolution::Solution, requestBank::Vector{Int}, insCostMatrix::Array{Float64,2}, compatibilityRequestVehicle::Array{Bool,2})
+function reCalcCostMatrix!(v::Int,scenario::Scenario, currentSolution::Solution, requestBank::Vector{Int}, insCostMatrix::Array{Float64,2}, compatibilityRequestVehicle::Array{Bool,2},visitedRoute::Dict{Int, Dict{String, Int}})
     for r in requestBank
         if compatibilityRequestVehicle[r,v]
-            status, _, _, _, _,_, bestCost, _, _, _ = findBestFeasibleInsertionRoute(scenario.requests[r], currentSolution.vehicleSchedules[v], scenario)
+            status, _, _, _, _,_, bestCost, _, _, _ = findBestFeasibleInsertionRoute(scenario.requests[r], currentSolution.vehicleSchedules[v], scenario,visitedRoute = visitedRoute)
             if status
                 insCostMatrix[r,v] = bestCost - currentSolution.vehicleSchedules[v].totalCost
             else
@@ -123,9 +130,18 @@ end
 #== 
     Method that performs greedy insertion of requests
 ==#
-function greedyInsertion(state::ALNSState,scenario::Scenario)
-    @unpack destroyWeights, repairWeights, destroyNumberOfUses, repairNumberOfUses, bestSolution, currentSolution, requestBank = state
+function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())
+    #println("greedyInsertion: ", visitedRoute)
+
+    @unpack currentSolution, requestBank = state
     newRequestBank = Int[]
+
+        #TODO remove when stable also in other places
+    if length(requestBank) != state.currentSolution.nTaxi
+        println(requestBank)
+        throw("Error: requestBank length does not match currentSolution.nTaxi")
+        return
+    end
 
     for r in requestBank
         request = scenario.requests[r]
@@ -142,7 +158,7 @@ function greedyInsertion(state::ALNSState,scenario::Scenario)
         bestTime = typemax(Int)
 
         for (idx,schedule) in enumerate(currentSolution.vehicleSchedules)
-            status, pickUp, dropOff, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime = findBestFeasibleInsertionRoute(request, schedule, scenario)
+            status, pickUp, dropOff, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime = findBestFeasibleInsertionRoute(request, schedule, scenario, visitedRoute=visitedRoute)
             if status && totalCost < bestCost
                 bestSchedule = schedule
                 bestPickUp = pickUp
@@ -168,7 +184,7 @@ function greedyInsertion(state::ALNSState,scenario::Scenario)
             state.currentSolution.totalIdleTime -= currentSolution.vehicleSchedules[bestVehicle].totalIdleTime
 
             # Insert request
-            insertRequest!(request, bestSchedule, bestPickUp, bestDropOff, scenario,bestNewStartOfServiceTimes,bestNewEndOfServiceTimes, bestWaitingActivitiesToDelete,totalCost = bestCost, totalDistance = bestDistance, totalIdleTime = bestIdleTime, totalTime = bestTime)
+            insertRequest!(request, bestSchedule, bestPickUp, bestDropOff, scenario,bestNewStartOfServiceTimes,bestNewEndOfServiceTimes, bestWaitingActivitiesToDelete,totalCost = bestCost, totalDistance = bestDistance, totalIdleTime = bestIdleTime, totalTime = bestTime,visitedRoute=visitedRoute)
             append!(state.assignedRequests, r)
 
             # Update solution pro
@@ -190,7 +206,7 @@ function greedyInsertion(state::ALNSState,scenario::Scenario)
 end
 
 
-function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::VehicleSchedule, scenario::Scenario)
+function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::VehicleSchedule, scenario::Scenario; visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())
     bestPickUp = -1
     bestDropOff = -1
     bestNewStartOfServiceTimes = []
@@ -205,7 +221,7 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
 
     for i in 1:length(route)-1
         for j in i:length(route)-1
-            feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,i,j,scenario)
+            feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,i,j,scenario,visitedRoute=visitedRoute)
     
             if feasible
                 if totalCost < bestCost

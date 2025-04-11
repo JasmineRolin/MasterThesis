@@ -2,7 +2,7 @@
 
 julia_version = "1.10.2"
 manifest_format = "2.0"
-project_hash = "109a96a4dfd37380f1d3e98cca5d3feac8ff20e0"
+project_hash = "080018590796c9ca2f7e2686dee57eca16479f49"
 
 [[deps.AliasTables]]
 deps = ["PtrArrays", "Random"]
@@ -152,9 +152,9 @@ version = "1.7.0"
 
 [[deps.DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
-git-tree-sha1 = "1d0a14036acb104d9e89698bd408f63ab58cdc82"
+git-tree-sha1 = "4e1fe97fdaed23e9dc21d4d664bea76b65fc50a0"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-version = "0.18.20"
+version = "0.18.22"
 
 [[deps.DataValueInterfaces]]
 git-tree-sha1 = "bfc1187b79289637fa0ef6d4436ebdfe6905cbd6"
@@ -1339,12 +1339,6 @@ version = "1.1.6+0"
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
 version = "1.52.0+1"
-
-[[deps.offlinesolution]]
-deps = ["domain", "utils"]
-path = "../offlinesolution"
-uuid = "a9fb1b74-13ee-4d8c-9e56-7a41bc88c15d"
-version = "0.1.0"
 
 [[deps.p7zip_jll]]
 deps = ["Artifacts", "Libdl"]

@@ -48,7 +48,7 @@ function printRouteHorizontal(schedule::VehicleSchedule)
     println("Total Distance: $(schedule.totalDistance) km, Total Time: $(schedule.totalTime) min,  Total Idle Time: $(schedule.totalIdleTime) min Total Cost: \$$(schedule.totalCost)")
     
     println("------------------------------------------------------------------------------------------------------------")
-    println("| Step | Activity Type |  Id |  Location  | Start/End Service | Time Window | (Walking) |")
+    println("| Step | Activity Type |  Id |  Location  | Start/End Service | Time Window | Load |")
     println("------------------------------------------------------------------------------------------------------------")
 
     for (i, assignment) in enumerate(schedule.route)
@@ -99,7 +99,7 @@ end
 #==
     New insert request 
 ==#
-function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPickUp::Int,idxDropOff::Int,scenario::Scenario,newStartOfServiceTimes::Vector{Int},newEndOfServiceTimes::Vector{Int},waitingActivitiesToDelete::Vector{Int};totalCost::Float64=-1.0,totalDistance::Float64=-1.0,totalIdleTime::Int=-1,totalTime::Int=-1)
+function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPickUp::Int,idxDropOff::Int,scenario::Scenario,newStartOfServiceTimes::Vector{Int},newEndOfServiceTimes::Vector{Int},waitingActivitiesToDelete::Vector{Int};totalCost::Float64=-1.0,totalDistance::Float64=-1.0,totalIdleTime::Int=-1,totalTime::Int=-1,visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())
 
     route = vehicleSchedule.route
     vehicle = vehicleSchedule.vehicle
@@ -143,7 +143,7 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPic
         vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow)
 
         # Update total cost
-        vehicleSchedule.totalCost = getTotalCostRoute(scenario,route)
+        vehicleSchedule.totalCost = getTotalCostRouteOnline(scenario.time,route,visitedRoute,scenario.serviceTimes)
 
         #Update total distance
         vehicleSchedule.totalDistance = getTotalDistanceRoute(route,scenario.distance)
@@ -173,13 +173,13 @@ end
 #==
  Method to check if it is feasible to insert a request in a vehicle schedule
 ==#
-function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule::VehicleSchedule,pickUpIdx::Int,dropOffIdx::Int,scenario::Scenario)
+function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule::VehicleSchedule,pickUpIdx::Int,dropOffIdx::Int,scenario::Scenario;visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())
 
     @unpack route,numberOfWalking, vehicle = vehicleSchedule
     @unpack time,serviceTimes = scenario
 
     # Check load 
-    if any(numberOfWalking[pickUpIdx:dropOffIdx] .+ 1 .> vehicle.totalCapacity) # TODO: jas - check rigtigt 
+    if any(numberOfWalking[pickUpIdx:dropOffIdx] .+ 1 .> vehicle.totalCapacity) 
         return false, [], [], [],0.0,0.0,0,0
     end
 
@@ -198,7 +198,7 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
     dropOffIdxInBlock = dropOffIdx+ 2 # Index as if pickup and dropoff is inserted
 
     # Check feasibility 
-    feasible, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime = checkFeasibilityOfInsertionInRoute(scenario.time,scenario.distance,scenario.serviceTimes,scenario.requests,vehicleSchedule.totalIdleTime,route,pickUpIdxInBlock = pickUpIdxInBlock,dropOffIdxInBlock = dropOffIdxInBlock,request = request)
+    feasible, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime = checkFeasibilityOfInsertionInRoute(scenario.time,scenario.distance,scenario.serviceTimes,scenario.requests,vehicleSchedule.totalIdleTime,route,pickUpIdxInBlock = pickUpIdxInBlock,dropOffIdxInBlock = dropOffIdxInBlock,request = request,visitedRoute=visitedRoute)
     
     return  feasible, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime
 end
@@ -207,9 +207,10 @@ end
  Method to check if it is feasible to insert request in route 
 ==#
 # If pickUpIdxInBlock = dropOffIdxInBlock = -1 we are not inserting a request in route but repairing a route where some request has been removed 
-function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},idleTime::Int,route::Vector{ActivityAssignment}; pickUpIdxInBlock::Int=-1, dropOffIdxInBlock::Int=-1,request::Union{Request,Nothing}=nothing)  
+function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},idleTime::Int,route::Vector{ActivityAssignment}; pickUpIdxInBlock::Int=-1, dropOffIdxInBlock::Int=-1,request::Union{Request,Nothing}=nothing,visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())  
     insertRequest = !isnothing(request)
     nActivities = length(route) + 2*insertRequest
+    visitedRouteIds = keys(visitedRoute)
 
     # New service times 
     newStartOfServiceTimes = zeros(Int,nActivities)
@@ -227,22 +228,37 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
     currentActivity = route[1].activity
     previousActivity = route[1].activity
     newStartOfServiceTimes[1] = route[1].startOfServiceTime
-    newEndOfServiceTimes[1] = route[1].endOfServiceTime 
-    newEndOfServiceTimes[end] = route[end].endOfServiceTime
+    newEndOfServiceTimes[1] = route[1].endOfServiceTime ### Spørg Jasmine: Hvorfor kan den ikke ændres fx hvis det er en witing node?
 
     # Keep track of KPIs 
     totalDistance = 0.0 
     totalIdleTime = 0 
     totalCost = 0
 
+    # Check first activity in route
+    if route[1].activity.activityType == PICKUP
+        pickUpIndexes[route[1].activity.requestId] = 1
+    elseif route[1].activity.activityType == DROPOFF
+        requestId = route[1].activity.requestId
+        totalCost += getCostOfRequest(time,visitedRoute[requestId]["PickUpServiceStart"] + serviceTimes,route[1].startOfServiceTime,requestId,route[1].activity.id)
+    elseif route[1].activity.activityType == WAITING
+        totalIdleTime = route[1].endOfServiceTime - route[1].startOfServiceTime
+    end
+    
     # Find maximum shift backward and forward
-    maximumShiftBackward = route[1].startOfServiceTime - route[1].activity.timeWindow.startTime
-
-    if route[end-1].activity.activityType == WAITING
-        maximumShiftForward =  route[end-1].activity.timeWindow.endTime - route[end-1].startOfServiceTime
-    elseif length(route) == 2
-        maximumShiftForward = route[1].activity.timeWindow.endTime - route[1].activity.timeWindow.startTime
+    if route[1].activity.activityType == WAITING || route[1].activity.activityType == DEPOT
+        maximumShiftBackward = route[1].startOfServiceTime - route[1].activity.timeWindow.startTime
     else
+        maximumShiftBackward = 0
+    end
+
+    if route[1].activity.activityType == DROPOFF || route[1].activity.activityType == PICKUP 
+        maximumShiftForward = 0
+    elseif route[end-1].activity.activityType == WAITING && length(route) != 2 # Waiting activity but not in route with only [waiting,depot]
+        maximumShiftForward =  route[end-1].activity.timeWindow.endTime - route[end-1].startOfServiceTime
+    elseif length(route) == 2 && route[1].activity.activityType == DEPOT && route[2].activity.activityType == DEPOT # EMpty route 
+        maximumShiftForward = route[1].activity.timeWindow.endTime - route[1].activity.timeWindow.startTime
+    else # Depot but non-empty route or [waiting,depot]
         maximumShiftForward = route[1].startOfServiceTime - route[1].activity.timeWindow.startTime
     end
 
@@ -258,9 +274,10 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
         return false, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0
     end
 
+
     # Find new service times 
     idxActivityInSchedule = 1
-    for idx in 2:nActivities
+    for idx in 2:nActivities 
         # Find current activity
         if idx == pickUpIdxInBlock
             currentActivity = request.pickUpActivity
@@ -277,12 +294,14 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
             if currentActivity.activityType == PICKUP
                 pickUpIndexes[requestId] = idx
             elseif currentActivity.activityType == DROPOFF
-                if newStartOfServiceTimes[idx] - newEndOfServiceTimes[pickUpIndexes[requestId]] > requests[requestId].maximumRideTime
+                newEndOfServiceTimePickUp = requestId in visitedRouteIds ? visitedRoute[requestId]["PickUpServiceStart"] + serviceTimes : newEndOfServiceTimes[pickUpIndexes[requestId]]
+
+                if newStartOfServiceTimes[idx] - newEndOfServiceTimePickUp > requests[requestId].maximumRideTime
                     return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0
                 end
 
                 # Update total cost
-                totalCost += getCostOfRequest(time,newEndOfServiceTimes[pickUpIndexes[requestId]],newStartOfServiceTimes[idx],requests[requestId].pickUpActivity.id,requests[requestId].dropOffActivity.id)
+                totalCost += getCostOfRequest(time,newEndOfServiceTimePickUp,newStartOfServiceTimes[idx],requests[requestId].pickUpActivity.id,requests[requestId].dropOffActivity.id)
             end
 
             # Set previous as current activity
@@ -332,15 +351,31 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
             # Keep waiting activity     
             else
-                feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
-                if !feasible
-                    return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0
-                end
+                # Check if we can minimize waiting node
+                # earliestArrivalFromCurrent = currentActivity.startOfServiceTime + time[currentActivity.id,nextActivity.id]
+                # latestArrival = currentActivity.endOfServiceTime + time[previousActivity.id,nextActivity.id]
+                # earliestArrival= max(earliestArrivalFromCurrent,nextActivity.timeWindow.startTime)
+                
+                # if earliestArrival < latestArrival && earliestArrival < nextActivity.timeWindow.endTime 
+                #     newEndOfServiceTimes[idx] = earliestArrival - time[currentActivity.id,nextActivity.id]
+                #     newStartOfServiceTimes[idx] = currentActivity.timeWindow.startTime
+                #     totalIdleTime += newEndOfServiceTimes[idx] - newStartOfServiceTimes[idx]
+                #     totalDistance += distance[previousActivity.id,currentActivity.id]
 
-                # Update total idle time 
-                totalIdleTime += newEndOfServiceTimes[idx] - newStartOfServiceTimes[idx]
-                totalDistance += distance[previousActivity.id,currentActivity.id]
-                push!(waitingActivitiesToKeep,currentActivity.id)
+                #     push!(waitingActivitiesToKeep,currentActivity.id)
+               # else
+                    # Keep waiting activity byt try to shift route
+                    feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
+                    if !feasible
+                        return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0
+                    end
+
+                    # Update total idle time 
+                    totalIdleTime += newEndOfServiceTimes[idx] - newStartOfServiceTimes[idx]
+                    totalDistance += distance[previousActivity.id,currentActivity.id]
+                    push!(waitingActivitiesToKeep,currentActivity.id)
+              #  end
+              
             end
         # Check if activity can be inserted
         else 
@@ -358,12 +393,13 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
         if currentActivity.activityType == PICKUP
             pickUpIndexes[requestId] = idx
         elseif currentActivity.activityType == DROPOFF
-            if newStartOfServiceTimes[idx] - newEndOfServiceTimes[pickUpIndexes[requestId]] > requests[requestId].maximumRideTime
+            newEndOfServiceTimePickUp = requestId in visitedRouteIds ? visitedRoute[requestId]["PickUpServiceStart"] + serviceTimes : newEndOfServiceTimes[pickUpIndexes[requestId]]
+            if newStartOfServiceTimes[idx] - newEndOfServiceTimePickUp > requests[requestId].maximumRideTime
                 return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0
             end
 
             # Update total cost
-            totalCost += getCostOfRequest(time,newEndOfServiceTimes[pickUpIndexes[requestId]],newStartOfServiceTimes[idx],requests[requestId].pickUpActivity.id,requests[requestId].dropOffActivity.id)
+            totalCost += getCostOfRequest(time,newEndOfServiceTimePickUp,newStartOfServiceTimes[idx],requests[requestId].pickUpActivity.id,requests[requestId].dropOffActivity.id)
         end
 
         # Set current as previous activity
@@ -371,7 +407,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
     end
 
     # Update total time 
-    totalTime = newStartOfServiceTimes[end] - newEndOfServiceTimes[1] 
+    totalTime = newEndOfServiceTimes[end] - newStartOfServiceTimes[1]
 
     return true, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime
 end
