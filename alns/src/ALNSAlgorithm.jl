@@ -12,6 +12,8 @@ export ALNS
  Method to run ALNS algorithm
 ==#
 function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters,fileName::String;alreadyRejected = 0,event = Request(),visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}()) 
+    # Retrieve event id 
+    eventId = event.id 
 
     # File 
     outputFile = open(fileName, "w")
@@ -76,7 +78,14 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
 
         # Check if solution is improved
         # TODO: create hash table to check if solution has been visited before
-        if trialState.currentSolution.totalCost < currentState.currentSolution.totalCost
+
+        # Check if we can accept solution when trying to insert event 
+        #    Is true when we are in offline phase: eventId == 0 
+        #    Is true when we are in online phase and the request bank is empty
+        #    Is true when we are in online phase and the event is the only request in the request bank
+        acceptOnlinePhase = (eventId == 0) || (length(trialState.requestBank) == 0) || (eventId in trialState.requestBank && length(trialState.requestBank) == 1)
+
+        if acceptOnlinePhase && (trialState.currentSolution.totalCost < currentState.currentSolution.totalCost)
             isImproved = true
             isAccepted = true
             currentState.currentSolution = copySolution(trialState.currentSolution)
@@ -93,7 +102,7 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
 
             end
         # Check if solution is accepted
-        elseif accept(temperature,trialState.currentSolution.totalCost - currentState.currentSolution.totalCost)
+        elseif acceptOnlinePhase && (accept(temperature,trialState.currentSolution.totalCost - currentState.currentSolution.totalCost))
             isAccepted = true
             currentState.currentSolution = copySolution(trialState.currentSolution)
             currentState.requestBank = deepcopy(trialState.requestBank)

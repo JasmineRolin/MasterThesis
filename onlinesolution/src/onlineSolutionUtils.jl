@@ -16,7 +16,6 @@ global MAX_EARLY_ARRIVAL_ONLINE = 5
 #==
  Update time windows for all requests in solution
 ==#
-# TODO: jas - hvad er forskellen ? 
 function updateTimeWindowsOnline!(solution::Solution,scenario::Scenario;searchForEvent::Bool=false,eventId::Int=-10)
 
     for vehicleSchedule in solution.vehicleSchedules
@@ -78,6 +77,7 @@ function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario
     # TODO: set correct parameters for alns 
     finalSolution,finalOnlineRequestBank,_,_ = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",initialSolution =  currentSolution, requestBank = newRequestBankOnline, event = event, alreadyRejected =  totalNTaxi, visitedRoute = currentState.visitedRoute,displayPlots = false, savePlots = false)
    
+    # TODO: remove when alns is stable
     if length(finalOnlineRequestBank) > 1 || (length(finalOnlineRequestBank) == 1 && finalOnlineRequestBank[1] != event.id)
         println("ALNS: FINAL REQUEST BANK IS NOT EMPTY")
         println(finalOnlineRequestBank)

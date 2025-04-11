@@ -24,7 +24,6 @@ function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::A
     @unpack minPercentToDestroy, maxPercentToDestroy = parameters
 
     if nAssignedRequests == 0
-        #println("Warning: No requests available to remove.")
         return
     end
     
@@ -40,7 +39,6 @@ function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::A
     end
     possibleToRemove = setdiff(assignedRequests, notMoveRequests)
     if length(possibleToRemove) == 0
-        #println("Warning: No requests available to remove.") #TODO Do we want it to be commented?
         return
     end
 
@@ -67,7 +65,6 @@ end
 #==
  Worst removal
 ==#
-# TODO: check how often it is not idx == 1
 function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::ALNSParameters;visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}())
     @unpack currentSolution, assignedRequests, nAssignedRequests, requestBank = currentState
     @unpack time, distance, serviceTimes,requests = scenario
@@ -75,7 +72,6 @@ function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::
 
     # Find number of requests currently in solution
     if nAssignedRequests == 0
-        #println("Warning: No requests available to remove.")
         return
     end
 
@@ -136,7 +132,6 @@ function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::A
 
     # Find number of requests currently in solution
     if nAssignedRequests == 0
-        #println("Warning: No requests available to remove.") #TODO Do we want it to be commented?
         return
     end
 
@@ -149,7 +144,6 @@ function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::A
     end
     possibleToRemove = setdiff(assignedRequests, notMoveRequests)
     if length(possibleToRemove) == 0
-        #println("Warning: No requests available to remove.") #TODO Do we want it to be commented?
         return
     end
 

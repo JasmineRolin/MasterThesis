@@ -57,13 +57,13 @@ Test SimulationFrameworkUtils
 
 #function main()
     #n = parse(Int,ARGS[1])
-    n = 20 
-    i = 1
+    #n = 20
+    #i = 1
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
     parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters2.json"
 
-   # for i in 1:10
+    for i in 1:10
         requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
         distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
         timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
@@ -78,13 +78,13 @@ Test SimulationFrameworkUtils
         scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
         # Simulate scenario 
-        solution = simulateScenario(scenario,printResults = true)
+        solution = simulateScenario(scenario,printResults = false)
 
         state = State(solution,scenario.onlineRequests[end],0)
         feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
         @test feasible == true
         @test msg == ""
-   # end
+    end
 #end
 
 #main()
