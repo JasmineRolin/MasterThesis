@@ -12,8 +12,8 @@ export splitRequests
 #==
  Allowed delay/early arrival
 ==#
-global MAX_DELAY = 45
-global MAX_EARLY_ARRIVAL = 15
+global MAX_DELAY = 15
+global MAX_EARLY_ARRIVAL = 5
 
 
 #==

@@ -229,7 +229,6 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
     previousActivity = route[1].activity
     newStartOfServiceTimes[1] = route[1].startOfServiceTime
     newEndOfServiceTimes[1] = route[1].endOfServiceTime ### Spørg Jasmine: Hvorfor kan den ikke ændres fx hvis det er en witing node?
-    #newEndOfServiceTimes[end] = route[end].endOfServiceTime
 
     # Keep track of KPIs 
     totalDistance = 0.0 

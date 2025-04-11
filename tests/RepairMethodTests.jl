@@ -29,26 +29,28 @@ using alns, domain, utils, offlinesolution
     insertRequest!(scenario.requests[1],vehicleSchedule,1,1,scenario,newStartOfServiceTimes,newEndOfServiceTimes,Vector{Int}())
 
     # Create requestBank
-    requestBank = [2]
+    requestBank = [2,3,4]
     assignedRequests = [1]
     nAssignedRequests = 1
 
     # Solution 
-    solution = Solution([vehicleSchedule],70.0,4,5,2,4)
+    solution = Solution([vehicleSchedule],10.0 + 3*scenario.taxiParameter,3,5,2.0,4)
 
     # Make ALNS state
-    state = ALNSState(Float64[2.0,3.5,2.0],Float64[1.0,3.0],[1.0,4.0,1.0],[4.0,1.0],[1,2,1],[2,0],solution,solution,requestBank,assignedRequests,nAssignedRequests)
+    alnsState = ALNSState(Float64[2.0,3.5,2.0],Float64[1.0,3.0],[1.0,4.0,1.0],[4.0,1.0],[1,2,1],[2,0],solution,requestBank,solution,requestBank,assignedRequests,nAssignedRequests)
 
     # Greedy repair 
-    greedyInsertion(state,scenario)
+    greedyInsertion(alnsState,scenario)
 
-    #printRouteHorizontal(state.currentSolution.vehicleSchedules[1])
+    #printRouteHorizontal(alnsState.currentSolution.vehicleSchedules[1])
 
-    feasible, msg = checkRouteFeasibility(scenario, state.currentSolution.vehicleSchedules[1])
+    state = State(solution,Request(),0)
+    feasible, msg = checkRouteFeasibilityOnline(scenario,vehicleSchedule,state.visitedRoute)
     if !feasible
         println(msg)
     end
     @test feasible == true
+    @test msg == ""
 end
 
 
@@ -95,19 +97,21 @@ end
    addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
    # Create requestBank
-   requestBank = [2]
+   requestBank = [2,3,4]
    assignedRequests = [1]
    nAssignedRequests = 1
 
    # Solution 
-   solution = Solution([vehicleSchedule],70.0,4,5,2,4)
+   solution = Solution([vehicleSchedule],10.0 + 3*scenario.taxiParameter,3,5,2.0,4)
 
    # Make ALNS state
-   state = ALNSState(Float64[2.0,3.5,2.0],Float64[1.0,3.0],[1.0,4.0,1.0],[4.0,1.0],[1,2,1],[2,0],solution,solution,requestBank,assignedRequests,nAssignedRequests)
+   alnsState = ALNSState(Float64[2.0,3.5,2.0],Float64[1.0,3.0],[1.0,4.0,1.0],[4.0,1.0],[1,2,1],[2,0],solution,requestBank,solution,requestBank,assignedRequests,nAssignedRequests)
 
    # Regret repair 
-   regretInsertion(state,scenario)
+   regretInsertion(alnsState,scenario)
 
-   feasible, msg = checkRouteFeasibility(scenario, state.currentSolution.vehicleSchedules[1])
+   state = State(solution,Request(),1)
+   feasible, msg =  checkRouteFeasibilityOnline(scenario,vehicleSchedule,state.visitedRoute)
    @test feasible == true
+   @test msg == ""
 end
