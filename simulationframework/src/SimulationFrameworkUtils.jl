@@ -360,7 +360,7 @@ end
 # ------
 # Function to simulate a scenario
 # ------
-function simulateScenario(scenario::Scenario;printResults::Bool = false)
+function simulateScenario(scenario::Scenario;printResults::Bool = false,displayPlots=false)
 
     # Choose destroy methods
     destroyMethods = Vector{GenericMethod}()
@@ -387,10 +387,14 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false)
         println("----------------")
         printSolution(initialSolution,printRouteHorizontal)
     end
+    if displayPlots
+        display(createGantChartOfSolutionOnline(initialSolution,"Initial Solution"))
+    end
 
     # Run ALNS for offline solution 
     # TODO: set correct parameters for alns
     solution,requestBank,_,_ = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",initialSolution =  initialSolution, requestBank = initialRequestBank, displayPlots = false, savePlots = false)
+    requestBankOffline = deepcopy(requestBank)
 
     # Update time windows 
     updateTimeWindowsOnline!(solution,scenario)
@@ -402,6 +406,9 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false)
         println("----------------")
         printSolution(solution,printRouteHorizontal)
     end
+    if displayPlots
+        display(createGantChartOfSolutionOnline(solution,"Initial Solution after ALNS"))
+    end
 
     # Initialize visited routes 
     visitedRoute = Dict{Int,Dict{String,Int}}()
@@ -409,7 +416,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false)
     # Get solution for online problem
     for (itr,event) in enumerate(scenario.onlineRequests)
         println("------------------------------------------------------------------------------------------------------------------------------------------------")
-        println("Event: id: ", itr, ", time: ", event.callTime)
+        println("Event: id: ", itr, ", time: ", event.callTime, " request id: ", event.id)
         println("----------------")
 
         # Determine current state
@@ -446,6 +453,9 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false)
             println("----------------")
             printSolution(currentState.solution,printRouteHorizontal)
         end
+        if displayPlots
+            display(createGantChartOfSolutionOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime))
+        end
 
     end
 
@@ -458,10 +468,40 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false)
         println("----------------")
         printSolution(finalSolution,printRouteHorizontal)
         println("Request bank: ", requestBank)
-
+    end
+    if displayPlots
+        display(createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge"))
     end
 
-    return finalSolution
+    # Print KPIs 
+    totalDirectRideTime = sum(r.directDriveTime for r in scenario.requests if !(r.id in requestBank))
+    totalActualRideTime = 0
+    pickUpTimes = Dict{Int,Int}()
+    for schedule in finalSolution.vehicleSchedules
+        for assignment in schedule.route
+            activity = assignment.activity
+            if activity.activityType == PICKUP
+                pickUpTimes[activity.requestId] = assignment.endOfServiceTime
+            elseif activity.activityType == DROPOFF
+                pickupTime = pickUpTimes[activity.requestId]
+                dropoffTime = assignment.startOfServiceTime
+                totalActualRideTime += dropoffTime - pickupTime
+            end
+        end
+    end
+
+    println(rpad("Metric", 40), "Value")
+    println("-"^45)
+    println(rpad("Unserviced offline requests", 40), length(requestBankOffline),"/",length(scenario.offlineRequests))
+    println(rpad("Unserviced online requests", 40), length(setdiff(requestBank, requestBankOffline)),"/",length(scenario.onlineRequests))
+    println(rpad("Final cost", 40), finalSolution.totalCost)
+    println(rpad("Final distance", 40), finalSolution.totalDistance)
+    println(rpad("Final ride time (veh)", 40), finalSolution.totalRideTime)
+    println(rpad("Final idle time", 40), finalSolution.totalIdleTime)
+    println(rpad("Final RT/direct DT", 40), totalActualRideTime,"/",totalDirectRideTime)
+    
+
+    return finalSolution, requestBank
 
 end
 

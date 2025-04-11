@@ -4,6 +4,7 @@ authors = ["JasmineRolin <75620908+JasmineRolin@users.noreply.github.com>"]
 version = "0.1.0"
 
 [deps]
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 alns = "923737b8-2e4c-4886-b2ed-ac7b70d13e65"
 domain = "734a5951-1d14-4631-9222-bf0d0da96408"
 utils = "d9eeeeb4-94be-4641-9ce8-3b648504a7dd"

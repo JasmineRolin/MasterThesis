@@ -104,7 +104,7 @@ function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario
     # Update time window for event
     updateTimeWindowsOnline!(finalSolution,scenario,searchForEvent=true,eventId = event.id)
 
-    return finalSolution,requestBank
+    return finalSolution, requestBank
 
 end
 

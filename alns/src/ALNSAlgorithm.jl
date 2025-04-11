@@ -11,7 +11,7 @@ export ALNS
 #==
  Method to run ALNS algorithm
 ==#
-function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters,fileName::String;alreadyRejected = 0,event = Request(),visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}()) 
+function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters,fileName::String;alreadyRejected = 0,event = Request(),visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}(),saveOutPut = false) 
     # Retrieve event id 
     eventId = event.id 
 
@@ -102,17 +102,18 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
         temperature = coolingRate*temperature
 
         # Write to file 
-        write(outputFile, string(iteration), ",", 
-                 string(trialState.currentSolution.totalCost), ",", 
-                 string(isAccepted), ",", 
-                 string(isImproved), ",", 
-                 string(isNewBest), ",", 
-                 string(temperature), ",", 
-                string(configuration.destroyMethods[destroyIdx].name), ",",
-                string(configuration.repairMethods[repairIdx].name), ",",
-                join(string.(currentState.destroyWeights), ","), ",", 
-                 join(string.(currentState.repairWeights), ","), "\n")
-
+        if saveOutPut
+            write(outputFile, string(iteration), ",", 
+                    string(trialState.currentSolution.totalCost), ",", 
+                    string(isAccepted), ",", 
+                    string(isImproved), ",", 
+                    string(isNewBest), ",", 
+                    string(temperature), ",", 
+                    string(configuration.destroyMethods[destroyIdx].name), ",",
+                    string(configuration.repairMethods[repairIdx].name), ",",
+                    join(string.(currentState.destroyWeights), ","), ",", 
+                    join(string.(currentState.repairWeights), ","), "\n")
+        end
 
         # Check solution 
         # TODO: remove when ALNS is robust 
