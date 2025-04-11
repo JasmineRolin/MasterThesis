@@ -12,5 +12,6 @@
     "maxPercentToDestroy": 0.3,
     "p": 6,
     "shawRemovalPhi": 9.0,
-    "shawRemovalXi": 3.0
+    "shawRemovalXi": 3.0,
+    "maxNumberOfIterationsWithoutImprovement": 1000 
 }
