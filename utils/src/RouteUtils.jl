@@ -352,19 +352,18 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
             # Keep waiting activity     
             else
                 # Check if we can minimize waiting node
-                # earliestArrivalFromCurrent = currentActivity.startOfServiceTime + time[currentActivity.id,nextActivity.id]
-                # latestArrival = currentActivity.endOfServiceTime + time[previousActivity.id,nextActivity.id]
-                # earliestArrival= max(earliestArrivalFromCurrent,nextActivity.timeWindow.startTime)
+                earliestArrivalFromCurrent = newEndOfServiceTimes[idx-1] + time[previousActivity.id,currentActivity.id] + time[currentActivity.id,nextActivity.id]
+                latestArrival = currentActivity.timeWindow.endTime + serviceTimes + time[currentActivity.id,nextActivity.id]
+                earliestArrival= max(earliestArrivalFromCurrent,nextActivity.timeWindow.startTime)
                 
-                # if earliestArrival < latestArrival && earliestArrival < nextActivity.timeWindow.endTime 
-                #     newEndOfServiceTimes[idx] = earliestArrival - time[currentActivity.id,nextActivity.id]
-                #     newStartOfServiceTimes[idx] = currentActivity.timeWindow.startTime
-                #     totalIdleTime += newEndOfServiceTimes[idx] - newStartOfServiceTimes[idx]
-                #     totalDistance += distance[previousActivity.id,currentActivity.id]
-
-                #     push!(waitingActivitiesToKeep,currentActivity.id)
-               # else
-                    # Keep waiting activity byt try to shift route
+                if earliestArrival < latestArrival && earliestArrival <= nextActivity.timeWindow.endTime 
+                    newEndOfServiceTimes[idx] = earliestArrival - time[currentActivity.id,nextActivity.id]
+                    newStartOfServiceTimes[idx] = newEndOfServiceTimes[idx-1] + time[previousActivity.id,currentActivity.id]
+                    totalIdleTime += newEndOfServiceTimes[idx] - newStartOfServiceTimes[idx]
+                    totalDistance += distance[previousActivity.id,currentActivity.id]
+                    push!(waitingActivitiesToKeep,currentActivity.id)
+                else
+                    # Keep waiting activity but try to shift route
                     feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
                     if !feasible
                         return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0
@@ -374,7 +373,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                     totalIdleTime += newEndOfServiceTimes[idx] - newStartOfServiceTimes[idx]
                     totalDistance += distance[previousActivity.id,currentActivity.id]
                     push!(waitingActivitiesToKeep,currentActivity.id)
-              #  end
+                end
               
             end
         # Check if activity can be inserted
