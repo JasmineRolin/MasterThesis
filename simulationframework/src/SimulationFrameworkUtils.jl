@@ -416,6 +416,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
     # Get solution for online problem
     averageResponseTime = 0
     startSimulation = time()
+    eventsInsertedByALNS = 0
     for (itr,event) in enumerate(scenario.onlineRequests)
         startTimeEvent = time()
         println("------------------------------------------------------------------------------------------------------------------------------------------------")
@@ -448,9 +449,10 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
 
   
         # Get solution for online problem
-        solution, requestBank = onlineAlgorithm(currentState, requestBank, scenario, destroyMethods, repairMethods) 
+        solution, requestBank,insertedByALNS = onlineAlgorithm(currentState, requestBank, scenario, destroyMethods, repairMethods) 
         endTimeEvent = time()
         averageResponseTime += endTimeEvent - startTimeEvent
+        eventsInsertedByALNS += insertedByALNS 
 
 
         if printResults
@@ -494,10 +496,11 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
     println(rpad("Final idle time", 40), finalSolution.totalIdleTime)
     println(rpad("Total elapsed time (sim)", 40),totalElapsedTime)
     println(rpad("Average response time (sim)", 40),averageResponseTime)
+    println(rpad("Events inserted by ALNS", 40),eventsInsertedByALNS)
 
     if saveResults
         fileName = outPutFileName*"Simulation_KPI_"*string(scenario.name)*".json"
-        writeOnlineKPIsToFile(fileName,scenario,finalSolution,requestBank,requestBankOffline,totalElapsedTime,averageResponseTime)
+        writeOnlineKPIsToFile(fileName,scenario,finalSolution,requestBank,requestBankOffline,totalElapsedTime,averageResponseTime,eventsInsertedByALNS)
     end
     
 

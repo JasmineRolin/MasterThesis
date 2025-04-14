@@ -66,6 +66,7 @@ end
  Run online algorithm
 ==#
 function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario::Scenario, destroyMethods::Vector{GenericMethod}, repairMethods::Vector{GenericMethod})
+    insertedByALNS = false 
 
     # Retrieve info 
     event, currentSolution, totalNTaxi = currentState.event, copySolution(currentState.solution), currentState.totalNTaxi
@@ -76,7 +77,10 @@ function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario
     # Run ALNS
     # TODO: set correct parameters for alns 
     finalSolution,finalOnlineRequestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",initialSolution =  currentSolution, requestBank = newRequestBankOnline, event = event, alreadyRejected =  totalNTaxi, visitedRoute = currentState.visitedRoute)
-   
+    if length(newRequestBankOnline) == 1 && length(finalOnlineRequestBank) == 0
+        insertedByALNS = true
+    end
+
     # TODO: remove when alns is stable
     if length(finalOnlineRequestBank) > 1 || (length(finalOnlineRequestBank) == 1 && finalOnlineRequestBank[1] != event.id)
         println("ALNS: FINAL REQUEST BANK IS NOT EMPTY")
@@ -104,7 +108,7 @@ function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario
     # Update time window for event
     updateTimeWindowsOnline!(finalSolution,scenario,searchForEvent=true,eventId = event.id)
 
-    return finalSolution, requestBank
+    return finalSolution, requestBank, insertedByALNS
 
 end
 
