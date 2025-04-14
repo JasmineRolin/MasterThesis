@@ -1,116 +1,94 @@
 module ALNSResults 
 
-using DataFrames, CSV, Plots, JSON, domain
+using DataFrames, CSV, Plots, JSON, domain,..ALNSDomain
 
 export ALNSResult, createGantChartOfSolutionAndEvent
 
 #==
  Method to plot ALNS results  
 ==#
-function ALNSResult(specificationsFile::String,ALNSKPISFile::String,ALNSOutputFile::String,scenario::Scenario,solution::Solution,requests::Vector{Request},requestBank::Vector{Int};savePlots=true::Bool,displayPlots=true::Bool,plotFolder=""::String)
-    # TODO: should we also input a solution and somehow save a solution? 
+function ALNSResult(specificationsFileName::String,KPIFileName::String,ALNSOutputFile::String,scenario::Scenario,configuration::ALNSConfiguration,solution::Solution,requests::Vector{Request},requestBank::Vector{Int},parameters::ALNSParameters;saveResults=true::Bool,displayPlots=true::Bool,plotFolder=""::String)
+    if saveResults
+        writeALNSSpecificationsFile(specificationsFileName,scenario,parameters,configuration)
+        writeKPIsToFile(KPIFileName,scenario,solution)
 
-    # Read the CSV file into a DataFrame
-    ALNSOutput = CSV.read(ALNSOutputFile, DataFrame)
+        # Read the CSV file into a DataFrame
+        ALNSOutput = CSV.read(ALNSOutputFile, DataFrame)
 
-    # Read specifications 
-    specifications = JSON.parsefile(specificationsFile)
-    specificationsTable = createSpecificationTable(specifications)
 
-    # Read KPIs
-    KPIS = JSON.parsefile(ALNSKPISFile)
-    KPIsTable = createKPITable(KPIS)
+        # Cost plot 
+        costPlot = createCostPlot(ALNSOutput,scenario.name)
 
-    # Cost plot 
-    costPlot = createCostPlot(ALNSOutput,scenario.name)
+        # Repair weight plot
+        repairWeightPlot = createRepairWeightPlot(ALNSOutput,configuration,scenario.name)
 
-    # Repair weight plot
-    repairWeightPlot = createRepairWeightPlot(ALNSOutput,specifications,scenario.name)
+        # Destroy weight plot
+        destroyWeightPlot = createDestroyWeightPlot(ALNSOutput,configuration,scenario.name)
 
-    # Destroy weight plot
-    destroyWeightPlot = createDestroyWeightPlot(ALNSOutput,specifications,scenario.name)
+        # Temperature plot
+        temperaturePlot = createTemperaturePlot(ALNSOutput,scenario.name)
 
-    # Temperature plot
-    temperaturePlot = createTemperaturePlot(ALNSOutput,scenario.name)
+        # Gant chart 
+        gantChart = createGantChartOfRequestsAndVehicles(scenario.vehicles,requests,requestBank,scenario.name)
 
-    # Gant chart 
-    gantChart = createGantChartOfRequestsAndVehicles(scenario.vehicles,requests,requestBank,scenario.name)
+        # Gant chart of solution 
+        gantChartSolution = createGantChartOfSolution(solution,scenario.name)
 
-    # Gant chart of solution 
-    gantChartSolution = createGantChartOfSolution(solution,scenario.name)
-
-    # Display and save plots
-    if displayPlots
-        display(costPlot)
-        display(repairWeightPlot)
-        display(destroyWeightPlot)
-        display(temperaturePlot)
-        display(gantChart) 
-        display(gantChartSolution)
-    end
-    if savePlots
+        # Display and save plots
         savefig(costPlot, joinpath(plotFolder, "ALNSCostPlot.png"))
         savefig(repairWeightPlot, joinpath(plotFolder, "ALNSRepairWeightPlot.png"))
         savefig(destroyWeightPlot, joinpath(plotFolder, "ALNSDestroyWeightPlot.png"))
         savefig(temperaturePlot, joinpath(plotFolder, "ALNSTemperaturePlot.png"))
         savefig(gantChart, joinpath(plotFolder, "ALNSGantChart.png"))
         savefig(gantChartSolution, joinpath(plotFolder, "ALNSGantChartSolution.png"))
-    end
 
-    return specificationsTable, KPIsTable
+        if displayPlots
+            display(costPlot)
+            display(repairWeightPlot)
+            display(destroyWeightPlot)
+            display(temperaturePlot)
+            display(gantChart) 
+            display(gantChartSolution)
+        end
+    end
 end
 
 #==
- Method to create a table of the specifications
+    Write ALNS specifications to file 
 ==#
-function createSpecificationTable(specifications::Dict)
+function writeALNSSpecificationsFile(fileName::String, scenario::Scenario,parameters::ALNSParameters,configuration::ALNSConfiguration)
+    # Create a dictionary for the entire specifications
+    specificationsDict = Dict(
+        "Scenario" => Dict("name" => scenario.name),
+        "RepairMethods" => [m.name for m in configuration.repairMethods],
+        "DestroyMethods" => [m.name for m in configuration.destroyMethods],
+        "Parameters" => ALNSParametersToDict(parameters)
+    )
 
-    # Extract relevant sections from the parsed data
-    destroy_methods = specifications["DestroyMethods"]
-    repair_methods = specifications["RepairMethods"]
-    scenario_name = specifications["Scenario"]["name"]
-    
-    parameters = specifications["Parameters"]
-
-    # Combine data into a table format
-    tableData = [
-        ("DestroyMethods", join(destroy_methods, ", ")),
-        ("RepairMethods", join(repair_methods, ", ")),
-        ("Scenario", scenario_name)
-    ]
-    
-    # Add the parameters to the table
-    for (param, value) in parameters
-        push!(tableData, (param, string(value)))
-    end
-    
-    # Convert list of tuples into a DataFrame
-    df = DataFrame(tableData, [:Parameter, :Value])
-
-    # Return the DataFrame
-    return df
+    # Write the dictionary to a JSON file
+    file = open(fileName, "w") 
+    write(file, JSON.json(specificationsDict))
+    close(file)
 end
 
 #==
- Method to create KPI table 
+ Write KPIs to file  
 ==#
-function createKPITable(KPIS::Dict)
+function writeKPIsToFile(fileName::String, scenario::Scenario,solution::Solution)
+    KPIDict = Dict(
+        "Scenario" => Dict("name" => scenario.name),
+        "TotalCost" => solution.totalCost,
+        "TotalDistance" => solution.totalDistance,
+        "TotalRideTime" => solution.totalRideTime,
+        "TotalIdleTime" => solution.totalIdleTime,
+        "nTaxi" => solution.nTaxi
+    )
 
-   # Extract KPIs and convert to a list of tuples
-   tableData = [
-        ("nTaxi", KPIS["nTaxi"]),
-        ("TotalCost", KPIS["TotalCost"]),
-        ("TotalDistance", KPIS["TotalDistance"]),
-        ("TotalIdleTime", KPIS["TotalIdleTime"]),
-        ("TotalRideTime", KPIS["TotalRideTime"])
-    ]
-
-    # Convert the list of tuples into a DataFrame
-    df = DataFrame(tableData, [:KPI, :Value])
-        
-    # Return the table for printing or further usage
-    return df
-end
+    # Write the dictionary to a JSON file
+    file = open(fileName, "w") 
+    write(file, JSON.json(KPIDict))
+    close(file)
+end 
 
 
 #==
@@ -145,11 +123,11 @@ end
 #==
  Method to create plot of repair weights 
 ==#
-function createRepairWeightPlot(df::DataFrame,specifications::Dict,scenarioName::String)
+function createRepairWeightPlot(df::DataFrame,configuration::ALNSConfiguration,scenarioName::String)
     # Extract iteration numbers
     iterations = df.Iteration
 
-    repair_methods = specifications["RepairMethods"]
+    repair_methods = configuration.repairMethods
 
     # Identify RW columns dynamically
     rw_columns = filter(col -> startswith(string(col), "RW"), names(df))
@@ -159,7 +137,7 @@ function createRepairWeightPlot(df::DataFrame,specifications::Dict,scenarioName:
 
     # Plot each RW column
     for (idx,col) in enumerate(rw_columns)
-        plot!(p, iterations, df[!, col], label=repair_methods[idx])
+        plot!(p, iterations, df[!, col], label=repair_methods[idx].name)
     end
 
     return p
@@ -168,11 +146,11 @@ end
 #==
  Method to create plot of destroy weights 
 ==#
-function createDestroyWeightPlot(df::DataFrame,specifications::Dict,scenarioName::String)
+function createDestroyWeightPlot(df::DataFrame,configuration::ALNSConfiguration,scenarioName::String)
     # Extract iteration numbers
     iterations = df.Iteration
 
-    destroyMethods = specifications["DestroyMethods"]
+    destroyMethods = configuration.destroyMethods
 
     # Identify RW columns dynamically
     rw_columns = filter(col -> startswith(string(col), "DW"), names(df))
@@ -182,7 +160,7 @@ function createDestroyWeightPlot(df::DataFrame,specifications::Dict,scenarioName
 
     # Plot each RW column
     for (idx,col) in enumerate(rw_columns)
-        plot!(p, iterations, df[!, col], label=destroyMethods[idx])
+        plot!(p, iterations, df[!, col], label=destroyMethods[idx].name)
     end
 
     return p

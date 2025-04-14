@@ -360,7 +360,7 @@ end
 # ------
 # Function to simulate a scenario
 # ------
-function simulateScenario(scenario::Scenario;printResults::Bool = false)
+function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileName::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false)
 
     # Choose destroy methods
     destroyMethods = Vector{GenericMethod}()
@@ -387,10 +387,14 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false)
         println("----------------")
         printSolution(initialSolution,printRouteHorizontal)
     end
+    if displayPlots
+        display(createGantChartOfSolutionOnline(initialSolution,"Initial Solution"))
+    end
 
     # Run ALNS for offline solution 
     # TODO: set correct parameters for alns
-    solution,requestBank,_,_ = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",initialSolution =  initialSolution, requestBank = initialRequestBank, displayPlots = false, savePlots = false)
+    solution,requestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",initialSolution =  initialSolution, requestBank = initialRequestBank, displayPlots = displayALNSPlots, saveResults = saveALNSResults)
+    requestBankOffline = deepcopy(requestBank)
 
     # Update time windows 
     updateTimeWindowsOnline!(solution,scenario)
@@ -402,14 +406,21 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false)
         println("----------------")
         printSolution(solution,printRouteHorizontal)
     end
+    if displayPlots
+        display(createGantChartOfSolutionOnline(solution,"Initial Solution after ALNS"))
+    end
 
     # Initialize visited routes 
     visitedRoute = Dict{Int,Dict{String,Int}}()
 
     # Get solution for online problem
+    averageResponseTime = 0
+    startSimulation = time()
+    eventsInsertedByALNS = 0
     for (itr,event) in enumerate(scenario.onlineRequests)
+        startTimeEvent = time()
         println("------------------------------------------------------------------------------------------------------------------------------------------------")
-        println("Event: id: ", itr, ", time: ", event.callTime)
+        println("Event: id: ", itr, ", time: ", event.callTime, " request id: ", event.id)
         println("----------------")
 
         # Plot solution and event
@@ -443,19 +454,29 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false)
 
   
         # Get solution for online problem
-        solution, requestBank = onlineAlgorithm(currentState, requestBank, scenario, destroyMethods, repairMethods) 
-    
+        solution, requestBank,insertedByALNS = onlineAlgorithm(currentState, requestBank, scenario, destroyMethods, repairMethods) 
+        endTimeEvent = time()
+        averageResponseTime += endTimeEvent - startTimeEvent
+        eventsInsertedByALNS += insertedByALNS 
+
+
         if printResults
             println("------------------------------------------------------------------------------------------------------------------------------------------------")
             println("Solution after online: ")
             println("----------------")
             printSolution(currentState.solution,printRouteHorizontal)
         end
+        if displayPlots
+            display(createGantChartOfSolutionOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime))
+        end
 
     end
 
     # Update final solution with last state 
     mergeCurrentStateIntoFinalSolution!(finalSolution,currentState,scenario)
+    endSimulation = time()
+    totalElapsedTime = endSimulation - startSimulation
+    averageResponseTime /= length(scenario.onlineRequests)
 
     if printResults
         println("------------------------------------------------------------------------------------------------------------------------------------------------")
@@ -463,11 +484,34 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false)
         println("----------------")
         printSolution(finalSolution,printRouteHorizontal)
         println("Request bank: ", requestBank)
-
+    end
+    if displayPlots
+        display(createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge"))
     end
 
-    return finalSolution
+
+    # Print summary 
+    println(rpad("Metric", 40), "Value")
+    println("-"^45)
+    println(rpad("Unserviced offline requests", 40), length(requestBankOffline),"/",length(scenario.offlineRequests))
+    println(rpad("Unserviced online requests", 40), length(setdiff(requestBank, requestBankOffline)),"/",length(scenario.onlineRequests))
+    println(rpad("Final cost", 40), finalSolution.totalCost)
+    println(rpad("Final distance", 40), finalSolution.totalDistance)
+    println(rpad("Final ride time (veh)", 40), finalSolution.totalRideTime)
+    println(rpad("Final idle time", 40), finalSolution.totalIdleTime)
+    println(rpad("Total elapsed time (sim)", 40),totalElapsedTime)
+    println(rpad("Average response time (sim)", 40),averageResponseTime)
+    println(rpad("Events inserted by ALNS", 40),eventsInsertedByALNS)
+
+    if saveResults
+        fileName = outPutFileName*"Simulation_KPI_"*string(scenario.name)*".json"
+        writeOnlineKPIsToFile(fileName,scenario,finalSolution,requestBank,requestBankOffline,totalElapsedTime,averageResponseTime,eventsInsertedByALNS)
+    end
+    
+
+    return finalSolution, requestBank
 
 end
+
 
 end
