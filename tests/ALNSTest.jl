@@ -160,7 +160,7 @@ Test ALNSFunctions
         # addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
         # initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
-        # finalSolution, specifications, KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",initialSolution=initialSolution,requestBank=requestBank)
+        # finalSolution, specifications, KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",initialSolution=initialSolution,event = scenario.onlineRequests[end],requestBank=requestBank)
         
         # state = State(finalSolution,scenario.onlineRequests[end],0)
         # feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
@@ -180,8 +180,9 @@ Test ALNSFunctions
 # end
 
 
-@testset "Run all generated data sets " begin
 
+
+@testset "Run all generated data sets " begin
     n = 100
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
     parametersFile = "tests/resources/Parameters.csv"
@@ -207,11 +208,15 @@ Test ALNSFunctions
         addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
         addMethod!(repairMethods,"regretInsertion",regretInsertion)
         
-        finalSolution,requestBank,specification,KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;initialSolutionConstructor=simpleConstruction,parametersFile=alnsParameters,displayPlots=true,savePlots=false)
+        initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
+        finalSolution, specifications, KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",initialSolution=initialSolution,requestBank=requestBank,event = scenario.onlineRequests[end])
 
-        feasible, msg = checkSolutionFeasibility(scenario,finalSolution,scenario.requests)
+        state = State(finalSolution,scenario.onlineRequests[end],0)
+        feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
         @test feasible == true
         @test msg == ""
         println(msg)
     end
+    
  end
+ 

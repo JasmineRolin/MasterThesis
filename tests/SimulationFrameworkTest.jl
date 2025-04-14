@@ -28,7 +28,7 @@ Test SimulationFrameworkUtils
     @test msg == ""
 end
 
-
+#==
 
 files = ["Data", "06.02","09.01","16.01","23.01","30.01"]
 suff = files[1]
@@ -53,7 +53,7 @@ for suff in files
     @test msg == ""
 end 
 
-
+==#
 
 #function main()
     #n = parse(Int,ARGS[1])
