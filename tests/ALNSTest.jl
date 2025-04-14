@@ -119,7 +119,7 @@ end
   
     initialSolution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
 
-    finalSolution, specifications, KPIs = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
+    finalSolution, requestBank = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
 
     state = State(finalSolution,Request(),0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
@@ -160,7 +160,7 @@ end
         # addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
         # initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
-        # finalSolution, specifications, KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",initialSolution=initialSolution,requestBank=requestBank)
+        # finalSolution, requestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",initialSolution=initialSolution,requestBank=requestBank)
         
         # state = State(finalSolution,scenario.onlineRequests[end],0)
         # feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
@@ -207,7 +207,7 @@ end
 #         addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
 #         addMethod!(repairMethods,"regretInsertion",regretInsertion)
         
-#         finalSolution,requestBank,specification,KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;initialSolutionConstructor=simpleConstruction,parametersFile=alnsParameters,displayPlots=true,savePlots=false)
+#         finalSolution,requestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;initialSolutionConstructor=simpleConstruction,parametersFile=alnsParameters,displayPlots=true,savePlots=false)
 
 #         feasible, msg = checkSolutionFeasibility(scenario,finalSolution,scenario.requests)
 #         @test feasible == true

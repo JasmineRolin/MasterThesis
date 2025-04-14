@@ -1,9 +1,9 @@
 module OnlineSolutionResults
 
-using Plots 
+using Plots, JSON
 using domain, utils 
 
-export createGantChartOfSolutionOnline
+export createGantChartOfSolutionOnline,writeOnlineKPIsToFile
 
 
 # Plot vehicle schedules 
@@ -72,6 +72,64 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String;eventI
     
     return p
 end
+
+
+
+#==
+ Write KPIs to file  
+==#
+function writeOnlineKPIsToFile(fileName::String, scenario::Scenario,solution::Solution,requestBank::Vector{Int},requestBankOffline::Vector{Int},totalElapsedTime::Float64,averageResponseTime::Float64)
+    # Find drive times for customers
+    totalDirectRideTime = sum(r.directDriveTime for r in scenario.requests if !(r.id in requestBank))
+    totalActualRideTime = 0
+    pickUpTimes = Dict{Int,Int}()
+    for schedule in solution.vehicleSchedules
+        for assignment in schedule.route
+            activity = assignment.activity
+            if activity.activityType == PICKUP
+                pickUpTimes[activity.requestId] = assignment.endOfServiceTime
+            elseif activity.activityType == DROPOFF
+                pickupTime = pickUpTimes[activity.requestId]
+                dropoffTime = assignment.startOfServiceTime
+                totalActualRideTime += dropoffTime - pickupTime
+            end
+        end
+    end
+
+    # Find idle time with customers 
+    totalIdleTimeWithCustomer = 0 
+    for schedule in solution.vehicleSchedules
+        for (idx,assignment) in enumerate(schedule.route)
+            if assignment.activity.activityType == WAITING && schedule.numberOfWalking[idx] > 0
+                totalIdleTimeWithCustomer += assignment.endOfServiceTime - assignment.startOfServiceTime
+            end
+        end
+    end
+
+    # Create a dictionary for the entire KPIs
+    KPIDict = Dict(
+        "Scenario" => Dict("name" => scenario.name),
+        "TotalCost" => solution.totalCost,
+        "TotalDistance" => solution.totalDistance,
+        "TotalRideTime" => solution.totalRideTime,
+        "TotalIdleTime" => solution.totalIdleTime,
+        "TotalIdleTimeWithCustomer" => totalIdleTimeWithCustomer,
+        "nTaxi" => solution.nTaxi, 
+        "nOfflineRequests" => length(scenario.offlineRequests),
+        "nOnlineRequests" => length(scenario.onlineRequests),
+        "UnservicedOfflineRequests" => length(requestBankOffline),
+        "UnservicedOnlineRequests" => length(setdiff(requestBank, requestBankOffline)),
+        "TotalDirectRideTime" => totalDirectRideTime,
+        "TotalActualRideTime" => totalActualRideTime,
+        "TotalElapsedTime" => round(totalElapsedTime,digits=2),
+        "AverageResponseTime" => round(averageResponseTime,digits=2)
+    )
+
+    # Write the dictionary to a JSON file
+    file = open(fileName, "w") 
+    write(file, JSON.json(KPIDict))
+    close(file)
+end 
 
 
 

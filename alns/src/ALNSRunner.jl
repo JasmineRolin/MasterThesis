@@ -8,13 +8,13 @@ export runALNS
  Module to run ALNS algorithm 
 ==#
 
-function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::Vector{GenericMethod},repairMethods::Vector{GenericMethod};outPutFileFolder="tests/output"::String,parametersFile=""::String,savePlots=true::Bool,displayPlots=true::Bool,plotFolder=""::String,initialSolution=Solution(scenario)::Solution, requestBank=Vector{Request}(),event = Request(), alreadyRejected = 0::Int, visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}())
+function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::Vector{GenericMethod},repairMethods::Vector{GenericMethod};outPutFileFolder="tests/output"::String,parametersFile=""::String,saveResults=false::Bool,displayPlots=false::Bool,initialSolution=Solution(scenario)::Solution, requestBank=Vector{Request}(),event = Request(), alreadyRejected = 0::Int, visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}())
     # Create time stamp and output file folder
-    timeStamp = Dates.format(Dates.now(), "yyyy-mm-dd_HH_MM_SS.sss")
+    timeStamp = Dates.format(Dates.now(), "yyyy-mm-dd_HH_MM_SS")
     outputFileFolderWithDate = string(outPutFileFolder,"/",timeStamp,"/")
     
     # Check if the output directory exists, and if not, create it
-    if !isdir(outputFileFolderWithDate)
+    if saveResults && !isdir(outputFileFolderWithDate)
         mkdir(outputFileFolderWithDate)
     end
 
@@ -40,65 +40,21 @@ function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::
     # Create ALNS configuration 
     configuration = ALNSConfiguration(parameters,destroyMethods,repairMethods)
 
-    # Create specifications file 
-    specificationsFileName = string(outputFileFolderWithDate,"ALNSSpecifications.json")
-    writeALNSSpecificationsFile(specificationsFileName,scenario,parameters,configuration)
- 
     # Create log file name
     ALNSOutputFileName = string(outputFileFolderWithDate,"ALNSOutput.csv")
 
     # Call ALNS 
-    solution, requestBank = ALNS(scenario,initialSolution, requestBank,configuration,parameters, ALNSOutputFileName, alreadyRejected = alreadyRejected,event = event, visitedRoute=visitedRoute)
-
-    # Write KPIs to file 
-    KPIFileName = string(outputFileFolderWithDate,"ALNSKPIs.json")
-    writeKPIsToFile(KPIFileName,scenario,solution)
+    solution, requestBank = ALNS(scenario,initialSolution, requestBank,configuration,parameters, ALNSOutputFileName, alreadyRejected = alreadyRejected,event = event, visitedRoute=visitedRoute, saveOutPut = saveResults)
 
     # Create results 
-    if savePlots
-        plotFolder = outputFileFolderWithDate
-    end
+    specificationsFileName = string(outputFileFolderWithDate,"ALNSSpecifications.json")
+    KPIFileName = string(outputFileFolderWithDate,"ALNSKPIs.json")
+    plotFolder = outputFileFolderWithDate
 
-    specification, KPIS = ALNSResult(specificationsFileName,KPIFileName,ALNSOutputFileName,scenario,solution,requests,requestBank,savePlots=savePlots,displayPlots=displayPlots,plotFolder=plotFolder)
+    ALNSResult(specificationsFileName,KPIFileName,ALNSOutputFileName,scenario,configuration,solution,requests,requestBank,parameters,saveResults=saveResults,displayPlots=displayPlots,plotFolder=plotFolder)
 
-    return solution, requestBank, specification, KPIS
+    return solution, requestBank
 end
 
-#==
-    Write ALNS specifications to file 
-==#
-function writeALNSSpecificationsFile(fileName::String, scenario::Scenario,parameters::ALNSParameters,configuration::ALNSConfiguration)
-    # Create a dictionary for the entire specifications
-    specificationsDict = Dict(
-        "Scenario" => Dict("name" => scenario.name),
-        "RepairMethods" => [m.name for m in configuration.repairMethods],
-        "DestroyMethods" => [m.name for m in configuration.destroyMethods],
-        "Parameters" => ALNSParametersToDict(parameters)
-    )
-
-    # Write the dictionary to a JSON file
-    file = open(fileName, "w") 
-    write(file, JSON.json(specificationsDict))
-    close(file)
-end
-
-#==
- Write KPIs to file  
-==#
-function writeKPIsToFile(fileName::String, scenario::Scenario,solution::Solution)
-    KPIDict = Dict(
-        "Scenario" => Dict("name" => scenario.name),
-        "TotalCost" => solution.totalCost,
-        "TotalDistance" => solution.totalDistance,
-        "TotalRideTime" => solution.totalRideTime,
-        "TotalIdleTime" => solution.totalIdleTime,
-        "nTaxi" => solution.nTaxi
-    )
-
-    # Write the dictionary to a JSON file
-    file = open(fileName, "w") 
-    write(file, JSON.json(KPIDict))
-    close(file)
-end 
 
 end

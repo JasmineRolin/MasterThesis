@@ -360,7 +360,7 @@ end
 # ------
 # Function to simulate a scenario
 # ------
-function simulateScenario(scenario::Scenario;printResults::Bool = false,displayPlots=false)
+function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileName::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false)
 
     # Choose destroy methods
     destroyMethods = Vector{GenericMethod}()
@@ -393,7 +393,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,displayP
 
     # Run ALNS for offline solution 
     # TODO: set correct parameters for alns
-    solution,requestBank,_,_ = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",initialSolution =  initialSolution, requestBank = initialRequestBank, displayPlots = false, savePlots = false)
+    solution,requestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",initialSolution =  initialSolution, requestBank = initialRequestBank, displayPlots = displayALNSPlots, saveResults = saveALNSResults)
     requestBankOffline = deepcopy(requestBank)
 
     # Update time windows 
@@ -414,7 +414,10 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,displayP
     visitedRoute = Dict{Int,Dict{String,Int}}()
 
     # Get solution for online problem
+    averageResponseTime = 0
+    startSimulation = time()
     for (itr,event) in enumerate(scenario.onlineRequests)
+        startTimeEvent = time()
         println("------------------------------------------------------------------------------------------------------------------------------------------------")
         println("Event: id: ", itr, ", time: ", event.callTime, " request id: ", event.id)
         println("----------------")
@@ -446,7 +449,10 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,displayP
   
         # Get solution for online problem
         solution, requestBank = onlineAlgorithm(currentState, requestBank, scenario, destroyMethods, repairMethods) 
-    
+        endTimeEvent = time()
+        averageResponseTime += endTimeEvent - startTimeEvent
+
+
         if printResults
             println("------------------------------------------------------------------------------------------------------------------------------------------------")
             println("Solution after online: ")
@@ -461,6 +467,9 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,displayP
 
     # Update final solution with last state 
     mergeCurrentStateIntoFinalSolution!(finalSolution,currentState,scenario)
+    endSimulation = time()
+    totalElapsedTime = endSimulation - startSimulation
+    averageResponseTime /= length(scenario.onlineRequests)
 
     if printResults
         println("------------------------------------------------------------------------------------------------------------------------------------------------")
@@ -473,23 +482,8 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,displayP
         display(createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge"))
     end
 
-    # Print KPIs 
-    totalDirectRideTime = sum(r.directDriveTime for r in scenario.requests if !(r.id in requestBank))
-    totalActualRideTime = 0
-    pickUpTimes = Dict{Int,Int}()
-    for schedule in finalSolution.vehicleSchedules
-        for assignment in schedule.route
-            activity = assignment.activity
-            if activity.activityType == PICKUP
-                pickUpTimes[activity.requestId] = assignment.endOfServiceTime
-            elseif activity.activityType == DROPOFF
-                pickupTime = pickUpTimes[activity.requestId]
-                dropoffTime = assignment.startOfServiceTime
-                totalActualRideTime += dropoffTime - pickupTime
-            end
-        end
-    end
 
+    # Print summary 
     println(rpad("Metric", 40), "Value")
     println("-"^45)
     println(rpad("Unserviced offline requests", 40), length(requestBankOffline),"/",length(scenario.offlineRequests))
@@ -498,11 +492,18 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,displayP
     println(rpad("Final distance", 40), finalSolution.totalDistance)
     println(rpad("Final ride time (veh)", 40), finalSolution.totalRideTime)
     println(rpad("Final idle time", 40), finalSolution.totalIdleTime)
-    println(rpad("Final RT/direct DT", 40), totalActualRideTime,"/",totalDirectRideTime)
+    println(rpad("Total elapsed time (sim)", 40),totalElapsedTime)
+    println(rpad("Average response time (sim)", 40),averageResponseTime)
+
+    if saveResults
+        fileName = outPutFileName*"Simulation_KPI_"*string(scenario.name)*".json"
+        writeOnlineKPIsToFile(fileName,scenario,finalSolution,requestBank,requestBankOffline,totalElapsedTime,averageResponseTime)
+    end
     
 
     return finalSolution, requestBank
 
 end
+
 
 end

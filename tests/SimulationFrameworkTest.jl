@@ -57,8 +57,8 @@ Test SimulationFrameworkUtils
 
 #function main()
     #n = parse(Int,ARGS[1])
-    n = 300
-    i = 1
+    n = 100
+    i = 3
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
     parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters2.json"
@@ -78,7 +78,7 @@ Test SimulationFrameworkUtils
         scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
         # Simulate scenario 
-        solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true)
+        solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = false,saveResults = false,saveALNSResults = false, displayALNSPlots = false,outPutFileName= "tests/output/OnlineSimulation/")
 
         state = State(solution,scenario.onlineRequests[end],0)
         feasible, msg = checkSolutionFeasibilityOnline(scenario,state)

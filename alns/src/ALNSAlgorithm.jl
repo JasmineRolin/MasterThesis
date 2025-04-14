@@ -16,11 +16,13 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
     eventId = event.id 
 
     # File 
-    outputFile = open(fileName, "w")
     nDestroy = length(configuration.destroyMethods)
     nRepair = length(configuration.repairMethods)
-    write(outputFile,"Iteration,TotalCost,IsAccepted,IsImproved,IsNewBest,Temperature,DM,RM,",join(["DW$i" for i in 1:nDestroy], ","),",", join(["RW$i" for i in 1:nRepair], ","), "\n")
 
+    if saveOutPut
+        outputFile = open(fileName, "w")
+        write(outputFile,"Iteration,TotalCost,IsAccepted,IsImproved,IsNewBest,Temperature,DM,RM,",join(["DW$i" for i in 1:nDestroy], ","),",", join(["RW$i" for i in 1:nRepair], ","), "\n")
+    end
 
     # Unpack parameters
     @unpack timeLimit, w, coolingRate, segmentSize, reactionFactor, scoreAccepted, scoreImproved, scoreNewBest, printSegmentSize, maxNumberOfIterationsWithoutImprovement = parameters
@@ -33,6 +35,7 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
     temperature = findStartTemperature(w,currentState.currentSolution,scenario.taxiParameter)
 
     iteration = 0
+    newSolutions = 0
     numberOfIterationsSinceLastImprovement = 0
     startTime = time()
 
@@ -56,6 +59,7 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
         hashKeySolution = hashSolution(trialState.currentSolution)
         seenBefore = hashKeySolution in currentState.seenSolutions
         if !seenBefore
+            newSolutions += 1
             popfirst!(currentState.seenSolutions)
             push!(currentState.seenSolutions, hashKeySolution)
         end
@@ -128,7 +132,7 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
 
         # Print 
         if iteration % printSegmentSize == 0
-            println("==> ALNS: Iteration: ", iteration, ", Current cost: ", currentState.currentSolution.totalCost," current request bank: ",currentState.currentSolution.nTaxi, ", Best cost: ", currentState.bestSolution.totalCost," best request bank: ",currentState.bestSolution.nTaxi,", Improvement from initial: ", 100*(initialCost-currentState.bestSolution.totalCost)/initialCost, "%, Temperature: ", temperature)
+            println("==> ALNS: Iteration: ", iteration, ", Current cost: ", currentState.currentSolution.totalCost," current request bank: ",currentState.currentSolution.nTaxi, ", Best cost: ", currentState.bestSolution.totalCost," best request bank: ",currentState.bestSolution.nTaxi,", Improvement from initial: ", 100*(initialCost-currentState.bestSolution.totalCost)/initialCost, "%, Temperature: ", temperature, " New solutions: ",newSolutions, " /", iteration)
         end
 
         # Update iteration
@@ -142,8 +146,10 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
 
     end
 
-    # Close file    
-    close(outputFile)
+    # Close file 
+    if saveOutPut   
+        close(outputFile)
+    end 
 
     # Check final solution
     state = State(currentState.bestSolution,event,visitedRoute,alreadyRejected)
