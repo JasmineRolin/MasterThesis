@@ -500,6 +500,9 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
 
     if saveResults
         fileName = outPutFileName*"Simulation_KPI_"*string(scenario.name)*".json"
+        if isdir(outPutFileName)
+            mkdir(outPutFileName)
+        end
         writeOnlineKPIsToFile(fileName,scenario,finalSolution,requestBank,requestBankOffline,totalElapsedTime,averageResponseTime,eventsInsertedByALNS)
     end
     

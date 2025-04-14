@@ -16,5 +16,5 @@ module load julia/1.10.2
 # Activate project 
 julia -e 'using Pkg; Pkg.activate("."), Pkg.add("DataFrames"); Pkg.add("CSV"),Pkg.develop(path="domain"); Pkg.develop(path="utils");Pkg.develop(path="offlinesolution");Pkg.develop(path="onlinesolution");Pkg.develop(path="alns");Pkg.develop(path="simulationframework");'
 
-julia tests/SimulationFrameworkTest.jl "500"
+julia tests/SimulationFrameworkTest.jl "20"
 
