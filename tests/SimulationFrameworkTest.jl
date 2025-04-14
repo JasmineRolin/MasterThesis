@@ -20,7 +20,7 @@ Test SimulationFrameworkUtils
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
  
     # Simulate scenario 
-    solution = simulateScenario(scenario)
+    solution = simulateScenario(scenario, printResults = true)
 
     state = State(solution,scenario.onlineRequests[end],0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)

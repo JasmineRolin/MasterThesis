@@ -412,6 +412,11 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false)
         println("Event: id: ", itr, ", time: ", event.callTime)
         println("----------------")
 
+        # Plot solution and event
+        if printResults
+            createGantChartOfSolutionAndEvent(solution,scenario.name,event)
+        end
+
         # Determine current state
         currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario,visitedRoute)
         
