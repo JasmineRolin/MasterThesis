@@ -423,11 +423,6 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
         println("Event: id: ", itr, ", time: ", event.callTime, " request id: ", event.id)
         println("----------------")
 
-        # Plot solution and event
-        if printResults
-            createGantChartOfSolutionAndEvent(solution,scenario.name,event)
-        end
-
         # Determine current state
         currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario,visitedRoute)
         
@@ -466,8 +461,14 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
             println("----------------")
             printSolution(currentState.solution,printRouteHorizontal)
         end
-        if displayPlots
-            display(createGantChartOfSolutionOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime))
+        if displayPlots && event.id in requestBank
+            display(createGantChartOfSolutionAndEventOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event))
+            if event.id == 10
+                println("---HERE------")
+                println(visitedRoute)
+                println(checkFeasibilityOfInsertionAtPosition(event, solution.vehicleSchedules[3],3,3,scenario;visitedRoute))
+                throw("error")
+            end
         end
 
     end

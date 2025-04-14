@@ -48,7 +48,6 @@ export regretInsertion
 include("ALNSResults.jl")
 using .ALNSResults 
 export ALNSResult
-export createGantChartOfSolutionAndEvent
 
 #==
  Import from ALNSAlgorithm

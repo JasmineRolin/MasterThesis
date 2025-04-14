@@ -324,7 +324,7 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
     end
 
     # Repair route 
-    feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime = checkFeasibilityOfInsertionInRoute(time,distance,serviceTimes,requests,-1,schedule.route,visitedRoute = visitedRoute)
+    feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime, addWaitingActivities = checkFeasibilityOfInsertionInRoute(scenario,time,distance,serviceTimes,requests,-1,schedule,visitedRoute = visitedRoute)
 
     # Shift route
     if feasible 
@@ -343,6 +343,10 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
 
         # Update capacities 
         deleteat!(schedule.numberOfWalking,waitingActivitiesToDelete)
+
+        # Insert waiting activities
+        insertWaiting!(addWaitingActivities, waitingActivitiesToDelete,schedule,scenario,newStartOfServiceTimes,newEndOfServiceTimes)
+
     else 
         totalCost = getTotalCostRouteOnline(time,schedule.route,visitedRoute,serviceTimes)
         totalDistance = getTotalDistanceRoute(schedule.route,distance)

@@ -2,7 +2,7 @@ module ALNSResults
 
 using DataFrames, CSV, Plots, JSON, domain,..ALNSDomain
 
-export ALNSResult, createGantChartOfSolutionAndEvent
+export ALNSResult
 
 #==
  Method to plot ALNS results  
@@ -310,72 +310,6 @@ function createGantChartOfSolution(solution::Solution,scenarioName::String)
     
     return p
 end
-
-
-function createGantChartOfSolutionAndEvent(solution::Solution,scenarioName::String,event::Request)
-    yPositions = []
-    yLabels = []
-    yPos = 1
-
-    xPositions = range(6*60,24*60,step=60)
-    xLabels = string.(Int.(collect(xPositions)/60))
-    
-    p = plot(size=(2000,2000))
-    
-    for schedule in solution.vehicleSchedules
-        for assignment in schedule.route
-            offset = 0 # TO offset waiting activities visually 
-            if assignment.activity.activityType == PICKUP
-                color = :lightgreen 
-                markersize = 10
-                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
-
-            elseif assignment.activity.activityType == DROPOFF
-                color = :tomato
-                markersize = 10
-
-                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
-
-            elseif assignment.activity.activityType == DEPOT
-                color = :black
-                markersize = 7
-
-                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:circle,markerstrokewidth=0,markersize=markersize)
-
-            else
-                offset = 0
-                color = :gray67
-                markersize = 10
-
-                plot!(p, [assignment.startOfServiceTime, assignment.endOfServiceTime], [yPos, yPos], linewidth=19.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
-
-            end
-        end
-        hline!([yPos - 1], linewidth=1, color=:gray, label="")
-
-        push!(yPositions, yPos)
-        push!(yLabels, "Vehicle $(schedule.vehicle.id)")
-        yPos += 2
-    end
-
-    # Plot the event
-    offset = 0
-    markersize = 10
-    plot!(p, [event.pickUpActivity.timeWindow.startTime, event.pickUpActivity.timeWindow.endTime], [yPos, yPos], linewidth=19.5, label="Pick up", color = :green, marker=:square,markerstrokewidth=0,markersize=markersize)
-    plot!(p, [event.dropOffActivity.timeWindow.startTime, event.dropOffActivity.timeWindow.endTime], [yPos, yPos], linewidth=19.5, label="Drop off", color = :red, marker=:square,markerstrokewidth=0,markersize=markersize)
-    scatter!(p, [event.callTime], [yPos], linewidth=11.5, label="Call time", color=:blue, marker=:circle,markerstrokewidth=0,markersize=markersize)
-    push!(yPositions, yPos)
-    push!(yLabels, "Event $(event.id)")
-
-    
-    plot!(p, yticks=(yPositions, yLabels))
-    plot!(p, xticks=(xPositions, xLabels))
-    xlabel!("Time (Hour)")
-    title!(string(scenarioName," - Activity Assignments for Vehicles"))
-    
-    display(p)
-end
-
 
 
 

@@ -211,7 +211,8 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
     bestDropOff = -1
     bestNewStartOfServiceTimes = []
     bestNewEndOfServiceTimes = []
-    bestWaitingActivitiesToDelete = []  
+    bestWaitingActivitiesToDelete = [] 
+    bestWaitingActivitiesToAdd = []  
     bestCost = typemax(Float64)
     bestDistance = typemax(Float64)
     bestIdleTime = typemax(Int)
@@ -221,7 +222,7 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
 
     for i in 1:length(route)-1
         for j in i:length(route)-1
-            feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,i,j,scenario,visitedRoute=visitedRoute)
+            feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,i,j,scenario,visitedRoute=visitedRoute)
     
             if feasible
                 if totalCost < bestCost
@@ -230,6 +231,7 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
                     bestNewStartOfServiceTimes = deepcopy(newStartOfServiceTimes)
                     bestNewEndOfServiceTimes = deepcopy(newEndOfServiceTimes)
                     bestWaitingActivitiesToDelete = deepcopy(waitingActivitiesToDelete)
+                    bestWaitingActivitiesToAdd = deepcopy(waitingActivitiesToAdd)
                     bestCost = totalCost
                     bestDistance = totalDistance
                     bestIdleTime = totalIdleTime
@@ -239,7 +241,7 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
         end
     end
 
-    return bestCost < typemax(Float64), bestPickUp, bestDropOff, bestNewStartOfServiceTimes, bestNewEndOfServiceTimes,bestWaitingActivitiesToDelete, bestCost, bestDistance, bestIdleTime, bestTime
+    return bestCost < typemax(Float64), bestPickUp, bestDropOff, bestNewStartOfServiceTimes, bestNewEndOfServiceTimes,bestWaitingActivitiesToDelete, bestCost, bestDistance, bestIdleTime, bestTime, bestWaitingActivitiesToAdd
 
 end
 

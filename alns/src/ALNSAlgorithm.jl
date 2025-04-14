@@ -129,7 +129,8 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
         feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
         if !feasible
             println("ALNS: INFEASIBLE SOLUTION IN ITERATION:", iteration)  
-            close(outputFile)
+            #close(outputFile)
+            printSolution(currentState.currentSolution,printRouteHorizontal)
             throw(msg) 
         end
 
