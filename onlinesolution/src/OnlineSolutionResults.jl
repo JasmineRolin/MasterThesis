@@ -157,6 +157,8 @@ function processResults(files::Vector{String})
 
     # Assuming you have multiple JSON files, you can read them like this
     appendResults(files,results)
+
+    return results
 end
 
 # Create an empty DataFrame with the KPIs as camel case column names

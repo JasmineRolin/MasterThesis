@@ -18,11 +18,14 @@ julia --project=. -e 'using Pkg;
     Pkg.activate("."); 
     Pkg.add("Plots");
     Pkg.add("DataFrames");
-    Pkg.add("CSV"),Pkg.develop(path="domain"); 
-    Pkg.develop(path="utils");Pkg.develop(path="offlinesolution");
-    Pkg.develop(path="onlinesolution");Pkg.develop(path="alns");
+    Pkg.add("CSV"); 
+    Pkg.develop(path="domain"); 
+    Pkg.develop(path="utils");
+    Pkg.develop(path="offlinesolution");
+    Pkg.develop(path="onlinesolution");
+    Pkg.develop(path="alns");
     Pkg.develop(path="simulationframework");
     Pkg.resolve();'
 
-julia --project=. runfiles/RunSimulation.jl "20"
+julia --project=. runfiles/RunSimulation.jl "500"
 

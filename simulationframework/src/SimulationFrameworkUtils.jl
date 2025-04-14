@@ -247,10 +247,10 @@ end
 # ------
 # Function to merge current State and final solution in last iteration
 # ------
-function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,currentState::State,scenario::Scenario)
+function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,solution::Solution,scenario::Scenario)
 
     # Loop through all schedules and add to final solution 
-    for (vehicle,schedule) in enumerate(currentState.solution.vehicleSchedules)
+    for (vehicle,schedule) in enumerate(solution.vehicleSchedules)
 
         # Set start time of time window if necesarry 
         if length(finalSolution.vehicleSchedules[vehicle].route) == 0
@@ -284,7 +284,7 @@ function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,currentStat
         finalSolution.totalCost += newCost
     end
 
-    finalSolution.nTaxi += currentState.solution.nTaxi
+    finalSolution.nTaxi += solution.nTaxi
     finalSolution.totalCost += scenario.taxiParameter*finalSolution.nTaxi
 
 end
@@ -468,7 +468,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
     end
 
     # Update final solution with last state 
-    mergeCurrentStateIntoFinalSolution!(finalSolution,currentState,scenario)
+    mergeCurrentStateIntoFinalSolution!(finalSolution,solution,scenario)
     endSimulation = time()
     totalElapsedTime = endSimulation - startSimulation
     averageResponseTime /= length(scenario.onlineRequests)

@@ -9,7 +9,7 @@ using CSV
 function main()
     n = parse(Int,ARGS[1])
    # n = 20
-    #i = 3
+    #i = 9
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
     parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters2.json"
@@ -27,10 +27,7 @@ function main()
 
         # Read instance 
         scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
-        
-        # Read instance 
-        scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
-
+    
         # Simulate scenario 
         solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = false,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder)
 
@@ -38,10 +35,10 @@ function main()
         feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
         @test feasible == true
         @test msg == ""
-    end
+   end
 
     dfResults = processResults(outputFiles)
-    CSV.write(outputFolder*"/results.csv", results)
+    CSV.write(outPutFolder*"/results.csv", dfResults)
 
 end
 main()
