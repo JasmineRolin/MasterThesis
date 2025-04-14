@@ -353,7 +353,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
             else
                 # Check if we can minimize waiting node
                 earliestArrivalFromCurrent = newEndOfServiceTimes[idx-1] + time[previousActivity.id,currentActivity.id] + time[currentActivity.id,nextActivity.id]
-                latestArrival = currentActivity.timeWindow.endTime + serviceTimes + time[currentActivity.id,nextActivity.id]
+                latestArrival = currentActivity.timeWindow.endTime + time[currentActivity.id,nextActivity.id]
                 earliestArrival= max(earliestArrivalFromCurrent,nextActivity.timeWindow.startTime)
                 
                 if earliestArrival < latestArrival && earliestArrival <= nextActivity.timeWindow.endTime 
