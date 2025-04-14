@@ -11,7 +11,7 @@ export ALNS
 #==
  Method to run ALNS algorithm
 ==#
-function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters,fileName::String;alreadyRejected = 0,event = Request(),visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}(),saveOutPut = false) 
+function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters,fileName::String;alreadyRejected = 0,event = Request(),visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}(),saveOutPut = false,stage="Offline") 
     # Retrieve event id 
     eventId = event.id 
 
@@ -69,7 +69,11 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
         #    Is true when we are in offline phase: eventId == 0 
         #    Is true when we are in online phase and the request bank is empty
         #    Is true when we are in online phase and the event is the only request in the request bank
-        acceptOnlinePhase = (eventId == 0) || (length(trialState.requestBank) == 0) || (eventId in trialState.requestBank && length(trialState.requestBank) == 1)
+        if stage == "Online"
+            acceptOnlinePhase = (length(trialState.requestBank) == 0) || (eventId in trialState.requestBank && length(trialState.requestBank) == 1)
+        else
+            acceptOnlinePhase = true
+        end
 
         if acceptOnlinePhase && !seenBefore && (trialState.currentSolution.totalCost < currentState.currentSolution.totalCost)
             isImproved = true
