@@ -278,7 +278,7 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
 
     if totalIdleTimeCheck != vehicleSchedule.totalIdleTime
         msg = "ROUTE INFEASIBLE: Total idle time $(vehicleSchedule.totalIdleTime) is incorrect. Calculated: $(totalIdleTimeCheck), vehicle: $(vehicle.id)"
-        return false, msg, Set{Int}()
+        return false, msg, Set{Int}(), Set{Int}()
     end
     
    

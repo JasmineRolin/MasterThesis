@@ -60,8 +60,8 @@ end
 
 #function main()
     #n = parse(Int,ARGS[1])
-    n = 20
-    i = 4
+    n = 100
+    i = 3
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
     parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters2.json"
