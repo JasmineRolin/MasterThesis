@@ -24,5 +24,5 @@ julia --project=. -e 'using Pkg;
     Pkg.develop(path="simulationframework");
     Pkg.resolve();'
 
-julia --project=. tests/SimulationFrameworkTest.jl "20"
+julia --project=. runfiles/RunSimulation.jl "20"
 

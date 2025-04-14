@@ -1,9 +1,9 @@
 module OnlineSolutionResults
 
-using Plots, JSON
+using Plots, JSON, DataFrames
 using domain, utils 
 
-export createGantChartOfSolutionOnline,writeOnlineKPIsToFile
+export createGantChartOfSolutionOnline,writeOnlineKPIsToFile,processResults
 
 
 # Plot vehicle schedules 
@@ -131,6 +131,92 @@ function writeOnlineKPIsToFile(fileName::String, scenario::Scenario,solution::So
     write(file, JSON.json(KPIDict))
     close(file)
 end 
+
+#==
+ Method to process results 
+==#
+function processResults(files::Vector{String})
+    results = DataFrame(
+        ScenarioName = String[],
+        TotalElapsedTime = Float64[],
+        AverageResponseTime = Float64[],
+        EventsInsertedByALNS = Int[], 
+        nTaxi = Int[],
+        TotalCost = Float64[],
+        TotalDistance = Float64[],
+        TotalIdleTime = Int[],
+        TotalIdleTimeWithCustomer= Int[],
+        TotalRideTime= Int[], 
+        TotalDirectRideTime= Int[], 
+        TotalActualRideTime= Int[],
+        nOfflineRequests= Int[], 
+        UnservicedOfflineRequest= Int[],
+        nOnlineRequests= Int[],
+        UnservicedOnlineRequests= Int[]
+    )
+
+    # Assuming you have multiple JSON files, you can read them like this
+    appendResults(files,results)
+end
+
+# Create an empty DataFrame with the KPIs as camel case column names
+
+# Function to read and append multiple JSON files to the DataFrame
+function appendResults(files,results)
+    for file_path in files
+        row = parse_json(file_path)
+        push!(results, row)
+    end
+end
+
+
+
+# Function to parse the JSON file and extract relevant information (camel case)
+function parse_json(file_path)
+    data = JSON.parsefile(file_path)
+    
+    # Extract values from the JSON structure with camel case keys
+    scenarioName = data["Scenario"]["name"]
+    totalIdleTime = data["TotalIdleTime"]
+    eventsInsertedByALNS = data["EventsInsertedByALNS"]
+    totalElapsedTime = data["TotalElapsedTime"]
+    unservicedOnlineRequests = data["UnservicedOnlineRequests"]
+    totalRideTime = data["TotalRideTime"]
+    nTaxi = data["nTaxi"]
+    unservicedOfflineRequests = data["UnservicedOfflineRequests"]
+    averageResponseTime = data["AverageResponseTime"]
+    totalIdleTimeWithCustomer = data["TotalIdleTimeWithCustomer"]
+    totalDirectRideTime = data["TotalDirectRideTime"]
+    nOnlineRequests = data["nOnlineRequests"]
+    totalCost = data["TotalCost"]
+    totalDistance = data["TotalDistance"]
+    nOfflineRequests = data["nOfflineRequests"]
+    totalActualRideTime = data["TotalActualRideTime"]
+    
+    return [
+       scenarioName,
+        totalElapsedTime,
+        averageResponseTime,
+        eventsInsertedByALNS, 
+        nTaxi,
+        totalCost,
+        totalDistance,
+        totalIdleTime,
+        totalIdleTimeWithCustomer,
+        totalRideTime, 
+        totalDirectRideTime, 
+        totalActualRideTime,
+        nOfflineRequests, 
+        unservicedOfflineRequests,
+        nOnlineRequests,
+        unservicedOnlineRequests
+    ]
+end
+
+
+
+
+
 
 
 
