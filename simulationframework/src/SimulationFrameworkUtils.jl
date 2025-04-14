@@ -360,7 +360,7 @@ end
 # ------
 # Function to simulate a scenario
 # ------
-function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileName::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false)
+function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false)
 
     # Choose destroy methods
     destroyMethods = Vector{GenericMethod}()
@@ -499,10 +499,10 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
     println(rpad("Events inserted by ALNS", 40),eventsInsertedByALNS)
 
     if saveResults
-        fileName = outPutFileName*"Simulation_KPI_"*string(scenario.name)*".json"
-        if isdir(outPutFileName)
-            mkdir(outPutFileName)
+        if !isdir(outPutFileFolder)
+            mkpath(outPutFileFolder)
         end
+        fileName = outPutFileFolder*"/Simulation_KPI_"*string(scenario.name)*".json"
         writeOnlineKPIsToFile(fileName,scenario,finalSolution,requestBank,requestBankOffline,totalElapsedTime,averageResponseTime,eventsInsertedByALNS)
     end
     

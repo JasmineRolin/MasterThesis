@@ -78,7 +78,7 @@ function main()
         scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
         # Simulate scenario 
-        solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = false,saveResults = false,saveALNSResults = false, displayALNSPlots = false,outPutFileName= "tests/output/OnlineSimulation/"*n*"/")
+        solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = false,saveResults = true,saveALNSResults = false, displayALNSPlots = false,outPutFileFolder= "tests/output/OnlineSimulation/"*string(n))
 
         state = State(solution,scenario.onlineRequests[end],0)
         feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
