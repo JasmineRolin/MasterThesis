@@ -183,7 +183,7 @@ using alns, domain, utils, offlinesolution
 
 
 #@testset "Run all generated data sets " begin
-    n = 20
+    n = 100
     i = 1
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
     parametersFile = "tests/resources/Parameters.csv"
@@ -234,3 +234,8 @@ p1 = plot(pVals, title="p-values", label="p-values", xlabel="iteration", ylabel=
 p2 = plot(deltaVals, title="delta", label="delta", xlabel="iteration", ylabel="delta",size = (1500,1000))
 display(p1)
 display(p2)
+
+
+onlyAccepted = isAcceptedVec .& .!isNewBestVec .& .!isImprovedVec
+it = collect(1:length(isAcceptedVec))[onlyAccepted]
+p2 = plot(it,deltaVals[onlyAccepted], title="delta", label="delta", xlabel="iteration", ylabel="delta",size = (1500,1000))
