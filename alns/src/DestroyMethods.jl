@@ -358,7 +358,7 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
 
     # Update KPIs 
     schedule.totalDistance = totalDistance 
-    schedule.totalIdleTime = totalIdleTime
+    schedule.totalIdleTime = getTotalIdleTimeRoute(schedule.route) #totalIdleTime TODO fix delta calculation
     schedule.totalCost = totalCost
     schedule.totalTime = totalTime
 

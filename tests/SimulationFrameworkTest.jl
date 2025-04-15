@@ -58,7 +58,7 @@ end
 
 ==#
 
-#function main()
+function main()
     #n = parse(Int,ARGS[1])
     n = 100
     i = 3
@@ -66,7 +66,7 @@ end
     parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters2.json"
 
-    #for i in 1:10
+    for i in 1:10
         requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
         distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
         timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
@@ -81,13 +81,13 @@ end
         scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
         # Simulate scenario 
-        solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = false,saveALNSResults = false, displayALNSPlots = false,outPutFileName= "tests/output/OnlineSimulation/")
+        solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = false,saveResults = false,saveALNSResults = false, displayALNSPlots = false,outPutFileName= "tests/output/OnlineSimulation/")
 
         state = State(solution,scenario.onlineRequests[end],0)
         feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
         @test feasible == true
         @test msg == ""
-    #end
-#end
+    end
+end
 
-#main()
+main()
