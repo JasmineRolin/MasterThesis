@@ -1,0 +1,7 @@
+ScenarioName,TotalElapsedTime,AverageResponseTime,EventsInsertedByALNS,nTaxi,TotalCost,TotalDistance,TotalIdleTime,TotalIdleTimeWithCustomer,TotalRideTime,TotalDirectRideTime,TotalActualRideTime,nOfflineRequests,UnservicedOfflineRequest,nOnlineRequests,UnservicedOnlineRequests
+Konsentra_Data,26.94,2.45,0,1,1270.0,1803.185987942112,2725,0,4616,366,366,17,1,11,0
+Konsentra_06.02,246.6,8.81,12,0,707.8379556950986,3686.584245530757,4125,0,8180,840,870,42,0,28,0
+Konsentra_09.01,156.13,6.25,6,3,3590.0,3288.01475166724,4600,0,8560,637,637,37,1,25,2
+Konsentra_16.01,231.3,8.57,4,0,670.0,3713.344016995167,3846,0,7910,647,647,40,0,27,0
+Konsentra_23.01,289.66,9.34,9,3,3751.1111111111113,3947.069853566383,4039,0,8381,848,853,47,0,31,3
+Konsentra_30.01,270.2,9.01,3,1,1734.2252252252251,3738.00362747676,4115,0,8238,761,775,44,0,30,1
