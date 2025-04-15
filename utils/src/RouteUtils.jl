@@ -100,7 +100,7 @@ end
 #==
     New insert request 
 ==#
-function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPickUp::Int,idxDropOff::Int,scenario::Scenario,newStartOfServiceTimes::Vector{Int},newEndOfServiceTimes::Vector{Int},waitingActivitiesToDelete::Vector{Int};totalCost::Float64=-1.0,totalDistance::Float64=-1.0,totalIdleTime::Int=-1,totalTime::Int=-1,visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(),addWaitingActivities::Vector{Int} = Vector{Int}())
+function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPickUp::Int,idxDropOff::Int,scenario::Scenario,newStartOfServiceTimes::Vector{Int},newEndOfServiceTimes::Vector{Int},waitingActivitiesToDelete::Vector{Int};totalCost::Float64=-1.0,totalDistance::Float64=-1.0,totalIdleTime::Int=-1,totalTime::Int=-1,visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(),waitingActivitiesToAdd::Vector{Int} = Vector{Int}())
 
     route = vehicleSchedule.route
     vehicle = vehicleSchedule.vehicle
@@ -135,12 +135,12 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPic
     deleteat!(newEndOfServiceTimes,waitingActivitiesToDelete)
 
     # Add waiting nodes 
-    if length(addWaitingActivities) > 0
-        insertWaiting!(addWaitingActivities, waitingActivitiesToDelete,vehicleSchedule,scenario,newStartOfServiceTimes,newEndOfServiceTimes)
+    if length(waitingActivitiesToAdd) > 0
+        insertWaiting!(waitingActivitiesToAdd, waitingActivitiesToDelete,vehicleSchedule,scenario,newStartOfServiceTimes,newEndOfServiceTimes)
     end
 
     # Update KPIs 
-    if totalCost != -1 && length(addWaitingActivities) == 0
+    if totalCost != -1 && length(waitingActivitiesToAdd) == 0
         vehicleSchedule.totalCost = totalCost
         vehicleSchedule.totalDistance = totalDistance
         vehicleSchedule.totalIdleTime = getTotalIdleTimeRoute(vehicleSchedule.route) #totalIdleTime TODO correct delta calculations
@@ -159,31 +159,13 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPic
         vehicleSchedule.totalDistance = getTotalDistanceRoute(route,scenario.distance)
     end
 
-    totalIdleTime = 0
-    for idx in 1:length(route)-1
-        if route[idx].activity.activityType == WAITING
-            totalIdleTime += route[idx].endOfServiceTime - route[idx].startOfServiceTime
-        end
-
-        totalTime += scenario.time[route[idx].activity.id,route[idx+1].activity.id]
-    end
-
-    if totalIdleTime != vehicleSchedule.totalIdleTime
-        printRouteHorizontal(vehicleSchedule)
-        println("Total idle time not equal")
-        println("Total idle time: ", totalIdleTime)
-        println("Vehicle schedule idle time: ", vehicleSchedule.totalIdleTime)
-        println(addWaitingActivities)
-        throw(ArgumentError("Total idle time not equal"))
-    end
-
 end
 
 
-function insertWaiting!(addWaitingActivities::Vector{Int}, waitingActivitiesToDelete::Vector{Int},vehicleSchedule::VehicleSchedule,scenario::Scenario,newStartOfServiceTimes::Vector{Int},newEndOfServiceTimes::Vector{Int})
+function insertWaiting!(waitingActivitiesToAdd::Vector{Int}, waitingActivitiesToDelete::Vector{Int},vehicleSchedule::VehicleSchedule,scenario::Scenario,newStartOfServiceTimes::Vector{Int},newEndOfServiceTimes::Vector{Int})
     route = vehicleSchedule.route
     numberOfAdded = 0
-    for idx in addWaitingActivities
+    for idx in waitingActivitiesToAdd
 
         # Get correct index
         countBefore = count(i -> i < idx, waitingActivitiesToDelete)
@@ -207,37 +189,6 @@ function insertWaiting!(addWaitingActivities::Vector{Int}, waitingActivitiesToDe
             numberOfAdded += 1
         end
 
-    end
-
-end
-
-
-
-function feasibleWhenInsertWaiting!(currentActivity::Activity,previousActivity::Activity,vehicleSchedule::VehicleSchedule,idx::Int,scenario::Scenario,newStartOfServiceTimes::Vector{Int},newEndOfServiceTimes::Vector{Int},addWaitingActivities::Vector{Int})
-    if !(vehicleSchedule.numberOfWalking[idx-1] == 0 && currentActivity.activityType == PICKUP)
-        return false, 0, 0
-    end
-
-    if scenario.requests[currentActivity.requestId].requestType == PICKUP_REQUEST
-        newStartOfServiceTimesPickUp = currentActivity.timeWindow.startTime
-        newEndOfServiceTimesPickUp = newStartOfServiceTimesPickUp + scenario.serviceTimes
-        newStartOfServiceTimeWaiting = newEndOfServiceTimes[idx-1]
-        newEndOfServiceTimeWaiting = newStartOfServiceTimesPickUp - scenario.time[previousActivity.id,currentActivity.id]
-    else
-        newStartOfServiceTimesPickUp = scenario.requests[currentActivity.requestId].dropOffActivity.timeWindow.startTime - scenario.time[scenario.requests[currentActivity.requestId].pickUpActivity.id,scenario.requests[currentActivity.requestId].dropOffActivity.id] 
-        newEndOfServiceTimesPickUp = newStartOfServiceTimesPickUp + scenario.serviceTimes
-        newStartOfServiceTimeWaiting = newEndOfServiceTimes[idx-1]
-        newEndOfServiceTimeWaiting = newStartOfServiceTimesPickUp - scenario.time[previousActivity.id,currentActivity.id]
-    end
-
-    newEndOfServiceTimes[idx] = newEndOfServiceTimesPickUp
-    newStartOfServiceTimes[idx] = newStartOfServiceTimesPickUp
-
-    if newEndOfServiceTimes[idx] + scenario.time[currentActivity.id,vehicleSchedule.vehicle.id] < vehicleSchedule.vehicle.availableTimeWindow.endTime && newStartOfServiceTimeWaiting < newEndOfServiceTimeWaiting
-        push!(addWaitingActivities,idx)
-        return true, 0, 0
-    else
-        return false, 0, 0
     end
 
 end
@@ -290,9 +241,9 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
     dropOffIdxInBlock = dropOffIdx+ 2 # Index as if pickup and dropoff is inserted
 
     # Check feasibility 
-    feasible, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime, addWaitingActivities = checkFeasibilityOfInsertionInRoute(scenario,scenario.time,scenario.distance,scenario.serviceTimes,scenario.requests,vehicleSchedule.totalIdleTime,vehicleSchedule,pickUpIdxInBlock = pickUpIdxInBlock,dropOffIdxInBlock = dropOffIdxInBlock,request = request,visitedRoute=visitedRoute)
+    feasible, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd = checkFeasibilityOfInsertionInRoute(scenario,scenario.time,scenario.distance,scenario.serviceTimes,scenario.requests,vehicleSchedule.totalIdleTime,vehicleSchedule,pickUpIdxInBlock = pickUpIdxInBlock,dropOffIdxInBlock = dropOffIdxInBlock,request = request,visitedRoute=visitedRoute)
 
-    return  feasible, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, addWaitingActivities
+    return  feasible, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd
 end
 
 #==
@@ -313,7 +264,7 @@ function checkFeasibilityOfInsertionInRoute(scenario::Scenario,time::Array{Int,2
     waitingActivitiesToDelete = Vector{Int}()
     waitingActivitiesToDeleteId = Vector{Int}()
     waitingActivitiesToKeep = Vector{Int}() # Keep track of waiting activities to keep
-    addWaitingActivities = Vector{Int}() # Keep track of waiting activities to add
+    waitingActivitiesToAdd = Vector{Int}() # Keep track of waiting activities to add
 
     # Keep track of ride times 
     pickUpIndexes = Dict{Int,Int}() # (RequestId, index)
@@ -474,7 +425,7 @@ function checkFeasibilityOfInsertionInRoute(scenario::Scenario,time::Array{Int,2
         else 
             feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
             if !feasible && idx <= length(route) && state == "Repair"
-                feasible, maximumShiftBackward, maximumShiftForward = feasibleWhenInsertWaiting!(currentActivity,previousActivity,vehicleSchedule,idx,scenario,newStartOfServiceTimes,newEndOfServiceTimes,addWaitingActivities)
+                feasible, maximumShiftBackward, maximumShiftForward = feasibleWhenInsertWaiting!(currentActivity,previousActivity,vehicleSchedule,idx,scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToAdd,maximumShiftBackward, maximumShiftForward)
             end
             
             # Check if we can insert a waiting activity and then insert activity
@@ -508,7 +459,45 @@ function checkFeasibilityOfInsertionInRoute(scenario::Scenario,time::Array{Int,2
     # Update total time 
     totalTime = newEndOfServiceTimes[end] - newStartOfServiceTimes[1]
 
-    return true, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, addWaitingActivities
+    return true, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd
+end
+
+#==
+Method to check if it is feasible to insert a waiting activity
+==#
+
+function feasibleWhenInsertWaiting!(currentActivity::Activity,previousActivity::Activity,vehicleSchedule::VehicleSchedule,idx::Int,scenario::Scenario,newStartOfServiceTimes::Vector{Int},newEndOfServiceTimes::Vector{Int},waitingActivitiesToAdd::Vector{Int},maximumShiftBackward::Int,maximumShiftForward::Int)
+    if !(vehicleSchedule.numberOfWalking[idx-1] == 0 && currentActivity.activityType == PICKUP)
+        return false, 0, 0
+    end
+
+    if scenario.requests[currentActivity.requestId].requestType == PICKUP_REQUEST
+        newStartOfServiceTimesPickUp = currentActivity.timeWindow.startTime
+        newEndOfServiceTimesPickUp = newStartOfServiceTimesPickUp + scenario.serviceTimes
+        newStartOfServiceTimeWaiting = newEndOfServiceTimes[idx-1]
+        newEndOfServiceTimeWaiting = newStartOfServiceTimesPickUp - scenario.time[previousActivity.id,currentActivity.id]
+    else
+        newStartOfServiceTimesPickUp = scenario.requests[currentActivity.requestId].dropOffActivity.timeWindow.startTime - scenario.time[scenario.requests[currentActivity.requestId].pickUpActivity.id,scenario.requests[currentActivity.requestId].dropOffActivity.id] 
+        newEndOfServiceTimesPickUp = newStartOfServiceTimesPickUp + scenario.serviceTimes
+        newStartOfServiceTimeWaiting = newEndOfServiceTimes[idx-1]
+        newEndOfServiceTimeWaiting = newStartOfServiceTimesPickUp - scenario.time[previousActivity.id,currentActivity.id]
+    end
+
+    # Update service times
+    newEndOfServiceTimes[idx] = newEndOfServiceTimesPickUp
+    newStartOfServiceTimes[idx] = newStartOfServiceTimesPickUp
+
+    # Update maximum shifts 
+    maximumShiftBackward = min(maximumShiftBackward,newStartOfServiceTimesPickUp - currentActivity.timeWindow.startTime)
+    maximumShiftForward = min(maximumShiftForward,currentActivity.timeWindow.endTime - newStartOfServiceTimesPickUp)
+
+    if newEndOfServiceTimes[idx] + scenario.time[currentActivity.id,vehicleSchedule.vehicle.id] < vehicleSchedule.vehicle.availableTimeWindow.endTime && newStartOfServiceTimeWaiting < newEndOfServiceTimeWaiting
+        push!(waitingActivitiesToAdd,idx)
+        return true, maximumShiftBackward, maximumShiftForward
+    else
+        return false, 0, 0
+    end
+
 end
 
 

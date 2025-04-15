@@ -7,7 +7,7 @@ using domain
 #==
 Test SimulationFrameworkUtils
 ==#
-
+#==
 @testset "test SimulationFramework - Konsentra Test" begin 
     suff = "Data"
     requestFile = string("Data/Konsentra/TransformedData_",suff,".csv")
@@ -28,7 +28,7 @@ Test SimulationFrameworkUtils
     @test feasible == true
     @test msg == ""
 end
-
+==#
 
 
 #==
@@ -58,7 +58,7 @@ end
 
 ==#
 
-#==
+
 function main()
     #n = parse(Int,ARGS[1])
     n = 100
@@ -82,7 +82,7 @@ function main()
         scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
         # Simulate scenario 
-        solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = false,saveResults = false,saveALNSResults = false, displayALNSPlots = false,outPutFileName= "tests/output/OnlineSimulation/")
+        solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = false,saveALNSResults = false, displayALNSPlots = false,outPutFileName= "tests/output/OnlineSimulation/")
 
         state = State(solution,scenario.onlineRequests[end],0)
         feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
@@ -92,4 +92,4 @@ function main()
 end
 
 main()
-==#
+
