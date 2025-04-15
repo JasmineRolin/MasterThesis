@@ -466,6 +466,14 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
         if displayPlots
             display(createGantChartOfSolutionOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime))
             display(plotRoutes(solution,scenario,requestBank,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime)))
+        if displayPlots && event.id in requestBank
+            display(createGantChartOfSolutionAndEventOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event))
+            if event.id == 10
+                println("---HERE------")
+                println(visitedRoute)
+                println(checkFeasibilityOfInsertionAtPosition(event, solution.vehicleSchedules[3],3,3,scenario;visitedRoute))
+                throw("error")
+            end
         end
 
     end

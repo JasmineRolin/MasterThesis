@@ -45,6 +45,7 @@ export getCostOfRequest,getTaxiCostOfSolution
 include("RouteUtils.jl")
 using .RouteUtils
 export printRoute,printSimpleRoute, insertRequest!,checkFeasibilityOfInsertionAtPosition,printRouteHorizontal,printSolution,updateRoute!,checkFeasibilityOfInsertionInRoute
+export insertWaiting!, feasibleWhenInsertWaiting!
 
 #==
     Export from SolutionUtils module   
