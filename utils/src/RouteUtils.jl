@@ -130,11 +130,46 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPic
     # Update capacities
     updateCapacities!(vehicleSchedule,idxPickUp,idxDropOff,waitingActivitiesToDelete)
 
+    # Update newStartOfServiceTimes and newEndOfServiceTimes
+    deleteat!(newStartOfServiceTimes,waitingActivitiesToDelete) 
+    deleteat!(newEndOfServiceTimes,waitingActivitiesToDelete)
+
     # Add waiting nodes 
     if length(addWaitingActivities) > 0
         insertWaiting!(addWaitingActivities, waitingActivitiesToDelete,vehicleSchedule,scenario,newStartOfServiceTimes,newEndOfServiceTimes)
+        #Check that waiting nodes are inserted correctly with respect to time
+        activeTime = vehicleSchedule.activeTimeWindow.endTime - vehicleSchedule.activeTimeWindow.startTime
+        totalTime = 0
+        for idx in 1:length(route)-1
+            if route[idx].activity.activityType == WAITING
+                totalTime += route[idx].endOfServiceTime - route[idx].startOfServiceTime
+            elseif (route[idx].activity.activityType == PICKUP) || (route[idx].activity.activityType == DROPOFF)
+                totalTime += scenario.serviceTimes
+            end
+
+            totalTime += scenario.time[route[idx].activity.id,route[idx+1].activity.id]
+        end
+        if totalTime != activeTime
+            println("It failed here! Total time: $totalTime, Active time: $activeTime")
+        end
     end
-    
+
+    #Check that waiting nodes are inserted correctly with respect to time
+    activeTime = vehicleSchedule.activeTimeWindow.endTime - vehicleSchedule.activeTimeWindow.startTime
+    totalTime = 0
+    for idx in 1:length(route)-1
+        if route[idx].activity.activityType == WAITING
+            totalTime += route[idx].endOfServiceTime - route[idx].startOfServiceTime
+        elseif (route[idx].activity.activityType == PICKUP) || (route[idx].activity.activityType == DROPOFF)
+            totalTime += scenario.serviceTimes
+        end
+
+        totalTime += scenario.time[route[idx].activity.id,route[idx+1].activity.id]
+    end
+    if totalTime != activeTime
+        println("It failed here2! Total time: $totalTime, Active time: $activeTime")
+    end
+
     # Update KPIs 
     if totalCost != -1 && length(addWaitingActivities) == 0## Astrid hvad sker der her?
         vehicleSchedule.totalCost = totalCost
@@ -142,6 +177,7 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPic
         vehicleSchedule.totalIdleTime = totalIdleTime
         vehicleSchedule.totalTime = totalTime
     else
+        println("Went here")
         # Update idle time 
         vehicleSchedule.totalIdleTime = getTotalIdleTimeRoute(vehicleSchedule.route)
 
@@ -154,6 +190,31 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPic
         #Update total distance
         vehicleSchedule.totalDistance = getTotalDistanceRoute(route,scenario.distance)
     end
+
+    #Check that waiting nodes are inserted correctly with respect to time
+    activeTime = vehicleSchedule.activeTimeWindow.endTime - vehicleSchedule.activeTimeWindow.startTime
+    totalTime = 0
+    for idx in 1:length(route)-1
+        if route[idx].activity.activityType == WAITING
+            totalTime += route[idx].endOfServiceTime - route[idx].startOfServiceTime
+        elseif (route[idx].activity.activityType == PICKUP) || (route[idx].activity.activityType == DROPOFF)
+            totalTime += scenario.serviceTimes
+        end
+
+        totalTime += scenario.time[route[idx].activity.id,route[idx+1].activity.id]
+    end
+    if totalTime != activeTime
+        println("It failed here3! Total time: $totalTime, Active time: $activeTime")
+        println(vehicleSchedule.totalTime)
+        println(duration(vehicleSchedule.activeTimeWindow))
+    else
+        println("It did not fail?!??!")
+    end
+
+    if vehicleSchedule.totalTime != duration(vehicleSchedule.activeTimeWindow)
+        throw("It failed here!")
+    end
+
 end
 
 
@@ -161,6 +222,8 @@ function insertWaiting!(addWaitingActivities::Vector{Int}, waitingActivitiesToDe
     route = vehicleSchedule.route
     numberOfAdded = 0
     for idx in addWaitingActivities
+        println("The index is idx: $idx")
+        println(addWaitingActivities)
 
         # Get correct index
         countBefore = count(i -> i < idx, waitingActivitiesToDelete)
@@ -169,16 +232,46 @@ function insertWaiting!(addWaitingActivities::Vector{Int}, waitingActivitiesToDe
         # Insert waiting activity
         startOfServiceTime = newEndOfServiceTimes[corr_idx-1]
         endOfServiceTime = newStartOfServiceTimes[corr_idx] - scenario.time[route[corr_idx-1].activity.id,route[corr_idx].activity.id]
-        if startOfServiceTime < endOfServiceTime
+
+        if startOfServiceTime > endOfServiceTime
+            throw("It failed here4! Start of service time: $startOfServiceTime, End of service time: $endOfServiceTime")
+        end
+
+        if startOfServiceTime <= endOfServiceTime
+            println("WE DID INSERT")
+            println("Before insertion of waiting activity")
+            printRouteHorizontal(vehicleSchedule)
+            println(corr_idx)
+            println(newEndOfServiceTimes[corr_idx-1])
+            println(newStartOfServiceTimes[corr_idx])
+            println(scenario.time[route[corr_idx-1].activity.id,route[corr_idx].activity.id])
+            println(newStartOfServiceTimes)
+            println(newEndOfServiceTimes)
+            println(addWaitingActivities)
+            println(waitingActivitiesToDelete)
+            
             waitingActivity = Activity(route[corr_idx-1].activity.id,-1,WAITING,vehicleSchedule.route[corr_idx-1].activity.location,TimeWindow(startOfServiceTime,endOfServiceTime))
             insert!(vehicleSchedule.route,corr_idx,ActivityAssignment(waitingActivity,vehicleSchedule.vehicle,startOfServiceTime,endOfServiceTime))
             insert!(newStartOfServiceTimes,corr_idx,startOfServiceTime)
             insert!(newEndOfServiceTimes,corr_idx,endOfServiceTime)
             insert!(vehicleSchedule.numberOfWalking,corr_idx,vehicleSchedule.numberOfWalking[corr_idx-1])
 
+            println("After insertion of waiting activity")
+            printRouteHorizontal(vehicleSchedule)
+            println(corr_idx)
+            println(newEndOfServiceTimes[corr_idx-1])
+            println(newStartOfServiceTimes[corr_idx])
+            println(scenario.time[route[corr_idx-1].activity.id,route[corr_idx].activity.id])
+            println(newStartOfServiceTimes)
+            println(newEndOfServiceTimes)
+            println(addWaitingActivities)
+            println(waitingActivitiesToDelete)
+
             # Update KPIs
             vehicleSchedule.totalIdleTime += endOfServiceTime - startOfServiceTime
             vehicleSchedule.totalTime += endOfServiceTime - startOfServiceTime
+
+            numberOfAdded += 1
         end
 
     end
@@ -198,13 +291,13 @@ function feasibleWhenInsertWaiting!(currentActivity::Activity,previousActivity::
         newStartOfServiceTimeWaiting = newEndOfServiceTimes[idx-1]
         newEndOfServiceTimeWaiting = newStartOfServiceTimesPickUp - scenario.time[previousActivity.id,currentActivity.id]
     else
-        newStartOfServiceTimesPickUp = scenario.requests[currentActivity.requestId].dropOffActivity.timeWindow.startTime - scenario.time[scenario.requests[currentActivity.requestId].pickUpActivity.id,scenario.requests[currentActivity.requestId].dropOffActivity.id] - scenario.serviceTimes
+        newStartOfServiceTimesPickUp = scenario.requests[currentActivity.requestId].dropOffActivity.timeWindow.startTime - scenario.time[scenario.requests[currentActivity.requestId].pickUpActivity.id,scenario.requests[currentActivity.requestId].dropOffActivity.id] 
         newEndOfServiceTimesPickUp = newStartOfServiceTimesPickUp + scenario.serviceTimes
         newStartOfServiceTimeWaiting = newEndOfServiceTimes[idx-1]
         newEndOfServiceTimeWaiting = newStartOfServiceTimesPickUp - scenario.time[previousActivity.id,currentActivity.id]
     end
 
-    # Update
+    # Update Astrid Here
     newEndOfServiceTimes[idx] = newEndOfServiceTimesPickUp
     newStartOfServiceTimes[idx] = newStartOfServiceTimesPickUp
 
@@ -409,8 +502,12 @@ function checkFeasibilityOfInsertionInRoute(scenario::Scenario,time::Array{Int,2
                 push!(waitingActivitiesToDelete,idx)
                 push!(waitingActivitiesToDeleteId, currentActivity.id)
 
-                # Give the next activity the service times of the waiting activity
+                # Give the next activity the service times of the waiting activity Astrid Here
                 if idx != nActivities
+                    println("Remove waiting activity")
+                    println(newStartOfServiceTimes)
+                    println(newEndOfServiceTimes)
+                    println(idx)
                     newStartOfServiceTimes[idx+1] = newStartOfServiceTimes[idx]
                     newEndOfServiceTimes[idx+1] = newEndOfServiceTimes[idx]
                 end
@@ -492,6 +589,7 @@ end
  Method to check if activity can be inserted according to previous activity 
 ==# 
 function canActivityBeInserted(currentActivity::Activity,arrivalAtCurrentActivity::Int,maximumShiftBackward::Int,maximumShiftForward::Int,newStartOfServiceTimes::Vector{Int},newEndOfServiceTimes::Vector{Int},serviceTimes::Int,idx::Int)
+    # CHeck if we can insert it directly
     if currentActivity.timeWindow.startTime <= arrivalAtCurrentActivity <= currentActivity.timeWindow.endTime 
         # Service times for current activity 
         newStartOfServiceTimes[idx] = arrivalAtCurrentActivity

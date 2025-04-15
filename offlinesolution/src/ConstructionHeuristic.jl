@@ -22,7 +22,15 @@ function simpleConstruction(scenario::Scenario,requests::Vector{Request};visited
 
         # Insert request
         if closestVehicleIdx != -1
+            println("Construction")
+            println(newStartOfServiceTimes)
+            println(newEndOfServiceTimes)
             insertRequest!(request,solution.vehicleSchedules[closestVehicleIdx],idxPickUp,idxDropOff,scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete,totalCost=totalCost,totalDistance=totalDistance,totalIdleTime=totalIdleTime,totalTime=totalTime,visitedRoute=visitedRoute,addWaitingActivities=addWaitingActivities)
+            for (i,activity) in enumerate(solution.vehicleSchedules[closestVehicleIdx].route)
+                if newStartOfServiceTimes[i] < activity.activity.timeWindow.startTime || newStartOfServiceTimes[i] > activity.activity.timeWindow.endTime
+                    throw(ArgumentError("New start of service time is not within time window"))
+                end
+            end
         else
             append!(requestBank,request.id)
         end

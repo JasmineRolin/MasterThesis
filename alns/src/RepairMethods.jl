@@ -73,8 +73,37 @@ function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{
         state.currentSolution.totalIdleTime -= currentSolution.vehicleSchedules[overallBestVehicle].totalIdleTime
 
         # Insert request
+        println("Regret")
+        println(newStartOfServiceTimes)
+        println(newEndOfServiceTimes)
         insertRequest!(requests[bestRequest], currentSolution.vehicleSchedules[overallBestVehicle], pickUp, dropOff, scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete,totalCost = totalCost, totalDistance = totalDistance, totalIdleTime = totalIdleTime, totalTime = totalTime,visitedRoute=visitedRoute, addWaitingActivities=waitingActivitesToAdd)
         append!(state.assignedRequests, bestRequest)
+
+        for (i,activity) in enumerate(currentSolution.vehicleSchedules[overallBestVehicle].route)
+            if newStartOfServiceTimes[i] < activity.activity.timeWindow.startTime || newStartOfServiceTimes[i] > activity.activity.timeWindow.endTime
+                throw(ArgumentError("New start of service time is not within time window"))
+            end
+        end
+
+        #Check that waiting nodes are inserted correctly with respect to time
+        vehicleSchedule = currentSolution.vehicleSchedules[overallBestVehicle]
+        vehicle = vehicleSchedule.vehicle
+        route = vehicleSchedule.route
+        activeTime = vehicleSchedule.activeTimeWindow.endTime - vehicleSchedule.activeTimeWindow.startTime
+        totalTime = 0
+        for idx in 1:length(route)-1
+            if route[idx].activity.activityType == WAITING
+                totalTime += route[idx].endOfServiceTime - route[idx].startOfServiceTime
+            elseif (route[idx].activity.activityType == PICKUP) || (route[idx].activity.activityType == DROPOFF)
+                totalTime += scenario.serviceTimes
+            end
+    
+            totalTime += scenario.time[route[idx].activity.id,route[idx+1].activity.id]
+        end
+    
+        if totalTime != activeTime
+            throw("Fails in regretInsertion: totalTime != activeTime")
+        end
 
         # Update solution pro
         state.nAssignedRequests += 1
@@ -186,8 +215,41 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
             state.currentSolution.totalIdleTime -= currentSolution.vehicleSchedules[bestVehicle].totalIdleTime
 
             # Insert request
+            println("Before Greedy")
+            println(bestNewStartOfServiceTimes)
+            println(bestNewEndOfServiceTimes)
             insertRequest!(request, bestSchedule, bestPickUp, bestDropOff, scenario,bestNewStartOfServiceTimes,bestNewEndOfServiceTimes, bestWaitingActivitiesToDelete,totalCost = bestCost, totalDistance = bestDistance, totalIdleTime = bestIdleTime, totalTime = bestTime,visitedRoute=visitedRoute, addWaitingActivities=bestWaitingActivitiesToAdd)
             append!(state.assignedRequests, r)
+            println(" After Greedy")
+            println(bestNewStartOfServiceTimes)
+            println(bestNewEndOfServiceTimes)
+
+            for (i,activity) in enumerate(bestSchedule.route)
+                if bestNewStartOfServiceTimes[i] < activity.activity.timeWindow.startTime || bestNewStartOfServiceTimes[i] > activity.activity.timeWindow.endTime
+                    throw(ArgumentError("New start of service time is not within time window"))
+                end
+            end
+
+            #Check that waiting nodes are inserted correctly with respect to time
+            vehicleSchedule = bestSchedule
+            vehicle = vehicleSchedule.vehicle
+            route = vehicleSchedule.route
+            activeTime = vehicleSchedule.activeTimeWindow.endTime - vehicleSchedule.activeTimeWindow.startTime
+            totalTime = 0
+            for idx in 1:length(route)-1
+                if route[idx].activity.activityType == WAITING
+                    totalTime += route[idx].endOfServiceTime - route[idx].startOfServiceTime
+                elseif (route[idx].activity.activityType == PICKUP) || (route[idx].activity.activityType == DROPOFF)
+                    totalTime += scenario.serviceTimes
+                end
+        
+                totalTime += scenario.time[route[idx].activity.id,route[idx+1].activity.id]
+            end
+        
+            if totalTime != activeTime
+                throw("Fails in regretInsertion: totalTime != activeTime")
+            end
+
 
             # Update solution pro
             state.nAssignedRequests += 1
