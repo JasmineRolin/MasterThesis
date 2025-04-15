@@ -7,7 +7,7 @@ using domain
 #==
 Test SimulationFrameworkUtils
 ==#
-#==
+
 @testset "test SimulationFramework - Konsentra Test" begin 
     suff = "Data"
     requestFile = string("Data/Konsentra/TransformedData_",suff,".csv")
@@ -29,7 +29,7 @@ Test SimulationFrameworkUtils
     @test msg == ""
 end
 
-==#
+
 
 #==
 
@@ -58,6 +58,7 @@ end
 
 ==#
 
+#==
 function main()
     #n = parse(Int,ARGS[1])
     n = 100
@@ -91,3 +92,4 @@ function main()
 end
 
 main()
+==#
