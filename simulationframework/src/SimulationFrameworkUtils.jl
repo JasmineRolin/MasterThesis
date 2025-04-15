@@ -389,6 +389,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
     end
     if displayPlots
         display(createGantChartOfSolutionOnline(initialSolution,"Initial Solution"))
+        display(plotRoutes(initialSolution,scenario,initialRequestBank,"Initial Solution"))
     end
 
     # Run ALNS for offline solution 
@@ -408,6 +409,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
     end
     if displayPlots
         display(createGantChartOfSolutionOnline(solution,"Initial Solution after ALNS"))
+        display(plotRoutes(solution,scenario,requestBank,"Initial Solution after ALNS"))
     end
 
     # Initialize visited routes 
@@ -463,6 +465,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
         end
         if displayPlots
             display(createGantChartOfSolutionOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime))
+            display(plotRoutes(solution,scenario,requestBank,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime)))
         end
 
     end
@@ -482,6 +485,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
     end
     if displayPlots
         display(createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge"))
+        display(plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge"))
     end
 
 

@@ -182,41 +182,42 @@ end
 
 
 
-# @testset "Run all generated data sets " begin
-#     n = 100
-#     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
-#     parametersFile = "tests/resources/Parameters.csv"
-#     alnsParameters = "tests/resources/ALNSParameters2.json"
+#@testset "Run all generated data sets " begin
+    n = 100
+    i = 1
+    vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
+    parametersFile = "tests/resources/Parameters.csv"
+    alnsParameters = "tests/resources/ALNSParameters2.json"
 
-#     for i in 1:10
-#         requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
-#         distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
-#         timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
-#         scenarioName = string("Konsentra_Data_",n,"_",i)
+    #for i in 1:10
+        requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
+        distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
+        timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
+        scenarioName = string("Konsentra_Data_",n,"_",i)
         
-#         # Read instance 
-#         scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
+        # Read instance 
+        scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
         
-#         # Choose destroy methods
-#         destroyMethods = Vector{GenericMethod}()
-#         addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
-#         addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
-#         addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
+        # Choose destroy methods
+        destroyMethods = Vector{GenericMethod}()
+        addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
+        addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
+        addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
 
-#         # Choose repair methods
-#         repairMethods = Vector{GenericMethod}()
-#         addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
-#         addMethod!(repairMethods,"regretInsertion",regretInsertion)
+        # Choose repair methods
+        repairMethods = Vector{GenericMethod}()
+        addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
+        addMethod!(repairMethods,"regretInsertion",regretInsertion)
         
-#         initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
-#         finalSolution, specifications, KPIs = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",initialSolution=initialSolution,requestBank=requestBank,event = scenario.onlineRequests[end])
+        initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
+        finalSolution,requestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",initialSolution=initialSolution,requestBank=requestBank,event = scenario.onlineRequests[end])
 
-#         state = State(finalSolution,scenario.onlineRequests[end],0)
-#         feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-#         @test feasible == true
-#         @test msg == ""
-#         println(msg)
-#     end
+        state = State(finalSolution,scenario.onlineRequests[end],0)
+        feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+        @test feasible == true
+        @test msg == ""
+        println(msg)
+   # end
     
-#  end
+#end
  
