@@ -77,7 +77,7 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,solution::Solution,ev
         end
     end
     notServicedRequests = setdiff(considered, servicedPickUpActivities)
-    
+
     if totalNTaxi + nTaxi != length(notServicedRequests) 
         msg = "SOLUTION INFEASIBLE: Not all requests are serviced. Serviced: $(length(servicedPickUpActivities)), not serviced: $(length(notServicedRequests)), nTaxi: $(nTaxi)"
         return false, msg
@@ -278,7 +278,7 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
 
     if totalIdleTimeCheck != vehicleSchedule.totalIdleTime
         msg = "ROUTE INFEASIBLE: Total idle time $(vehicleSchedule.totalIdleTime) is incorrect. Calculated: $(totalIdleTimeCheck), vehicle: $(vehicle.id)"
-        return false, msg, Set{Int}()
+        return false, msg, Set{Int}(), Set{Int}()
     end
     
    

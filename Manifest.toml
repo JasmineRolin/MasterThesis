@@ -1992,7 +1992,7 @@ uuid = "1317d2d5-d96f-522e-a858-c73665f53c3e"
 version = "2022.0.0+0"
 
 [[deps.onlinesolution]]
-deps = ["alns", "domain", "utils"]
+deps = ["JSON", "Plots", "alns", "domain", "utils"]
 path = "onlinesolution"
 uuid = "8da48cfb-8db1-429c-aa5b-1e7864c4ef49"
 version = "0.1.0"

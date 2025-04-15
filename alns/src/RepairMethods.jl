@@ -64,7 +64,7 @@ function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{
         end
 
         # Find best insertion position
-        status, pickUp, dropOff, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime  = findBestFeasibleInsertionRoute(requests[bestRequest], currentSolution.vehicleSchedules[overallBestVehicle], scenario, visitedRoute=visitedRoute)
+        status, pickUp, dropOff, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitesToAdd  = findBestFeasibleInsertionRoute(requests[bestRequest], currentSolution.vehicleSchedules[overallBestVehicle], scenario, visitedRoute=visitedRoute)
 
         # Update solution pre
         state.currentSolution.totalCost -= currentSolution.vehicleSchedules[overallBestVehicle].totalCost
@@ -73,7 +73,7 @@ function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{
         state.currentSolution.totalIdleTime -= currentSolution.vehicleSchedules[overallBestVehicle].totalIdleTime
 
         # Insert request
-        insertRequest!(requests[bestRequest], currentSolution.vehicleSchedules[overallBestVehicle], pickUp, dropOff, scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete,totalCost = totalCost, totalDistance = totalDistance, totalIdleTime = totalIdleTime, totalTime = totalTime,visitedRoute=visitedRoute)
+        insertRequest!(requests[bestRequest], currentSolution.vehicleSchedules[overallBestVehicle], pickUp, dropOff, scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete,totalCost = totalCost, totalDistance = totalDistance, totalIdleTime = totalIdleTime, totalTime = totalTime,visitedRoute=visitedRoute, addWaitingActivities=waitingActivitesToAdd)
         append!(state.assignedRequests, bestRequest)
 
         # Update solution pro
@@ -152,13 +152,14 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
         bestNewStartOfServiceTimes = []
         bestNewEndOfServiceTimes = []
         bestWaitingActivitiesToDelete = []
+        bestWaitingActivitiesToAdd = []
         bestCost = typemax(Float64)
         bestDistance = typemax(Float64)
         bestIdleTime = typemax(Int)
         bestTime = typemax(Int)
 
         for (idx,schedule) in enumerate(currentSolution.vehicleSchedules)
-            status, pickUp, dropOff, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime = findBestFeasibleInsertionRoute(request, schedule, scenario, visitedRoute=visitedRoute)
+            status, pickUp, dropOff, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd = findBestFeasibleInsertionRoute(request, schedule, scenario, visitedRoute=visitedRoute)
             if status && totalCost < bestCost
                 bestSchedule = schedule
                 bestPickUp = pickUp
@@ -167,6 +168,7 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
                 bestNewStartOfServiceTimes = deepcopy(newStartOfServiceTimes)
                 bestNewEndOfServiceTimes = deepcopy(newEndOfServiceTimes)
                 bestWaitingActivitiesToDelete = deepcopy(waitingActivitiesToDelete)
+                bestWaitingActivitiesToAdd = deepcopy(waitingActivitiesToAdd)
                 bestCost = totalCost
                 bestDistance = totalDistance
                 bestIdleTime = totalIdleTime
@@ -184,7 +186,7 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
             state.currentSolution.totalIdleTime -= currentSolution.vehicleSchedules[bestVehicle].totalIdleTime
 
             # Insert request
-            insertRequest!(request, bestSchedule, bestPickUp, bestDropOff, scenario,bestNewStartOfServiceTimes,bestNewEndOfServiceTimes, bestWaitingActivitiesToDelete,totalCost = bestCost, totalDistance = bestDistance, totalIdleTime = bestIdleTime, totalTime = bestTime,visitedRoute=visitedRoute)
+            insertRequest!(request, bestSchedule, bestPickUp, bestDropOff, scenario,bestNewStartOfServiceTimes,bestNewEndOfServiceTimes, bestWaitingActivitiesToDelete,totalCost = bestCost, totalDistance = bestDistance, totalIdleTime = bestIdleTime, totalTime = bestTime,visitedRoute=visitedRoute, addWaitingActivities=bestWaitingActivitiesToAdd)
             append!(state.assignedRequests, r)
 
             # Update solution pro
@@ -211,7 +213,8 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
     bestDropOff = -1
     bestNewStartOfServiceTimes = []
     bestNewEndOfServiceTimes = []
-    bestWaitingActivitiesToDelete = []  
+    bestWaitingActivitiesToDelete = [] 
+    bestWaitingActivitiesToAdd = []  
     bestCost = typemax(Float64)
     bestDistance = typemax(Float64)
     bestIdleTime = typemax(Int)
@@ -221,8 +224,9 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
 
     for i in 1:length(route)-1
         for j in i:length(route)-1
-            feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,i,j,scenario,visitedRoute=visitedRoute)
-    
+            feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,i,j,scenario,visitedRoute=visitedRoute)
+            #println("Repair: ", waitingActivitiesToAdd)
+
             if feasible
                 if totalCost < bestCost
                     bestPickUp = i
@@ -230,6 +234,7 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
                     bestNewStartOfServiceTimes = deepcopy(newStartOfServiceTimes)
                     bestNewEndOfServiceTimes = deepcopy(newEndOfServiceTimes)
                     bestWaitingActivitiesToDelete = deepcopy(waitingActivitiesToDelete)
+                    bestWaitingActivitiesToAdd = deepcopy(waitingActivitiesToAdd)
                     bestCost = totalCost
                     bestDistance = totalDistance
                     bestIdleTime = totalIdleTime
@@ -239,7 +244,7 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
         end
     end
 
-    return bestCost < typemax(Float64), bestPickUp, bestDropOff, bestNewStartOfServiceTimes, bestNewEndOfServiceTimes,bestWaitingActivitiesToDelete, bestCost, bestDistance, bestIdleTime, bestTime
+    return bestCost < typemax(Float64), bestPickUp, bestDropOff, bestNewStartOfServiceTimes, bestNewEndOfServiceTimes,bestWaitingActivitiesToDelete, bestCost, bestDistance, bestIdleTime, bestTime, bestWaitingActivitiesToAdd
 
 end
 
