@@ -324,7 +324,7 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
     end
 
     # Repair route 
-    feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime, addWaitingActivities = checkFeasibilityOfInsertionInRoute(scenario,time,distance,serviceTimes,requests,-1,schedule,visitedRoute = visitedRoute,state = "Destroy")
+    feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd = checkFeasibilityOfInsertionInRoute(scenario,time,distance,serviceTimes,requests,-1,schedule,visitedRoute = visitedRoute,state = "Destroy")
 
     # Shift route
     if feasible 
