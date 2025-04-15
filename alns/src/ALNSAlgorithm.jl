@@ -8,6 +8,8 @@ export ALNS
  Module that contains the ALNS algorithm
 ==#
 
+global epsilon = 0.0001
+
 #==
  Method to run ALNS algorithm
 ==#
@@ -38,6 +40,14 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
     newSolutions = 0
     numberOfIterationsSinceLastImprovement = 0
     startTime = time()
+
+    # TODO: remove only for testing
+    pVals = []
+    deltaVals = []
+    countAccepted = 0
+    isImprovedVec = []
+    isNewBestVec = []
+    isAcceptedVec = []
 
     # Iterate while time limit is not reached 
     while !(termination(startTime,timeLimit) || numberOfIterationsSinceLastImprovement > maxNumberOfIterationsWithoutImprovement)
@@ -75,7 +85,12 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
             acceptOnlinePhase = true
         end
 
-        if acceptOnlinePhase && !seenBefore && (trialState.currentSolution.totalCost < currentState.currentSolution.totalCost)
+        # Check if solution is accepted
+        acceptBool,p,delta = accept(temperature,trialState.currentSolution.totalCost - currentState.currentSolution.totalCost)
+        push!(pVals,p) # TODO: remove only for testing
+        push!(deltaVals,delta) # TODO: remove only for testing 
+
+        if acceptOnlinePhase && !seenBefore && (trialState.currentSolution.totalCost < currentState.currentSolution.totalCost - epsilon)
             isImproved = true
             isAccepted = true
             currentState.currentSolution = copySolution(trialState.currentSolution)
@@ -85,14 +100,14 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
 
 
             # Check if new best solution
-            if trialState.currentSolution.totalCost < currentState.bestSolution.totalCost
+            if trialState.currentSolution.totalCost < currentState.bestSolution.totalCost - epsilon
                 isNewBest = true
                 currentState.bestSolution = copySolution(trialState.currentSolution)
                 currentState.bestRequestBank = deepcopy(trialState.requestBank)
 
             end
-        # Check if solution is accepted
-        elseif acceptOnlinePhase && !seenBefore && (accept(temperature,trialState.currentSolution.totalCost - currentState.currentSolution.totalCost))
+        elseif acceptOnlinePhase && !seenBefore && acceptBool
+            countAccepted += 1 # TODO: remove 
             isAccepted = true
             currentState.currentSolution = copySolution(trialState.currentSolution)
             currentState.requestBank = deepcopy(trialState.requestBank)
@@ -151,6 +166,11 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
             numberOfIterationsSinceLastImprovement += 1
         end
 
+        # TODO: remove 
+        push!(isImprovedVec,isImproved)
+        push!(isNewBestVec,isNewBest)
+        push!(isAcceptedVec,isAccepted)
+
     end
 
     # Close file 
@@ -166,7 +186,8 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
         throw(msg) 
     end
 
-    return currentState.bestSolution, currentState.bestRequestBank
+    println("NUMBER ACCEPTED NO IMPROVEMENT: ", countAccepted) # TODO: remove
+    return currentState.bestSolution, currentState.bestRequestBank, pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec # TODO: remove
 end 
 
 end

@@ -108,6 +108,9 @@ function createCostPlot(df::DataFrame, scenarioName::String)
     # Filter isImproved points to exclude isNewBest
     onlyImproved = isImproved .& .!isNewBest
 
+    # Filter only accepted 
+    onlyAccepted = isAccepted .& .!isNewBest .& .!isImproved
+
     # Define a 2-row layout
     l = @layout [a; b]
 
@@ -122,7 +125,7 @@ function createCostPlot(df::DataFrame, scenarioName::String)
               title=string(scenarioName, " - ALNS Total Cost Over Iterations"),
               legend=:topright)
 
-    scatter!(p1, iterations[isAccepted], total_cost[isAccepted],
+    scatter!(p1, iterations[onlyAccepted], total_cost[onlyAccepted],
              markershape=:circle, color=:yellow, label="Accepted",markerstrokewidth=0)
 
     scatter!(p1, iterations[onlyImproved], total_cost[onlyImproved],

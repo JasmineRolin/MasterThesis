@@ -187,7 +187,7 @@ using alns, domain, utils, offlinesolution
     i = 1
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
     parametersFile = "tests/resources/Parameters.csv"
-    alnsParameters = "tests/resources/ALNSParameters2.json"
+    alnsParameters = "tests/resources/ALNSParameters3.json"
 
     #for i in 1:10
         requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
@@ -210,7 +210,7 @@ using alns, domain, utils, offlinesolution
         addMethod!(repairMethods,"regretInsertion",regretInsertion)
         
         initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
-        finalSolution,requestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters3.json",initialSolution=initialSolution,requestBank=requestBank,event = scenario.onlineRequests[end],displayPlots=true,saveResults=true,stage="Offline")
+        finalSolution,requestBank,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank,event = scenario.onlineRequests[end],displayPlots=true,saveResults=true,stage="Offline")
 
         state = State(finalSolution,scenario.onlineRequests[end],0)
         feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
@@ -228,4 +228,9 @@ using alns, domain, utils, offlinesolution
    # end
     
 #end
- 
+
+using Plots
+p1 = plot(pVals, title="p-values", label="p-values", xlabel="iteration", ylabel="p-value",size = (1500,1000))
+p2 = plot(deltaVals, title="delta", label="delta", xlabel="iteration", ylabel="delta",size = (1500,1000))
+display(p1)
+display(p2)
