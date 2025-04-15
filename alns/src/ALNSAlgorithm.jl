@@ -21,7 +21,7 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
 
     if saveOutPut
         outputFile = open(fileName, "w")
-        write(outputFile,"Iteration,TotalCost,IsAccepted,IsImproved,IsNewBest,Temperature,DM,RM,",join(["DW$i" for i in 1:nDestroy], ","),",", join(["RW$i" for i in 1:nRepair], ","), "\n")
+        write(outputFile,"Iteration,TotalCost,nRequestBank,IsAccepted,IsImproved,IsNewBest,Temperature,DM,RM,",join(["DW$i" for i in 1:nDestroy], ","),",", join(["RW$i" for i in 1:nRepair], ","),join(["nD$i" for i in 1:nDestroy], ","),",", join(["nR$i" for i in 1:nRepair], ","), "\n")
     end
 
     # Unpack parameters
@@ -113,6 +113,7 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
         if saveOutPut
             write(outputFile, string(iteration), ",", 
                     string(trialState.currentSolution.totalCost), ",", 
+                    string(length(trialState.requestBank)), ",",
                     string(isAccepted), ",", 
                     string(isImproved), ",", 
                     string(isNewBest), ",", 
@@ -120,7 +121,9 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
                     string(configuration.destroyMethods[destroyIdx].name), ",",
                     string(configuration.repairMethods[repairIdx].name), ",",
                     join(string.(currentState.destroyWeights), ","), ",", 
-                    join(string.(currentState.repairWeights), ","), "\n")
+                    join(string.(currentState.repairWeights), ","), 
+                    join(string.(currentState.destroyNumberOfUses), ","), ",", 
+                    join(string.(currentState.repairNumberOfUses), ","), "\n")
         end
 
         # Check solution 
