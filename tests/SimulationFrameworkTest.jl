@@ -91,4 +91,4 @@ CSV.write(outPutFolder*"/results.csv", dfResults)
 
 
 
-createGantChartOfRequestsAndVehicles(scenario.vehicles,scenario.requests,requestBank,"test")
+#createGantChartOfRequestsAndVehicles(scenario.vehicles,scenario.requests,requestBank,"test")
