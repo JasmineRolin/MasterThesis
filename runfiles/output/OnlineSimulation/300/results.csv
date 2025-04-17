@@ -1,0 +1,2 @@
+ScenarioName,TotalElapsedTime,AverageResponseTime,EventsInsertedByALNS,nTaxi,TotalCost,TotalDistance,TotalIdleTime,TotalIdleTimeWithCustomer,TotalRideTime,TotalDirectRideTime,TotalActualRideTime,nOfflineRequests,UnservicedOfflineRequest,nOnlineRequests,UnservicedOnlineRequests,AveragePercentRideSharing
+Gen_Data_300_5,1202.8,10.02,8,56,58721.97469825232,17012.708418634178,11386,6,29667,10161,11510,180,32,120,24,13.239
