@@ -11,7 +11,7 @@ using CSV
 ==# 
 function main()
     n = parse(Int,ARGS[1])
-   # n = 20
+    #n = 300
     #i = 9
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
     parametersFile = "tests/resources/Parameters.csv"
