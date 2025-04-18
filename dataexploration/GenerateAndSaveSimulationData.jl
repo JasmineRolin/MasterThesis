@@ -6,9 +6,9 @@ using StatsBase
 using domain, utils
 using Plots.PlotMeasures
 
-include("TransformKonsentraData.jl")
-include("GenerateLargeVehiclesKonsentra.jl")
-include("MakeAndSaveDistanceAndTimeMatrix.jl")
+#include("TransformKonsentraData.jl")
+#include("GenerateLargeVehiclesKonsentra.jl")
+#include("MakeAndSaveDistanceAndTimeMatrix.jl")
 
 global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
@@ -167,31 +167,6 @@ function getRequestTimeDistribution(requestTimePickUp::Vector{Int}, requestTimeD
 end
 
 #==
-# Function to get disance between location grid
-==#
-function compute_distance_matrix(x_range::Vector{Float64}, y_range::Vector{Float64})
-    n_x = length(x_range)
-    n_y = length(y_range)
-    n = n_x * n_y
-
-    # Create coordinate list of all (lon, lat) pairs from the KDE grid
-    coordinates = [(x_range[i], y_range[j]) for i in 1:n_x for j in 1:n_y]
-
-    D = zeros(Float64, n, n)
-    for i in 1:n
-        lon1, lat1 = coordinates[i]
-        for j in i:n
-            lon2, lat2 = coordinates[j]
-            d = haversine_distance(lat1, lon1, lat2, lon2)[1]
-            D[i, j] = d
-            D[j, i] = d
-        end
-    end
-
-    return D
-end
-
-#==
 # Function to save all simulation data
 ==#
 function run_and_save_simulation(data_files::Vector{String}, output_dir::String, bandwidth_factor_location, bandwidth_factor_time, time_range)
@@ -201,37 +176,37 @@ function run_and_save_simulation(data_files::Vector{String}, output_dir::String,
     location_matrix, requestTimePickUp, requestTimeDropOff,requests, distanceDriven = getOldData(data_files)
 
     # Find time and location distributions
-    #probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff = getRequestTimeDistribution(requestTimePickUp, requestTimeDropOff, time_range,bandwidth_factor=bandwidth_factor_time)
-    #probabilities_location, density_grid, x_range, y_range = getLocationDistribution(location_matrix;bandwidth_factor = bandwidth_factor_location)
+    probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff = getRequestTimeDistribution(requestTimePickUp, requestTimeDropOff, time_range,bandwidth_factor=bandwidth_factor_time)
+    probabilities_location, density_grid, x_range, y_range = getLocationDistribution(location_matrix;bandwidth_factor = bandwidth_factor_location)
     probabilities_distance, density_distance, distance_range = getDistanceDistribution(distanceDriven)
 
     # Save everything
-    #CSV.write(joinpath(output_dir, "location_matrix.csv"), DataFrame(longitude=location_matrix[:,1], latitude=location_matrix[:,2]))
-    #CSV.write(joinpath(output_dir, "request_time_pickup.csv"), DataFrame(time=requestTimePickUp))
-    #CSV.write(joinpath(output_dir, "request_time_dropoff.csv"), DataFrame(time=requestTimeDropOff))
+    CSV.write(joinpath(output_dir, "location_matrix.csv"), DataFrame(longitude=location_matrix[:,1], latitude=location_matrix[:,2]))
+    CSV.write(joinpath(output_dir, "request_time_pickup.csv"), DataFrame(time=requestTimePickUp))
+    CSV.write(joinpath(output_dir, "request_time_dropoff.csv"), DataFrame(time=requestTimeDropOff))
 
-    #CSV.write(joinpath(output_dir, "requests.csv"), DataFrame(
-    #    request_type = [r[1] for r in requests],
-    #    pickup_latitude = [r[2] for r in requests],
-    #    pickup_longitude = [r[3] for r in requests],
-    #    dropoff_latitude = [r[4] for r in requests],
-    #    dropoff_longitude = [r[5] for r in requests]
-    #))
+    CSV.write(joinpath(output_dir, "requests.csv"), DataFrame(
+        request_type = [r[1] for r in requests],
+        pickup_latitude = [r[2] for r in requests],
+        pickup_longitude = [r[3] for r in requests],
+        dropoff_latitude = [r[4] for r in requests],
+        dropoff_longitude = [r[5] for r in requests]
+    ))
 
     CSV.write(joinpath(output_dir, "distance_driven.csv"), DataFrame(distance=distanceDriven))
     CSV.write(joinpath(output_dir, "distance_distribution.csv"), DataFrame(probability=probabilities_distance))
     CSV.write(joinpath(output_dir, "density_distance.csv"), DataFrame(density=density_distance))
     CSV.write(joinpath(output_dir, "distance_range.csv"), DataFrame(distance=distance_range))
 
-    #CSV.write(joinpath(output_dir, "pickup_time_distribution.csv"), DataFrame(probability=probabilities_pickUpTime))
-    #CSV.write(joinpath(output_dir, "density_pickup_time.csv"), DataFrame(density=density_pickUp))
-    #CSV.write(joinpath(output_dir, "dropoff_time_distribution.csv"), DataFrame(probability=probabilities_dropOffTime))
-    #CSV.write(joinpath(output_dir, "density_dropoff_time.csv"), DataFrame(density=density_dropOff))
+    CSV.write(joinpath(output_dir, "pickup_time_distribution.csv"), DataFrame(probability=probabilities_pickUpTime))
+    CSV.write(joinpath(output_dir, "density_pickup_time.csv"), DataFrame(density=density_pickUp))
+    CSV.write(joinpath(output_dir, "dropoff_time_distribution.csv"), DataFrame(probability=probabilities_dropOffTime))
+    CSV.write(joinpath(output_dir, "density_dropoff_time.csv"), DataFrame(density=density_dropOff))
 
-    #CSV.write(joinpath(output_dir, "x_range.csv"), DataFrame(x=x_range))
-    #CSV.write(joinpath(output_dir, "y_range.csv"), DataFrame(y=y_range))
-    #CSV.write(joinpath(output_dir, "density_grid.csv"), DataFrame(density=vec(density_grid)))
-    #CSV.write(joinpath(output_dir, "probabilities_location.csv"), DataFrame(probability=probabilities_location)))
+    CSV.write(joinpath(output_dir, "x_range.csv"), DataFrame(x=x_range))
+    CSV.write(joinpath(output_dir, "y_range.csv"), DataFrame(y=y_range))
+    CSV.write(joinpath(output_dir, "density_grid.csv"), DataFrame(density=vec(density_grid)))
+    CSV.write(joinpath(output_dir, "probabilities_location.csv"), DataFrame(probability=probabilities_location))
 
     println("✅ All simulation outputs saved to $output_dir")
 end
