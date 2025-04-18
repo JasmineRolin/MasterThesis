@@ -196,5 +196,16 @@ function accept(tempature::Float64,delta::Float64)
     return false,p,delta
 end
 
+function accept(timeLimit::Float64,startTime::Float64,trialCost::Float64,bestCost::Float64)
+    
+    startThreshold = 1
+    delta = abs(bestCost - trialCost)
+    elapsedTime = time() - startTime
+    if delta/bestCost < startThreshold*(1-elapsedTime/timeLimit)
+        return true,startThreshold*(1-elapsedTime/timeLimit),delta/bestCost 
+    end
+
+    return false,startThreshold*(1-elapsedTime/timeLimit),delta/bestCost 
+end
 
 end
