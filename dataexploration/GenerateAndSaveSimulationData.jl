@@ -120,18 +120,23 @@ function getDistanceDistribution(distanceDriven::Vector{Float64}; bandwidth_fact
     # Compute KDE with Silverman’s bandwidth
     kde_distance = KernelDensity.kde(distanceDriven; bandwidth=bw_distance)
 
-    # Compute density values
-    density_values_distance = [pdf(kde_distance, d) for d in distanceDriven]
+    # After collecting the range:
+    distance_range = collect(kde_distance.x)
+    density_values_distance = kde_distance.density
+
+    # Filter out negative distances
+    valid_idxs = findall(x -> x ≥ 0, distance_range)
+
+    # Apply the filter
+    distance_range = distance_range[valid_idxs]
+    density_values_distance = density_values_distance[valid_idxs]
 
     # Avoid zero probabilities
     epsilon = 0.0001
     density_values_distance .= density_values_distance .+ epsilon
 
-    # Normalize to get probability distributions
+    # Normalize to get probabilities
     probabilities_distance = density_values_distance / sum(density_values_distance)
-
-    # Collect ranges for plotting
-    distance_range = collect(kde_distance.x)
 
     return probabilities_distance, density_values_distance, distance_range
 end
@@ -197,11 +202,8 @@ function run_and_save_simulation(data_files::Vector{String}, output_dir::String,
 
     # Find time and location distributions
     #probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff = getRequestTimeDistribution(requestTimePickUp, requestTimeDropOff, time_range,bandwidth_factor=bandwidth_factor_time)
-    probabilities_location, density_grid, x_range, y_range = getLocationDistribution(location_matrix;bandwidth_factor = bandwidth_factor_location)
-    #probabilities_distance, density_distance, distance_range = getDistanceDistribution(distanceDriven)
-
-    # Compute distance matrix
-    D = compute_distance_matrix(x_range, y_range)
+    #probabilities_location, density_grid, x_range, y_range = getLocationDistribution(location_matrix;bandwidth_factor = bandwidth_factor_location)
+    probabilities_distance, density_distance, distance_range = getDistanceDistribution(distanceDriven)
 
     # Save everything
     #CSV.write(joinpath(output_dir, "location_matrix.csv"), DataFrame(longitude=location_matrix[:,1], latitude=location_matrix[:,2]))
@@ -216,10 +218,10 @@ function run_and_save_simulation(data_files::Vector{String}, output_dir::String,
     #    dropoff_longitude = [r[5] for r in requests]
     #))
 
-    #CSV.write(joinpath(output_dir, "distance_driven.csv"), DataFrame(distance=distanceDriven))
-    #CSV.write(joinpath(output_dir, "distance_distribution.csv"), DataFrame(probability=probabilities_distance))
-    #CSV.write(joinpath(output_dir, "density_distance.csv"), DataFrame(density=density_distance))
-    #CSV.write(joinpath(output_dir, "distance_range.csv"), DataFrame(distance=distance_range))
+    CSV.write(joinpath(output_dir, "distance_driven.csv"), DataFrame(distance=distanceDriven))
+    CSV.write(joinpath(output_dir, "distance_distribution.csv"), DataFrame(probability=probabilities_distance))
+    CSV.write(joinpath(output_dir, "density_distance.csv"), DataFrame(density=density_distance))
+    CSV.write(joinpath(output_dir, "distance_range.csv"), DataFrame(distance=distance_range))
 
     #CSV.write(joinpath(output_dir, "pickup_time_distribution.csv"), DataFrame(probability=probabilities_pickUpTime))
     #CSV.write(joinpath(output_dir, "density_pickup_time.csv"), DataFrame(density=density_pickUp))
@@ -229,9 +231,7 @@ function run_and_save_simulation(data_files::Vector{String}, output_dir::String,
     #CSV.write(joinpath(output_dir, "x_range.csv"), DataFrame(x=x_range))
     #CSV.write(joinpath(output_dir, "y_range.csv"), DataFrame(y=y_range))
     #CSV.write(joinpath(output_dir, "density_grid.csv"), DataFrame(density=vec(density_grid)))
-    #CSV.write(joinpath(output_dir, "probabilities_location.csv"), DataFrame(probability=probabilities_location))
-
-    CSV.write(joinpath(output_dir, "distance_matrix.csv"), DataFrame(D,:auto))
+    #CSV.write(joinpath(output_dir, "probabilities_location.csv"), DataFrame(probability=probabilities_location)))
 
     println("✅ All simulation outputs saved to $output_dir")
 end
@@ -253,4 +253,4 @@ bandwidth_factor_location = 1.25
 # Set probabilities and time range
 time_range = collect(range(6*60,23*60))
 
-run_and_save_simulation(oldDataList, "Data/Simulation data/", bandwidth_factor_location, bandwidth_factor_time,time_range)
+#run_and_save_simulation(oldDataList, "Data/Simulation data/", bandwidth_factor_location, bandwidth_factor_time,time_range)

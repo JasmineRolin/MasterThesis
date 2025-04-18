@@ -6,15 +6,16 @@ using StatsBase
 using domain, utils
 using Plots.PlotMeasures
 
-include("TransformKonsentraData.jl")
-include("GenerateLargeVehiclesKonsentra.jl")
-include("MakeAndSaveDistanceAndTimeMatrix.jl")
+#include("TransformKonsentraData.jl")
+#include("GenerateLargeVehiclesKonsentra.jl")
+#include("MakeAndSaveDistanceAndTimeMatrix.jl")
+include("GenerateAndSaveSimulationData.jl")
 
 global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 2*60 # 2 hours buffer
 global nData = 1
-global nRequest = 20 
+global nRequest = 300 
 global MAX_DELAY = 15 # TODO Astrid I just put something
 
 
@@ -46,7 +47,6 @@ function load_simulation_data(input_dir::String)
     density_grid = reshape(density_flat, length(y_range), length(x_range))'
 
     probabilities_location = CSV.read(joinpath(input_dir, "probabilities_location.csv"), DataFrame).probability
-    D = Matrix(CSV.read(joinpath(input_dir, "distance_matrix.csv"), DataFrame))
 
     println("✅ All simulation data loaded from $input_dir")
 
@@ -67,12 +67,32 @@ function load_simulation_data(input_dir::String)
         requestTimeDropOff,
         requests,
         distanceDriven,
-        D
     )
 end
 
 
-function getNewLocations(probabilities::Vector{Float64},x_range::Vector{Float64},y_range::Vector{Float64}, distance_range::Vector{Float64},probabilities_distance::Vector{Float64},D::Matrix{Float64}; tolerance_km::Float64 = 1.0)
+function find_dropoff(pickup::Tuple{Float64, Float64}, grid_coords::Vector{Tuple{Float64, Float64}},distance_sample::Float64,probabilities::Vector{Float64},x_range::Vector{Float64},y_range::Vector{Float64};tolerance_km::Float64 = 1.0)
+
+    # Compute distances from pickup to all grid coordinates
+    distances = [haversine_distance(pickup[2], pickup[1], lat, lon)[1] for (lon, lat) in grid_coords]
+
+    # Find grid indices within tolerance
+    candidate_idxs = findall(abs.(distances .- distance_sample) .<= tolerance_km)
+
+    if isempty(candidate_idxs)
+    error("No candidates found within tolerance range of sampled distance.")
+    end
+
+    # Sample one index based on probabilities
+    probability_distances = [probabilities[i] for i in candidate_idxs]
+    probabilities_sum = sum(probability_distances)
+    probabilities_distance_norm = [p / probabilities_sum for p in probability_distances]
+    selected_idx = sample(candidate_idxs, Weights(probabilities_distance_norm))
+
+    return grid_coords[selected_idx][1], grid_coords[selected_idx][2] 
+end
+
+function getNewLocations(probabilities::Vector{Float64},x_range::Vector{Float64},y_range::Vector{Float64}, distance_range::Vector{Float64},probabilities_distance::Vector{Float64}; tolerance_km::Float64 = 1.0)
     n = length(probabilities)
     ny = length(y_range)
     nd = length(distance_range)
@@ -87,17 +107,9 @@ function getNewLocations(probabilities::Vector{Float64},x_range::Vector{Float64}
     sampled_distance = distance_range[distance_idx]
     sampled_distance = max(sampled_distance, 0.1) 
 
-    # Find valid drop-offs (within ± tolerance)
-    candidate_indices = findall(i -> abs(D[pickup_idx, i] - sampled_distance) ≤ tolerance_km, 1:n)
-
-    if isempty(candidate_indices)
-        error("No valid drop-off locations within tolerance for sampled distance.")
-    end
-
-    # Sample a drop-off from the valid ones (weighted)
-    dropoff_idx = sample(candidate_indices, Weights(probabilities[candidate_indices]))
-    dropoff_x = x_range[(dropoff_idx - 1) ÷ ny + 1]
-    dropoff_y = y_range[(dropoff_idx - 1) % ny + 1]
+    # Find drop off
+    grid_coords = [(x, y) for x in x_range for y in y_range]
+    dropoff_x, dropoff_y = find_dropoff((pickup_x, pickup_y), grid_coords, sampled_distance, probabilities, x_range, y_range; tolerance_km=tolerance_km)
 
     return [(pickup_x, pickup_y), (dropoff_x, dropoff_y)]
 end
@@ -110,39 +122,9 @@ function getNewLocations(probabilities::Vector{Float64},x_range::Vector{Float64}
 end
 
 #==
-# Get request time distribution
-==#
-function getRequestTimeDistribution(requestTimePickUp::Vector{Int}, requestTimeDropOff::Vector{Int}, time_range::Vector{Int}; bandwidth_factor=1.0)
-    # Compute Silverman’s bandwidth and apply scaling
-    bw_pickup = bandwidth_factor * silverman_bandwidth(requestTimePickUp)
-    bw_dropoff = bandwidth_factor * silverman_bandwidth(requestTimeDropOff)
-
-    # Compute KDE with Silverman’s bandwidth
-    kde_pickUpTime = KernelDensity.kde(requestTimePickUp; bandwidth=bw_pickup)
-    kde_dropOffTime = KernelDensity.kde(requestTimeDropOff; bandwidth=bw_dropoff)
-
-    # Compute density values
-    density_values_pickUp = [pdf(kde_pickUpTime, t) for t in time_range]
-    density_values_dropOff = [pdf(kde_dropOffTime, t) for t in time_range]
-
-    # Avoid zero probabilities
-    epsilon = 0.0001
-    density_values_pickUp .= density_values_pickUp .+ epsilon
-    density_values_dropOff .= density_values_dropOff .+ epsilon
-
-    # Normalize to get probability distributions
-    probabilities_pickUpTime = density_values_pickUp / sum(density_values_pickUp)
-    probabilities_dropOffTime = density_values_dropOff / sum(density_values_dropOff)
-
-    return probabilities_pickUpTime, probabilities_dropOffTime, density_values_pickUp, density_values_dropOff
-end
-
-
-
-#==
 # Make request
 ==#
-function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, probabilities_dropOffTime::Vector{Float64}, probabilities_location::Vector{Float64}, time_range::Vector{Int}, x_range::Vector{Float64}, y_range::Vector{Float64}, output_file::String,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},D::Matrix{Float64})
+function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, probabilities_dropOffTime::Vector{Float64}, probabilities_location::Vector{Float64}, time_range::Vector{Int}, x_range::Vector{Float64}, y_range::Vector{Float64}, output_file::String,distance_range::Vector{Float64},probabilities_distance::Vector{Float64})
     results = DataFrame(
         id = Int[],
         pickup_latitude = Float64[],
@@ -159,7 +141,7 @@ function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, p
     # Loop to generate samples
     for i in 1:nSample
         # Sample new location based on KDE probabilities
-        sampled_location = getNewLocations(probabilities_location, x_range, y_range, distance_range,probabilities_distance,D)
+        sampled_location = getNewLocations(probabilities_location, x_range, y_range, distance_range,probabilities_distance)
         pickup_longitude, pickup_latitude = sampled_location[1]
         dropoff_longitude, dropoff_latitude = sampled_location[2]
 
@@ -207,7 +189,7 @@ function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, p
 end
 
 
-function generateDataSets(nRequest,nData,probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},D::Matrix{Float64})
+function generateDataSets(nRequest,nData,probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range,distance_range::Vector{Float64},probabilities_distance::Vector{Float64})
     df_list = []
     newDataList = Vector{String}()  
     for i in 1:nData
@@ -219,7 +201,7 @@ function generateDataSets(nRequest,nData,probabilities_pickUpTime, probabilities
         while retry_count < 5
             try
                 # Call the function that may throw the error
-                results = makeRequests(nRequest, probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range, output_file,distance_range,probabilities_distance,D)
+                results = makeRequests(nRequest, probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range, output_file,distance_range,probabilities_distance)
                 
                 println("Request generation succeeded!")
                 push!(df_list,results)
@@ -284,16 +266,15 @@ function generateDataSetsAndvehicles(nRequest,nData,shifts,oldDataList,bandwidth
         requestTimePickUp,
         requestTimeDropOff,
         requests,
-        distanceDriven,
-        D = load_simulation_data("Data/Matrices/")
+        distanceDriven= load_simulation_data("Data/Simulation data/")
 
     # Generate request data 
-    newDataList, df_list = generateDataSets(nRequest,nData,probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range,distance_range,probabilities_distance,D)
+    newDataList, df_list = generateDataSets(nRequest,nData,probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range,distance_range,probabilities_distance)
 
     # Generate vehicles 
     average_demand_per_hour = generateVehicles(shifts,df_list, probabilities_location, x_range, y_range)
 
-    return location_matrix, requestTimePickUp, requestTimeDropOff, newDataList, df_list, average_demand_per_hour, probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff, probabilities_location, density_grid, x_range, y_range, requests
+    return location_matrix, requestTimePickUp, requestTimeDropOff, newDataList, df_list, average_demand_per_hour, probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff, probabilities_location, density_grid, x_range, y_range, requests, distanceDriven
 end
 
 #==
@@ -347,14 +328,10 @@ function plotDataSets(x_range,y_range,density_grid,location_matrix,requestTimePi
     xtick_values = range(min_x, max_x, step=1)  # Adjust length for more ticks
     plot!(xticks=xtick_values)
 
-    p5 = histogram(distanceDriven, normalize=:pdf, label="", color=:blue,bins=19)
-    vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
-    vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+    p5 = histogram(distanceDriven, normalize=:pdf, label="", color=:blue)
     title!(prefix*" Distance Driven Distribution")
-    xlabel!("Time (Hours)")
+    xlabel!("Driven distance")
     ylabel!("Probability Density")
-    xtick_values = range(min_x, max_x, step=1)  # Adjust length for more ticks
-    plot!(xticks=xtick_values)
 
 
     return p1,p2,p3,p4,p5
@@ -457,7 +434,7 @@ shifts = Dict(
 bandwidth_factor_time = 1.5 
 bandwidth_factor_location = 1.25
 
-location_matrix, requestTimePickUp, requestTimeDropOff, newDataList, df_list, average_demand_per_hour, probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff, probabilities_location, density_grid, x_range, y_range,requests = generateDataSetsAndvehicles(nRequest,nData,shifts,oldDataList,bandwidth_factor_time,bandwidth_factor_location)
+location_matrix, requestTimePickUp, requestTimeDropOff, newDataList, df_list, average_demand_per_hour, probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff, probabilities_location, density_grid, x_range, y_range,requests, distanceDriven = generateDataSetsAndvehicles(nRequest,nData,shifts,oldDataList,bandwidth_factor_time,bandwidth_factor_location)
 #plotDemandAndShifts(average_demand_per_hour,shifts)
 
 prefix = "Base Data"
@@ -483,7 +460,7 @@ prefix_new = "Gen. Data"
 
 # Generate plot for each new data set 
 for (idx,file) in enumerate(newDataList)
-    location_matrix_new, requestTimePickUp_new, requestTimeDropOff_new, distanceDriven_new = getOldData([file];checkUnique=false)
+    location_matrix_new, requestTimePickUp_new, requestTimeDropOff_new, _, distanceDriven_new = getOldData([file];checkUnique=false)
     probabilities_pickUpTime_new, probabilities_dropOffTime_new, density_pickUp_new, density_dropOff_new = getRequestTimeDistribution(requestTimePickUp_new, requestTimeDropOff_new, time_range)
     probabilities_location_new, density_grid_new,x_range_new,y_range_new = getLocationDistribution(location_matrix_new)
     probabilities_distance_new, density_distance_new, distance_range_new = getDistanceDistribution(distanceDriven_new)
@@ -511,10 +488,10 @@ for (idx,file) in enumerate(newDataList)
     distanceMatrixFile = string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",idx,"_distance.txt")
     timeMatrixFile =  string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",idx,"_time.txt")
     scenarioName = "No. requests = " * string(nRequest)
-    
+
     # Read instance 
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
-    
+
     p2 = createGantChartOfRequestsAndVehicles(scenario.vehicles, scenario.requests, [],scenarioName)
     display(p2)
     savefig(p2, string("Plots/DataGeneration/GantChart_",nRequest,"_",idx,".svg"))
