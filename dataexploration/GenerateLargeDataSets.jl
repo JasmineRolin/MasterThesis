@@ -15,7 +15,7 @@ global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 2*60 # 2 hours buffer
 global nData = 10
-global nRequest = 20 
+global nRequest = 500 
 global MAX_DELAY = 15 # TODO Astrid I just put something
 
 
@@ -78,6 +78,9 @@ function find_dropoff(pickup::Tuple{Float64, Float64}, grid_coords::Vector{Tuple
 
     # Find grid indices within tolerance
     candidate_idxs = findall(abs.(distances .- distance_sample) .<= tolerance_km)
+
+    # Remove pickup location itself from candidates
+    candidate_idxs = filter(i -> grid_coords[i] != pickup, candidate_idxs)
 
     if isempty(candidate_idxs)
     error("No candidates found within tolerance range of sampled distance.")
