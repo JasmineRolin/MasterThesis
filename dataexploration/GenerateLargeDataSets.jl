@@ -6,15 +6,15 @@ using StatsBase
 using domain, utils
 using Plots.PlotMeasures
 
-#include("TransformKonsentraData.jl")
-#include("GenerateLargeVehiclesKonsentra.jl")
-#include("MakeAndSaveDistanceAndTimeMatrix.jl")
+include("TransformKonsentraData.jl")
+include("GenerateLargeVehiclesKonsentra.jl")
+include("MakeAndSaveDistanceAndTimeMatrix.jl")
 include("GenerateAndSaveSimulationData.jl")
 
 global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 2*60 # 2 hours buffer
-global nData = 1
+global nData = 10
 global nRequest = 20 
 global MAX_DELAY = 15 # TODO Astrid I just put something
 
@@ -479,7 +479,7 @@ for (idx,file) in enumerate(newDataList)
         right_margin=5mm
     )
     display(p)
-    savefig(p, string("Plots/DataGeneration/Plot_",nRequest,"_",idx,".svg"))
+    savefig(p, string("plots/DataGeneration/Plot_",nRequest,"_",idx,".svg"))
 
     # Plot gant chart 
     requestFile = file
@@ -494,6 +494,6 @@ for (idx,file) in enumerate(newDataList)
 
     p2 = createGantChartOfRequestsAndVehicles(scenario.vehicles, scenario.requests, [],scenarioName)
     display(p2)
-    savefig(p2, string("Plots/DataGeneration/GantChart_",nRequest,"_",idx,".svg"))
+    savefig(p2, string("plots/DataGeneration/GantChart_",nRequest,"_",idx,".svg"))
 
 end
