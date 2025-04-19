@@ -247,10 +247,10 @@ end
 # ------
 # Function to merge current State and final solution in last iteration
 # ------
-function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,currentState::State,scenario::Scenario)
+function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,solution::Solution,scenario::Scenario)
 
     # Loop through all schedules and add to final solution 
-    for (vehicle,schedule) in enumerate(currentState.solution.vehicleSchedules)
+    for (vehicle,schedule) in enumerate(solution.vehicleSchedules)
 
         # Set start time of time window if necesarry 
         if length(finalSolution.vehicleSchedules[vehicle].route) == 0
@@ -284,7 +284,7 @@ function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,currentStat
         finalSolution.totalCost += newCost
     end
 
-    finalSolution.nTaxi += currentState.solution.nTaxi
+    finalSolution.nTaxi += solution.nTaxi
     finalSolution.totalCost += scenario.taxiParameter*finalSolution.nTaxi
 
 end
@@ -360,7 +360,7 @@ end
 # ------
 # Function to simulate a scenario
 # ------
-function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileName::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false)
+function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false)
 
     # Choose destroy methods
     destroyMethods = Vector{GenericMethod}()
@@ -389,6 +389,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
     end
     if displayPlots
         display(createGantChartOfSolutionOnline(initialSolution,"Initial Solution"))
+        display(plotRoutes(initialSolution,scenario,initialRequestBank,"Initial Solution"))
     end
 
     # Run ALNS for offline solution 
@@ -408,6 +409,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
     end
     if displayPlots
         display(createGantChartOfSolutionOnline(solution,"Initial Solution after ALNS"))
+        display(plotRoutes(solution,scenario,requestBank,"Initial Solution after ALNS"))
     end
 
     # Initialize visited routes 
@@ -461,20 +463,18 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
             println("----------------")
             printSolution(currentState.solution,printRouteHorizontal)
         end
+        #if displayPlots
+        #    display(createGantChartOfSolutionOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime))
+        #    display(plotRoutes(solution,scenario,requestBank,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime)))
+        #end
         if displayPlots && event.id in requestBank
             display(createGantChartOfSolutionAndEventOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event))
-            if event.id == 10
-                println("---HERE------")
-                println(visitedRoute)
-                println(checkFeasibilityOfInsertionAtPosition(event, solution.vehicleSchedules[3],3,3,scenario;visitedRoute))
-                throw("error")
-            end
         end
 
     end
 
     # Update final solution with last state 
-    mergeCurrentStateIntoFinalSolution!(finalSolution,currentState,scenario)
+    mergeCurrentStateIntoFinalSolution!(finalSolution,solution,scenario)
     endSimulation = time()
     totalElapsedTime = endSimulation - startSimulation
     averageResponseTime /= length(scenario.onlineRequests)
@@ -488,6 +488,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
     end
     if displayPlots
         display(createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge"))
+        display(plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge"))
     end
 
 
@@ -505,7 +506,10 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
     println(rpad("Events inserted by ALNS", 40),eventsInsertedByALNS)
 
     if saveResults
-        fileName = outPutFileName*"Simulation_KPI_"*string(scenario.name)*".json"
+        if !isdir(outPutFileFolder)
+            mkpath(outPutFileFolder)
+        end
+        fileName = outPutFileFolder*"/Simulation_KPI_"*string(scenario.name)*".json"
         writeOnlineKPIsToFile(fileName,scenario,finalSolution,requestBank,requestBankOffline,totalElapsedTime,averageResponseTime,eventsInsertedByALNS)
     end
     

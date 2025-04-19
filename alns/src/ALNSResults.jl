@@ -1,6 +1,7 @@
 module ALNSResults 
 
 using DataFrames, CSV, Plots, JSON, domain,..ALNSDomain
+using Plots.PlotMeasures
 
 export ALNSResult
 
@@ -8,13 +9,10 @@ export ALNSResult
  Method to plot ALNS results  
 ==#
 function ALNSResult(specificationsFileName::String,KPIFileName::String,ALNSOutputFile::String,scenario::Scenario,configuration::ALNSConfiguration,solution::Solution,requests::Vector{Request},requestBank::Vector{Int},parameters::ALNSParameters;saveResults=true::Bool,displayPlots=true::Bool,plotFolder=""::String)
+   
     if saveResults
-        writeALNSSpecificationsFile(specificationsFileName,scenario,parameters,configuration)
-        writeKPIsToFile(KPIFileName,scenario,solution)
-
         # Read the CSV file into a DataFrame
         ALNSOutput = CSV.read(ALNSOutputFile, DataFrame)
-
 
         # Cost plot 
         costPlot = createCostPlot(ALNSOutput,scenario.name)
@@ -34,6 +32,9 @@ function ALNSResult(specificationsFileName::String,KPIFileName::String,ALNSOutpu
         # Gant chart of solution 
         gantChartSolution = createGantChartOfSolution(solution,scenario.name)
 
+        writeALNSSpecificationsFile(specificationsFileName,scenario,parameters,configuration)
+        writeKPIsToFile(KPIFileName,scenario,solution)
+
         # Display and save plots
         savefig(costPlot, joinpath(plotFolder, "ALNSCostPlot.png"))
         savefig(repairWeightPlot, joinpath(plotFolder, "ALNSRepairWeightPlot.png"))
@@ -41,6 +42,7 @@ function ALNSResult(specificationsFileName::String,KPIFileName::String,ALNSOutpu
         savefig(temperaturePlot, joinpath(plotFolder, "ALNSTemperaturePlot.png"))
         savefig(gantChart, joinpath(plotFolder, "ALNSGantChart.png"))
         savefig(gantChartSolution, joinpath(plotFolder, "ALNSGantChartSolution.png"))
+
 
         if displayPlots
             display(costPlot)
@@ -94,31 +96,61 @@ end
 #==
  Method create plot of cost of run 
 ==#
-function createCostPlot(df::DataFrame,scenarioName::String)
+function createCostPlot(df::DataFrame, scenarioName::String)
     # Extract relevant columns
     iterations = df.Iteration
     total_cost = df.TotalCost
     isAccepted = df.IsAccepted
     isImproved = df.IsImproved
     isNewBest = df.IsNewBest
+    nRequestBank = df.nRequestBank
 
     # Filter isImproved points to exclude isNewBest
     onlyImproved = isImproved .& .!isNewBest
 
-    # Create the line plot for total cost
-    p = plot(iterations, total_cost, label="Total Cost", linewidth=2, color=:darkgray, xlabel="Iteration", ylabel="Total Cost", title=string(scenarioName," - ALNS Total Cost Over Iterations"),size=(2000,1000))
+    # Filter only accepted 
+    onlyAccepted = isAccepted .& .!isNewBest .& .!isImproved
 
-    # Add yellow dots for accepted solutions
-    scatter!(iterations[isAccepted], total_cost[isAccepted], markershape=:circle, color=:yellow, label="Accepted")
+    # Define a 2-row layout
+    l = @layout [a; b]
 
-    # Add green dots for improved solutions
-    scatter!(iterations[onlyImproved], total_cost[onlyImproved], markershape=:circle, color=:orange, label="Improved")
+    # First plot: Total Cost
+    p1 = plot(iterations, total_cost,
+              label="Total Cost",
+              linewidth=1,
+              linestyle=:dash,
+              color=:darkgray,
+              xlabel="Iteration",
+              ylabel="Total Cost",
+              title=string(scenarioName, " - ALNS Total Cost Over Iterations"),
+              legend=:topright)
 
-    # Add green stars for new best solutions
-    scatter!(iterations[isNewBest], total_cost[isNewBest], markershape=:star5, color=:green, label="New Best",markersize=10)
+    scatter!(p1, iterations[onlyAccepted], total_cost[onlyAccepted],
+             markershape=:circle, color=:yellow, label="Accepted",markerstrokewidth=0)
 
-    return p
+    scatter!(p1, iterations[onlyImproved], total_cost[onlyImproved],
+             markershape=:circle, color=:orange, label="Improved",markerstrokewidth=0)
+
+    scatter!(p1, iterations[isNewBest], total_cost[isNewBest],
+             markershape=:star5, color=:green, label="New Best", markersize=10,markerstrokewidth=0)
+
+    # Second plot: Number of Requests in the Bank
+    p2 = plot(iterations, nRequestBank,
+              label="Request Bank Size",
+              linewidth=2,
+              color=:blue,
+              xlabel="Iteration",
+              ylabel="# Requests in Bank",
+              title="Request Bank Over Iterations")
+
+    # Combine plots into a subplot layout
+    finalPlot = plot(p1, p2, layout=l, size=(2500, 2500),
+                     bottom_margin=12mm, left_margin=12mm,
+                     top_margin=5mm, right_margin=5mm)
+
+    return finalPlot
 end
+
 
 #==
  Method to create plot of repair weights 

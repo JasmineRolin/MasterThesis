@@ -6,7 +6,7 @@
 #BSUB -R "rusage[mem=2GB]"
 #BSUB -R "span[hosts=1]"
 #BSUB -W 10:00
-#BSUB -u s194321@student.dtu.dk
+#BSUB -u s194351@student.dtu.dk
 #BSUB -N 
 # end of BSUB options
 
@@ -14,7 +14,18 @@
 module load julia/1.10.2
 
 # Activate project 
-julia -e 'using Pkg; Pkg.activate("."), Pkg.add("DataFrames"); Pkg.add("CSV"),Pkg.develop(path="domain"); Pkg.develop(path="utils");Pkg.develop(path="offlinesolution");Pkg.develop(path="onlinesolution");Pkg.develop(path="alns");Pkg.develop(path="simulationframework");'
+julia --project=. -e 'using Pkg; 
+    Pkg.activate("."); 
+    Pkg.add("Plots");
+    Pkg.add("DataFrames");
+    Pkg.add("CSV"); 
+    Pkg.develop(path="domain"); 
+    Pkg.develop(path="utils");
+    Pkg.develop(path="offlinesolution");
+    Pkg.develop(path="onlinesolution");
+    Pkg.develop(path="alns");
+    Pkg.develop(path="simulationframework");
+    Pkg.resolve();'
 
-julia tests/SimulationFrameworkTest.jl "500"
+julia --project=. runfiles/RunSimulation.jl "500"
 
