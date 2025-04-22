@@ -1,6 +1,7 @@
-module ALNSAlgorithm 
+module ALNSAlgorithm
 
 using UnPack, domain, utils, ..ALNSDomain, ..ALNSFunctions
+using TimerOutputs
 
 export ALNS
 
@@ -9,32 +10,224 @@ export ALNS
 ==#
 
 global epsilon = 0.0001
+const TO = TimerOutput()
 
 #==
  Method to run ALNS algorithm
 ==#
-function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters,fileName::String;alreadyRejected = 0,event = Request(),visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}(),saveOutPut = false,stage="Offline") 
-    # Retrieve event id 
-    eventId = event.id 
+# function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters,fileName::String;alreadyRejected = 0,event = Request(),visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}(),saveOutPut = false,stage="Offline") 
+#     # Retrieve event id 
+#     eventId = event.id 
 
-    # File 
+#     # File 
+#     nDestroy = length(configuration.destroyMethods)
+#     nRepair = length(configuration.repairMethods)
+
+#     if saveOutPut
+#         outputFile = open(fileName, "w")
+#         write(outputFile,"Iteration,TotalCost,nRequestBank,IsAccepted,IsImproved,IsNewBest,Temperature,DM,RM,",join(["DW$i" for i in 1:nDestroy], ","),",", join(["RW$i" for i in 1:nRepair], ","),join(["nD$i" for i in 1:nDestroy], ","),",", join(["nR$i" for i in 1:nRepair], ","), "\n")
+#     end
+
+#     # Unpack parameters
+#     @unpack timeLimit, w, coolingRate, segmentSize, reactionFactor, scoreAccepted, scoreImproved, scoreNewBest, printSegmentSize, maxNumberOfIterationsWithoutImprovement, maxNumberOfIterationsWithoutNewBest = parameters
+
+#     # Create ALNS state
+#     currentState = ALNSState(initialSolution, length(configuration.destroyMethods), length(configuration.repairMethods), requestBank)
+#     initialCost = initialSolution.totalCost
+
+#     # Initialize temperature, iteration and time 
+#     temperature = findStartTemperature(w,currentState.currentSolution,scenario.taxiParameter)
+
+#     iteration = 0
+#     newSolutions = 0
+#     numberOfIterationsSinceLastImprovement = 0
+#     numberOfIterationsSinceLastBest = 0
+#     startTime = time()
+
+#     # TODO: remove only for testing
+#     pVals = []
+#     deltaVals = []
+#     countAccepted = 0
+#     isImprovedVec = []
+#     isNewBestVec = []
+#     isAcceptedVec = []
+
+#     # Iterate while time limit is not reached 
+#     while !(termination(startTime,timeLimit) || numberOfIterationsSinceLastImprovement > maxNumberOfIterationsWithoutImprovement || numberOfIterationsSinceLastBest > maxNumberOfIterationsWithoutNewBest)
+#         isAccepted = false 
+#         isImproved = false
+#         isNewBest = false
+
+#         # Create copy of current state
+#         trialState = copyALNSState(currentState)
+
+#         # Destroy trial solution  
+#         destroyIdx = destroy!(scenario,trialState,parameters,configuration,visitedRoute = visitedRoute)
+
+#         # Repair trial solution 
+#         repairIdx = repair!(scenario,trialState,configuration,visitedRoute=visitedRoute)
+
+
+#         # Check if solution is improved
+#         hashKeySolution = hashSolution(trialState.currentSolution)
+#         seenBefore = hashKeySolution in currentState.seenSolutions
+#         if !seenBefore
+#             newSolutions += 1
+#             popfirst!(currentState.seenSolutions)
+#             push!(currentState.seenSolutions, hashKeySolution)
+#         end
+
+
+#         # Check if we can accept solution when trying to insert event 
+#         #    Is true when we are in offline phase: eventId == 0 
+#         #    Is true when we are in online phase and the request bank is empty
+#         #    Is true when we are in online phase and the event is the only request in the request bank
+#         if stage == "Online"
+#             acceptOnlinePhase = (length(trialState.requestBank) == 0) || (eventId in trialState.requestBank && length(trialState.requestBank) == 1)
+#         else
+#             acceptOnlinePhase = true
+#         end
+
+#         # Check if solution is accepted
+#         acceptBool,p,delta = accept(parameters.timeLimit,startTime,trialState.currentSolution.totalCost,currentState.bestSolution.totalCost)
+#         push!(pVals,p) # TODO: remove only for testing
+#         push!(deltaVals,delta) # TODO: remove only for testing 
+
+#         if acceptOnlinePhase && !seenBefore && (trialState.currentSolution.totalCost < currentState.currentSolution.totalCost - epsilon)
+#             isImproved = true
+#             isAccepted = true
+#             currentState.currentSolution = copySolution(trialState.currentSolution)
+#             currentState.requestBank = deepcopy(trialState.requestBank)
+#             currentState.assignedRequests = deepcopy(trialState.assignedRequests)
+#             currentState.nAssignedRequests = trialState.nAssignedRequests
+
+
+#             # Check if new best solution
+#             if trialState.currentSolution.totalCost < currentState.bestSolution.totalCost - epsilon
+#                 isNewBest = true
+#                 currentState.bestSolution = copySolution(trialState.currentSolution)
+#                 currentState.bestRequestBank = deepcopy(trialState.requestBank)
+
+#             end
+#         elseif acceptOnlinePhase && !seenBefore && acceptBool
+#             countAccepted += 1 # TODO: remove 
+#             isAccepted = true
+#             currentState.currentSolution = copySolution(trialState.currentSolution)
+#             currentState.requestBank = deepcopy(trialState.requestBank)
+#             currentState.assignedRequests = deepcopy(trialState.assignedRequests)
+#             currentState.nAssignedRequests = trialState.nAssignedRequests
+#         end
+
+#         # Update method scores and counts 
+#         updateScoreAndCount(scoreAccepted,scoreImproved,scoreNewBest,currentState,destroyIdx,repairIdx,isAccepted,isImproved,isNewBest)
+
+#         # Update weights and reset scores and count if end of segment
+#         updateWeightsAfterEndOfSegment(segmentSize,currentState,reactionFactor,iteration)
+
+#         # Update temperature and iteration
+#         temperature = coolingRate*temperature
+
+#         # Write to file 
+#         if saveOutPut
+#             write(outputFile, string(iteration), ",", 
+#                     string(trialState.currentSolution.totalCost), ",", 
+#                     string(length(trialState.requestBank)), ",",
+#                     string(isAccepted), ",", 
+#                     string(isImproved), ",", 
+#                     string(isNewBest), ",", 
+#                     string(temperature), ",", 
+#                     string(configuration.destroyMethods[destroyIdx].name), ",",
+#                     string(configuration.repairMethods[repairIdx].name), ",",
+#                     join(string.(currentState.destroyWeights), ","), ",", 
+#                     join(string.(currentState.repairWeights), ","), 
+#                     join(string.(currentState.destroyNumberOfUses), ","), ",", 
+#                     join(string.(currentState.repairNumberOfUses), ","), "\n")
+#         end
+
+#         # Check solution 
+#         # TODO: remove when ALNS is robust 
+#         state = State(currentState.currentSolution,event,visitedRoute,alreadyRejected)
+#         feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+#         if !feasible
+#             println("ALNS: INFEASIBLE SOLUTION IN ITERATION:", iteration)  
+#             #close(outputFile)
+#             printSolution(currentState.currentSolution,printRouteHorizontal)
+#             throw(msg) 
+#         end
+
+
+#         # Print 
+#         if iteration % printSegmentSize == 0
+#             println("==> ALNS: Iteration: ", iteration, ", Current cost: ", currentState.currentSolution.totalCost," current request bank: ",currentState.currentSolution.nTaxi, ", Best cost: ", currentState.bestSolution.totalCost," best request bank: ",currentState.bestSolution.nTaxi,", Improvement from initial: ", 100*(initialCost-currentState.bestSolution.totalCost)/initialCost, "%, Temperature: ", temperature, " New solutions: ",newSolutions, " /", iteration)
+#         end
+
+#         # Update iteration
+#         iteration += 1
+
+#         if isNewBest
+#             numberOfIterationsSinceLastBest = 0
+#             numberOfIterationsSinceLastImprovement = 0
+#         elseif isImproved
+#             numberOfIterationsSinceLastImprovement = 0
+#             numberOfIterationsSinceLastBest += 1
+#         else
+#             numberOfIterationsSinceLastImprovement += 1
+#             numberOfIterationsSinceLastBest += 1
+#         end
+
+#         # TODO: remove 
+#         push!(isImprovedVec,isImproved)
+#         push!(isNewBestVec,isNewBest)
+#         push!(isAcceptedVec,isAccepted)
+
+#     end
+
+#     # Close file 
+#     if saveOutPut   
+#         close(outputFile)
+#     end 
+
+#     # Check final solution
+#     state = State(currentState.bestSolution,event,visitedRoute,alreadyRejected)
+#     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+#     if !feasible
+#         println("ALNS: INFEASIBLE FINAL SOLUTION")
+#         throw(msg) 
+#     end
+
+#     println("NUMBER ACCEPTED NO IMPROVEMENT: ", countAccepted) # TODO: remove
+#     println("Total number of iterations: ", iteration) # TODO: remove
+#     println("Termination: max since last improvement:", numberOfIterationsSinceLastImprovement > maxNumberOfIterationsWithoutImprovement, " max since last best: ", numberOfIterationsSinceLastBest > maxNumberOfIterationsWithoutNewBest)
+#     return currentState.bestSolution, currentState.bestRequestBank, pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec # TODO: remove
+# end 
+
+function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector{Int},
+    configuration::ALNSConfiguration, parameters::ALNSParameters, fileName::String;
+    alreadyRejected=0, event=Request(), visitedRoute::Dict{Int,Dict{String,Int}}=Dict(),
+    saveOutPut=false, stage="Offline")
+
+    eventId = event.id
     nDestroy = length(configuration.destroyMethods)
     nRepair = length(configuration.repairMethods)
 
     if saveOutPut
         outputFile = open(fileName, "w")
-        write(outputFile,"Iteration,TotalCost,nRequestBank,IsAccepted,IsImproved,IsNewBest,Temperature,DM,RM,",join(["DW$i" for i in 1:nDestroy], ","),",", join(["RW$i" for i in 1:nRepair], ","),join(["nD$i" for i in 1:nDestroy], ","),",", join(["nR$i" for i in 1:nRepair], ","), "\n")
+        write(outputFile, "Iteration,TotalCost,nRequestBank,IsAccepted,IsImproved,IsNewBest,Temperature,DM,RM," *
+                          join(["DW$i" for i in 1:nDestroy], ",") * "," *
+                          join(["RW$i" for i in 1:nRepair], ",") *
+                          join(["nD$i" for i in 1:nDestroy], ",") * "," *
+                          join(["nR$i" for i in 1:nRepair], ",") * "\n")
     end
 
-    # Unpack parameters
-    @unpack timeLimit, w, coolingRate, segmentSize, reactionFactor, scoreAccepted, scoreImproved, scoreNewBest, printSegmentSize, maxNumberOfIterationsWithoutImprovement, maxNumberOfIterationsWithoutNewBest = parameters
+    @unpack timeLimit, w, coolingRate, segmentSize, reactionFactor,
+    scoreAccepted, scoreImproved, scoreNewBest,
+    printSegmentSize, maxNumberOfIterationsWithoutImprovement,
+    maxNumberOfIterationsWithoutNewBest = parameters
 
-    # Create ALNS state
-    currentState = ALNSState(initialSolution, length(configuration.destroyMethods), length(configuration.repairMethods), requestBank)
+    currentState = ALNSState(initialSolution, nDestroy, nRepair, requestBank)
     initialCost = initialSolution.totalCost
 
-    # Initialize temperature, iteration and time 
-    temperature = findStartTemperature(w,currentState.currentSolution,scenario.taxiParameter)
+    temperature = findStartTemperature(w, currentState.currentSolution, scenario.taxiParameter)
 
     iteration = 0
     newSolutions = 0
@@ -42,31 +235,25 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
     numberOfIterationsSinceLastBest = 0
     startTime = time()
 
-    # TODO: remove only for testing
-    pVals = []
-    deltaVals = []
+    pVals, deltaVals = [], []
     countAccepted = 0
-    isImprovedVec = []
-    isNewBestVec = []
-    isAcceptedVec = []
+    isImprovedVec, isNewBestVec, isAcceptedVec = [], [], []
 
-    # Iterate while time limit is not reached 
-    while !(termination(startTime,timeLimit) || numberOfIterationsSinceLastImprovement > maxNumberOfIterationsWithoutImprovement || numberOfIterationsSinceLastBest > maxNumberOfIterationsWithoutNewBest)
-        isAccepted = false 
-        isImproved = false
-        isNewBest = false
+    reset_timer!(TO)  # Reset timer for this ALNS run
 
-        # Create copy of current state
+    while !(termination(startTime, timeLimit) || numberOfIterationsSinceLastImprovement > maxNumberOfIterationsWithoutImprovement || numberOfIterationsSinceLastBest > maxNumberOfIterationsWithoutNewBest)
+        isAccepted, isImproved, isNewBest = false, false, false
+
         trialState = copyALNSState(currentState)
 
-        # Destroy trial solution  
-        destroyIdx = destroy!(scenario,trialState,parameters,configuration,visitedRoute = visitedRoute)
-       
-        # Repair trial solution 
-        repairIdx = repair!(scenario,trialState,configuration,visitedRoute=visitedRoute)
-    
+        @timeit TO "Destroy!" begin
+            destroyIdx = destroy!(scenario, trialState, parameters, configuration, visitedRoute=visitedRoute)
+        end
 
-        # Check if solution is improved
+        @timeit TO "Repair!" begin
+            repairIdx = repair!(scenario, trialState, configuration, visitedRoute=visitedRoute,TO=TO)
+        end
+
         hashKeySolution = hashSolution(trialState.currentSolution)
         seenBefore = hashKeySolution in currentState.seenSolutions
         if !seenBefore
@@ -75,40 +262,33 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
             push!(currentState.seenSolutions, hashKeySolution)
         end
 
-
-        # Check if we can accept solution when trying to insert event 
-        #    Is true when we are in offline phase: eventId == 0 
-        #    Is true when we are in online phase and the request bank is empty
-        #    Is true when we are in online phase and the event is the only request in the request bank
-        if stage == "Online"
-            acceptOnlinePhase = (length(trialState.requestBank) == 0) || (eventId in trialState.requestBank && length(trialState.requestBank) == 1)
+        acceptOnlinePhase = if stage == "Online"
+            (length(trialState.requestBank) == 0) || (eventId in trialState.requestBank && length(trialState.requestBank) == 1)
         else
-            acceptOnlinePhase = true
+            true
         end
 
-        # Check if solution is accepted
-        acceptBool,p,delta = accept(parameters.timeLimit,startTime,trialState.currentSolution.totalCost,currentState.bestSolution.totalCost)
-        push!(pVals,p) # TODO: remove only for testing
-        push!(deltaVals,delta) # TODO: remove only for testing 
+        acceptBool, p, delta = @timeit TO "Accept Decision" begin
+            accept(parameters.timeLimit, startTime, trialState.currentSolution.totalCost, currentState.bestSolution.totalCost)
+        end
+
+        push!(pVals, p)
+        push!(deltaVals, delta)
 
         if acceptOnlinePhase && !seenBefore && (trialState.currentSolution.totalCost < currentState.currentSolution.totalCost - epsilon)
-            isImproved = true
-            isAccepted = true
+            isImproved, isAccepted = true, true
             currentState.currentSolution = copySolution(trialState.currentSolution)
             currentState.requestBank = deepcopy(trialState.requestBank)
             currentState.assignedRequests = deepcopy(trialState.assignedRequests)
             currentState.nAssignedRequests = trialState.nAssignedRequests
 
-
-            # Check if new best solution
             if trialState.currentSolution.totalCost < currentState.bestSolution.totalCost - epsilon
                 isNewBest = true
                 currentState.bestSolution = copySolution(trialState.currentSolution)
                 currentState.bestRequestBank = deepcopy(trialState.requestBank)
-
             end
         elseif acceptOnlinePhase && !seenBefore && acceptBool
-            countAccepted += 1 # TODO: remove 
+            countAccepted += 1
             isAccepted = true
             currentState.currentSolution = copySolution(trialState.currentSolution)
             currentState.requestBank = deepcopy(trialState.requestBank)
@@ -116,50 +296,43 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
             currentState.nAssignedRequests = trialState.nAssignedRequests
         end
 
-        # Update method scores and counts 
-        updateScoreAndCount(scoreAccepted,scoreImproved,scoreNewBest,currentState,destroyIdx,repairIdx,isAccepted,isImproved,isNewBest)
+        @timeit TO "Update Scores" begin
+            updateScoreAndCount(scoreAccepted, scoreImproved, scoreNewBest, currentState, destroyIdx, repairIdx, isAccepted, isImproved, isNewBest)
+            updateWeightsAfterEndOfSegment(segmentSize, currentState, reactionFactor, iteration)
+        end
 
-        # Update weights and reset scores and count if end of segment
-        updateWeightsAfterEndOfSegment(segmentSize,currentState,reactionFactor,iteration)
+        temperature *= coolingRate
 
-        # Update temperature and iteration
-        temperature = coolingRate*temperature
-
-        # Write to file 
         if saveOutPut
-            write(outputFile, string(iteration), ",", 
-                    string(trialState.currentSolution.totalCost), ",", 
-                    string(length(trialState.requestBank)), ",",
-                    string(isAccepted), ",", 
-                    string(isImproved), ",", 
-                    string(isNewBest), ",", 
-                    string(temperature), ",", 
-                    string(configuration.destroyMethods[destroyIdx].name), ",",
-                    string(configuration.repairMethods[repairIdx].name), ",",
-                    join(string.(currentState.destroyWeights), ","), ",", 
-                    join(string.(currentState.repairWeights), ","), 
-                    join(string.(currentState.destroyNumberOfUses), ","), ",", 
-                    join(string.(currentState.repairNumberOfUses), ","), "\n")
+            write(outputFile, string(iteration), ",",
+                string(trialState.currentSolution.totalCost), ",",
+                string(length(trialState.requestBank)), ",",
+                string(isAccepted), ",",
+                string(isImproved), ",",
+                string(isNewBest), ",",
+                string(temperature), ",",
+                string(configuration.destroyMethods[destroyIdx].name), ",",
+                string(configuration.repairMethods[repairIdx].name), ",",
+                join(string.(currentState.destroyWeights), ","), ",",
+                join(string.(currentState.repairWeights), ","),
+                join(string.(currentState.destroyNumberOfUses), ","), ",",
+                join(string.(currentState.repairNumberOfUses), ","), "\n")
         end
 
-        # Check solution 
-        # TODO: remove when ALNS is robust 
-        state = State(currentState.currentSolution,event,visitedRoute,alreadyRejected)
-        feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-        if !feasible
-            println("ALNS: INFEASIBLE SOLUTION IN ITERATION:", iteration)  
-            #close(outputFile)
-            printSolution(currentState.currentSolution,printRouteHorizontal)
-            throw(msg) 
+        @timeit TO "Feasibility Check" begin
+            state = State(currentState.currentSolution, event, visitedRoute, alreadyRejected)
+            feasible, msg = checkSolutionFeasibilityOnline(scenario, state)
+            if !feasible
+                println("ALNS: INFEASIBLE SOLUTION IN ITERATION:", iteration)
+                printSolution(currentState.currentSolution, printRouteHorizontal)
+                throw(msg)
+            end
         end
 
-
-        # Print 
         if iteration % printSegmentSize == 0
             println("==> ALNS: Iteration: ", iteration, ", Current cost: ", currentState.currentSolution.totalCost," current request bank: ",currentState.currentSolution.nTaxi, ", Best cost: ", currentState.bestSolution.totalCost," best request bank: ",currentState.bestSolution.nTaxi,", Improvement from initial: ", 100*(initialCost-currentState.bestSolution.totalCost)/initialCost, "%, Temperature: ", temperature, " New solutions: ",newSolutions, " /", iteration)
         end
 
-        # Update iteration
         iteration += 1
 
         if isNewBest
@@ -173,30 +346,31 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
             numberOfIterationsSinceLastBest += 1
         end
 
-        # TODO: remove 
-        push!(isImprovedVec,isImproved)
-        push!(isNewBestVec,isNewBest)
-        push!(isAcceptedVec,isAccepted)
-
+        push!(isImprovedVec, isImproved)
+        push!(isNewBestVec, isNewBest)
+        push!(isAcceptedVec, isAccepted)
     end
 
-    # Close file 
-    if saveOutPut   
+    if saveOutPut
         close(outputFile)
-    end 
+    end
 
-    # Check final solution
-    state = State(currentState.bestSolution,event,visitedRoute,alreadyRejected)
-    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+    state = State(currentState.bestSolution, event, visitedRoute, alreadyRejected)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario, state)
     if !feasible
         println("ALNS: INFEASIBLE FINAL SOLUTION")
-        throw(msg) 
+        throw(msg)
     end
 
-    println("NUMBER ACCEPTED NO IMPROVEMENT: ", countAccepted) # TODO: remove
-    println("Total number of iterations: ", iteration) # TODO: remove
-    println("Termination: max since last improvement:", numberOfIterationsSinceLastImprovement > maxNumberOfIterationsWithoutImprovement, " max since last best: ", numberOfIterationsSinceLastBest > maxNumberOfIterationsWithoutNewBest)
-    return currentState.bestSolution, currentState.bestRequestBank, pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec # TODO: remove
-end 
+    println("NUMBER ACCEPTED NO IMPROVEMENT: ", countAccepted)
+    println("Total number of iterations: ", iteration)
+    println("Termination: max since last improvement: ", numberOfIterationsSinceLastImprovement > maxNumberOfIterationsWithoutImprovement,
+        ", max since last best: ", numberOfIterationsSinceLastBest > maxNumberOfIterationsWithoutNewBest)
+
+    println("\n Timing Breakdown:")
+    show(TO)
+
+    return currentState.bestSolution, currentState.bestRequestBank, pVals, deltaVals, isImprovedVec, isAcceptedVec, isNewBestVec
+end
 
 end

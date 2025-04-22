@@ -221,6 +221,11 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
     @unpack route,numberOfWalking, vehicle = vehicleSchedule
     @unpack time,serviceTimes = scenario
 
+    # Check vehicle time window
+    if vehicleSchedule.vehicle.availableTimeWindow.startTime > request.pickUpActivity.timeWindow.endTime || vehicleSchedule.vehicle.availableTimeWindow.endTime < request.dropOffActivity.timeWindow.startTime
+        return false, [], [], [],0.0,0.0,0,0,[]
+    end
+
     # Check load 
     if any(numberOfWalking[pickUpIdx:dropOffIdx] .+ 1 .> vehicle.totalCapacity) 
         return false, [], [], [],0.0,0.0,0,0,[]
@@ -238,7 +243,7 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
 
     # Retrieve schedule block
     pickUpIdxInBlock = pickUpIdx + 1 # Index as if pickup is inserted 
-    dropOffIdxInBlock = dropOffIdx+ 2 # Index as if pickup and dropoff is inserted
+    dropOffIdxInBlock = dropOffIdx + 2 # Index as if pickup and dropoff is inserted
 
     # Check feasibility 
     feasible, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd = checkFeasibilityOfInsertionInRoute(scenario,scenario.time,scenario.distance,scenario.serviceTimes,scenario.requests,vehicleSchedule.totalIdleTime,vehicleSchedule,pickUpIdxInBlock = pickUpIdxInBlock,dropOffIdxInBlock = dropOffIdxInBlock,request = request,visitedRoute=visitedRoute)

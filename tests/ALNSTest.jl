@@ -187,7 +187,9 @@ using alns, domain, utils, offlinesolution
     i = 1
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
     parametersFile = "tests/resources/Parameters.csv"
-    alnsParameters = "tests/resources/ALNSParameters_online.json"
+    #alnsParameters = "tests/resources/ALNSParameters_online.json"
+    alnsParameters = "tests/resources/ALNSParameters3.json"
+    displayPlots = false
 
     #for i in 1:10
         requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
@@ -210,7 +212,7 @@ using alns, domain, utils, offlinesolution
         addMethod!(repairMethods,"regretInsertion",regretInsertion)
         
         initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
-        finalSolution,requestBank,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank,event = scenario.onlineRequests[end],displayPlots=true,saveResults=true,stage="Offline")
+        finalSolution,requestBank,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=false,stage="Offline")
 
         state = State(finalSolution,scenario.onlineRequests[end],0)
         feasible, msg = checkSolutionFeasibilityOnline(scenario,state)

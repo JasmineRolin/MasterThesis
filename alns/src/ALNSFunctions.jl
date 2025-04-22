@@ -1,6 +1,6 @@
 module ALNSFunctions 
 
-using UnPack, JSON3, domain, ..ALNSDomain
+using UnPack, JSON3, domain, ..ALNSDomain, TimerOutputs
 
 export readALNSParameters
 export addMethod!
@@ -60,14 +60,14 @@ end
 #==
  Method to Repair  
 ==#
-function repair!(scenario::Scenario, state::ALNSState, configuration::ALNSConfiguration;visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}())::Int  
+function repair!(scenario::Scenario, state::ALNSState, configuration::ALNSConfiguration;visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}(),TO::TimerOutput=TimerOutput())::Int  
     # Select method 
     repairIdx = rouletteWheel(state.repairWeights)
 
     # println("\t Repair method: ", configuration.repairMethods[repairIdx].name)
 
     # Use method 
-    configuration.repairMethods[repairIdx].method(state,scenario,visitedRoute=visitedRoute)
+    configuration.repairMethods[repairIdx].method(state,scenario,visitedRoute=visitedRoute,TO=TO)
 
     return repairIdx
 end
