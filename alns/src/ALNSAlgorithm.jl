@@ -27,7 +27,7 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
     end
 
     # Unpack parameters
-    @unpack timeLimit, w, coolingRate, segmentSize, reactionFactor, scoreAccepted, scoreImproved, scoreNewBest, printSegmentSize, maxNumberOfIterationsWithoutImprovement = parameters
+    @unpack timeLimit, w, coolingRate, segmentSize, reactionFactor, scoreAccepted, scoreImproved, scoreNewBest, printSegmentSize, maxNumberOfIterationsWithoutImprovement, maxNumberOfIterationsWithoutNewBest = parameters
 
     # Create ALNS state
     currentState = ALNSState(initialSolution, length(configuration.destroyMethods), length(configuration.repairMethods), requestBank)
@@ -39,6 +39,7 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
     iteration = 0
     newSolutions = 0
     numberOfIterationsSinceLastImprovement = 0
+    numberOfIterationsSinceLastBest = 0
     startTime = time()
 
     # TODO: remove only for testing
@@ -50,7 +51,7 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
     isAcceptedVec = []
 
     # Iterate while time limit is not reached 
-    while !(termination(startTime,timeLimit) || numberOfIterationsSinceLastImprovement > maxNumberOfIterationsWithoutImprovement)
+    while !(termination(startTime,timeLimit) || numberOfIterationsSinceLastImprovement > maxNumberOfIterationsWithoutImprovement || numberOfIterationsSinceLastBest > maxNumberOfIterationsWithoutNewBest)
         isAccepted = false 
         isImproved = false
         isNewBest = false
@@ -86,7 +87,7 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
         end
 
         # Check if solution is accepted
-        acceptBool,p,delta = accept(temperature,trialState.currentSolution.totalCost - currentState.currentSolution.totalCost)
+        acceptBool,p,delta = accept(parameters.timeLimit,startTime,trialState.currentSolution.totalCost,currentState.bestSolution.totalCost)
         push!(pVals,p) # TODO: remove only for testing
         push!(deltaVals,delta) # TODO: remove only for testing 
 
@@ -161,10 +162,15 @@ function ALNS(scenario::Scenario,initialSolution::Solution, requestBank::Vector{
         # Update iteration
         iteration += 1
 
-        if isImproved
+        if isNewBest
+            numberOfIterationsSinceLastBest = 0
             numberOfIterationsSinceLastImprovement = 0
+        elseif isImproved
+            numberOfIterationsSinceLastImprovement = 0
+            numberOfIterationsSinceLastBest += 1
         else
             numberOfIterationsSinceLastImprovement += 1
+            numberOfIterationsSinceLastBest += 1
         end
 
         # TODO: remove 

@@ -6,7 +6,7 @@
 #BSUB -R "rusage[mem=2GB]"
 #BSUB -R "span[hosts=1]"
 #BSUB -W 10:00
-#BSUB -u s194321@student.dtu.dk
+#BSUB -u s194351@student.dtu.dk
 #BSUB -N 
 # end of BSUB options
 
@@ -27,5 +27,5 @@ julia --project=. -e 'using Pkg;
     Pkg.develop(path="simulationframework");
     Pkg.resolve();'
 
-julia --project=. runfiles/RunSimulation.jl 
+julia --project=. runfiles/RunSimulation.jl "500"
 
