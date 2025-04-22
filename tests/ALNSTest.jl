@@ -187,7 +187,7 @@ using alns, domain, utils, offlinesolution
     i = 1
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
     parametersFile = "tests/resources/Parameters.csv"
-    alnsParameters = "tests/resources/ALNSParameters3.json"
+    alnsParameters = "tests/resources/ALNSParameters_online.json"
 
     #for i in 1:10
         requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")

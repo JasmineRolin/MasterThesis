@@ -1,11 +1,11 @@
 {
-    "timeLimit": 2.0,
+    "timeLimit": 60.0,
     "printSegmentSize":1000,
-    "segmentSize": 100,
-    "w": 0.05, 
+    "segmentSize": 1,
+    "w": 0.15, 
     "coolingRate": 0.99975,
-    "reactionFactor": 0.1,
-    "scoreAccepted": 1.0,
+    "reactionFactor": 0.01,
+    "scoreAccepted": 13.0,
     "scoreImproved": 9.0,
     "scoreNewBest": 33.0,
     "minPercentToDestroy": 0.1,
@@ -13,6 +13,6 @@
     "p": 6,
     "shawRemovalPhi": 9.0,
     "shawRemovalXi": 3.0,
-    "maxNumberOfIterationsWithoutImprovement": 1000,
-    "maxNumberOfIterationsWithoutNewBest": 5000  
+    "maxNumberOfIterationsWithoutImprovement": 5000,
+    "maxNumberOfIterationsWithoutNewBest": 10000  
 }
