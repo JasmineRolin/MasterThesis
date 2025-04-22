@@ -10,13 +10,13 @@ using CSV
  Generated data 
 ==# 
 function main()
-    #n = parse(Int,ARGS[1])
-    n = 20
-    #i = 9
+    n = parse(Int,ARGS[1])
+    #n = 500
+    #i = 2
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
     parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters2.json"
-    outPutFolder = "runfiles/output/OnlineSimulation/"*string(n)
+    outPutFolder = "runfiles/output/OnlineSimulation2/"*string(n)
     outputFiles = Vector{String}()
 
     for i in 1:10
@@ -30,15 +30,17 @@ function main()
 
         # Read instance 
         scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
-    
+
         # Simulate scenario 
         solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = false,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder)
 
         state = State(solution,scenario.onlineRequests[end],0)
         feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-        @test feasible == true
+        printSolution(solution,printRouteHorizontal)
         @test msg == ""
-   end
+        @test feasible == true
+        
+    end
 
     dfResults = processResults(outputFiles)
     CSV.write(outPutFolder*"/results.csv", dfResults)

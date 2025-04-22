@@ -249,6 +249,8 @@ end
 # ------
 function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,solution::Solution,scenario::Scenario)
 
+    finalSolution.totalRideTime = 0 # Only because no delta calculation
+
     # Loop through all schedules and add to final solution 
     for (vehicle,schedule) in enumerate(solution.vehicleSchedules)
 
@@ -265,12 +267,12 @@ function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,solution::S
 
         # Update KPIs of route
         newDistance = schedule.totalDistance
-        newDuration = duration(schedule.activeTimeWindow)
+        newDuration = duration(finalSolution.vehicleSchedules[vehicle].activeTimeWindow) #duration(schedule.activeTimeWindow) TODO fix 
         newCost = schedule.totalCost 
         newIdleTime = schedule.totalIdleTime
 
         finalSolution.vehicleSchedules[vehicle].totalDistance += newDistance
-        finalSolution.vehicleSchedules[vehicle].totalTime += newDuration
+        finalSolution.vehicleSchedules[vehicle].totalTime = newDuration 
         finalSolution.vehicleSchedules[vehicle].totalCost += newCost
         finalSolution.vehicleSchedules[vehicle].totalIdleTime += newIdleTime
 

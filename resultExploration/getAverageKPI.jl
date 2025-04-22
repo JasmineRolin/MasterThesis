@@ -22,6 +22,6 @@ function average_kpis_by_data_size(base_path::String)
     return grouped
 end
 
-folder = "14042025"
+folder = "22042025"
 results_df = average_kpis_by_data_size("runfiles/output/OnlineSimulation/"*folder)
 CSV.write("runfiles/output/OnlineSimulation/"*folder*"/average_results_by_size.csv", results_df)
