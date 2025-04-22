@@ -268,9 +268,7 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
             true
         end
 
-        acceptBool, p, delta = @timeit TO "Accept Decision" begin
-            accept(parameters.timeLimit, startTime, trialState.currentSolution.totalCost, currentState.bestSolution.totalCost)
-        end
+        acceptBool, p, delta = accept(parameters.timeLimit, startTime, trialState.currentSolution.totalCost, currentState.bestSolution.totalCost)
 
         push!(pVals, p)
         push!(deltaVals, delta)
@@ -369,7 +367,7 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
         ", max since last best: ", numberOfIterationsSinceLastBest > maxNumberOfIterationsWithoutNewBest)
 
     println("\n Timing Breakdown:")
-    show(TO)
+    #show(TO)
 
     return currentState.bestSolution, currentState.bestRequestBank, pVals, deltaVals, isImprovedVec, isAcceptedVec, isNewBestVec
 end

@@ -183,8 +183,8 @@ using alns, domain, utils, offlinesolution, TimerOutputs
 
 #@testset "Run all generated data sets " begin
 
-    n = 100
-    i = 1
+    n = 500
+    i = 2
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
     parametersFile = "tests/resources/Parameters.csv"
     #alnsParameters = "tests/resources/ALNSParameters_online.json"
