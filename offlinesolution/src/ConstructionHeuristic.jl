@@ -2,6 +2,7 @@ module ConstructionHeuristic
 
 using utils
 using domain
+using TimerOutputs
 
 export simpleConstruction
 export findFeasibleInsertionInSchedule
@@ -10,7 +11,7 @@ export findFeasibleInsertionInSchedule
 # ----------
 # Construct a solution using a simple construction heuristic
 # ----------
-function simpleConstruction(scenario::Scenario,requests::Vector{Request};visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())
+function simpleConstruction(scenario::Scenario,requests::Vector{Request};visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(),TO::TimerOutput=TimerOutput())
    
     # Initialize solution
     solution = Solution(scenario)
@@ -18,7 +19,7 @@ function simpleConstruction(scenario::Scenario,requests::Vector{Request};visited
 
     for request in requests
         # Determine closest feasible vehicle
-        closestVehicleIdx, idxPickUp, idxDropOff, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd  = getClosestFeasibleVehicle(request,solution,scenario,visitedRoute=visitedRoute)
+        closestVehicleIdx, idxPickUp, idxDropOff, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd  = getClosestFeasibleVehicle(request,solution,scenario,visitedRoute=visitedRoute,TO=TO)
 
         # Insert request
         if closestVehicleIdx != -1
@@ -42,7 +43,7 @@ end
 # ----------
 # Function to find the closest vehicle
 # ----------
-function getClosestFeasibleVehicle(request::Request, solution::Solution, scenario::Scenario; visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())
+function getClosestFeasibleVehicle(request::Request, solution::Solution, scenario::Scenario; visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(),TO::TimerOutput=TimerOutput())
     closestVehicle = nothing
     minTravelTime = Inf
     closestVehicleIdx = -1
@@ -87,7 +88,7 @@ function getClosestFeasibleVehicle(request::Request, solution::Solution, scenari
 
         if travelTime < minTravelTime
             # Determine if there is a feasible place to insert it
-            feasible, idxPickUp, idxDropOff, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd  = findFeasibleInsertionInSchedule(request,solution.vehicleSchedules[vehicleIdx],scenario,visitedRoute=visitedRoute)
+            feasible, idxPickUp, idxDropOff, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd  = findFeasibleInsertionInSchedule(request,solution.vehicleSchedules[vehicleIdx],scenario,visitedRoute=visitedRoute,TO=TO)
 
             # Update closest vehicle if a shorter travel time is found
             if feasible 
@@ -115,7 +116,7 @@ end
 # ----------
 # Function to check feasibility of inserting a request in a vehicle schedule and returning feasible position
 # ----------
-function findFeasibleInsertionInSchedule(request::Request,vehicleSchedule::VehicleSchedule,scenario::Scenario;visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())
+function findFeasibleInsertionInSchedule(request::Request,vehicleSchedule::VehicleSchedule,scenario::Scenario;visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(),TO::TimerOutput=TimerOutput())
 
     # Check inside available time window
     if vehicleSchedule.vehicle.availableTimeWindow.startTime > request.pickUpActivity.timeWindow.endTime || vehicleSchedule.vehicle.availableTimeWindow.endTime < request.dropOffActivity.timeWindow.startTime 
@@ -127,7 +128,7 @@ function findFeasibleInsertionInSchedule(request::Request,vehicleSchedule::Vehic
     for idxPickUp in 1:length(vehicleSchedule.route)-1
         for idxDropOff in idxPickUp:length(vehicleSchedule.route)-1
             # Check feasibility
-            feasible, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,idxPickUp,idxDropOff,scenario,visitedRoute=visitedRoute)
+            feasible, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,idxPickUp,idxDropOff,scenario,visitedRoute=visitedRoute,TO=TO)
             if feasible
                 return true, idxPickUp, idxDropOff, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete,totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd
             end

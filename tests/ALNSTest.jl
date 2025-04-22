@@ -1,5 +1,5 @@
 using Test 
-using alns, domain, utils, offlinesolution
+using alns, domain, utils, offlinesolution, TimerOutputs
 
 # #==
 # Test ALNSFunctions
@@ -181,8 +181,8 @@ using alns, domain, utils, offlinesolution
 
 
 
-
 #@testset "Run all generated data sets " begin
+
     n = 100
     i = 1
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
@@ -191,7 +191,7 @@ using alns, domain, utils, offlinesolution
     alnsParameters = "tests/resources/ALNSParameters3.json"
     displayPlots = false
 
-    #for i in 1:10
+    #for i in 1:10be
         requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
         distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
         timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
@@ -211,7 +211,8 @@ using alns, domain, utils, offlinesolution
         addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
         addMethod!(repairMethods,"regretInsertion",regretInsertion)
         
-        initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
+        TO = TimerOutput()
+        initialSolution, requestBank = simpleConstruction(scenario,scenario.requests,TO=TO)
         finalSolution,requestBank,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=false,stage="Offline")
 
         state = State(finalSolution,scenario.onlineRequests[end],0)
@@ -231,13 +232,13 @@ using alns, domain, utils, offlinesolution
     
 #end
 
-using Plots
-p1 = plot(pVals, title="p-values", label="p-values", xlabel="iteration", ylabel="p-value",size = (1500,1000))
-p2 = plot(deltaVals, title="delta", label="delta", xlabel="iteration", ylabel="delta",size = (1500,1000))
-display(p1)
-display(p2)
+# using Plots
+# p1 = plot(pVals, title="p-values", label="p-values", xlabel="iteration", ylabel="p-value",size = (1500,1000))
+# p2 = plot(deltaVals, title="delta", label="delta", xlabel="iteration", ylabel="delta",size = (1500,1000))
+# display(p1)
+# display(p2)
 
 
-onlyAccepted = isAcceptedVec .& .!isNewBestVec .& .!isImprovedVec
-it = collect(1:length(isAcceptedVec))[onlyAccepted]
-p2 = plot(it,deltaVals[onlyAccepted], title="delta", label="delta", xlabel="iteration", ylabel="delta",size = (1500,1000))
+# onlyAccepted = isAcceptedVec .& .!isNewBestVec .& .!isImprovedVec
+# it = collect(1:length(isAcceptedVec))[onlyAccepted]
+# p2 = plot(it,deltaVals[onlyAccepted], title="delta", label="delta", xlabel="iteration", ylabel="delta",size = (1500,1000))
