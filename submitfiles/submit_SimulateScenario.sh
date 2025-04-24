@@ -31,7 +31,7 @@ Pkg.resolve();
 
 # Loop to run simulations with third argument from 1 to 10
 for i in {1..10}; do
-    julia --project=. runfiles/RunSimulation.jl "500" "0.5" "$i" &
+    julia --project=. runfiles/RunSimulation.jl "20" "0.5" "$i" &
 done
 
 wait  # Wait for all background Julia jobs to finish
