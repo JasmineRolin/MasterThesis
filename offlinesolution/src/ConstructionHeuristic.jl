@@ -91,7 +91,7 @@ function getClosestFeasibleVehicle(request::Request, solution::Solution, scenari
             feasible, idxPickUp, idxDropOff, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd  = findFeasibleInsertionInSchedule(request,solution.vehicleSchedules[vehicleIdx],scenario,visitedRoute=visitedRoute,TO=TO)
 
             # Update closest vehicle if a shorter travel time is found
-            if feasible # && totalCost < bestCost
+            if feasible
                 minTravelTime = travelTime
                 closestVehicle = vehicle
                 closestVehicleIdx = vehicleIdx
