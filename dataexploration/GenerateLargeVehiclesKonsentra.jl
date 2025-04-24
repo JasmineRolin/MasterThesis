@@ -5,23 +5,6 @@ using DataFrames
 using Plots
 using Random
 
-# --------
-# Constants
-# --------
-global maxRideTimeRatio = 1
-global Gamma = 0.9
-global nWalking = 4
-
-# ------
-# Define possible shifts
-# ------
-# shiftTypes = ["Morning", "Noon", "Afternoon", "Evening"]
-# shifts = Dict(
-#     "Morning"    => Dict("TimeWindow" => [6*60, 10*60], "cost" => 2.0, "nVehicles" => 0, "y" => []),
-#     "Noon"       => Dict("TimeWindow" => [9*60, 14*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
-#     "Afternoon"  => Dict("TimeWindow" => [13*60, 19*60], "cost" => 3.0, "nVehicles" => 0, "y" => []),
-#     "Evening"    => Dict("TimeWindow" => [18*60, 24*60], "cost" => 4.0, "nVehicles" => 0, "y" => [])
-# )
 
 # ------
 # Generate average demand per hour
@@ -117,6 +100,38 @@ function generateVehiclesKonsentra(shifts, locations,vehicle_file::String)
     CSV.write(vehicle_file, vehicles)
 end
 
+function load_request_data(nRequests::Int)
+    df_list = []
+
+    for i in 1:10
+        filename = "Data/Konsentra/"*string(nRequests)*"/GeneratedRequests_"*string(nRequests)*"_"*string(i)*".csv"
+        if isfile(filename)
+            df = CSV.read(filename, DataFrame)
+            push!(df_list, df)
+        else
+            @warn "File not found: $filename"
+        end
+    end
+
+    return df_list
+end
+
+
+function generateVehicles(shifts,df_list, probabilities_location, x_range, y_range)
+    computeShiftCoverage!(shifts)
+    average_demand_per_hour = generateAverageDemandPerHour(df_list)
+
+    generateNumberOfVehiclesKonsentra!(average_demand_per_hour, shifts)
+
+    locations = []
+    total_nVehicles = sum(shift["nVehicles"] for shift in values(shifts))
+    for i in 1:total_nVehicles
+        push!(locations,getNewLocations(probabilities_location,x_range, y_range)[1])
+    end
+    generateVehiclesKonsentra(shifts, locations,"Data/Konsentra/"*string(nRequest)*"/Vehicles_"*string(nRequest)*"_"*string(Gamma)*".csv")
+
+    return average_demand_per_hour
+end
 
 function plotDemandAndShifts(average_demand_per_hour, shifts)
     hours = 1:24  # X-axis
@@ -137,3 +152,53 @@ function plotDemandAndShifts(average_demand_per_hour, shifts)
 
     display(bar_plot)
 end
+
+
+# --------
+# Constants
+# --------
+global maxRideTimeRatio = 1
+global Gamma = 0.9
+global nWalking = 4
+
+##################################################
+# Generate vehicles
+##################################################
+nRequest = 20 # Number of requests
+
+# Set probabilities and time range
+time_range = collect(range(6*60,23*60))
+
+# Shifts for vehicles 
+shiftTypes = ["Morning", "Noon", "Afternoon", "Evening"]
+shifts = Dict(
+    "Morning"    => Dict("TimeWindow" => [6*60, 12*60], "cost" => 2.0, "nVehicles" => 0, "y" => []),
+    "Noon"       => Dict("TimeWindow" => [10*60, 16*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
+    "Afternoon"  => Dict("TimeWindow" => [14*60, 20*60], "cost" => 3.0, "nVehicles" => 0, "y" => []),
+    "Evening"    => Dict("TimeWindow" => [18*60, 24*60], "cost" => 4.0, "nVehicles" => 0, "y" => [])
+)
+
+# Load simulation data
+probabilities_pickUpTime,
+probabilities_dropOffTime,
+density_pickUp,
+density_dropOff,
+probabilities_location,
+density_grid,
+x_range,
+y_range,
+probabilities_distance,
+density_distance,
+distance_range,
+location_matrix,
+requestTimePickUp,
+requestTimeDropOff,
+requests,
+distanceDriven= load_simulation_data("Data/Simulation data/")
+
+# Read data
+df_list = load_request_data(nRequest)
+
+# Generate vehicles 
+average_demand_per_hour = generateVehicles(shifts,df_list, probabilities_location, x_range, y_range)
+
