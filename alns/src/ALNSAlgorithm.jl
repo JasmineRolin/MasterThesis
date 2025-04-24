@@ -246,13 +246,13 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
 
         trialState = copyALNSState(currentState)
 
-       # @timeit TO "Destroy!" begin
+        @timeit TO "Destroy!" begin
             destroyIdx = destroy!(scenario, trialState, parameters, configuration, visitedRoute=visitedRoute,TO=TO)
-        #end
+        end
 
-        #@timeit TO "Repair!" begin
+        @timeit TO "Repair!" begin
             repairIdx = repair!(scenario, trialState, configuration, visitedRoute=visitedRoute,TO=TO)
-        #end
+        end
 
         hashKeySolution = hashSolution(trialState.currentSolution)
         seenBefore = hashKeySolution in currentState.seenSolutions
@@ -294,10 +294,10 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
             currentState.nAssignedRequests = trialState.nAssignedRequests
         end
 
-        #@timeit TO "Update Scores" begin
+        @timeit TO "Update Scores" begin
             updateScoreAndCount(scoreAccepted, scoreImproved, scoreNewBest, currentState, destroyIdx, repairIdx, isAccepted, isImproved, isNewBest)
             updateWeightsAfterEndOfSegment(segmentSize, currentState, reactionFactor, iteration)
-        #end
+        end
 
         temperature *= coolingRate
 
@@ -317,7 +317,7 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
                 join(string.(currentState.repairNumberOfUses), ","), "\n")
         end
 
-        #@timeit TO "Feasibility Check" begin
+        @timeit TO "Feasibility Check" begin
             state = State(currentState.currentSolution, event, visitedRoute, alreadyRejected)
             feasible, msg = checkSolutionFeasibilityOnline(scenario, state)
             if !feasible
@@ -326,7 +326,7 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
                 show(TO)
                 throw(msg)
             end
-        #end
+        end
 
         if iteration % printSegmentSize == 0
             println("==> ALNS: Iteration: ", iteration, ", Current cost: ", currentState.currentSolution.totalCost," current request bank: ",currentState.currentSolution.nTaxi, ", Best cost: ", currentState.bestSolution.totalCost," best request bank: ",currentState.bestSolution.nTaxi,", Improvement from initial: ", 100*(initialCost-currentState.bestSolution.totalCost)/initialCost, "%, Temperature: ", temperature, " New solutions: ",newSolutions, " /", iteration)
@@ -366,8 +366,12 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
     println("Termination: max since last improvement: ", numberOfIterationsSinceLastImprovement > maxNumberOfIterationsWithoutImprovement,
         ", max since last best: ", numberOfIterationsSinceLastBest > maxNumberOfIterationsWithoutNewBest)
 
+    println(configuration.repairMethods[1]," no uses: ", currentState.repairNumberOfUses[1])
+    println(configuration.repairMethods[2]," no uses: ", currentState.repairNumberOfUses[2])
+
     println("\n Timing Breakdown:")
-    #show(TO)
+    
+    show(TO)
 
     return currentState.bestSolution, currentState.bestRequestBank, pVals, deltaVals, isImprovedVec, isAcceptedVec, isNewBestVec
 end
