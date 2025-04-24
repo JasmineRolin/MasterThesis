@@ -189,7 +189,7 @@ using alns, domain, utils, offlinesolution, TimerOutputs
     parametersFile = "tests/resources/Parameters.csv"
     #alnsParameters = "tests/resources/ALNSParameters_online.json"
     alnsParameters = "tests/resources/ALNSParameters3.json"
-    displayPlots = false
+    displayPlots = true
 
     #for i in 1:10be
         requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
