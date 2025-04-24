@@ -14,8 +14,8 @@ include("GenerateAndSaveSimulationData.jl")
 global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 2*60 # 2 hours buffer
-global nData = 10
-global nRequest = 500 
+global nData = 1
+global nRequest = 20 
 global MAX_DELAY = 15 # TODO Astrid I just put something
 
 
@@ -44,7 +44,7 @@ function load_simulation_data(input_dir::String)
     y_range = CSV.read(joinpath(input_dir, "y_range.csv"), DataFrame).y
 
     density_flat = CSV.read(joinpath(input_dir, "density_grid.csv"), DataFrame).density
-    density_grid = reshape(density_flat, length(y_range), length(x_range))'
+    density_grid = reshape(density_flat, length(y_range), length(x_range))
 
     probabilities_location = CSV.read(joinpath(input_dir, "probabilities_location.csv"), DataFrame).probability
 
