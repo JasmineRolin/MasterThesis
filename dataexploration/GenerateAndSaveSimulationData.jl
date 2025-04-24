@@ -178,7 +178,7 @@ function run_and_save_simulation(data_files::Vector{String}, output_dir::String,
     # Find time and location distributions
     probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff = getRequestTimeDistribution(requestTimePickUp, requestTimeDropOff, time_range,bandwidth_factor=bandwidth_factor_time)
     probabilities_location, density_grid, x_range, y_range = getLocationDistribution(location_matrix;bandwidth_factor = bandwidth_factor_location)
-    probabilities_distance, density_distance, distance_range = getDistanceDistribution(distanceDriven)
+    probabilities_distance, density_distance, distance_range = getDistanceDistribution(distanceDriven; bandwidth_factor=bandwidth_factor_location)
 
     # Save everything
     CSV.write(joinpath(output_dir, "location_matrix.csv"), DataFrame(longitude=location_matrix[:,1], latitude=location_matrix[:,2]))
@@ -197,7 +197,7 @@ function run_and_save_simulation(data_files::Vector{String}, output_dir::String,
     CSV.write(joinpath(output_dir, "distance_distribution.csv"), DataFrame(probability=probabilities_distance))
     CSV.write(joinpath(output_dir, "density_distance.csv"), DataFrame(density=density_distance))
     CSV.write(joinpath(output_dir, "distance_range.csv"), DataFrame(distance=distance_range))
-
+    
     CSV.write(joinpath(output_dir, "pickup_time_distribution.csv"), DataFrame(probability=probabilities_pickUpTime))
     CSV.write(joinpath(output_dir, "density_pickup_time.csv"), DataFrame(density=density_pickUp))
     CSV.write(joinpath(output_dir, "dropoff_time_distribution.csv"), DataFrame(probability=probabilities_dropOffTime))
