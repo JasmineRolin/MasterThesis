@@ -15,7 +15,7 @@ global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 2*60 # 2 hours buffer
 global nData = 10
-global nRequest = 500 
+global nRequest = 20 
 global MAX_DELAY = 15 # TODO Astrid I just put something
 
 
@@ -322,7 +322,7 @@ function plotDataSets(x_range,y_range,density_grid,location_matrix,requestTimePi
     plot!(xticks=xtick_values)
 
    
-    p4 = histogram(vcat(requestTimeDropOff_hours,requestTimePickUp_hours), normalize=:pdf, label="", color=:blue,bins=19, size = (900,500))
+    p4 = histogram(vcat(requestTimeDropOff_hours,requestTimePickUp_hours), normalize=:pdf, label="", color=:blue,bins=24, size = (900,500))
     vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
     vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
     title!(prefix*" Request Time Distribution")

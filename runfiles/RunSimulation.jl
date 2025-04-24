@@ -10,12 +10,12 @@ using CSV
  Generated data 
 ==# 
 function main()
-    #n = parse(Int,ARGS[1])
-    #Gamma = parse(Float64,ARGS[2])
-    #i = parse(Int,ARGS[3])
-    n = 100
-    Gamma = 0.7
-    i = 1
+    n = parse(Int,ARGS[1])
+    Gamma = parse(Float64,ARGS[2])
+    i = parse(Int,ARGS[3])
+    #n = 100
+    #Gamma = 0.5
+    #i = 1
     
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",Gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"
@@ -36,7 +36,7 @@ function main()
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Simulate scenario 
-    solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder)
+    solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = false,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder)
 
     state = State(solution,scenario.onlineRequests[end],0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
@@ -46,9 +46,9 @@ function main()
     #end
 
     dfResults = processResults(outputFiles)
-    #result_file = string(outPutFolder, "/results_", Gamma, ".csv")
-    #append_mode = isfile(result_file)
-    #CSV.write(result_file, dfResults; append=append_mode)
+    result_file = string(outPutFolder, "/results_", Gamma, ".csv")
+    append_mode = isfile(result_file)
+    CSV.write(result_file, dfResults; append=append_mode)
 
 end
 

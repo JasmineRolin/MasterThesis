@@ -157,9 +157,11 @@ end
 # --------
 # Constants
 # --------
+
 global maxRideTimeRatio = 1
 global Gamma = 0.9
 global nWalking = 4
+
 
 ##################################################
 # Generate vehicles

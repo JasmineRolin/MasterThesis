@@ -9,7 +9,7 @@ using Random
 # Constants
 # --------
 global maxRideTimeRatio = 1
-global Gamma = 0.9
+global Gamma = 0.7
 global nWalking = 4
 
 # ------
@@ -154,6 +154,7 @@ end
 # ------
 # Generate vehicles to CSV
 # ------
+#==
 function generateVehiclesKonsentra(shifts, locations)
     vehicles = DataFrame(id=Int[], start_of_availability=Int[], end_of_availability=Int[], 
                          maximum_ride_time=Int[], 
@@ -172,6 +173,7 @@ function generateVehiclesKonsentra(shifts, locations)
     # Write to CSV
     CSV.write("Data/Konsentra/Vehicles_$Gamma.csv", vehicles)
 end
+==#
 
 # ------
 # Update distance and time matrix
