@@ -396,7 +396,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
 
     # Run ALNS for offline solution 
     # TODO: set correct parameters for alns
-    solution,requestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",initialSolution =  initialSolution, requestBank = initialRequestBank, displayPlots = displayALNSPlots, saveResults = saveALNSResults)
+    solution,requestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters_offline.json",initialSolution =  initialSolution, requestBank = initialRequestBank, displayPlots = displayALNSPlots, saveResults = saveALNSResults)
     requestBankOffline = deepcopy(requestBank)
 
     # Update time windows 

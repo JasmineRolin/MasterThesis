@@ -5,7 +5,7 @@ function average_kpis_by_data_size(base_path::String)
     all_data = DataFrame()
 
     for dataSize in [20, 100, 300, 500]
-        full_path = joinpath(base_path, string(dataSize), "results.csv")
+        full_path = joinpath(base_path, string(dataSize), "results_0.9.csv")
         df = CSV.read(full_path, DataFrame)
         df[!, :DataSize] = fill(dataSize, nrow(df))
         append!(all_data, df)
@@ -22,6 +22,6 @@ function average_kpis_by_data_size(base_path::String)
     return grouped
 end
 
-folder = "22042025"
+folder = "24042025"
 results_df = average_kpis_by_data_size("runfiles/output/OnlineSimulation/"*folder)
-CSV.write("runfiles/output/OnlineSimulation/"*folder*"/average_results_by_size.csv", results_df)
+CSV.write("runfiles/output/OnlineSimulation/"*folder*"/average_results_by_size_0.9.csv", results_df)

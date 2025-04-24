@@ -10,40 +10,45 @@ using CSV
  Generated data 
 ==# 
 function main()
-    n = parse(Int,ARGS[1])
-    #n = 500
-    #i = 2
-    vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
+    #n = parse(Int,ARGS[1])
+    #Gamma = parse(Float64,ARGS[2])
+    #i = parse(Int,ARGS[3])
+    n = 100
+    Gamma = 0.7
+    i = 1
+    
+    vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",Gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters2.json"
-    outPutFolder = "runfiles/output/OnlineSimulation2/"*string(n)
+    outPutFolder = "runfiles/output/OnlineSimulation/"*string(n)
     outputFiles = Vector{String}()
 
-    for i in 1:10
-        requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
-        distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
-        timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
-        scenarioName = string("Gen_Data_",n,"_",i)
-        push!(outputFiles, outPutFolder*"/Simulation_KPI_"*string(scenarioName)*".json")
-        
-        println("====> SCENARIO: ",scenarioName)
+    #for i in 1:10
+    requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
+    distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",Gamma,"_",i,"_distance.txt")
+    timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",Gamma,"_",i,"_time.txt")
+    scenarioName = string("Gen_Data_",n,"_",Gamma,"_",i)
+    push!(outputFiles, outPutFolder*"/Simulation_KPI_"*string(scenarioName)*".json")
+    
+    println("====> SCENARIO: ",scenarioName)
 
-        # Read instance 
-        scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
+    # Read instance 
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
-        # Simulate scenario 
-        solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = false,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder)
+    # Simulate scenario 
+    solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder)
 
-        state = State(solution,scenario.onlineRequests[end],0)
-        feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-        printSolution(solution,printRouteHorizontal)
-        @test msg == ""
-        @test feasible == true
-        
-    end
+    state = State(solution,scenario.onlineRequests[end],0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+    printSolution(solution,printRouteHorizontal)
+    @test msg == ""
+    @test feasible == true
+    #end
 
     dfResults = processResults(outputFiles)
-    CSV.write(outPutFolder*"/results.csv", dfResults)
+    #result_file = string(outPutFolder, "/results_", Gamma, ".csv")
+    #append_mode = isfile(result_file)
+    #CSV.write(result_file, dfResults; append=append_mode)
 
 end
 

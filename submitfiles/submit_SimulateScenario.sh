@@ -10,22 +10,28 @@
 #BSUB -N 
 # end of BSUB options
 
-# load Julia version
+# Load Julia module
 module load julia/1.10.2
 
-# Activate project 
-julia --project=. -e 'using Pkg; 
-    Pkg.activate("."); 
-    Pkg.add("Plots");
-    Pkg.add("DataFrames");
-    Pkg.add("CSV"); 
-    Pkg.develop(path="domain"); 
-    Pkg.develop(path="utils");
-    Pkg.develop(path="offlinesolution");
-    Pkg.develop(path="onlinesolution");
-    Pkg.develop(path="alns");
-    Pkg.develop(path="simulationframework");
-    Pkg.resolve();'
+# Activate project and install dependencies
+julia --project=. -e '
+using Pkg;
+Pkg.activate(".");
+Pkg.add("Plots");
+Pkg.add("DataFrames");
+Pkg.add("CSV");
+Pkg.develop(path="domain");
+Pkg.develop(path="utils");
+Pkg.develop(path="offlinesolution");
+Pkg.develop(path="onlinesolution");
+Pkg.develop(path="alns");
+Pkg.develop(path="simulationframework");
+Pkg.resolve();
+'
 
-julia --project=. runfiles/RunSimulation.jl "500"
+# Loop to run simulations with third argument from 1 to 10
+for i in {1..10}; do
+    julia --project=. runfiles/RunSimulation.jl "500" "0.5" "$i" &
+done
 
+wait  # Wait for all background Julia jobs to finish
