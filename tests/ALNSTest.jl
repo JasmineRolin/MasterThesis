@@ -182,8 +182,14 @@ using alns, domain, utils, offlinesolution, TimerOutputs
 
 
 #@testset "Run all generated data sets " begin
+
+    # Number of requests in scenario - 20, 100, 300 or 500 
     n = 500
+
+    # Scenario number - 1:10
     i = 1
+
+    # Files 
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
     parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters3.json"
@@ -192,7 +198,7 @@ using alns, domain, utils, offlinesolution, TimerOutputs
     displayPlots = true
     saveResults = true
 
-    #for i in 1:10be
+    #for i in 1:10
         requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
         distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
         timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")

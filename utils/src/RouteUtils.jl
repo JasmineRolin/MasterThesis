@@ -236,7 +236,7 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
         fill!(newEndOfServiceTimes, 0)
     end
 
-    #@timeit TO "checkHighLevelConstraints" begin
+    @timeit TO "CheckHighLevelConstraints" begin
         vehicleStartTime = vehicle.availableTimeWindow.startTime
         vehicleEndTime = vehicle.availableTimeWindow.endTime
         pickUpActivity = request.pickUpActivity
@@ -265,20 +265,17 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
            route[dropOffIdx+1].activity.timeWindow.endTime < dropOffStartTime
             return INFEASIBLE_RESULT
         end
-    #end
+    end
 
     pickUpIdxInBlock = pickUpIdx + 1
     dropOffIdxInBlock = dropOffIdx + 2
 
-    # return @timeit TO "callCheckFeasibilityOfInsertionInRoute" begin
-    #     checkFeasibilityOfInsertionInRoute(time,distance,serviceTimes,requests,vehicleSchedule.totalIdleTime,vehicleSchedule,
-    #     newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete,waitingActivitiesToAdd,
-    #                                        pickUpIdxInBlock = pickUpIdxInBlock, dropOffIdxInBlock = dropOffIdxInBlock, request = request, visitedRoute=visitedRoute, TO=TO,visitedRouteIds=visitedRouteIds)
-    # end
+    return @timeit TO "CallCheckFeasibilityOfInsertionInRoute" begin
+        checkFeasibilityOfInsertionInRoute(time,distance,serviceTimes,requests,vehicleSchedule.totalIdleTime,vehicleSchedule,
+        newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete,waitingActivitiesToAdd,
+                                           pickUpIdxInBlock = pickUpIdxInBlock, dropOffIdxInBlock = dropOffIdxInBlock, request = request, visitedRoute=visitedRoute, TO=TO,visitedRouteIds=visitedRouteIds)
+    end
 
-    return checkFeasibilityOfInsertionInRoute(time,distance,serviceTimes,requests,vehicleSchedule.totalIdleTime,vehicleSchedule,
-    newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete,waitingActivitiesToAdd,
-                                       pickUpIdxInBlock = pickUpIdxInBlock, dropOffIdxInBlock = dropOffIdxInBlock, request = request, visitedRoute=visitedRoute, TO=TO,visitedRouteIds=visitedRouteIds)
 end
 
 #==
@@ -433,7 +430,6 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
                 # Remove waiting activity 
                 if feasible
-                    #idxActivityInSchedule += isActivityInSchedule
                     maximumShiftBackward = maximumShiftBackwardTrial
                     maximumShiftForward = maximumShiftForwardTrial
 
@@ -466,7 +462,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                         # feasible, maximumShiftBackward, maximumShiftForward = @timeit TO "CHECKWAITING" begin
                         #     canActivityBeInserted(currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
                         # end
-                        feasible, maximumShiftBackward, maximumShiftForwar = canActivityBeInserted(currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
+                        feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
 
                         
                         if !feasible
@@ -531,7 +527,6 @@ end
 #==
 Method to check if it is feasible to insert a waiting activity
 ==#
-
 function feasibleWhenInsertWaiting!(time::Array{Int,2},requests::Vector{Request},serviceTimes::Int,currentActivity::Activity,currentActivityType::ActivityType,previousActivity::Activity,vehicleSchedule::VehicleSchedule,idx::Int,newStartOfServiceTimes::Vector{Int},newEndOfServiceTimes::Vector{Int},waitingActivitiesToAdd::Vector{Int},maximumShiftBackward::Int,maximumShiftForward::Int)
     if !(vehicleSchedule.numberOfWalking[idx-1] == 0 && currentActivityType == PICKUP)
         return false, 0, 0
