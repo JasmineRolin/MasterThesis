@@ -254,8 +254,9 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
 
     # Keep track of costs 
     infVar = typemax(Float64)
-    insertionCosts = Dict{Int64, Vector{Float64}}()
-    positions = Dict{Tuple{Int64,Int64}, Tuple{Int64,Int64}}()
+    insertionCosts = [infVar for _ in 1:length(requestBank), _ in 1:length(vehicleSchedules)]
+    positions = [(-1, -1) for _ in 1:length(requestBank), _ in 1:length(vehicleSchedules)]
+
     # for r in requestBank
     #     request = requests[r]
     #     insertionCosts[r] = ones(length(vehicleSchedules))*infVar
@@ -320,8 +321,8 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
                         throw("Error: bestPickUp or bestDropOff is -1")
                     end
 
-                    insertion_cost_buffer[r][idx] = totalCost
-                    position_buffer[(r, idx)] = (bestPickUp, bestDropOff)
+                    insertion_cost_buffer[r,idx] = totalCost
+                    position_buffer[r, idx] = (bestPickUp, bestDropOff)
                 end
             end
         end
@@ -336,6 +337,8 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
                     insertionCosts[r] = costs  # Add a new entry if it doesn't exist
                 end
             end
+
+            
 
             # Merge thread-local positions into global `positions`
             for ((r, idx), pos) in local_positions[t]
