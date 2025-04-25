@@ -26,12 +26,16 @@ function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{
         return
     end
 
-    # Define insertion matrix
+    # Keep track of insertion costs for each request and vehicle
     insCostMatrix = zeros(Float64, length(requests), length(scenario.vehicles))
-    compatibilityRequestVehicle = ones(Bool, length(requests), length(scenario.vehicles))
-    positions = Dict{Tuple{Int64,Int64}, Tuple{Int64,Int64}}()
 
-   @timeit TO "RegretfillInsertionCostMatrix!" begin
+    # Keep track of compatibility of requests and vehicles
+    compatibilityRequestVehicle = ones(Bool, length(requests), length(scenario.vehicles))
+
+    # Keep track of the best position to insert each request in each vehicle
+    positions = Array{Tuple{Int64, Int64}, 2}(undef, length(requests), length(scenario.vehicles))
+
+    @timeit TO "RegretfillInsertionCostMatrix!" begin
         fillInsertionCostMatrix!(scenario, currentSolution, requestBank, insCostMatrix, compatibilityRequestVehicle,positions,visitedRoute)
     end
 
@@ -83,7 +87,7 @@ function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{
             waitingActivitiesToDelete = zeros(Int, 0)
             waitingActivitiesToAdd = zeros(Int, 0)
             visitedRouteIds = Set(keys(visitedRoute))
-            pickUp, dropOff = positions[(bestRequest,overallBestVehicle)]
+            pickUp, dropOff = positions[bestRequest,overallBestVehicle]
 
             feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd = checkFeasibilityOfInsertionAtPosition(requests[bestRequest],bestSchedule,pickUp,dropOff,scenario,visitedRoute=visitedRoute,TO=TO,
             newStartOfServiceTimes=newStartOfServiceTimes,newEndOfServiceTimes=newEndOfServiceTimes,waitingActivitiesToDelete=waitingActivitiesToDelete,waitingActivitiesToAdd=waitingActivitiesToAdd,visitedRouteIds=visitedRouteIds)
@@ -116,7 +120,7 @@ function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{
 
         # Recalculate insertion cost matrix
         @timeit TO "RegretreCalcCostMatrix!" begin
-         reCalcCostMatrix!(overallBestVehicle, scenario, currentSolution, requestBank, insCostMatrix, compatibilityRequestVehicle,positions,visitedRoute,TO=TO)
+            reCalcCostMatrix!(overallBestVehicle, scenario, currentSolution, requestBank, insCostMatrix, compatibilityRequestVehicle,positions,visitedRoute)
         end
     end
 
@@ -158,7 +162,7 @@ function fillInsertionCostMatrix!(
     requestBank::Vector{Int}, 
     insCostMatrix::Array{Float64,2},
     compatibilityRequestVehicle::Array{Bool,2},
-    positions::Dict{Tuple{Int,Int}, Tuple{Int,Int}},
+    positions::Array{Tuple{Int64, Int64}, 2},  # Change positions type to 2D array of tuples
     visitedRoute::Dict{Int, Dict{String, Int}}
 )
     vehicles = scenario.vehicles
@@ -169,7 +173,7 @@ function fillInsertionCostMatrix!(
     n_threads = Threads.nthreads()
 
     # Thread-local buffers (one per thread)
-    local_positions = [Dict{Tuple{Int,Int}, Tuple{Int,Int}}() for _ in 1:n_threads]
+    local_positions = [fill((-1, -1), size(positions)) for _ in 1:n_threads]  # Initializing with (-1, -1)
     local_costs = [fill(infVar, size(insCostMatrix)) for _ in 1:n_threads]
     local_compatibility = [trues(size(insCostMatrix)) for _ in 1:n_threads]
 
@@ -184,13 +188,16 @@ function fillInsertionCostMatrix!(
 
         for v in eachindex(vehicles)
             schedule = vehicleSchedules[v]
+            scheduleTotalCost = schedule.totalCost
+
+            # Check if insertion is feasible 
             status, bestPickUp, bestDropOff, _, _, _, bestCost, _, _, _ = findBestFeasibleInsertionRoute(
                 request, schedule, scenario, visitedRoute=visitedRoute
             )
 
             if status
-                cost_buffer[r, v] = bestCost - schedule.totalCost
-                pos_buffer[(r, v)] = (bestPickUp, bestDropOff)
+                cost_buffer[r, v] = bestCost  #- scheduleTotalCost
+                pos_buffer[r, v] = (bestPickUp, bestDropOff)
             else
                 cost_buffer[r, v] = infVar
                 compat_buffer[r, v] = false
@@ -200,16 +207,19 @@ function fillInsertionCostMatrix!(
 
     # Merge thread-local results into shared outputs
     for t in 1:n_threads
-        for ((r, v), pos) in local_positions[t]
-            positions[(r, v)] = pos
+        for r in 1:size(local_positions[t], 1)
+            for v in 1:size(local_positions[t], 2)
+                insCostMatrix[r, v] = local_costs[t][r, v]
+                positions[r, v] = local_positions[t][r, v]
+                compatibilityRequestVehicle[r, v] = local_compatibility[t][r, v]
+            end
         end
-        insCostMatrix .+= local_costs[t]
-        compatibilityRequestVehicle .&= local_compatibility[t]
     end
 end
 
 
-function reCalcCostMatrix!(v::Int,scenario::Scenario, currentSolution::Solution, requestBank::Vector{Int}, insCostMatrix::Array{Float64,2}, compatibilityRequestVehicle::Array{Bool,2},positions::Dict{Tuple{Int64,Int64}, Tuple{Int64,Int64}},visitedRoute::Dict{Int, Dict{String, Int}};TO::TimerOutput=TimerOutput())
+
+function reCalcCostMatrix!(v::Int,scenario::Scenario, currentSolution::Solution, requestBank::Vector{Int}, insCostMatrix::Array{Float64,2}, compatibilityRequestVehicle::Array{Bool,2},positions::Array{Tuple{Int64, Int64}, 2},visitedRoute::Dict{Int, Dict{String, Int}};TO::TimerOutput=TimerOutput())
     requests = scenario.requests
     schedule = currentSolution.vehicleSchedules[v]
     infVar = typemax(Float64)
@@ -219,8 +229,8 @@ function reCalcCostMatrix!(v::Int,scenario::Scenario, currentSolution::Solution,
         if compatibilityRequestVehicle[r,v]
             status, bestPickUp, bestDropOff, _, _,_, bestCost, _, _, _ = findBestFeasibleInsertionRoute(request, schedule, scenario,visitedRoute = visitedRoute,TO=TO)
             if status
-                insCostMatrix[r,v] = bestCost - schedule.totalCost
-                positions[(r,v)] = (bestPickUp, bestDropOff)
+                insCostMatrix[r,v] = bestCost #- schedule.totalCost
+                positions[r,v] = (bestPickUp, bestDropOff)
             else
                 insCostMatrix[r,v] = infVar
                 compatibilityRequestVehicle[r,v] = false
@@ -240,6 +250,8 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
     @unpack currentSolution, requestBank = state
     @unpack vehicleSchedules = currentSolution
     @unpack requests, time, distance = scenario
+    nRequests = length(requests)
+    nVehicles = length(vehicleSchedules)
     newRequestBank = Int[]
 
     #TODO remove when stable also in other places
@@ -254,8 +266,7 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
 
     # Keep track of costs 
     infVar = typemax(Float64)
-    insertionCosts = Dict{Int64, Vector{Float64}}()
-    positions = Dict{Tuple{Int64,Int64}, Tuple{Int64,Int64}}()
+  
     # for r in requestBank
     #     request = requests[r]
     #     insertionCosts[r] = ones(length(vehicleSchedules))*infVar
@@ -273,75 +284,17 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
     #     end
     # end
 
+    # Keep track of insertion costs for each request and vehicle
+    insCostMatrix = zeros(Float64, length(requests), length(scenario.vehicles))
 
-    infVar = typemax(Float64)
-    
-    # Thread-local buffers (one per thread)
-    n_threads = Threads.nthreads()
+    # Keep track of compatibility of requests and vehicles
+    compatibilityRequestVehicle = ones(Bool, length(requests), length(scenario.vehicles))
 
-    @timeit TO "GreedyFindFeasibleInsertionFill" begin
+    # Keep track of the best position to insert each request in each vehicle
+    positions = Array{Tuple{Int64, Int64}, 2}(undef, length(requests), length(scenario.vehicles))
 
-        # Parallelize the outer loop (over requestBank)
-        infVar = typemax(Float64)  # Use `Int` for infeasible value (as you changed the array to Int type)
-            
-        # Thread-local buffers (one per thread)
-        n_threads = Threads.nthreads()
-
-        # Initialize thread-local buffers
-        local_insertion_costs = [Dict{Int, Vector{Float64}}() for _ in 1:n_threads]
-        local_positions = [Dict{Tuple{Int, Int}, Tuple{Int, Int}}() for _ in 1:n_threads]
-
-        # Parallelize the outer loop (over requestBank)
-        Threads.@threads for r_idx in 1:length(requestBank)
-            r = requestBank[r_idx]
-            request = requests[r]
-
-            # Each thread gets its own local insertion costs and positions
-            insertion_cost_buffer = local_insertion_costs[Threads.threadid()]
-            position_buffer = local_positions[Threads.threadid()]
-                
-
-            # Initialize the current request's insertion costs to infVar
-            insertion_cost_buffer[r] = fill(infVar, length(vehicleSchedules))  # Fill with infVar
-
-            # Sequentially iterate over the vehicle schedules (no need to parallelize this)
-            for (idx, schedule) in enumerate(vehicleSchedules)
-                status, bestPickUp, bestDropOff, _, _, _, totalCost, _, _, _, _ = findBestFeasibleInsertionRoute(request, schedule, scenario, visitedRoute=visitedRoute)
-
-                # Save cost if insertion was feasible
-                if status
-                    if bestPickUp == -1 || bestDropOff == -1
-                        println("Error: bestPickUp or bestDropOff is -1")
-                        println("Request: ", r2)
-                        println("Best Schedule: ", bestSchedule)
-                        println("Best PickUp: ", bestPickUp)
-                        println("Best DropOff: ", bestDropOff)
-                        println(totalCost)
-                        throw("Error: bestPickUp or bestDropOff is -1")
-                    end
-
-                    insertion_cost_buffer[r][idx] = totalCost
-                    position_buffer[(r, idx)] = (bestPickUp, bestDropOff)
-                end
-            end
-        end
-
-        # Merge thread-local results into global insertion costs and positions
-        for t in 1:n_threads
-            # Merge thread-local results for insertion costs into global `insertionCosts`
-            for (r, costs) in local_insertion_costs[t]
-                if haskey(insertionCosts, r)
-                    insertionCosts[r] .= costs  # Update the existing entry in the global Dict
-                else
-                    insertionCosts[r] = costs  # Add a new entry if it doesn't exist
-                end
-            end
-
-            # Merge thread-local positions into global `positions`
-            for ((r, idx), pos) in local_positions[t]
-                positions[(r, idx)] = pos
-            end
-        end
+    @timeit TO "GreedyFillInsertionCostMatrix!" begin
+        fillInsertionCostMatrix!(scenario, currentSolution, requestBank, insCostMatrix, compatibilityRequestVehicle,positions,visitedRoute)
     end
 
     # Loop through request bank and insert request with best cost 
@@ -351,7 +304,7 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
         popfirst!(remainingRequests)
 
         # Check if any feasible insertion was found
-        costs = insertionCosts[r]
+        costs = insCostMatrix[r,:]
         if all(x -> x == infVar, costs)
             push!(newRequestBank, r)
             continue
@@ -359,7 +312,9 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
 
         # Extract best vehicle
         bestVehicle = argmin(costs)
+       # println(findmin(costs))
         bestSchedule = vehicleSchedules[bestVehicle]
+
         @timeit TO "GreedyFindFeasibleInsertionACTUAL" begin
            # status, bestPickUp, bestDropOff, bestNewStartOfServiceTimes, bestNewEndOfServiceTimes, bestWaitingActivitiesToDelete, bestCost, bestDistance, bestIdleTime, bestTime, bestWaitingActivitiesToAdd = findBestFeasibleInsertionRoute(request, bestSchedule, scenario, visitedRoute=visitedRoute,TO=TO)
             arraySize = length(bestSchedule.route) + 2
@@ -370,7 +325,7 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
             visitedRouteIds = Set(keys(visitedRoute))
             bestPickUp = bestDropOff = -1
             try
-                bestPickUp, bestDropOff = positions[(r,bestVehicle)]
+                bestPickUp, bestDropOff = positions[r,bestVehicle]
             catch e 
                 println(costs)
                 throw(e)
@@ -426,72 +381,16 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
 
         #     # Save cost 
         #     if status
-        #         insertionCosts[r2][bestVehicle] = totalCost
-        #         positions[(r2,bestVehicle)] = (bestPickUp, bestDropOff)
+        #         insCostMatrix[r2,bestVehicle] = totalCost
+        #         positions[r2,bestVehicle] = (bestPickUp, bestDropOff)
         #     else
-        #         insertionCosts[r2][bestVehicle] = infVar
+        #         insCostMatrix[r2,bestVehicle] = infVar
         #     end
         # end
 
-        # Initialize thread-local buffers
-
-        @timeit TO "GreedyFindFeasibleInsertion" begin
-       # println("==========>==========>==========>DO UPDATE")
-            local_insertion_costs = [Dict{Int, Float64}() for _ in 1:n_threads]
-            local_positions = [Dict{Tuple{Int, Int}, Tuple{Int, Int}}() for _ in 1:n_threads]
-            local_pick_up = [0 for _ in 1:n_threads]
-            local_drop_off = [0 for _ in 1:n_threads]   
-
-            # Parallelize the last loop (for r2 in remainingRequests)
-            Threads.@threads for r_idx in 1:length(remainingRequests)
-                r2 = remainingRequests[r_idx]
-                request2 = scenario.requests[r2]
-
-              #  bestPickUp = bestDropOff = 0
-
-                # Each thread gets its own local insertion costs and positions
-                insertion_cost_buffer = local_insertion_costs[Threads.threadid()]
-                position_buffer = local_positions[Threads.threadid()]
-
-                status, local_pick_up[Threads.threadid()], local_drop_off[Threads.threadid()], _, _, _, totalCost, _, _, _, _ = findBestFeasibleInsertionRoute(request2, bestSchedule, scenario, visitedRoute=visitedRoute)
-
-                # Save cost if insertion was feasible
-                if status
-                    pickUp = local_pick_up[Threads.threadid()]
-                    dropOff = local_drop_off[Threads.threadid()]
-
-                    if pickUp == -1 || dropOff == -1
-                        println("Error: bestPickUp or bestDropOff is -1")
-                        println("Request: ", r2)
-                        println("Best Schedule: ", bestSchedule)
-                        println("Best PickUp: ", pickUp)
-                        println("Best DropOff: ", dropOff)
-                        println(totalCost)
-                    end
-                    insertion_cost_buffer[r2] = totalCost
-                    position_buffer[(r2, bestVehicle)] = (pickUp, dropOff)
-                else
-                    insertion_cost_buffer[r2] = infVar
-                end
-            end
-
-            # Merge thread-local results into global insertion costs and positions
-            for t in 1:n_threads
-                # Merge thread-local results for insertion costs into global `insertionCosts`
-                for (key, value) in local_insertion_costs[t]
-                    # Make sure `key` exists in `insertionCosts` before assignment
-                    if haskey(insertionCosts, key)
-                        insertionCosts[key][bestVehicle] = value  # Merge values from thread-local buffers
-                    else
-                        insertionCosts[key] = Dict(bestVehicle => value)  # Initialize if not present
-                    end
-                end
-
-                # Merge thread-local positions into global `positions`
-                for ((r2, bestVehicle), pos) in local_positions[t]
-                    positions[(r2, bestVehicle)] = pos
-                end
-            end
+        # Recalculate insertion cost matrix
+        @timeit TO "GreedyReCalcCostMatrix!" begin
+            reCalcCostMatrix!(bestVehicle, scenario, currentSolution, remainingRequests, insCostMatrix, compatibilityRequestVehicle,positions,visitedRoute)
         end
       
     end
@@ -504,55 +403,27 @@ end
 function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::VehicleSchedule, scenario::Scenario; visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(), TO::TimerOutput=TimerOutput())
     bestPickUp = -1
     bestDropOff = -1
-    # bestNewStartOfServiceTimes = Vector{Int}()
-    # bestNewEndOfServiceTimes = Vector{Int}()
-    # bestWaitingActivitiesToDelete = Vector{Int}() 
-    # bestWaitingActivitiesToAdd = Vector{Int}()
-     bestCost = typemax(Float64)
-    # bestDistance = typemax(Float64)
-    # bestIdleTime = typemax(Int)
-    # bestTime = typemax(Int)
+    bestCost = typemax(Float64)
 
     route = vehicleSchedule.route
 
-
+    # Initialize arrays  
+    arraySize = length(route) + 2
+    newStartOfServiceTimes = zeros(Int, arraySize)
+    newEndOfServiceTimes = zeros(Int, arraySize)
+    waitingActivitiesToDelete = zeros(Int, 0)
+    waitingActivitiesToAdd = zeros(Int, 0)
+    visitedRouteIds = Set(keys(visitedRoute))
 
     for i in 1:length(route)-1
         for j in i:length(route)-1
-            # feasible, _, _,_, totalCost, _, _, _, _  = @timeit TO "checkFeasibilityOfInsertionAtPosition" begin 
-            #     checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,i,j,scenario,visitedRoute=visitedRoute,TO=TO,
-            #     newStartOfServiceTimes=newStartOfServiceTimes,newEndOfServiceTimes=newEndOfServiceTimes,waitingActivitiesToDelete=waitingActivitiesToDelete,
-            #     waitingActivitiesToAdd=waitingActivitiesToAdd,visitedRouteIds=visitedRouteIds)
-            # end
-
-            # Initialize arrays  
-            arraySize = length(route) + 2
-            newStartOfServiceTimes = zeros(Int, arraySize)
-            newEndOfServiceTimes = zeros(Int, arraySize)
-            waitingActivitiesToDelete = zeros(Int, 0)
-            waitingActivitiesToAdd = zeros(Int, 0)
-            visitedRouteIds = Set(keys(visitedRoute))
-
             feasible, _, _,_, totalCost, totalDistance, totalIdleTime, totalTime, _  = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,i,j,scenario,visitedRoute=visitedRoute,
             newStartOfServiceTimes=newStartOfServiceTimes,newEndOfServiceTimes=newEndOfServiceTimes,waitingActivitiesToDelete=waitingActivitiesToDelete,waitingActivitiesToAdd=waitingActivitiesToAdd,visitedRouteIds=visitedRouteIds)
 
             if feasible && (totalCost < bestCost)
                     bestPickUp = i
                     bestDropOff = j
-                    # bestNewStartOfServiceTimes = copy(newStartOfServiceTimes)
-                    # bestNewEndOfServiceTimes = copy(newEndOfServiceTimes)
-                    # bestWaitingActivitiesToDelete = copy(waitingActivitiesToDelete)
-                    # bestWaitingActivitiesToAdd = copy(waitingActivitiesToAdd)
-                        bestCost = totalCost
-                    # bestDistance = totalDistance
-                    # bestIdleTime = totalIdleTime
-                    # bestTime = totalTime
-
-                    # # TODO: jas - remove 
-                    # feasible, bestNewStartOfServiceTimes, bestNewEndOfServiceTimes,bestWaitingActivitiesToDelete, bestCost, bestDistance, bestIdleTime, bestTime, bestWaitingActivitiesToAdd =    checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,bestPickUp,bestDropOff,scenario,visitedRoute=visitedRoute,TO=TO,
-                    # newStartOfServiceTimes=newStartOfServiceTimes,newEndOfServiceTimes=newEndOfServiceTimes,waitingActivitiesToDelete=waitingActivitiesToDelete,waitingActivitiesToAdd=waitingActivitiesToAdd,visitedRouteIds=visitedRouteIds)
-
-                    # return bestCost < typemax(Float64), bestPickUp, bestDropOff, bestNewStartOfServiceTimes, bestNewEndOfServiceTimes,bestWaitingActivitiesToDelete, bestCost, bestDistance, bestIdleTime, bestTime, bestWaitingActivitiesToAdd
+                    bestCost = totalCost
             end
         end
     end
@@ -562,29 +433,13 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
 
     # Because copy is slowes
     if feasible
-        # Initialize arrays  
-        arraySize = length(route) + 2
-        newStartOfServiceTimes = zeros(Int, arraySize)
-        newEndOfServiceTimes = zeros(Int, arraySize)
-        waitingActivitiesToDelete = zeros(Int, 0)
-        waitingActivitiesToAdd = zeros(Int, 0)
-        visitedRouteIds = Set(keys(visitedRoute))
-
        feasible, bestNewStartOfServiceTimes, bestNewEndOfServiceTimes,bestWaitingActivitiesToDelete, bestCost, bestDistance, bestIdleTime, bestTime, bestWaitingActivitiesToAdd =    checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,bestPickUp,bestDropOff,scenario,visitedRoute=visitedRoute,TO=TO,
        newStartOfServiceTimes=newStartOfServiceTimes,newEndOfServiceTimes=newEndOfServiceTimes,waitingActivitiesToDelete=waitingActivitiesToDelete,waitingActivitiesToAdd=waitingActivitiesToAdd,visitedRouteIds=visitedRouteIds)
 
-    #    println("__________________")
-    #    println("request: ", request.id)
-    #      println("Best PickUp: ", bestPickUp)
-    #         println("Best DropOff: ", bestDropOff)
-    #         println("Best Cost: ", bestCost)
        return true, bestPickUp, bestDropOff, bestNewStartOfServiceTimes, bestNewEndOfServiceTimes,bestWaitingActivitiesToDelete, bestCost, bestDistance, bestIdleTime, bestTime, bestWaitingActivitiesToAdd
     else 
         return EMPTY_RESULT
     end
-
-  #  return bestCost < typemax(Float64), bestPickUp, bestDropOff, bestNewStartOfServiceTimes, bestNewEndOfServiceTimes,bestWaitingActivitiesToDelete, bestCost, bestDistance, bestIdleTime, bestTime, bestWaitingActivitiesToAdd
-
 end
 
 end
