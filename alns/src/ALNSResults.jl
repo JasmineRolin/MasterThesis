@@ -165,7 +165,7 @@ function createRepairWeightPlot(df::DataFrame,configuration::ALNSConfiguration,s
     rw_columns = filter(col -> startswith(string(col), "RW"), names(df))
 
     # Create a plot
-    p = plot(title=string(scenarioName," - RW Over Iterations"), xlabel="Iteration", ylabel="RW",size=(2000,1000))
+    p = plot(title=string(scenarioName," - Repair Weights Over Iterations"), xlabel="Iteration", ylabel="RW",size=(2000,1000))
 
     # Plot each RW column
     for (idx,col) in enumerate(rw_columns)
@@ -188,7 +188,7 @@ function createDestroyWeightPlot(df::DataFrame,configuration::ALNSConfiguration,
     rw_columns = filter(col -> startswith(string(col), "DW"), names(df))
 
     # Create a plot
-    p = plot(title=string(scenarioName," - DW Over Iterations"), xlabel="Iteration", ylabel="DW",size=(2000,1000))
+    p = plot(title=string(scenarioName," - Destroy Weights Over Iterations"), xlabel="Iteration", ylabel="DW",size=(2000,1000))
 
     # Plot each RW column
     for (idx,col) in enumerate(rw_columns)

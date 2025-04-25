@@ -182,20 +182,21 @@ using alns, domain, utils, offlinesolution, TimerOutputs
 
 
 #@testset "Run all generated data sets " begin
-
     n = 500
     i = 1
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
     parametersFile = "tests/resources/Parameters.csv"
-    #alnsParameters = "tests/resources/ALNSParameters_online.json"
     alnsParameters = "tests/resources/ALNSParameters3.json"
+
+    # Set both true to see plots 
     displayPlots = true
+    saveResults = true
 
     #for i in 1:10be
         requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
         distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
         timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
-        scenarioName = string("Konsentra_Data_",n,"_",i)
+        scenarioName = string("Generated_Data_",n,"_",i)
         
         # Read instance 
         scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
@@ -213,7 +214,7 @@ using alns, domain, utils, offlinesolution, TimerOutputs
         
         TO = TimerOutput()
         initialSolution, requestBank = simpleConstruction(scenario,scenario.requests,TO=TO)
-        finalSolution,requestBank,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=false,stage="Offline")
+        finalSolution,requestBank,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=saveResults,stage="Offline")
 
         state = State(finalSolution,scenario.onlineRequests[end],0)
         feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
