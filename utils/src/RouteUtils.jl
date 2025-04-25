@@ -287,6 +287,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
      pickUpIdxInBlock::Int=-1, dropOffIdxInBlock::Int=-1,request::Union{Request,Nothing}=nothing,visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(), state::String = "Repair",TO::TimerOutput=TimerOutput(),visitedRouteIds::Set{Int}=Set{Int}()) 
    
      #@timeit TO "BEFORELOOP" begin 
+        # Initialize 
         route = vehicleSchedule.route
         insertRequest = !isnothing(request)
         routeLength = length(route)
@@ -296,6 +297,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
         end
         pickUpActivity = insertRequest ? request.pickUpActivity : nothing 
         dropOffActivity = insertRequest ? request.dropOffActivity : nothing 
+        firstActivity = route[1]
 
         # New service times - assuming that the size is correct
         fill!(newStartOfServiceTimes, 0)
@@ -309,10 +311,10 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
         pickUpIndexes = Dict{Int,Int}() # (RequestId, index)
 
         # Initialize
-        currentActivity = route[1].activity
-        previousActivity = route[1].activity
-        newStartOfServiceTimes[1] = route[1].startOfServiceTime
-        newEndOfServiceTimes[1] = route[1].endOfServiceTime ### Spørg Jasmine: Hvorfor kan den ikke ændres fx hvis det er en witing node?
+        currentActivity = firstActivity.activity
+        previousActivity = firstActivity.activity
+        newStartOfServiceTimes[1] = firstActivity.startOfServiceTime
+        newEndOfServiceTimes[1] = firstActivity.endOfServiceTime ### Spørg Jasmine: Hvorfor kan den ikke ændres fx hvis det er en witing node?
 
         # Keep track of KPIs 
         totalDistance = 0.0 
@@ -322,30 +324,30 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
     #@timeit TO "BEFORELOOP2" begin
         # Check first activity in route
-        if route[1].activity.activityType == PICKUP
-            pickUpIndexes[route[1].activity.requestId] = 1
-        elseif route[1].activity.activityType == DROPOFF
-            requestId = route[1].activity.requestId
-            totalCost += getCostOfRequest(time,visitedRoute[requestId]["PickUpServiceStart"] + serviceTimes,route[1].startOfServiceTime,requestId,route[1].activity.id)
-        elseif route[1].activity.activityType == WAITING
-            totalIdleTime = route[1].endOfServiceTime - route[1].startOfServiceTime
+        if firstActivity.activity.activityType == PICKUP
+            pickUpIndexes[firstActivity.activity.requestId] = 1
+        elseif firstActivity.activity.activityType == DROPOFF
+            requestId = firstActivity.activity.requestId
+            totalCost += getCostOfRequest(time,visitedRoute[requestId]["PickUpServiceStart"] + serviceTimes,firstActivity.startOfServiceTime,requestId,firstActivity.activity.id)
+        elseif firstActivity.activity.activityType == WAITING
+            totalIdleTime = firstActivity.endOfServiceTime - firstActivity.startOfServiceTime
         end
         
         # Find maximum shift backward and forward
-        if route[1].activity.activityType == WAITING || route[1].activity.activityType == DEPOT
-            maximumShiftBackward = route[1].startOfServiceTime - route[1].activity.timeWindow.startTime
+        if firstActivity.activity.activityType == WAITING || firstActivity.activity.activityType == DEPOT
+            maximumShiftBackward = firstActivity.startOfServiceTime - firstActivity.activity.timeWindow.startTime
         else
             maximumShiftBackward = 0
         end
 
-        if route[1].activity.activityType == DROPOFF || route[1].activity.activityType == PICKUP 
+        if firstActivity.activity.activityType == DROPOFF || firstActivity.activity.activityType == PICKUP 
             maximumShiftForward = 0
         elseif route[end-1].activity.activityType == WAITING && length(route) != 2 # Waiting activity but not in route with only [waiting,depot] # Astrid Here
             maximumShiftForward =  route[end-1].activity.timeWindow.endTime - route[end-1].startOfServiceTime
-        elseif length(route) == 2 && route[1].activity.activityType == DEPOT && route[2].activity.activityType == DEPOT # EMpty route 
-            maximumShiftForward = route[1].activity.timeWindow.endTime - route[1].activity.timeWindow.startTime
+        elseif length(route) == 2 && firstActivity.activity.activityType == DEPOT && route[2].activity.activityType == DEPOT # EMmty route 
+            maximumShiftForward = firstActivity.activity.timeWindow.endTime - firstActivity.activity.timeWindow.startTime
         else # Depot but non-empty route or [waiting,depot]
-            maximumShiftForward = route[1].startOfServiceTime - route[1].activity.timeWindow.startTime
+            maximumShiftForward = firstActivity.startOfServiceTime - firstActivity.activity.timeWindow.startTime
         end
 
     # Check if there is room for detour 
@@ -421,7 +423,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                 end  
 
                 # Check if we can drive from previous activity to activity after waiting 
-                feasible, maximumShiftBackwardTrial, maximumShiftForwardTrial = canActivityBeInserted(route[1].activity,nextActivity,arrivalAtNextActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
+                feasible, maximumShiftBackwardTrial, maximumShiftForwardTrial = canActivityBeInserted(firstActivity.activity,nextActivity,arrivalAtNextActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
 
                 # Remove waiting activity 
                 if feasible
@@ -454,7 +456,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                         totalDistance += distance[previousActivityId,currentActivityId]
                     else
                         # Keep waiting activity but try to shift route
-                        feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(route[1].activity,currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
+                        feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(firstActivity.activity,currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
 
                         
                         if !feasible
@@ -469,7 +471,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                 end
             # Check if activity can be inserted
             else 
-                feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(route[1].activity,currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
+                feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(firstActivity.activity,currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
 
                 # Check if can insert by inserting waiting activity 
                 if !feasible && idx <= routeLength && state == "Repair"
@@ -559,6 +561,10 @@ end
  Method to check if activity can be inserted according to previous activity 
 ==# 
 function canActivityBeInserted(firstActivity::Activity,currentActivity::Activity,arrivalAtCurrentActivity::Int,maximumShiftBackward::Int,maximumShiftForward::Int,newStartOfServiceTimes::Vector{Int},newEndOfServiceTimes::Vector{Int},serviceTimes::Int,idx::Int)
+    currentActivityStartTime = currentActivity.timeWindow.startTime
+    currentActivityEndTime = currentActivity.timeWindow.endTime
+    activityType = currentActivity.activityType
+
     # CHeck if we can insert it directly
     if currentActivityStartTime <= arrivalAtCurrentActivity <= currentActivityEndTime
         # Service times for current activity 
