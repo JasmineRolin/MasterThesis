@@ -184,10 +184,10 @@ using alns, domain, utils, offlinesolution, TimerOutputs
 #@testset "Run all generated data sets " begin
 
     # Number of requests in scenario - 20, 100, 300 or 500 
-    n = 500
+    n = 20
 
     # Scenario number - 1:10
-    i = 1
+    i = 8
 
     # Files 
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
