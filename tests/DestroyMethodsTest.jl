@@ -107,7 +107,7 @@ end
     state = State(currentState.currentSolution,Request(),0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == true
-    @test length(currentState.assignedRequests) == 9
+    @test length(currentState.assignedRequests) == 12
 
     # Destroy 
     randomDestroy!(scenario,currentState,parameters)
@@ -115,8 +115,8 @@ end
     feasible1, msg1 = checkSolutionFeasibilityOnline(scenario,state)
     @test msg1 == ""
     @test feasible1 == true
-    @test length(currentState.requestBank) == 14
-    @test length(currentState.assignedRequests) == 3
+    @test length(currentState.requestBank) == 13
+    @test length(currentState.assignedRequests) == 4
 end
 
 
@@ -197,7 +197,7 @@ end
     state = State(solution,Request(),0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == true
-    @test length(currentState.assignedRequests) == 9
+    @test length(currentState.assignedRequests) == 12
 
     printSolution(currentState.currentSolution,printRouteHorizontal)
 
@@ -207,8 +207,8 @@ end
     feasible1, msg1 = checkSolutionFeasibilityOnline(scenario,state)
     @test msg1 == ""
     @test feasible1 == true
-    @test length(currentState.requestBank) == 14
-    @test length(currentState.assignedRequests) == 3
+    @test length(currentState.requestBank) == 13
+    @test length(currentState.assignedRequests) == 4
 end
 
 
@@ -291,8 +291,8 @@ end
     feasible1, msg1 = checkSolutionFeasibilityOnline(scenario,state)
     @test msg1 == ""
     @test feasible1 == true
-    @test length(currentState.requestBank) == 14
-    @test length(currentState.assignedRequests) == 3
+    @test length(currentState.requestBank) == 13
+    @test length(currentState.assignedRequests) == 4
 
     shawRemoval!(scenario,currentState,parameters)
     state = State(currentState.currentSolution,Request(),0)

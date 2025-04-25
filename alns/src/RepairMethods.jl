@@ -16,8 +16,9 @@ function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{
     # TODO: should we implement noise?
     @unpack currentSolution, requestBank = state
     requests = scenario.requests
+    vehicleSchedules = currentSolution.vehicleSchedules
     nRequests = length(requests)
-    nVehicles = length(scenario.vehicles)
+    nVehicles = length(vehicleSchedules)
 
     # TODO: remove when stable also in other places
     if length(requestBank) != state.currentSolution.nTaxi
@@ -76,7 +77,7 @@ function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{
             end
 
             # Retrieve best schedule
-            bestSchedule = currentSolution.vehicleSchedules[overallBestVehicle]
+            bestSchedule = vehicleSchedules[overallBestVehicle]
 
             # Initialize arrays 
             arraySize = length(bestSchedule.route) + 2
@@ -135,7 +136,7 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
     newRequestBank = Int[]
     infVar = typemax(Float64)
     nRequests = length(requests)
-    nVehicles = length(scenario.vehicles)
+    nVehicles = length(vehicleSchedules)
 
     # TODO: remove when stable also in other places
     if length(requestBank) != state.currentSolution.nTaxi
@@ -243,7 +244,7 @@ function fillInsertionCostMatrix!(scenario::Scenario,currentSolution::Solution,r
         r = requestBank[idx]
         request = requests[r]
     
-        for v in eachindex(vehicles)
+        for v in eachindex(vehicleSchedules)
             schedule = vehicleSchedules[v]
 
             status, bestPickUp, bestDropOff, _, _, _, bestCost, _, _, _ = findBestFeasibleInsertionRoute(request, schedule, scenario, visitedRoute=visitedRoute, TO=TO)
