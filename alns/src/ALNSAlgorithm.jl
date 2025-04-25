@@ -64,12 +64,14 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
             repairIdx = repair!(scenario, trialState, configuration, visitedRoute=visitedRoute,TO=TO)
         end
 
-        hashKeySolution = hashSolution(trialState.currentSolution)
-        seenBefore = hashKeySolution in currentState.seenSolutions
-        if !seenBefore
-            newSolutions += 1
-            popfirst!(currentState.seenSolutions)
-            push!(currentState.seenSolutions, hashKeySolution)
+        @timeit TO "Hash solution" begin 
+            hashKeySolution =  hashSolution(trialState.currentSolution)
+            seenBefore = hashKeySolution in currentState.seenSolutions
+            if !seenBefore
+                newSolutions += 1
+                popfirst!(currentState.seenSolutions)
+                push!(currentState.seenSolutions, hashKeySolution)
+            end
         end
 
         acceptOnlinePhase = if stage == "Online"
