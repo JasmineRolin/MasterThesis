@@ -88,7 +88,3 @@ outputFiles = Vector{String}()
 #end
 dfResults = processResults(outputFiles)
 CSV.write(outPutFolder*"/results.csv", dfResults)
-
-
-
-createGantChartOfRequestsAndVehicles(scenario.vehicles,scenario.requests,requestBank,"test")
