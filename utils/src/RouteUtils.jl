@@ -147,7 +147,7 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPic
         vehicleSchedule.totalCost = totalCost
         vehicleSchedule.totalDistance = totalDistance
         vehicleSchedule.totalIdleTime = getTotalIdleTimeRoute(vehicleSchedule.route) #totalIdleTime TODO correct delta calculations
-        vehicleSchedule.totalTime = totalTime
+        vehicleSchedule.totalTime = duration(vehicleSchedule.activeTimeWindow) # totalTime TODO correct delta calculations
     else
         # Update idle time 
         vehicleSchedule.totalIdleTime = getTotalIdleTimeRoute(vehicleSchedule.route)
@@ -340,14 +340,13 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
         if route[1].activity.activityType == DROPOFF || route[1].activity.activityType == PICKUP 
             maximumShiftForward = 0
-        elseif route[end-1].activity.activityType == WAITING && routeLength != 2 # Waiting activity but not in route with only [waiting,depot]
+        elseif route[end-1].activity.activityType == WAITING && length(route) != 2 # Waiting activity but not in route with only [waiting,depot] # Astrid Here
             maximumShiftForward =  route[end-1].activity.timeWindow.endTime - route[end-1].startOfServiceTime
-        elseif routeLength == 2 && route[1].activity.activityType == DEPOT && route[2].activity.activityType == DEPOT # EMpty route 
+        elseif length(route) == 2 && route[1].activity.activityType == DEPOT && route[2].activity.activityType == DEPOT # EMpty route 
             maximumShiftForward = route[1].activity.timeWindow.endTime - route[1].activity.timeWindow.startTime
         else # Depot but non-empty route or [waiting,depot]
             maximumShiftForward = route[1].startOfServiceTime - route[1].activity.timeWindow.startTime
         end
-    #end
 
     # Check if there is room for detour 
     detour = 0 
@@ -422,11 +421,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                 end  
 
                 # Check if we can drive from previous activity to activity after waiting 
-                # feasible, maximumShiftBackwardTrial, maximumShiftForwardTrial = @timeit TO "CHECKWAITING" begin
-                #     canActivityBeInserted(nextActivity,arrivalAtNextActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
-                # end
-                feasible, maximumShiftBackwardTrial, maximumShiftForwardTrial = canActivityBeInserted(nextActivity,arrivalAtNextActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
-
+                feasible, maximumShiftBackwardTrial, maximumShiftForwardTrial = canActivityBeInserted(route[1].activity,nextActivity,arrivalAtNextActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
 
                 # Remove waiting activity 
                 if feasible
@@ -459,10 +454,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                         totalDistance += distance[previousActivityId,currentActivityId]
                     else
                         # Keep waiting activity but try to shift route
-                        # feasible, maximumShiftBackward, maximumShiftForward = @timeit TO "CHECKWAITING" begin
-                        #     canActivityBeInserted(currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
-                        # end
-                        feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
+                        feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(route[1].activity,currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
 
                         
                         if !feasible
@@ -477,18 +469,13 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                 end
             # Check if activity can be inserted
             else 
-                # feasible, maximumShiftBackward, maximumShiftForward = @timeit TO "CHECKACTIVITY" begin
-                #     canActivityBeInserted(currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
-                # end
-                feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
-
+                feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(route[1].activity,currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
 
                 # Check if can insert by inserting waiting activity 
                 if !feasible && idx <= routeLength && state == "Repair"
                     feasible, maximumShiftBackward, maximumShiftForward = feasibleWhenInsertWaiting!(time,requests,serviceTimes,currentActivity,activityType,previousActivity,vehicleSchedule,idx,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToAdd,maximumShiftBackward, maximumShiftForward)
                 end
                 
-                # Check if we can insert a waiting activity and then insert activity
                 if !feasible
                     # No possible way to insert it
                     return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd
@@ -571,11 +558,7 @@ end
 #== 
  Method to check if activity can be inserted according to previous activity 
 ==# 
-function canActivityBeInserted(currentActivity::Activity,arrivalAtCurrentActivity::Int,maximumShiftBackward::Int,maximumShiftForward::Int,newStartOfServiceTimes::Vector{Int},newEndOfServiceTimes::Vector{Int},serviceTimes::Int,idx::Int) 
-    currentActivityEndTime = currentActivity.timeWindow.endTime
-    currentActivityStartTime = currentActivity.timeWindow.startTime
-    activityType = currentActivity.activityType
-
+function canActivityBeInserted(firstActivity::Activity,currentActivity::Activity,arrivalAtCurrentActivity::Int,maximumShiftBackward::Int,maximumShiftForward::Int,newStartOfServiceTimes::Vector{Int},newEndOfServiceTimes::Vector{Int},serviceTimes::Int,idx::Int)
     # CHeck if we can insert it directly
     if currentActivityStartTime <= arrivalAtCurrentActivity <= currentActivityEndTime
         # Service times for current activity 
@@ -613,7 +596,13 @@ function canActivityBeInserted(currentActivity::Activity,arrivalAtCurrentActivit
         maximumShiftForward = min(maximumShiftForward - shift,currentActivityEndTime - currentActivityStartTime)
 
         # Update service times for previous activities 
-        for i in 1:(idx-1)
+        if firstActivity.activityType != WAITING
+            newStartOfServiceTimes[1] += shift
+            newEndOfServiceTimes[1] += shift
+        else
+            newEndOfServiceTimes[1] += shift
+        end
+        for i in 2:(idx-1)
             newStartOfServiceTimes[i] += shift
             newEndOfServiceTimes[i] += shift
         end

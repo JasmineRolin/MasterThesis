@@ -76,7 +76,7 @@ function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario
 
     # Run ALNS
     # TODO: set correct parameters for alns 
-    finalSolution,finalOnlineRequestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",initialSolution =  currentSolution, requestBank = newRequestBankOnline, event = event, alreadyRejected =  totalNTaxi, visitedRoute = currentState.visitedRoute,stage = "Online")
+    finalSolution,finalOnlineRequestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters_online.json",initialSolution =  currentSolution, requestBank = newRequestBankOnline, event = event, alreadyRejected =  totalNTaxi, visitedRoute = currentState.visitedRoute,stage = "Online")
     if length(newRequestBankOnline) == 1 && length(finalOnlineRequestBank) == 0
         insertedByALNS = true
     end
