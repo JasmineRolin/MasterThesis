@@ -342,10 +342,13 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
         if firstActivity.activity.activityType == DROPOFF || firstActivity.activity.activityType == PICKUP 
             maximumShiftForward = 0
+            
         elseif route[end-1].activity.activityType == WAITING && length(route) != 2 # Waiting activity but not in route with only [waiting,depot] # Astrid Here
             maximumShiftForward =  route[end-1].activity.timeWindow.endTime - route[end-1].startOfServiceTime
+
         elseif length(route) == 2 && firstActivity.activity.activityType == DEPOT && route[2].activity.activityType == DEPOT # EMmty route 
             maximumShiftForward = firstActivity.activity.timeWindow.endTime - firstActivity.activity.timeWindow.startTime
+
         else # Depot but non-empty route or [waiting,depot]
             maximumShiftForward = firstActivity.startOfServiceTime - firstActivity.activity.timeWindow.startTime
         end

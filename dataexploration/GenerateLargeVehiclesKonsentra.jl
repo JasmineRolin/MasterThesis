@@ -166,41 +166,41 @@ global nWalking = 4
 ##################################################
 # Generate vehicles
 ##################################################
-nRequest = 20 # Number of requests
+# nRequest = 20 # Number of requests
 
-# Set probabilities and time range
-time_range = collect(range(6*60,23*60))
+# # Set probabilities and time range
+# time_range = collect(range(6*60,23*60))
 
-# Shifts for vehicles 
-shiftTypes = ["Morning", "Noon", "Afternoon", "Evening"]
-shifts = Dict(
-    "Morning"    => Dict("TimeWindow" => [6*60, 12*60], "cost" => 2.0, "nVehicles" => 0, "y" => []),
-    "Noon"       => Dict("TimeWindow" => [10*60, 16*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
-    "Afternoon"  => Dict("TimeWindow" => [14*60, 20*60], "cost" => 3.0, "nVehicles" => 0, "y" => []),
-    "Evening"    => Dict("TimeWindow" => [18*60, 24*60], "cost" => 4.0, "nVehicles" => 0, "y" => [])
-)
+# # Shifts for vehicles 
+# shiftTypes = ["Morning", "Noon", "Afternoon", "Evening"]
+# shifts = Dict(
+#     "Morning"    => Dict("TimeWindow" => [6*60, 12*60], "cost" => 2.0, "nVehicles" => 0, "y" => []),
+#     "Noon"       => Dict("TimeWindow" => [10*60, 16*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
+#     "Afternoon"  => Dict("TimeWindow" => [14*60, 20*60], "cost" => 3.0, "nVehicles" => 0, "y" => []),
+#     "Evening"    => Dict("TimeWindow" => [18*60, 24*60], "cost" => 4.0, "nVehicles" => 0, "y" => [])
+# )
 
-# Load simulation data
-probabilities_pickUpTime,
-probabilities_dropOffTime,
-density_pickUp,
-density_dropOff,
-probabilities_location,
-density_grid,
-x_range,
-y_range,
-probabilities_distance,
-density_distance,
-distance_range,
-location_matrix,
-requestTimePickUp,
-requestTimeDropOff,
-requests,
-distanceDriven= load_simulation_data("Data/Simulation data/")
+# # Load simulation data
+# probabilities_pickUpTime,
+# probabilities_dropOffTime,
+# density_pickUp,
+# density_dropOff,
+# probabilities_location,
+# density_grid,
+# x_range,
+# y_range,
+# probabilities_distance,
+# density_distance,
+# distance_range,
+# location_matrix,
+# requestTimePickUp,
+# requestTimeDropOff,
+# requests,
+# distanceDriven= load_simulation_data("Data/Simulation data/")
 
-# Read data
-df_list = load_request_data(nRequest)
+# # Read data
+# df_list = load_request_data(nRequest)
 
-# Generate vehicles 
-average_demand_per_hour = generateVehicles(shifts,df_list, probabilities_location, x_range, y_range)
+# # Generate vehicles 
+# average_demand_per_hour = generateVehicles(shifts,df_list, probabilities_location, x_range, y_range)
 

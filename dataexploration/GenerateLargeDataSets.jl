@@ -18,6 +18,14 @@ global nData = 10
 global nRequest = 20 
 global MAX_DELAY = 15 # TODO Astrid I just put something
 
+# Grid 
+global MAX_LAT = 60.721
+global MIN_LAT = 59.165
+global MAX_LONG = 12.458
+global MIN_LONG = 9.948
+global NUM_ROWS = 5
+global NUM_COLS = 5
+
 
 function load_simulation_data(input_dir::String)
     location_df = CSV.read(joinpath(input_dir, "location_matrix.csv"), DataFrame)
@@ -113,6 +121,29 @@ function getNewLocations(probabilities::Vector{Float64},x_range::Vector{Float64}
     # Find drop off
     grid_coords = [(x, y) for x in x_range for y in y_range]
     dropoff_x, dropoff_y = find_dropoff((pickup_x, pickup_y), grid_coords, sampled_distance, probabilities, x_range, y_range; tolerance_km=tolerance_km)
+
+    # Make sure location is in grid 
+    if pickup_x < MIN_LONG 
+        pickup_x = MIN_LONG
+    elseif pickup_x > MAX_LONG
+        pickup_x = MAX_LONG
+    end
+    if pickup_y < MIN_LAT 
+        pickup_y = MIN_LAT
+    elseif pickup_y > MAX_LAT
+        pickup_y = MAX_LAT
+    end
+
+    if dropoff_x < MIN_LONG 
+        dropoff_x = MIN_LONG
+    elseif dropoff_x > MAX_LONG
+        dropoff_x = MAX_LONG
+    end
+    if dropoff_y < MIN_LAT 
+        dropoff_y = MIN_LAT
+    elseif dropoff_y > MAX_LAT
+        dropoff_y = MAX_LAT
+    end
 
     return [(pickup_x, pickup_y), (dropoff_x, dropoff_y)]
 end
@@ -231,8 +262,40 @@ function generateDataSets(nRequest,nData,probabilities_pickUpTime, probabilities
 end
 
 
+# Find grid centers
+function findGridCenters()
+    # Compute grid spacing
+    lat_step = (MAX_LAT - MIN_LAT) / NUM_ROWS
+    long_step = (MAX_LONG - MIN_LONG) / NUM_COLS
+
+    # Generate grid cell centers
+    grid_centers_lat = [MIN_LAT + (i + 0.5) * lat_step for i in 0:NUM_ROWS-1]
+    grid_centers_long = [MIN_LONG + (j + 0.5) * long_step for j in 0:NUM_COLS-1]
+    grid_centers = [(lat, lon) for lat in grid_centers_lat for lon in grid_centers_long]
+
+    return lat_step, long_step, grid_centers
+end
+
+function findClosestGridCenter(loc, grid_centers)
+    lat, lon = loc
+    closest_center = nothing
+    min_dist = Inf
+
+    for (clat, clon) in grid_centers
+        dist = haversine_distance(lat, lon, clat, clon)
+        if dist < min_dist
+            min_dist = dist
+            closest_center = (clat, clon)
+        end
+    end
+    return closest_center
+end
+
+
 # Generate vehicles
 function generateVehicles(shifts,df_list, probabilities_location, x_range, y_range)
+    grid_centers = findGridCenters()[3]
+
     computeShiftCoverage!(shifts)
     average_demand_per_hour = generateAverageDemandPerHour(df_list)
 
@@ -240,8 +303,10 @@ function generateVehicles(shifts,df_list, probabilities_location, x_range, y_ran
 
     locations = []
     total_nVehicles = sum(shift["nVehicles"] for shift in values(shifts))
-    for i in 1:total_nVehicles
-        push!(locations,getNewLocations(probabilities_location,x_range, y_range)[1])
+    for _ in 1:total_nVehicles
+        original_loc = getNewLocations(probabilities_location, x_range, y_range)[1]
+        closest_center = findClosestGridCenter(original_loc, grid_centers)
+        push!(locations, closest_center)
     end
     generateVehiclesKonsentra(shifts, locations,"Data/Konsentra/"*string(nRequest)*"/Vehicles_"*string(nRequest)*".csv")
 
@@ -252,7 +317,7 @@ end
 #==
 # Generate data sets and vehicles
 ==#
-function generateDataSetsAndvehicles(nRequest,nData,shifts,oldDataList,bandwidth_factor_time,bandwidth_factor_location)
+function generateDataSetsAndvehicles(nRequest,nData,shifts)
     # Load simulation data
     probabilities_pickUpTime,
         probabilities_dropOffTime,
@@ -415,12 +480,12 @@ end
 #================================================#
 # Generate data 
 #================================================#
-oldDataList = ["Data/Konsentra/TransformedData_30.01.csv",
-            "Data/Konsentra/TransformedData_06.02.csv",
-            "Data/Konsentra/TransformedData_09.01.csv",
-            "Data/Konsentra/TransformedData_16.01.csv",
-            "Data/Konsentra/TransformedData_23.01.csv",
-            "Data/Konsentra/TransformedData_Data.csv"]
+# oldDataList = ["Data/Konsentra/TransformedData_30.01.csv",
+#             "Data/Konsentra/TransformedData_06.02.csv",
+#             "Data/Konsentra/TransformedData_09.01.csv",
+#             "Data/Konsentra/TransformedData_16.01.csv",
+#             "Data/Konsentra/TransformedData_23.01.csv",
+#             "Data/Konsentra/TransformedData_Data.csv"]
 
 # Set probabilities and time range
 time_range = collect(range(6*60,23*60))
@@ -437,7 +502,7 @@ shifts = Dict(
 bandwidth_factor_time = 1.5 
 bandwidth_factor_location = 1.25
 
-location_matrix, requestTimePickUp, requestTimeDropOff, newDataList, df_list, average_demand_per_hour, probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff, probabilities_location, density_grid, x_range, y_range,requests, distanceDriven = generateDataSetsAndvehicles(nRequest,nData,shifts,oldDataList,bandwidth_factor_time,bandwidth_factor_location)
+location_matrix, requestTimePickUp, requestTimeDropOff, newDataList, df_list, average_demand_per_hour, probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff, probabilities_location, density_grid, x_range, y_range,requests, distanceDriven = generateDataSetsAndvehicles(nRequest,nData,shifts)
 #plotDemandAndShifts(average_demand_per_hour,shifts)
 
 prefix = "Base Data"
@@ -500,3 +565,75 @@ for (idx,file) in enumerate(newDataList)
     savefig(p2, string("plots/DataGeneration/GantChart_",nRequest,"_",idx,".svg"))
 
 end
+
+
+
+
+#======================================================#
+# # Find min and max lat and long
+# #======================================================#
+# maxLong = 0.0
+# maxLat = 0.0
+# minLong = typemax(Float64)
+# minLat = typemax(Float64)
+# for n in [20,100,300,500]
+#     for i in 1:10 
+#         fileName = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
+#         requestsDf = CSV.read(fileName, DataFrame)
+
+#         currentMaxLat = maximum(vcat(requestsDf.pickup_latitude,requestsDf.dropoff_latitude))
+#         currentMinLat = minimum(vcat(requestsDf.pickup_latitude,requestsDf.dropoff_latitude))
+
+#         currentMaxLong = maximum(vcat(requestsDf.pickup_longitude,requestsDf.dropoff_longitude))
+#         currentMinLong = minimum(vcat(requestsDf.pickup_longitude,requestsDf.dropoff_longitude))
+
+#         maxLat = max(maxLat,currentMaxLat)
+#         maxLong = max(maxLong,currentMaxLong)
+#         minLat = min(minLat,currentMinLat)
+#         minLong = min(minLong,currentMinLong)
+#     end
+# end 
+
+# println("Max Lat: ", maxLat)
+# println("Min Lat: ", minLat)
+# println("Max Long: ", maxLong)
+# println("Min Long: ", minLong)
+
+
+
+
+
+
+# # Generate grid cell centers
+# lat_step, long_step, grid_centers = findGridCenters()
+
+# for n in [20, 100, 300, 500]
+#     for i in 1:10
+#         fileName = string("Data/Konsentra/", n, "/GeneratedRequests_", n, "_", i, ".csv")
+#         requestsDf = CSV.read(fileName, DataFrame)
+
+#         p = plot(size = (1000, 800))
+#         scatter!(p, requestsDf.pickup_longitude, requestsDf.pickup_latitude, label = "Pick-up", color = :blue, markersize = 3)
+#         scatter!(p, requestsDf.dropoff_longitude, requestsDf.dropoff_latitude, label = "Drop-off", color = :red, markersize = 3)
+
+#         # Bounding box
+#         lons = [MIN_LONG, MAX_LONG, MAX_LONG, MIN_LONG, MIN_LONG]
+#         lats = [MIN_LAT, MIN_LAT, MAX_LAT, MAX_LAT, MIN_LAT]
+#         plot!(p, lons, lats, label = "", color = :green, linewidth = 2)
+
+#         # Grid lines
+#         for lat in [MIN_LAT + i * lat_step for i in 0:NUM_ROWS]
+#             plot!(p, [MIN_LONG, MAX_LONG], [lat, lat], color = :gray, linestyle = :dash, label = "")
+#         end
+#         for lon in [MIN_LONG + j * long_step for j in 0:NUM_COLS]
+#             plot!(p, [lon, lon], [MIN_LAT, MAX_LAT], color = :gray, linestyle = :dash, label = "")
+#         end
+
+#         # Plot grid cell centers
+#         for (lat,lon) in grid_centers
+#             scatter!(p, [lon], [lat], color = :black, marker = (:cross, 4), label = "")
+#         end
+
+#         display(p)
+#     end
+# end
