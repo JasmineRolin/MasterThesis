@@ -71,7 +71,7 @@ end
 
 
 ################
-
+#==
 for gamma in [0.5,0.7,0.9]
     for nRequests in [20,100,300,500]
         for i in 1:10
@@ -82,7 +82,7 @@ for gamma in [0.5,0.7,0.9]
         end
     end
 end
-
+==#
 
 
 

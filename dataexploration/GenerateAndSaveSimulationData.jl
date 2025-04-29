@@ -224,6 +224,7 @@ end
 #================================================#
 # Generate simulation data 
 #================================================#
+#==
 oldDataList = ["Data/Konsentra/TransformedData_30.01.csv",
             "Data/Konsentra/TransformedData_06.02.csv",
             "Data/Konsentra/TransformedData_09.01.csv",
@@ -238,5 +239,6 @@ bandwidth_factor_distance = 2.0
 
 # Set probabilities and time range
 time_range = collect(range(6*60,23*60))
+==#
 
 #run_and_save_simulation(oldDataList, "Data/Simulation data/", bandwidth_factor_location, bandwidth_factor_time, bandwidth_factor_distance,time_range)

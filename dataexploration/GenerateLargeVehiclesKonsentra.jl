@@ -166,6 +166,7 @@ global nWalking = 4
 ##################################################
 # Generate vehicles
 ##################################################
+#==
 nRequest = 20 # Number of requests
 
 # Set probabilities and time range
@@ -203,4 +204,4 @@ df_list = load_request_data(nRequest)
 
 # Generate vehicles 
 average_demand_per_hour = generateVehicles(shifts,df_list, probabilities_location, x_range, y_range)
-
+==#

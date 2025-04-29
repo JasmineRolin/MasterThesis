@@ -1,9 +1,14 @@
 using offlinesolution
 using domain
 using utils
+using DataFrames
+using CSV
+using alns
+using Test
 
+include("../dataexploration/GenerateLargeDataSets.jl")
 
-function generateExpectedRequests(N::Int,nFixedRequests::Int,parametersFile::String)
+function createExpectedRequests(N::Int,nFixedRequests::Int)
     
     # Initialize variables
     expectedRequests = Vector{Request}(undef, N)
@@ -21,14 +26,10 @@ function generateExpectedRequests(N::Int,nFixedRequests::Int,parametersFile::Str
         direct_drive_time = Int[],
     )
 
-    # Load needed data
-    parametersDf = CSV.read(parametersFile, DataFrame)
-    bufferTime = parametersDf[1,"buffer_time"]
-    maximumRideTimePercent = parametersDf[1,"maximum_ride_time_percent"]
-    minimumMaximumRideTime = parametersDf[1,"minimum_maximum_ride_time"]
     probabilities_pickUpTime,probabilities_dropOffTime,_,_,probabilities_location,_,x_range,y_range,probabilities_distance,_,distance_range,_,_,_,_,_= load_simulation_data("Data/Simulation data/")
+    time_range = collect(range(6*60,23*60))
 
-    # Generate requests
+    # Generate expected request DF
     for i in 1:N
         # Sample new location based on KDE probabilities
         sampled_location = getNewLocations(probabilities_location, x_range, y_range, distance_range,probabilities_distance)
@@ -65,11 +66,83 @@ function generateExpectedRequests(N::Int,nFixedRequests::Int,parametersFile::Str
     
     end
 
-    expectedRequests = readRequests(requestDf,N,bufferTime,maximumRideTimePercent, minimumMaximumRideTime,time,extraN = nFixedRequests)
-
-    return expectedRequests, expectedRequestIds
+    return requestDF
 
 end
+
+function getDistanceAndTimeMatrixFromDataFrame(requestsDf::DataFrame,expectedRequestsDf::DataFrame,depotLocations::Vector{Tuple{Float64,Float64}})::Tuple{Array{Float64, 2}, Array{Int, 2}}
+    # Collect request info 
+    pickUpLocations = [(r.pickup_latitude,r.pickup_longitude) for r in eachrow(requestsDf)]
+    dropOffLocations = [(r.dropoff_latitude,r.dropoff_longitude)  for r in eachrow(requestsDf)]
+
+    # Collect expected request info
+    expectedPickUpLocations = [(r.pickup_latitude,r.pickup_longitude) for r in eachrow(expectedRequestsDf)]
+    expectedDropOffLocations = [(r.dropoff_latitude,r.dropoff_longitude)  for r in eachrow(expectedRequestsDf)]
+
+    # Collect all locations
+    locations = [pickUpLocations;expectedPickUpLocations;dropOffLocations;expectedDropOffLocations;depotLocations]
+
+    return getDistanceAndTimeMatrixFromLocations(locations)
+end
+
+
+function readInstanceAnticipation(requestFile::String, nExpected::Int, vehicleFile::String, parametersFile::String,scenarioName=""::String)::Scenario
+
+    # Check that files exist 
+    if !isfile(requestFile)
+        error("Error: Request file $requestFile does not exist.")
+    end
+    if !isfile(vehicleFile)
+        error("Error: Vehicle file $vehicleFile does not exist.")
+    end
+    if !isfile(parametersFile)
+        error("Error: Parameters file $parametersFile does not exist.")
+    end
+   
+
+    # Read request, vehicle and parameters dataframes from input
+    requestsDf = CSV.read(requestFile, DataFrame)
+    vehiclesDf = CSV.read(vehicleFile, DataFrame)
+    parametersDf = CSV.read(parametersFile, DataFrame)
+    nRequests = nrow(requestsDf)
+    
+    # Get parameters 
+    planningPeriod = TimeWindow(parametersDf[1,"start_of_planning_period"],parametersDf[1,"end_of_planning_period"])
+    serviceTimes = parametersDf[1,"service_time_walking"]
+    vehicleCostPrHour = Float64(parametersDf[1,"vehicle_cost_pr_hour"])
+    vehicleStartUpCost = Float64(parametersDf[1,"vehicle_start_up_cost"])
+    bufferTime = parametersDf[1,"buffer_time"]
+    maximumRideTimePercent = parametersDf[1,"maximum_ride_time_percent"]
+    minimumMaximumRideTime = parametersDf[1,"minimum_maximum_ride_time"]
+    taxiParameter = Float64(parametersDf[1,"taxi_parameter"])
+    
+
+    # Get vehicles 
+    vehicles,depots, depotLocations = readVehicles(vehiclesDf,nRequests)
+    nDepots = length(depots)
+
+    # Generate expected requests
+    expectedRequestsDf = createExpectedRequests(nExpected,nRequests)
+
+    # Read time and distance matrices from input or initialize empty matrices
+    distance, time = getDistanceAndTimeMatrixFromDataFrame(requestsDf,expectedRequestsDf,collect(keys(depotLocations)))
+
+    # Get requests 
+    requests = readRequests(requestsDf,nRequests+nExpected,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time)
+    expectedRequests = readRequests(expectedRequestsDf,nExpected,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time,extraN=nRequests)
+    allRequests = vcat(requests, expectedRequests)
+
+    # Split into offline and online requests
+    onlineRequests, offlineRequests = splitRequests(requests)
+
+    # Get distance and time matrix
+    scenario = Scenario(scenarioName,allRequests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots,depots,taxiParameter)
+
+    return scenario
+
+end
+
+
 
 #==
 function offlineSolutionWithAnticipation(fixedRequests::Vector{Request},N::Int,scenario::Scenario,parameterFile::String)
@@ -120,6 +193,35 @@ function offlineSolutionWithAnticipation(fixedRequests::Vector{Request},N::Int,s
     return bestSolution
 
 end
-==#
+==#  
 
-expectedRequests, expectedRequestIds  = generateExpectedRequests(10,20,"tests/resources/Parameters.csv")     
+@testset "Anticipation Test" begin 
+    requestFile = "Data/Konsentra/TransformedData_Data.csv"
+    vehiclesFile = "tests/resources/Vehicles.csv"
+    parametersFile = "tests/resources/Parameters.csv"
+    alnsParameters = "tests/resources/ALNSParameters_Article.json"
+    scenarioName = "Konsentra_Data"
+
+    # Make scenario
+    N = 10
+    scenario = readInstanceAnticipation(requestFile, N, vehiclesFile, parametersFile,scenarioName)
+
+    # Choose destroy methods
+    destroyMethods = Vector{GenericMethod}()
+    addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
+    addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
+    addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
+
+    #Choose repair methods
+    repairMethods = Vector{GenericMethod}()
+    addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
+    addMethod!(repairMethods,"regretInsertion",regretInsertion)
+
+    initialSolution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
+    solution, requestBank,_,_, _,_,_ = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
+
+    state = State(solution,Request(),0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+    @test feasible == true
+    @test msg == ""
+end

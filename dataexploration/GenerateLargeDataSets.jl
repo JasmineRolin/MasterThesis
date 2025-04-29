@@ -415,6 +415,7 @@ end
 #================================================#
 # Generate data 
 #================================================#
+#==
 oldDataList = ["Data/Konsentra/TransformedData_30.01.csv",
             "Data/Konsentra/TransformedData_06.02.csv",
             "Data/Konsentra/TransformedData_09.01.csv",
@@ -500,3 +501,4 @@ for (idx,file) in enumerate(newDataList)
     savefig(p2, string("plots/DataGeneration/GantChart_",nRequest,"_",idx,".svg"))
 
 end
+==#
