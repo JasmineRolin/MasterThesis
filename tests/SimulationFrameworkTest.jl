@@ -58,7 +58,7 @@ Test SimulationFrameworkUtils
 # CSV.write(outPutFolder*"/results.csv", dfResults)
 
 
-n = 20
+n = 100
 i = 10
 vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
 parametersFile = "tests/resources/Parameters.csv"
@@ -88,38 +88,3 @@ outputFiles = Vector{String}()
 #end
 dfResults = processResults(outputFiles)
 CSV.write(outPutFolder*"/results.csv", dfResults)
-
-n = 100
-i = 3
-vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
-parametersFile = "tests/resources/Parameters.csv"
-alnsParameters = "tests/resources/ALNSParameters2.json"
-
-#for i in 1:10
-i = 1
-requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
-distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
-timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
-scenarioName = string("Konsentra_Data_",n,"_",i)
-
-println("====> SCENARIO: ",scenarioName)
-
-# Read instance 
-scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
-
-# Simulate scenario 
-solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = false,saveALNSResults = false, displayALNSPlots = false,outPutFileName= "tests/output/OnlineSimulation/")
-
-state = State(solution,scenario.onlineRequests[end],0)
-feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-@test feasible == true
-@test msg == ""
-#end
-#function main()
-    #n = parse(Int,ARGS[1])
-    
-#end
-
-#main()
-
-createGantChartOfRequestsAndVehicles(scenario.vehicles,scenario.requests,requestBank,"test")

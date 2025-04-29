@@ -1,5 +1,5 @@
 using Test 
-using alns, domain, utils
+using alns, domain, utils, TimerOutputs
 
 #==
 Test ALNSFunctions
@@ -136,10 +136,10 @@ end
 
 @testset "destroy! and repair! test" begin
     # Dummy methods
-    function dest1(scenario::Scenario,state::ALNSState,parameters::ALNSParameters;visitedRoute=Dict{Int, Dict{String, Int}}())
+    function dest1(scenario::Scenario,state::ALNSState,parameters::ALNSParameters;visitedRoute=Dict{Int, Dict{String, Int}}(),TO::TimerOutput=TimerOutput())
         solution.totalCost = 900       
     end
-    function rep1(state::ALNSState,scenario::Scenario;visitedRoute=Dict{Int, Dict{String, Int}}())
+    function rep1(state::ALNSState,scenario::Scenario;visitedRoute=Dict{Int, Dict{String, Int}}(),TO::TimerOutput=TimerOutput())
         state.currentSolution.totalCost = 500        
     end
 

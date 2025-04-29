@@ -1,6 +1,6 @@
 module ALNSFunctions 
 
-using UnPack, JSON3, domain, ..ALNSDomain
+using UnPack, JSON3, domain, ..ALNSDomain, TimerOutputs
 
 export readALNSParameters
 export addMethod!
@@ -45,14 +45,14 @@ end
 #==
  Method to Destroy 
 ==#
-function destroy!(scenario::Scenario,state::ALNSState,parameters::ALNSParameters, configuration::ALNSConfiguration;visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}() )::Int
+function destroy!(scenario::Scenario,state::ALNSState,parameters::ALNSParameters, configuration::ALNSConfiguration;visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}(),TO::TimerOutput=TimerOutput())::Int
     # Select method 
     destroyIdx = rouletteWheel(state.destroyWeights)
 
     #println("\t Destroy method: ", configuration.destroyMethods[destroyIdx].name)
 
     # Use method 
-    configuration.destroyMethods[destroyIdx].method(scenario,state,parameters,visitedRoute = visitedRoute)
+    configuration.destroyMethods[destroyIdx].method(scenario,state,parameters,visitedRoute = visitedRoute,TO=TO)
 
     return destroyIdx
 end
@@ -60,14 +60,14 @@ end
 #==
  Method to Repair  
 ==#
-function repair!(scenario::Scenario, state::ALNSState, configuration::ALNSConfiguration;visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}())::Int  
+function repair!(scenario::Scenario, state::ALNSState, configuration::ALNSConfiguration;visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}(),TO::TimerOutput=TimerOutput())::Int  
     # Select method 
     repairIdx = rouletteWheel(state.repairWeights)
 
     # println("\t Repair method: ", configuration.repairMethods[repairIdx].name)
 
     # Use method 
-    configuration.repairMethods[repairIdx].method(state,scenario,visitedRoute=visitedRoute)
+    configuration.repairMethods[repairIdx].method(state,scenario,visitedRoute=visitedRoute,TO=TO)
 
     return repairIdx
 end
@@ -196,5 +196,16 @@ function accept(tempature::Float64,delta::Float64)
     return false,p,delta
 end
 
+function accept(timeLimit::Float64,startTime::Float64,trialCost::Float64,bestCost::Float64)
+    
+    startThreshold = 1
+    delta = abs(bestCost - trialCost)
+    elapsedTime = time() - startTime
+    if delta/bestCost < startThreshold*(1-elapsedTime/timeLimit)
+        return true,startThreshold*(1-elapsedTime/timeLimit),delta/bestCost 
+    end
+
+    return false,startThreshold*(1-elapsedTime/timeLimit),delta/bestCost 
+end
 
 end
