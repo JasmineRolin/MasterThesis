@@ -129,6 +129,7 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
                 join(string.(currentState.repairNumberOfUses), ","), "\n")
         end
 
+        # TODO: remove when ALNS is robust 
         @timeit TO "Feasibility Check" begin
             state = State(currentState.currentSolution, event, visitedRoute, alreadyRejected)
             feasible, msg = checkSolutionFeasibilityOnline(scenario, state)
@@ -173,14 +174,10 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
         throw(msg)
     end
 
-    println("NUMBER ACCEPTED NO IMPROVEMENT: ", countAccepted)
+    # TODO: remove 
     println("Total number of iterations: ", iteration)
     println("Termination: max since last improvement: ", numberOfIterationsSinceLastImprovement > maxNumberOfIterationsWithoutImprovement,
         ", max since last best: ", numberOfIterationsSinceLastBest > maxNumberOfIterationsWithoutNewBest)
-
-    println(configuration.repairMethods[1]," no uses: ", currentState.repairNumberOfUses[1])
-    println(configuration.repairMethods[2]," no uses: ", currentState.repairNumberOfUses[2])
-
     println("\n Timing Breakdown:")
     
     show(TO)

@@ -8,6 +8,8 @@ export greedyInsertion
 export regretInsertion
 
 const EMPTY_RESULT = (false, -1, -1, Vector{Int}(), Vector{Int}(), Vector{Int}(), typemax(Float64), typemax(Float64), typemax(Int), typemax(Int), Vector{Int}())
+
+# TODO: delete 
 global countTotal = Ref(0)
 global countFeasible = Ref(0)
 
@@ -56,13 +58,13 @@ function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{
                 bestInsertion = secondBestInsertion = typemax(Float64)
 
                 for v in 1:nVehicles
-                    if compatibilityRequestVehicle[request.id,v]
-                        if insertionCosts[request.id,v] < bestInsertion
+                    if compatibilityRequestVehicle[r,v]
+                        if insertionCosts[r,v] < bestInsertion
                             secondBestInsertion = bestInsertion
-                            bestInsertion = insertionCosts[request.id,v]
+                            bestInsertion = insertionCosts[r,v]
                             bestVehicleForRequest = v
-                        elseif insertionCosts[request.id,v] < secondBestInsertion
-                            secondBestInsertion = insertionCosts[request.id,v]
+                        elseif insertionCosts[r,v] < secondBestInsertion
+                            secondBestInsertion = insertionCosts[r,v]
                         end
                     end
                 end
@@ -127,8 +129,8 @@ function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{
         end
     end
 
-    println("REGRET: TOTAL: ", countTotal[], " FEASIBLE: ", countFeasible[])
-
+    # TODO: delete 
+    # println("REGRET: TOTAL: ", countTotal[], " FEASIBLE: ", countFeasible[])
 end
 
 
@@ -146,6 +148,7 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
     infVar = typemax(Float64)
     nRequests = length(requests)
     nVehicles = length(vehicleSchedules)
+    nRequestBank = length(requestBank)
 
     # TODO: remove when stable also in other places
     if length(requestBank) != state.currentSolution.nTaxi
@@ -170,10 +173,8 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
 
 
     # Loop through request bank and insert request with lowest insertion cost 
-    remainingRequests = copy(requestBank)
-    for r in requestBank
+    for (idx,r) in enumerate(requestBank)
         request = requests[r]
-        popfirst!(remainingRequests)
 
         # Check if any feasible insertion was found
         costs = insertionCosts[r,:]
@@ -231,14 +232,17 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
 
         # Recalculate insertion costs for vehicle 
         @timeit TO "GreedyreCalculateInsertionCostMatrix!!" begin
-            reCalculateInsertionCostMatrix!!(bestVehicle, scenario, currentSolution, remainingRequests, insertionCosts, compatibilityRequestVehicle,positions,visitedRoute,TO=TO)
+            if idx != nRequestBank
+                reCalculateInsertionCostMatrix!!(bestVehicle, scenario, currentSolution, requestBank[idx+1:end], insertionCosts, compatibilityRequestVehicle,positions,visitedRoute,TO=TO)
+            end
         end
       
     end
 
     state.requestBank = newRequestBank
 
-    println("GREEDY: TOTAL: ", countTotal[], " FEASIBLE: ", countFeasible[])
+    # TODO: delete 
+    # println("GREEDY: TOTAL: ", countTotal[], " FEASIBLE: ", countFeasible[])
 
 end
 
@@ -248,8 +252,6 @@ end
 function fillInsertionCostMatrix!(scenario::Scenario,currentSolution::Solution,requestBank::Vector{Int}, insertionCosts::Array{Float64,2},compatibilityRequestVehicle::Array{Bool,2},positions::Array{Tuple{Int,Int}, 2},visitedRoute::Dict{Int, Dict{String, Int}}; TO::TimerOutput=TimerOutput())
     requests = scenario.requests
     vehicleSchedules = currentSolution.vehicleSchedules
-    nVehicles = length(vehicleSchedules)
-
     infVar = typemax(Float64)
 
     for idx in 1:length(requestBank)
@@ -333,11 +335,6 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
                 bestCost = totalCost
 
                 countFeasible[] += 1
-
-                # feasible, bestNewStartOfServiceTimes, bestNewEndOfServiceTimes,bestWaitingActivitiesToDelete, bestCost, bestDistance, bestIdleTime, bestTime, bestWaitingActivitiesToAdd =    checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,bestPickUp,bestDropOff,scenario,visitedRoute=visitedRoute,TO=TO,
-                # newStartOfServiceTimes=newStartOfServiceTimes,newEndOfServiceTimes=newEndOfServiceTimes,waitingActivitiesToDelete=waitingActivitiesToDelete,waitingActivitiesToAdd=waitingActivitiesToAdd,visitedRouteIds=visitedRouteIds)
-         
-                # return true, bestPickUp, bestDropOff, bestNewStartOfServiceTimes, bestNewEndOfServiceTimes,bestWaitingActivitiesToDelete, bestCost, bestDistance, bestIdleTime, bestTime, bestWaitingActivitiesToAdd
             end
         end
     end
