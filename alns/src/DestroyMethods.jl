@@ -2,7 +2,7 @@ module DestroyMethods
 
 using Random, UnPack, LinearAlgebra, domain, utils, ..ALNSDomain, TimerOutputs
 
-export randomDestroy!, worstRemoval!, shawRemoval!, findNumberOfRequestToRemove
+export randomDestroy!, worstRemoval!, shawRemoval!, findNumberOfRequestToRemove, removeRequestsFromSolution!
 
 #==
  Set seed each time module is reloaded
@@ -235,7 +235,7 @@ end
 #==
  Method to remove requests
 ==#
-function removeRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},solution::Solution,requestsToRemove::Set{Int};visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}(),scenario::Scenario=Scenario(),TO::TimerOutput=TimerOutput())   
+function removeRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},solution::Solution,requestsToRemove::Set{Int};visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}(),scenario::Scenario=Scenario(),TO::TimerOutput=TimerOutput(),remover::Function = removeActivityFromRoute!)   
     # Create a mutable copy of requestsToRemove
     remainingRequests = copy(requestsToRemove)
 
@@ -256,7 +256,7 @@ function removeRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,
             solution.totalRideTime -= schedule.totalTime
 
             # Remove requests from schedule 
-            removeRequestsFromSchedule!(time,distance,serviceTimes,requests,schedule,requestsToRemoveInSchedule,visitedRoute,scenario,TO=TO) 
+            removeRequestsFromSchedule!(time,distance,serviceTimes,requests,schedule,requestsToRemoveInSchedule,visitedRoute,scenario,remover,TO=TO) 
 
             # Update solution KPIs
             solution.totalDistance += schedule.totalDistance
@@ -273,7 +273,7 @@ end
 #==
  Method to remove list of requests from schedule
 ==#
-function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},schedule::VehicleSchedule,requestsToRemove::Vector{Int},visitedRoute::Dict{Int, Dict{String, Int}},scenario::Scenario;TO::TimerOutput=TimerOutput())
+function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},schedule::VehicleSchedule,requestsToRemove::Vector{Int},visitedRoute::Dict{Int, Dict{String, Int}},scenario::Scenario,remover::Function;TO::TimerOutput=TimerOutput())
 
     # Remove requests from schedule
     for requestToRemove in requestsToRemove
@@ -281,10 +281,10 @@ function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,
         pickUpPosition,dropOffPosition = findPositionOfRequest(schedule,requestToRemove)
 
         # Remove pickup activity 
-        routeReductionPickUp = removeActivityFromRoute!(time,schedule,pickUpPosition)
+        routeReductionPickUp = remover(time,schedule,pickUpPosition)
 
         # Remove drop off activity 
-        routeReductionDropOff = removeActivityFromRoute!(time,schedule,dropOffPosition-routeReductionPickUp)
+        routeReductionDropOff = remover(time,schedule,dropOffPosition-routeReductionPickUp)
 
         # Check if vehicle schedule is empty 
         if isVehicleScheduleEmpty(schedule)

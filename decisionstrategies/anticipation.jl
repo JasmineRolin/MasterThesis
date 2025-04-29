@@ -5,6 +5,7 @@ using DataFrames
 using CSV
 using alns
 using Test
+using TimerOutputs
 
 include("../dataexploration/GenerateLargeDataSets.jl")
 
@@ -86,7 +87,7 @@ function getDistanceAndTimeMatrixFromDataFrame(requestsDf::DataFrame,expectedReq
 end
 
 
-function readInstanceAnticipation(requestFile::String, nExpected::Int, vehicleFile::String, parametersFile::String,scenarioName=""::String)::Scenario
+function readInstanceAnticipation(requestFile::String, nExpected::Int, vehicleFile::String, parametersFile::String,scenarioName=""::String)
 
     # Check that files exist 
     if !isfile(requestFile)
@@ -138,10 +139,49 @@ function readInstanceAnticipation(requestFile::String, nExpected::Int, vehicleFi
     # Get distance and time matrix
     scenario = Scenario(scenarioName,allRequests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots,depots,taxiParameter)
 
-    return scenario
+    return scenario, nRequests
 
 end
 
+
+function removeExpectedRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},solution::Solution,nExpected::Int,nFixed::Int;visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}(),scenario::Scenario=Scenario(),TO::TimerOutput=TimerOutput())
+    
+    # Determine remaining requests to remove
+    requestsToRemove = Set{Int}()
+    for i in nFixed+1:nFixed+nExpected
+        if i in requestBank
+            continue
+        end
+        # Add to remaining requests
+        push!(requestsToRemove, i)
+    end
+
+    println("Length of requests to remove: ", length(requestsToRemove))
+
+    # Choice of removal of activity
+    remover = removeExpectedActivityFromRouteBasic!
+    removeRequestsFromSolution!(time,distance,serviceTimes,requests,solution,requestsToRemove,remover=remover)
+
+end
+
+function removeExpectedActivityFromRouteBasic!(time::Array{Int,2},schedule::VehicleSchedule,idx::Int)
+
+    # TODO: needs to be updated when waiting strategies are implemented 
+
+    # Retrieve activities before and after activity to remove
+    route = schedule.route
+    currentActivity = route[idx]
+
+    # How much did the route length reduce 
+    routeReduction = 0
+
+    currentActivity.activity.activityType = WAITING
+    currentActivity.activity.timeWindow.startTime = currentActivity.startOfServiceTime
+    currentActivity.activity.timeWindow.endTime = currentActivity.endOfServiceTime
+
+    return routeReduction
+
+end
 
 
 #==
@@ -203,8 +243,8 @@ end
     scenarioName = "Konsentra_Data"
 
     # Make scenario
-    N = 10
-    scenario = readInstanceAnticipation(requestFile, N, vehiclesFile, parametersFile,scenarioName)
+    nExpected = 10
+    scenario, nFixed = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName)
 
     # Choose destroy methods
     destroyMethods = Vector{GenericMethod}()
@@ -224,4 +264,21 @@ end
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == true
     @test msg == ""
+
+
+    time = scenario.time
+    distance = scenario.distance
+    serviceTimes = scenario.serviceTimes
+    requests = scenario.requests
+    nExpected = N
+
+    removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,solution,nExpected,nFixed)
+    #printSolution(solution,printRouteHorizontal)
+
+    state = State(solution,Request(),0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+    @test feasible == true
+    @test msg == ""
+    
+
 end

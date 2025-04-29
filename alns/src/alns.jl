@@ -32,7 +32,7 @@ export termination, findStartTemperature, accept, updateScoreAndCount,updateWeig
 ==#
 include("DestroyMethods.jl")
 using .DestroyMethods
-export randomDestroy!, worstRemoval!, shawRemoval!, findNumberOfRequestToRemove
+export randomDestroy!, worstRemoval!, shawRemoval!, findNumberOfRequestToRemove, removeRequestsFromSolution!
 
 #==
  Import from RepairMethods 
