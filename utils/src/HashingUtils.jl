@@ -18,10 +18,10 @@ function hashSolution(sol::Solution)::String
     routesHash = join(sortedRouteStrs, "|")
 
     # Include relevant KPIs
-   # kpis = string(round(sol.totalCost,digits=2), "", sol.nTaxi, "", sol.totalRideTime, "", round(sol.totalDistance,digits=2), "", sol.totalIdleTime)
+    kpis = string(round(sol.totalCost,digits=2), "", sol.nTaxi, "", sol.totalRideTime, "", round(sol.totalDistance,digits=2), "", sol.totalIdleTime)
 
     # Final key
-    return routesHash #* "#" * kpis
+    return routesHash * "#" * kpis
 end
 
 

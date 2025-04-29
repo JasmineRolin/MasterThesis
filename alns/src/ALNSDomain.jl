@@ -42,6 +42,7 @@ mutable struct ALNSParameters
     minStartOfTimeWindowDropOff::Float64 # Minimum start of time window for drop-off in scenario
     maxStartOfTimeWindowDropOff::Float64 # Maximum start of time window for drop-off in scenario
     maxNumberOfIterationsWithoutImprovement::Int # Number of iterations without improvement before stopping
+    maxNumberOfIterationsWithoutNewBest::Int # Number of iterations without new best before stopping
 
     function ALNSParameters( 
         timeLimit=10.0, 
@@ -58,9 +59,10 @@ mutable struct ALNSParameters
         p=6.0,
         shawRemovalPhi=9.0,
         shawRemovalXi=3.0,
-        maxNumberOfIterationsWithoutImprovement=1000
+        maxNumberOfIterationsWithoutImprovement=1000,
+        maxNumberOfIterationsWithoutNewBest=5000
         )
-        return new(timeLimit,printSegmentSize,segmentSize, w, coolingRate,reactionFactor, scoreAccepted, scoreImproved, scoreNewBest,minPercentToDestroy,maxPercentToDestroy,p,shawRemovalPhi,shawRemovalXi,0.0,0.0,0.0,0.0,0.0,0.0,maxNumberOfIterationsWithoutImprovement)
+        return new(timeLimit,printSegmentSize,segmentSize, w, coolingRate,reactionFactor, scoreAccepted, scoreImproved, scoreNewBest,minPercentToDestroy,maxPercentToDestroy,p,shawRemovalPhi,shawRemovalXi,0.0,0.0,0.0,0.0,0.0,0.0,maxNumberOfIterationsWithoutImprovement,maxNumberOfIterationsWithoutNewBest)
     end
 end
 
@@ -95,7 +97,8 @@ function ALNSParametersToDict(params::ALNSParameters)
         "maxStartOfTimeWindowPickUp" => params.maxStartOfTimeWindowPickUp,
         "minStartOfTimeWindowDropOff" => params.minStartOfTimeWindowDropOff,
         "maxStartOfTimeWindowDropOff" => params.maxStartOfTimeWindowDropOff,
-        "maxNumberOfIterationsWithoutImprovement" => params.maxNumberOfIterationsWithoutImprovement
+        "maxNumberOfIterationsWithoutImprovement" => params.maxNumberOfIterationsWithoutImprovement,
+        "maxNumberOfIterationsWithoutNewBest" => params.maxNumberOfIterationsWithoutNewBest
     )
 end
 
