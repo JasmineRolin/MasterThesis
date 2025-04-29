@@ -71,11 +71,12 @@ function generateExpectedRequests(N::Int,nFixedRequests::Int,parametersFile::Str
 
 end
 
-
+#==
 function offlineSolutionWithAnticipation(fixedRequests::Vector{Request},N::Int,scenario::Scenario,parameterFile::String)
 
     bestAverageSAE = maximumFloat64
     bestSolution = Solution()
+    nFixedRequests = length(fixedRequests)
 
     for n in 1:10
         # Get values
@@ -85,9 +86,7 @@ function offlineSolutionWithAnticipation(fixedRequests::Vector{Request},N::Int,s
         requests = scenario.requests
 
         # Generate expected requests
-        expectedRequests, expectedRequestIds  = generateExpectedRequests(N,nFixedRequests,parametersFile) 
-
-        #==
+        expectedRequests, expectedRequestIds  = generateExpectedRequests(N,nFixedRequests,parametersFile)         
         allRequests = vcat(fixedRequests, expectedRequests)
 
         # Update time and distance matrices
@@ -103,7 +102,7 @@ function offlineSolutionWithAnticipation(fixedRequests::Vector{Request},N::Int,s
         # Determine SAE
         averageSAE = 0.0
         for i in 1:10
-            expectedRequests, expectedRequestIds  = generateExpectedRequests(N)
+            expectedRequests, expectedRequestIds  = generateExpectedRequests(N,nFixedRequests,parametersFile)
             allRequests = vcat(fixedRequests, expectedRequests)
             time, distance = updateTimeAndDistanceMatrices(time,distance,allRequests)
             solution, requestBank = regretInsertion(scenario,allRequests) # This should be a different kind of construction. We have fixed requests and the rest should be inserted, but how? Here we could modify the simple construction quite simple to insert. and then potentially use ALNS, could also be a case to see if that improves any thing 
@@ -115,10 +114,12 @@ function offlineSolutionWithAnticipation(fixedRequests::Vector{Request},N::Int,s
             bestAverageSAE = averageSAE
             bestSolution = copySolution(solution)
         end
-        ==#
+        
     end
 
     return bestSolution
 
 end
+==#
 
+expectedRequests, expectedRequestIds  = generateExpectedRequests(10,20,"tests/resources/Parameters.csv")     
