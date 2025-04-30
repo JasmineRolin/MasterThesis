@@ -66,7 +66,7 @@ end
 #==
 # Generate data sets and vehicles
 ==#
-function generateDataSets(nRequest,nData,time_range,max_lat, min_lat, max_long, min_long, nRows, nCols)
+function generateDataSets(nRequest,nData,time_range,max_lat, min_lat, max_long, min_long)
     # Load simulation data
     probabilities_pickUpTime,
         probabilities_dropOffTime,
@@ -86,7 +86,7 @@ function generateDataSets(nRequest,nData,time_range,max_lat, min_lat, max_long, 
         distanceDriven= load_simulation_data("Data/Simulation data/")
 
     # Generate request data 
-    newDataList, df_list = generateData(nRequest,nData,probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long, nRows, nCols)
+    newDataList, df_list = generateData(nRequest,nData,probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long)
 
     return location_matrix, requestTimePickUp, requestTimeDropOff, newDataList, df_list, probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff, probabilities_location, density_grid, x_range, y_range, requests, distanceDriven
 end
@@ -95,7 +95,7 @@ end
 #==
 # Generate data sets
 ==#
-function generateData(nRequest,nData,probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long, nRows, nCols)
+function generateData(nRequest,nData,probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long)
     df_list = []
     newDataList = Vector{String}()  
     for i in 1:nData
@@ -107,7 +107,7 @@ function generateData(nRequest,nData,probabilities_pickUpTime, probabilities_dro
         while retry_count < 5
             try
                 # Call the function that may throw the error
-                results = makeRequests(nRequest, probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range, output_file,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long, nRows, nCols)
+                results = makeRequests(nRequest, probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range, output_file,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long)
                 
                 println("Request generation succeeded!")
                 push!(df_list,results)
@@ -136,7 +136,7 @@ end
 #==
 # Make request
 ==#
-function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, probabilities_dropOffTime::Vector{Float64}, probabilities_location::Vector{Float64}, time_range::Vector{Int}, x_range::Vector{Float64}, y_range::Vector{Float64}, output_file::String,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long, nRows, nCols)
+function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, probabilities_dropOffTime::Vector{Float64}, probabilities_location::Vector{Float64}, time_range::Vector{Int}, x_range::Vector{Float64}, y_range::Vector{Float64}, output_file::String,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long)
     results = DataFrame(
         id = Int[],
         pickup_latitude = Float64[],
@@ -153,7 +153,7 @@ function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, p
     # Loop to generate samples
     for i in 1:nSample
         # Sample new location based on KDE probabilities
-        sampled_location = getNewLocations(probabilities_location, x_range, y_range, distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long, nRows, nCols)
+        sampled_location = getNewLocations(probabilities_location, x_range, y_range, distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long)
         pickup_longitude, pickup_latitude = sampled_location[1]
         dropoff_longitude, dropoff_latitude = sampled_location[2]
 
@@ -200,7 +200,7 @@ function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, p
     return results
 end
 
-function getNewLocations(probabilities::Vector{Float64},x_range::Vector{Float64},y_range::Vector{Float64}, distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long, nRows, nCols; tolerance_km::Float64 = 1.0)
+function getNewLocations(probabilities::Vector{Float64},x_range::Vector{Float64},y_range::Vector{Float64}, distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long; tolerance_km::Float64 = 1.0)
     n = length(probabilities)
     ny = length(y_range)
     nd = length(distance_range)
@@ -217,7 +217,7 @@ function getNewLocations(probabilities::Vector{Float64},x_range::Vector{Float64}
 
     # Find drop off
     grid_coords = [(x, y) for x in x_range for y in y_range]
-    dropoff_x, dropoff_y = find_dropoff((pickup_x, pickup_y), grid_coords, sampled_distance, probabilities, x_range, y_range; tolerance_km=tolerance_km)
+    dropoff_x, dropoff_y = find_dropoff((pickup_x, pickup_y), grid_coords, sampled_distance, probabilities; tolerance_km=tolerance_km)
 
     # Make sure location is in grid 
     if pickup_x < min_long 
@@ -249,7 +249,7 @@ end
 #==
 # Method to sample drop off location  
 ==#
-function find_dropoff(pickup::Tuple{Float64, Float64}, grid_coords::Vector{Tuple{Float64, Float64}},distance_sample::Float64,probabilities::Vector{Float64},x_range::Vector{Float64},y_range::Vector{Float64};tolerance_km::Float64 = 1.0)
+function find_dropoff(pickup::Tuple{Float64, Float64}, grid_coords::Vector{Tuple{Float64, Float64}},distance_sample::Float64,probabilities::Vector{Float64};tolerance_km::Float64 = 1.0)
 
     # Compute distances from pickup to all grid coordinates
     distances = [haversine_distance(pickup[2], pickup[1], lat, lon)[1] for (lon, lat) in grid_coords]

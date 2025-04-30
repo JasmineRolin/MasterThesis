@@ -85,5 +85,11 @@ include("State.jl")
 using .States
 export State
 
+#==
+ Export from grid module
+==#
+include("Grid.jl")
+using .Grids 
+export Grid,determineGridCell,findDepotLocations
 
 end

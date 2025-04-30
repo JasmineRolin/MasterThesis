@@ -1,4 +1,4 @@
-using CSV, DataFrames
+using CSV, DataFrames, JSON
 using Plots
 using KernelDensity, Statistics
 using Random
@@ -14,8 +14,8 @@ include("GenerateLargeDataSets.jl")
 
 
 global GENERATE_SIMULATION_DATA = false
-global GENERATE_DATA_AND_VEHICLES = true
-global GENERATE_VEHICLES = false
+global GENERATE_DATA_AND_VEHICLES = false
+global GENERATE_VEHICLES = true
 
 #==
 # Constants for data generation 
@@ -23,16 +23,16 @@ global GENERATE_VEHICLES = false
 global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 2*60 # 2 hours buffer
-global nData = 10
-global nRequestList = [20,100,300,500]
-global MAX_DELAY = 15 # TODO Astrid I just put something
+global nData = 1
+global nRequestList = [20] #[20,100,300,500]
+global MAX_DELAY = 5 # TODO Astrid I just put something
 
 #==
 # Constant for vehicle generation  
 ==#
-global maxRideTimeRatio = 1
+global vehicleCapacity = 4
 global GammaList = [0.5,0.7,0.9]
-global nWalking = 4
+
 global shifts = Dict(
     "Morning"    => Dict("TimeWindow" => [6*60, 12*60], "cost" => 2.0, "nVehicles" => 0, "y" => []),
     "Noon"       => Dict("TimeWindow" => [10*60, 16*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
@@ -57,7 +57,23 @@ global NUM_COLS = 5
 ==#
 global time_range = collect(range(6*60,23*60))
 
+#================================================================================================#
+# Write grid to file 
+#================================================================================================#
+# Create a serializable dictionary
+grid = Dict(
+        "max_latitude" => MAX_LAT,
+        "min_latitude" => MIN_LAT,
+        "max_longitude" => MAX_LONG,
+        "min_longitude" => MIN_LONG,
+        "num_rows" => NUM_ROWS,
+        "num_columns" => NUM_COLS
+)
 
+# Write to a JSON file
+open("Data/Konsentra/grid.json", "w") do f
+    JSON.print(f, grid) 
+end
 
 #================================================================================================#
 # Generate simulation data 
@@ -106,14 +122,14 @@ if GENERATE_DATA_AND_VEHICLES
     _= load_simulation_data("Data/Simulation data/")
 
     for nRequest in nRequestList
-        location_matrix, requestTimePickUp, requestTimeDropOff, newDataList, df_list, probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff, probabilities_location, density_grid, x_range, y_range,requests, distanceDriven = generateDataSets(nRequest,nData,time_range,MAX_LAT, MIN_LAT, MAX_LONG, MIN_LONG, NUM_ROWS, NUM_COLS)
+        location_matrix, requestTimePickUp, requestTimeDropOff, newDataList, df_list, probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff, probabilities_location, density_grid, x_range, y_range,requests, distanceDriven = generateDataSets(nRequest,nData,time_range,MAX_LAT, MIN_LAT, MAX_LONG, MIN_LONG)
         
         # Generate vehicles 
         for gamma in GammaList
             println("Gamma = ",gamma)
 
             # Generate vehicles
-            average_demand_per_hour = generateVehicles(shifts,df_list, base_probabilities_location, base_x_range, base_y_range,gamma,nRequest,MAX_LAT,MIN_LAT,MAX_LONG,MIN_LONG,NUM_ROWS,NUM_COLS)
+            average_demand_per_hour = generateVehicles(shifts,df_list, base_probabilities_location, base_x_range, base_y_range,gamma,vehicleCapacity,nRequest,MAX_LAT,MIN_LAT,MAX_LONG,MIN_LONG,NUM_ROWS,NUM_COLS)
 
             # Plot demand and shifts
             plotDemandAndShifts(average_demand_per_hour,shifts,gamma)
@@ -177,12 +193,24 @@ if GENERATE_VEHICLES
             println("Gamma = ",gamma)
 
             # Generate vehicles
-            average_demand_per_hour = generateVehicles(shifts,df_list, probabilities_location, x_range, y_range,gamma,nRequest,MAX_LAT,MIN_LAT,MAX_LONG,MIN_LONG,NUM_ROWS,NUM_COLS)
+            average_demand_per_hour = generateVehicles(shifts,df_list, probabilities_location, x_range, y_range,gamma,vehicleCapacity,nRequest,MAX_LAT,MIN_LAT,MAX_LONG,MIN_LONG,NUM_ROWS,NUM_COLS)
 
             plotDemandAndShifts(average_demand_per_hour,shifts,gamma)
 
             # Plot request and vehicle locations 
             plotRequestsAndVehicles(nRequest,nData,gamma,MAX_LAT,MIN_LAT,MAX_LONG,MIN_LONG,NUM_ROWS,NUM_COLS,grid_centers,lat_step,long_step)
+        end
+
+        # Generate time and distance matrices  
+        for gamma in GammaList
+            for i in 1:nData
+                println("n = ",nRequest," i = ",i)
+                requestFile = string("Data/Konsentra/",nRequest,"/GeneratedRequests_",nRequest,"_",i,".csv")
+                vehicleFile = string("Data/Konsentra/",nRequest,"/Vehicles_",nRequest,".csv")
+                dataName = string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",i)
+                
+                getTimeDistanceMatrix(requestFile, vehicleFile, dataName)
+            end
         end
     end
 end

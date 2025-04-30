@@ -81,7 +81,7 @@ end
 # ------
 # Generate vehicles to CSV
 # ------
-function generateVehiclesKonsentra(shifts, locations,vehicle_file::String)
+function generateVehiclesKonsentra(shifts,vehicleCapacity, locations,vehicle_file::String)
     vehicles = DataFrame(id=Int[], start_of_availability=Int[], end_of_availability=Int[], 
                          maximum_ride_time=Int[], 
                          capacity_walking=Int[], depot_latitude=Float64[], depot_longitude=Float64[])
@@ -92,7 +92,7 @@ function generateVehiclesKonsentra(shifts, locations,vehicle_file::String)
             id += 1
             location = locations[id]
             push!(vehicles, [id, data["TimeWindow"][1], data["TimeWindow"][2],
-                             Int(floor((data["TimeWindow"][2] - data["TimeWindow"][1]) * maxRideTimeRatio / 60)), nWalking, location[1], location[2]])
+                             Int(floor((data["TimeWindow"][2] - data["TimeWindow"][1]) / 60)), vehicleCapacity, location[1], location[2]])
         end
     end
 
@@ -119,7 +119,7 @@ end
 #==
 # Method to generate vehicles for generated data 
 ==#
-function generateVehicles(shifts,df_list, probabilities_location, x_range, y_range,Gamma,nRequest,max_lat,min_lat,max_long,min_long,nRows,nCols)
+function generateVehicles(shifts,df_list, probabilities_location, x_range, y_range,Gamma,vehicleCapacity,nRequest,max_lat,min_lat,max_long,min_long,nRows,nCols)
     # Find possible depots locations 
     grid_centers = findGridCenters(max_lat,min_lat,max_long,min_long,nRows,nCols)[3]
 
@@ -140,7 +140,7 @@ function generateVehicles(shifts,df_list, probabilities_location, x_range, y_ran
     end
 
     # Generate vehicles 
-    generateVehiclesKonsentra(shifts, locations,"Data/Konsentra/"*string(nRequest)*"/Vehicles_"*string(nRequest)*"_"*string(Gamma)*".csv")
+    generateVehiclesKonsentra(shifts,vehicleCapacity, locations,"Data/Konsentra/"*string(nRequest)*"/Vehicles_"*string(nRequest)*"_"*string(Gamma)*".csv")
 
     return average_demand_per_hour
 end
@@ -267,6 +267,6 @@ function plotRequestsAndVehicles(n,nData,gamma,max_lat,min_lat,max_long,min_long
         end
 
         display(p)
-        savefig(p, string("plots/DataGeneration/RequestsAndVehicles_",n,"_",i,".svg"))
+        savefig(p, string("plots/DataGeneration/RequestsAndVehicles_",gamma,"_",n,"_",i,".svg"))
     end
 end
