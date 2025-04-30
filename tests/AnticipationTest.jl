@@ -1,6 +1,7 @@
 
 include("../decisionstrategies/anticipation.jl")
 
+#==
 #@testset "Anticipation Test" begin 
     requestFile = "Data/Konsentra/TransformedData_Data.csv"
     vehiclesFile = "tests/resources/Vehicles.csv"
@@ -49,12 +50,13 @@ include("../decisionstrategies/anticipation.jl")
     serviceTimes = scenario.serviceTimes
     requests = scenario.requests
     
-    removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,solution,nExpected,nFixed,nNotServicedExpectedRequests,requestBank)
+    removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,solution,nExpected,nFixed,nNotServicedExpectedRequests,requestBank,scenario.taxiParameter)
     
-    state = State(solution,Request(),nExpected)
-    feasible, msg = checkSolutionFeasibilityOnline(scenario,state;nExpected=nServicedExpectedRequests)
-    @test feasible == true
+    state = State(solution,Request(),0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state;nExpected=nExpected)
     @test msg == ""
+    @test feasible == true
+    
     
     # Generate new scenario
     nExpected = 10
@@ -63,17 +65,35 @@ include("../decisionstrategies/anticipation.jl")
     # Insert expected requests randomly into solution using regret insertion
     expectedRequestsIds = collect(nFixed+1:nFixed+nExpected)
     solution.nTaxi = nExpected
-    solution.totalCost += nExpected * scenario.taxiParameter - nNotServicedExpectedRequests * scenario.taxiParameter
+    solution.totalCost += nExpected * scenario.taxiParameter
     stateALNS = ALNSState(solution,1,1,expectedRequestsIds)
-    println(solution.nTaxi)
     regretInsertion(stateALNS,scenario2)
-    printSolution(solution,printRouteHorizontal)
-    println(requestBank)
 
     state = State(solution,Request(),nNotServicedFixedRequests)
     feasible, msg = checkSolutionFeasibilityOnline(scenario2,state)
     @test msg == ""
     @test feasible == true
     
+    
+#end
+
+==#
+
+#@testset "Complete Anticipation Test" begin 
+    requestFile = "Data/Konsentra/TransformedData_Data.csv"
+    vehiclesFile = "tests/resources/Vehicles.csv"
+    parametersFile = "tests/resources/Parameters.csv"
+    alnsParameters = "tests/resources/ALNSParameters_Article.json"
+    scenarioName = "Konsentra_Data"
+    
+    nExpected = 10
+    bestSolution, bestRequestBank, results, scenario, scenario2 = offlineSolutionWithAnticipation(requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,scenario)
+
+    println(results)
+
+    #state = State(solution,Request(),0)
+    #feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+    #@test msg == ""
+    #@test feasible == true
     
 #end

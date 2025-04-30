@@ -78,13 +78,13 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,solution::Solution,ev
     end
     notServicedRequests = setdiff(considered, servicedPickUpActivities)
 
-    if totalNTaxi + nTaxi != length(notServicedRequests) 
+    if totalNTaxi + nTaxi + nExpected != length(notServicedRequests) 
         msg = "SOLUTION INFEASIBLE: Not all requests are serviced. Serviced: $(length(servicedPickUpActivities)), not serviced: $(length(notServicedRequests)), nTaxi: $(nTaxi)"
         return false, msg
     end
 
     # Check cost, distance and time of solution 
-    totalCostCheck += (nTaxi + totalNTaxi - nExpected) * scenario.taxiParameter #?
+    totalCostCheck += (nTaxi + totalNTaxi) * scenario.taxiParameter #?
     if !isapprox(totalCostCheck,totalCost,atol=0.0001) 
         msg = "SOLUTION INFEASIBLE: Total cost of solution is incorrect. Calculated: $(totalCostCheck), actual: $(totalCost), diff: $(abs(totalCostCheck-totalCost))"
         return false, msg

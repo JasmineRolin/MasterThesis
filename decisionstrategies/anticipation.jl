@@ -144,7 +144,7 @@ function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicle
 end
 
 
-function removeExpectedRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},solution::Solution,nExpected::Int,nFixed::Int,nNotServicedExpectedRequests::Int,requestBank::Vector{Int};TO::TimerOutput=TimerOutput())
+function removeExpectedRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},solution::Solution,nExpected::Int,nFixed::Int,nNotServicedExpectedRequests::Int,requestBank::Vector{Int},taxiParameter::Float64;TO::TimerOutput=TimerOutput())
     
     # Determine remaining requests to remove
     requestsToRemove = Set{Int}()
@@ -165,6 +165,7 @@ function removeExpectedRequestsFromSolution!(time::Array{Int,2},distance::Array{
 
     # Remove taxis for expected requests
     solution.nTaxi -= nNotServicedExpectedRequests
+    solution.totalCost -= nNotServicedExpectedRequests * taxiParameter
 
 
 end
@@ -300,7 +301,7 @@ function removeExpectedActivityFromRouteWF2!(time::Array{Int,2},schedule::Vehicl
 end
 
 
-function offlineSolutionWithAnticipation(requestFile::String,VehiclesFile::String,parametersFile::String,alnsParameter::String,scenarioName::String,nExpected::Int)
+function offlineSolutionWithAnticipation(requestFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String,nExpected::Int,scenario::Scenario)
 
     # Choose destroy methods
     destroyMethods = Vector{GenericMethod}()
@@ -314,13 +315,19 @@ function offlineSolutionWithAnticipation(requestFile::String,VehiclesFile::Strin
     addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
     # Variables to determine best solution
-    bestAverageSAE = maximumFloat64
-    bestSolution = Solution()
+    bestAverageSAE = typemax(Float64)
+    bestSolution::Union{Nothing, Solution} = nothing
+    bestRequestBank::Union{Nothing, Vector{Int}} = nothing
+    results = DataFrame(runId = String[],
+                        averageSAE = Float64[],
+                        nServicedFixedRequests = Int[],
+                        nServicedExpectedRequests = Int[],
+                        nNotServicedFixedRequests = Int[],
+                        nNotServicedExpectedRequests = Int[])
 
 
-    for _ in 1:10
+    for i in 1:10
         # Make scenario
-        nExpected = 10
         scenario, nFixed = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName)
         time = scenario.time
         distance = scenario.distance
@@ -330,44 +337,70 @@ function offlineSolutionWithAnticipation(requestFile::String,VehiclesFile::Strin
 
         # Get solution
         initialSolution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
-        solution, requestBank,_,_, _,_,_ = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
+        originalSolution, originalRequestBank,_,_, _,_,_ = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
 
         # Determine number of serviced requests
-        nNotServicedFixedRequests = sum(requestBank .<= nFixed)
-        nNotServicedExpectedRequests = sum(requestBank .> nFixed)
+        nNotServicedFixedRequests = sum(originalRequestBank .<= nFixed)
+        nNotServicedExpectedRequests = sum(originalRequestBank .> nFixed)
         nServicedFixedRequests = nFixed - nNotServicedFixedRequests
         nServicedExpectedRequests = nExpected - nNotServicedExpectedRequests
 
         # Remove expected requests from solution
-        removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,solution,nExpected,nFixed,nNotServicedExpectedRequests,requestBank)
+        removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,originalSolution,nExpected,nFixed,nNotServicedExpectedRequests,originalRequestBank,scenario.taxiParameter)
+
+        # TODO remove when stable
+        state = State(originalSolution,Request(),0)
+        feasible, msg = checkSolutionFeasibilityOnline(scenario,state;nExpected=nExpected)
+        if !feasible
+            printSolution(originalSolution,printRouteHorizontal)
+            println("Solution is not feasible")
+            throw(msg)
+        end
 
         # Determine SAE
         averageSAE = 0.0
         for _ in 1:10
+            # Get solution
+            solution = copySolution(originalSolution)
+            
             # Generate new scenario
-            nTaxiSolution = copy(solution.nTaxi)
-            nExpected = 10
-            scenario, nFixed = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName)
+            scenario2, nFixed = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName)
 
             # Insert expected requests randomly into solution using regret insertion
             expectedRequestsIds = collect(nFixed+1:nFixed+nExpected)
             solution.nTaxi = nExpected
+            solution.totalCost += nExpected * scenario.taxiParameter
             stateALNS = ALNSState(solution,1,1,expectedRequestsIds)
-            regretInsertion(stateALNS,scenario)
+            regretInsertion(stateALNS,scenario2)
+
+            # TODO remove when stable
+            state = State(solution,Request(),nNotServicedFixedRequests)
+            feasible, msg = checkSolutionFeasibilityOnline(scenario2,state)
+            if !feasible
+                printSolution(solution,printRouteHorizontal)
+                println("Solution is not feasible")
+                println(msg)
+                return solution, requestBank, results, scenario, scenario2, feasible, msg
+            end
 
             # Calculate SAE
-            averageSAE += solution.totalCost + nTaxiSolution * taxiParameter
+            averageSAE += solution.totalCost + originalSolution.nTaxi * taxiParameter
         end
         averageSAE /= 10
 
+        # Check if solution is better than best solution
         if averageSAE < bestAverageSAE 
             bestAverageSAE = averageSAE
-            bestSolution = copySolution(solution)
+            bestSolution = copySolution(originalSolution)
+            bestRequestBank = copy(originalRequestBank)
         end
         
+
+        # Save results
+        push!(results, (runId = "Run $i", averageSAE = averageSAE, nServicedFixedRequests = nServicedFixedRequests, nServicedExpectedRequests = nServicedExpectedRequests, nNotServicedFixedRequests = nNotServicedFixedRequests, nNotServicedExpectedRequests = nNotServicedExpectedRequests))
     end
 
-    return bestSolution
+    return bestSolution, bestRequestBank, results, scenario, scenario2, feasible, msg
 
 end
 
