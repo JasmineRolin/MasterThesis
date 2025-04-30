@@ -87,7 +87,7 @@ function getDistanceAndTimeMatrixFromDataFrame(requestsDf::DataFrame,expectedReq
 end
 
 
-function readInstanceAnticipation(requestFile::String, originalExpectedRequests::DataFrame,nNewExpected::Int, vehicleFile::String, parametersFile::String,scenarioName=""::String)
+function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicleFile::String, parametersFile::String,scenarioName=""::String)
 
     # Check that files exist 
     if !isfile(requestFile)
@@ -124,20 +124,17 @@ function readInstanceAnticipation(requestFile::String, originalExpectedRequests:
 
     # Generate expected requests
     newExpectedRequestsDf = createExpectedRequests(nNewExpected,nRequests)
-    expectedRequestsDf = vcat(originalExpectedRequests,newExpectedRequestsDf)
-    nOriginalExpected = nrow(originalExpectedRequests)
 
     # Read time and distance matrices from input or initialize empty matrices
-    distance, time = getDistanceAndTimeMatrixFromDataFrame(requestsDf,expectedRequestsDf,collect(keys(depotLocations)))
+    distance, time = getDistanceAndTimeMatrixFromDataFrame(requestsDf,newExpectedRequestsDf,collect(keys(depotLocations)))
 
     # Get requests 
-    requests = readRequests(requestsDf,nRequests+nOriginalExpected+nNewExpected,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time)
-    expectedRequests = readRequests(newExpectedRequestsDf,nNewExpected,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time,extraN=nRequests+nOriginalExpected)
-    allConsideredRequests = vcat(requests, expectedRequests)
-    allRequests = vcat(requests, [Request() for _ in 1:nOriginalExpected]..., expectedRequests)
+    requests = readRequests(requestsDf,nRequests+nNewExpected,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time)
+    expectedRequests = readRequests(newExpectedRequestsDf,nNewExpected,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time,extraN=nRequests)
+    allRequests = vcat(requests, expectedRequests)
 
     # Split into offline and online requests
-    onlineRequests, offlineRequests = splitRequests(allConsideredRequests)
+    onlineRequests, offlineRequests = splitRequests(allRequests)
 
     # Get distance and time matrix
     scenario = Scenario(scenarioName,allRequests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots,depots,taxiParameter)
@@ -163,7 +160,7 @@ function removeExpectedRequestsFromSolution!(time::Array{Int,2},distance::Array{
     println(requestsToRemove)
 
     # Choice of removal of activity
-    remover = removeExpectedActivityFromRouteBasic!
+    remover = removeExpectedActivityFromRouteWF!
     removeRequestsFromSolution!(time,distance,serviceTimes,requests,solution,requestsToRemove,remover=remover)
 
     # Remove taxis for expected requests
@@ -173,8 +170,6 @@ function removeExpectedRequestsFromSolution!(time::Array{Int,2},distance::Array{
 end
 
 function removeExpectedActivityFromRouteBasic!(time::Array{Int,2},schedule::VehicleSchedule,idx::Int)
-
-    # TODO: needs to be updated when waiting strategies are implemented 
 
     # Retrieve activities before and after activity to remove
     route = schedule.route
@@ -191,6 +186,118 @@ function removeExpectedActivityFromRouteBasic!(time::Array{Int,2},schedule::Vehi
 
 end
 
+function removeExpectedActivityFromRouteWF!(time::Array{Int,2}, schedule::VehicleSchedule, idx::Int)
+    route = schedule.route
+
+    # Find number of WAITING activities before idx
+    nActivitiesBefore = 0
+    for i in idx-1:-1:1
+        if route[i].activity.activityType == WAITING
+            nActivitiesBefore += 1
+        else
+            break
+        end
+    end
+
+    # Find number of WAITING activities after idx
+    nActivitiesAfter = 0
+    for i in idx+1:length(route)
+        if route[i].activity.activityType == WAITING
+            nActivitiesAfter += 1
+        else
+            break
+        end
+    end
+
+    idxStart = idx - nActivitiesBefore
+    idxEnd = idx + nActivitiesAfter
+
+    # Extract activities before and after the activity to remove and the waiting activities
+    activityAssignmentBefore = route[idxStart - 1]
+    activityAssignmentAfter = route[idxEnd + 1]
+
+    # Calculate route reduction
+    routeReduction = idxEnd - idxStart
+
+    # Remove activities (from end to start to avoid index shifting)
+    for _ in idxStart:idxEnd
+        deleteat!(route, idxStart)
+    end
+
+    # Insert WAITING activity
+    startOfWaitingActivity = activityAssignmentBefore.endOfServiceTime
+    endOfWaitingActivity = activityAssignmentAfter.startOfServiceTime -time[activityAssignmentBefore.activity.id, activityAssignmentAfter.activity.id]
+    waitingActivity = Activity(activityAssignmentBefore.activity.id,-1,WAITING,activityAssignmentBefore.activity.location,TimeWindow(startOfWaitingActivity, endOfWaitingActivity))
+    waitingAssignment = ActivityAssignment(waitingActivity,activityAssignmentBefore.vehicle,startOfWaitingActivity,endOfWaitingActivity)
+
+    insert!(route, idxStart, waitingAssignment)
+
+    return routeReduction
+end
+
+function removeExpectedActivityFromRouteWF2!(time::Array{Int,2},schedule::VehicleSchedule,idx::Int)
+
+    # Retrieve activities before and after activity to remove
+    route = schedule.route
+    activityAssignmentBefore = route[idx-1]
+    activityAssignmentAfter = route[idx+1]
+
+    # How much did the route length reduce 
+    routeReduction = 0
+
+    # Remove activity 
+    # If there is a waiting activity both before and after 
+    if activityAssignmentBefore.activity.activityType == WAITING && activityAssignmentAfter.activity.activityType == WAITING
+
+        # Update waiting activity 
+        activityAssignemntAfterWaiting = route[idx+2]
+        activityAssignmentBefore.endOfServiceTime = activityAssignemntAfterWaiting.startOfServiceTime - time[activityAssignmentBefore.activity.id,activityAssignemntAfterWaiting.activity.id]
+        activityAssignmentBefore.activity.timeWindow.endTime = activityAssignmentBefore.endOfServiceTime
+
+        # Delete activity
+        deleteat!(route,idx) # Delete activity 
+        deleteat!(route,idx) # Delete waiting activity
+
+        routeReduction = 2
+
+    # Extend waiting activity before activity to remove
+    elseif activityAssignmentBefore.activity.activityType == WAITING
+        # Update waiting activity 
+        activityAssignmentBefore.endOfServiceTime = activityAssignmentAfter.startOfServiceTime - time[activityAssignmentBefore.activity.id,activityAssignmentAfter.activity.id]
+        activityAssignmentBefore.activity.timeWindow.endTime = activityAssignmentBefore.endOfServiceTime
+
+        # Delete activity
+        deleteat!(route,idx)
+
+        routeReduction = 1
+
+    # Extend waiting activity after activity to remove
+    elseif activityAssignmentAfter.activity.activityType == WAITING
+        # Update waiting activity
+        activityAssignmentAfter.startOfServiceTime = activityAssignmentBefore.endOfServiceTime + time[activityAssignmentBefore.activity.id,activityAssignmentAfter.activity.id]
+        activityAssignmentAfter.activity.timeWindow.startTime = activityAssignmentAfter.startOfServiceTime
+        
+        # Delete activity 
+        deleteat!(route,idx)
+
+        routeReduction = 1
+
+    # Insert waiting activity before activity to remove
+    else
+        # Create waiting activity 
+        startOfWaitingActivity = activityAssignmentBefore.endOfServiceTime
+        endOfWaitingActivity = activityAssignmentAfter.startOfServiceTime - time[activityAssignmentBefore.activity.id,activityAssignmentAfter.activity.id]
+
+        waitingActivity = Activity(activityAssignmentBefore.activity.id,-1,WAITING,activityAssignmentBefore.activity.location,TimeWindow(startOfWaitingActivity,endOfWaitingActivity))
+        waitingActivityAssignment = ActivityAssignment(waitingActivity,activityAssignmentBefore.vehicle,startOfWaitingActivity,endOfWaitingActivity)
+                
+        # Update route 
+        route[idx] = waitingActivityAssignment
+    end
+
+    return routeReduction
+
+end
 
 
 function offlineSolutionWithAnticipation(requestFile::String,VehiclesFile::String,parametersFile::String,alnsParameter::String,scenarioName::String,nExpected::Int)

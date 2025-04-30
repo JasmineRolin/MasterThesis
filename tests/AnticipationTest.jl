@@ -10,7 +10,7 @@ include("../decisionstrategies/anticipation.jl")
     
     # Make scenario
     nExpected = 10
-    scenario, nFixed, originalExpectedRequestsDf = readInstanceAnticipation(requestFile, DataFrame(), nExpected, vehiclesFile, parametersFile, scenarioName)
+    scenario, nFixed, originalExpectedRequestsDf = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile, scenarioName)
     
     # Choose destroy methods
     destroyMethods = Vector{GenericMethod}()
@@ -26,6 +26,11 @@ include("../decisionstrategies/anticipation.jl")
     initialSolution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
     solution, requestBank,_,_, _,_,_ = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
     
+    # Save original solution
+    originalSolution = copySolution(solution)
+    originalRequestBank = copy(requestBank)
+    nTaxiSolution = copy(solution.nTaxi)
+
     state = State(solution,Request(),0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == true
@@ -52,18 +57,20 @@ include("../decisionstrategies/anticipation.jl")
     @test msg == ""
     
     # Generate new scenario
-    nTaxiSolution = copy(solution.nTaxi)
     nExpected = 10
-    scenario2, nFixed = readInstanceAnticipation(requestFile, originalExpectedRequestsDf, nExpected, vehiclesFile, parametersFile,scenarioName)
+    scenario2, nFixed = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName)
     
     # Insert expected requests randomly into solution using regret insertion
     expectedRequestsIds = collect(nFixed+1:nFixed+nExpected)
     solution.nTaxi = nExpected
+    solution.totalCost += nExpected * scenario.taxiParameter
     stateALNS = ALNSState(solution,1,1,expectedRequestsIds)
+    println(solution.nTaxi)
     regretInsertion(stateALNS,scenario2)
     printSolution(solution,printRouteHorizontal)
+    println(requestBank)
 
-    state = State(solution,Request(),0)
+    state = State(solution,Request(),length(originalRequestBank))
     feasible, msg = checkSolutionFeasibilityOnline(scenario2,state)
     @test msg == ""
     @test feasible == true
