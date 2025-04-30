@@ -63,14 +63,14 @@ include("../decisionstrategies/anticipation.jl")
     # Insert expected requests randomly into solution using regret insertion
     expectedRequestsIds = collect(nFixed+1:nFixed+nExpected)
     solution.nTaxi = nExpected
-    solution.totalCost += nExpected * scenario.taxiParameter
+    solution.totalCost += nExpected * scenario.taxiParameter - nNotServicedExpectedRequests * scenario.taxiParameter
     stateALNS = ALNSState(solution,1,1,expectedRequestsIds)
     println(solution.nTaxi)
     regretInsertion(stateALNS,scenario2)
     printSolution(solution,printRouteHorizontal)
     println(requestBank)
 
-    state = State(solution,Request(),length(originalRequestBank))
+    state = State(solution,Request(),nNotServicedFixedRequests)
     feasible, msg = checkSolutionFeasibilityOnline(scenario2,state)
     @test msg == ""
     @test feasible == true
