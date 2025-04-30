@@ -8,12 +8,12 @@ export checkSolutionFeasibility,checkRouteFeasibility, checkSolutionFeasibilityO
 #==
 # Function to check feasibility of online solution 
 ==#
-function checkSolutionFeasibilityOnline(scenario::Scenario,state::State)
+function checkSolutionFeasibilityOnline(scenario::Scenario,state::State;nExpected::Int=0)
     @unpack solution, event, visitedRoute, totalNTaxi = state
-    checkSolutionFeasibilityOnline(scenario,solution,event,visitedRoute,totalNTaxi)
+    checkSolutionFeasibilityOnline(scenario,solution,event,visitedRoute,totalNTaxi; nExpected=nExpected)
 end
 
-function checkSolutionFeasibilityOnline(scenario::Scenario,solution::Solution,event::Request,visitedRoute::Dict{Int, Dict{String, Int}}, totalNTaxi::Int)
+function checkSolutionFeasibilityOnline(scenario::Scenario,solution::Solution,event::Request,visitedRoute::Dict{Int, Dict{String, Int}}, totalNTaxi::Int;nExpected::Int=0)
     @unpack vehicleSchedules, totalCost, nTaxi, totalRideTime, totalDistance, totalIdleTime = solution
 
     # Keep track of serviced activities assuming that activity 
@@ -84,7 +84,7 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,solution::Solution,ev
     end
 
     # Check cost, distance and time of solution 
-    totalCostCheck += (nTaxi + totalNTaxi) * scenario.taxiParameter #?
+    totalCostCheck += (nTaxi + totalNTaxi - nExpected) * scenario.taxiParameter #?
     if !isapprox(totalCostCheck,totalCost,atol=0.0001) 
         msg = "SOLUTION INFEASIBLE: Total cost of solution is incorrect. Calculated: $(totalCostCheck), actual: $(totalCost), diff: $(abs(totalCostCheck-totalCost))"
         return false, msg
@@ -155,8 +155,6 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
         return false, msg, Set{Int}(), Set{Int}()
     end
     if !isapprox(totalCost, getTotalCostRouteOnline(scenario.time,route,visitedRoute,scenario.serviceTimes),atol=0.0001) 
-        println(route)
-        println(visitedRoute)
         msg = "ROUTE INFEASIBLE: Total cost is incorrect for vehicle $(vehicle.id). Calculated cost $(getTotalCostRouteOnline(scenario.time,route,visitedRoute,scenario.serviceTimes)), actual cost $(totalCost), diff $(abs(totalCost-getTotalCostRouteOnline(scenario.time,route,visitedRoute,scenario.serviceTimes))))"
         return false, msg, Set{Int}(), Set{Int}()
     end

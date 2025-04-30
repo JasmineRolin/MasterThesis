@@ -71,6 +71,7 @@ function getTotalCostRoute(time::Array{Int,2},route::Vector{ActivityAssignment})
 end
 
 function getTotalCostRouteOnline(time::Array{Int,2},route::Vector{ActivityAssignment},visitedRoute::Dict{Int, Dict{String, Int}},serviceTime::Int)
+    
     ratio = 0.0
     pickupTimes = Dict{Int, Int}()
     
@@ -95,7 +96,6 @@ function getTotalCostRouteOnline(time::Array{Int,2},route::Vector{ActivityAssign
             ratio += actualTime/directTime
         end
     end
-    
     return ratio*10.0
 end
 

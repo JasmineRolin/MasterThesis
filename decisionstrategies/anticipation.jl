@@ -87,7 +87,7 @@ function getDistanceAndTimeMatrixFromDataFrame(requestsDf::DataFrame,expectedReq
 end
 
 
-function readInstanceAnticipation(requestFile::String, nExpected::Int, vehicleFile::String, parametersFile::String,scenarioName=""::String)
+function readInstanceAnticipation(requestFile::String, originalExpectedRequests::DataFrame,nNewExpected::Int, vehicleFile::String, parametersFile::String,scenarioName=""::String)
 
     # Check that files exist 
     if !isfile(requestFile)
@@ -123,28 +123,31 @@ function readInstanceAnticipation(requestFile::String, nExpected::Int, vehicleFi
     nDepots = length(depots)
 
     # Generate expected requests
-    expectedRequestsDf = createExpectedRequests(nExpected,nRequests)
+    newExpectedRequestsDf = createExpectedRequests(nNewExpected,nRequests)
+    expectedRequestsDf = vcat(originalExpectedRequests,newExpectedRequestsDf)
+    nOriginalExpected = nrow(originalExpectedRequests)
 
     # Read time and distance matrices from input or initialize empty matrices
     distance, time = getDistanceAndTimeMatrixFromDataFrame(requestsDf,expectedRequestsDf,collect(keys(depotLocations)))
 
     # Get requests 
-    requests = readRequests(requestsDf,nRequests+nExpected,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time)
-    expectedRequests = readRequests(expectedRequestsDf,nExpected,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time,extraN=nRequests)
-    allRequests = vcat(requests, expectedRequests)
+    requests = readRequests(requestsDf,nRequests+nOriginalExpected+nNewExpected,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time)
+    expectedRequests = readRequests(newExpectedRequestsDf,nNewExpected,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time,extraN=nRequests+nOriginalExpected)
+    allConsideredRequests = vcat(requests, expectedRequests)
+    allRequests = vcat(requests, [Request() for _ in 1:nOriginalExpected]..., expectedRequests)
 
     # Split into offline and online requests
-    onlineRequests, offlineRequests = splitRequests(requests)
+    onlineRequests, offlineRequests = splitRequests(allConsideredRequests)
 
     # Get distance and time matrix
     scenario = Scenario(scenarioName,allRequests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots,depots,taxiParameter)
 
-    return scenario, nRequests
+    return scenario, nRequests, newExpectedRequestsDf
 
 end
 
 
-function removeExpectedRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},solution::Solution,nExpected::Int,nFixed::Int;visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}(),scenario::Scenario=Scenario(),TO::TimerOutput=TimerOutput())
+function removeExpectedRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},solution::Solution,nExpected::Int,nFixed::Int,nNotServicedExpectedRequests::Int,requestBank::Vector{Int};TO::TimerOutput=TimerOutput())
     
     # Determine remaining requests to remove
     requestsToRemove = Set{Int}()
@@ -157,10 +160,15 @@ function removeExpectedRequestsFromSolution!(time::Array{Int,2},distance::Array{
     end
 
     println("Length of requests to remove: ", length(requestsToRemove))
+    println(requestsToRemove)
 
     # Choice of removal of activity
     remover = removeExpectedActivityFromRouteBasic!
     removeRequestsFromSolution!(time,distance,serviceTimes,requests,solution,requestsToRemove,remover=remover)
+
+    # Remove taxis for expected requests
+    solution.nTaxi -= nNotServicedExpectedRequests
+
 
 end
 
@@ -184,42 +192,64 @@ function removeExpectedActivityFromRouteBasic!(time::Array{Int,2},schedule::Vehi
 end
 
 
-#==
-function offlineSolutionWithAnticipation(fixedRequests::Vector{Request},N::Int,scenario::Scenario,parameterFile::String)
 
+function offlineSolutionWithAnticipation(requestFile::String,VehiclesFile::String,parametersFile::String,alnsParameter::String,scenarioName::String,nExpected::Int)
+
+    # Choose destroy methods
+    destroyMethods = Vector{GenericMethod}()
+    addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
+    addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
+    addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
+
+    #Choose repair methods
+    repairMethods = Vector{GenericMethod}()
+    addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
+    addMethod!(repairMethods,"regretInsertion",regretInsertion)
+
+    # Variables to determine best solution
     bestAverageSAE = maximumFloat64
     bestSolution = Solution()
-    nFixedRequests = length(fixedRequests)
 
-    for n in 1:10
-        # Get values
-        serviceTimes = scenario.serviceTimes
-        distance = scenario.distance
+
+    for _ in 1:10
+        # Make scenario
+        nExpected = 10
+        scenario, nFixed = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName)
         time = scenario.time
+        distance = scenario.distance
+        serviceTimes = scenario.serviceTimes
         requests = scenario.requests
+        taxiParameter = scenario.taxiParameter
 
-        # Generate expected requests
-        expectedRequests, expectedRequestIds  = generateExpectedRequests(N,nFixedRequests,parametersFile)         
-        allRequests = vcat(fixedRequests, expectedRequests)
+        # Get solution
+        initialSolution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
+        solution, requestBank,_,_, _,_,_ = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
 
-        # Update time and distance matrices
-        time, distance = updateTimeAndDistanceMatrices(time,distance,allRequests) # Should be made in fastest possible way
+        # Determine number of serviced requests
+        nNotServicedFixedRequests = sum(requestBank .<= nFixed)
+        nNotServicedExpectedRequests = sum(requestBank .> nFixed)
+        nServicedFixedRequests = nFixed - nNotServicedFixedRequests
+        nServicedExpectedRequests = nExpected - nNotServicedExpectedRequests
 
-        # Generate route
-        solution, requestBank = runModifiedALNS(scenario,allRequests) # We only want solutions where all fixed requests are in. Expected does not need to be in. Need different weights for fixed and expected, so as many fixed as possible is in the route, so I think we need to use ALNS here. 
-
-        # Remove expected requests
-        removeRequestsFromSolution!(time,distance,serviceTimes,requests,solution,expectedRequestIds,scenario::Scenario=Scenario()) # WHich requests?, hvorfor er standard at scenario er tom? # Skal laves om, skal ikke fjerne waiting nodes, men indsætte istedet for kunder, og vælge location ud fra en waiting strategy
-
+        # Remove expected requests from solution
+        removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,solution,nExpected,nFixed,nNotServicedExpectedRequests,requestBank)
 
         # Determine SAE
         averageSAE = 0.0
-        for i in 1:10
-            expectedRequests, expectedRequestIds  = generateExpectedRequests(N,nFixedRequests,parametersFile)
-            allRequests = vcat(fixedRequests, expectedRequests)
-            time, distance = updateTimeAndDistanceMatrices(time,distance,allRequests)
-            solution, requestBank = regretInsertion(scenario,allRequests) # This should be a different kind of construction. We have fixed requests and the rest should be inserted, but how? Here we could modify the simple construction quite simple to insert. and then potentially use ALNS, could also be a case to see if that improves any thing 
-            averageSAE += solution.totalCost
+        for _ in 1:10
+            # Generate new scenario
+            nTaxiSolution = copy(solution.nTaxi)
+            nExpected = 10
+            scenario, nFixed = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName)
+
+            # Insert expected requests randomly into solution using regret insertion
+            expectedRequestsIds = collect(nFixed+1:nFixed+nExpected)
+            solution.nTaxi = nExpected
+            stateALNS = ALNSState(solution,1,1,expectedRequestsIds)
+            regretInsertion(stateALNS,scenario)
+
+            # Calculate SAE
+            averageSAE += solution.totalCost + nTaxiSolution * taxiParameter
         end
         averageSAE /= 10
 
@@ -233,52 +263,5 @@ function offlineSolutionWithAnticipation(fixedRequests::Vector{Request},N::Int,s
     return bestSolution
 
 end
-==#  
-
-@testset "Anticipation Test" begin 
-    requestFile = "Data/Konsentra/TransformedData_Data.csv"
-    vehiclesFile = "tests/resources/Vehicles.csv"
-    parametersFile = "tests/resources/Parameters.csv"
-    alnsParameters = "tests/resources/ALNSParameters_Article.json"
-    scenarioName = "Konsentra_Data"
-
-    # Make scenario
-    nExpected = 10
-    scenario, nFixed = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName)
-
-    # Choose destroy methods
-    destroyMethods = Vector{GenericMethod}()
-    addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
-    addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
-    addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
-
-    #Choose repair methods
-    repairMethods = Vector{GenericMethod}()
-    addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
-    addMethod!(repairMethods,"regretInsertion",regretInsertion)
-
-    initialSolution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
-    solution, requestBank,_,_, _,_,_ = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
-
-    state = State(solution,Request(),0)
-    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-    @test feasible == true
-    @test msg == ""
 
 
-    time = scenario.time
-    distance = scenario.distance
-    serviceTimes = scenario.serviceTimes
-    requests = scenario.requests
-    nExpected = N
-
-    removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,solution,nExpected,nFixed)
-    #printSolution(solution,printRouteHorizontal)
-
-    state = State(solution,Request(),0)
-    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-    @test feasible == true
-    @test msg == ""
-    
-
-end
