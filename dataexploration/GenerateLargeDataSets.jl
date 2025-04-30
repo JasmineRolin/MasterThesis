@@ -6,55 +6,40 @@ using StatsBase
 using domain, utils
 using Plots.PlotMeasures
 
-include("TransformKonsentraData.jl")
-include("GenerateLargeVehiclesKonsentra.jl")
-include("MakeAndSaveDistanceAndTimeMatrix.jl")
-include("GenerateAndSaveSimulationData.jl")
 
-global DoD = 0.4 # Degree of dynamism
-global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
-global callBuffer = 2*60 # 2 hours buffer
-global nData = 10
-global nRequest = 20 
-global MAX_DELAY = 15 # TODO Astrid I just put something
-
-# Grid 
-global MAX_LAT = 60.721
-global MIN_LAT = 59.165
-global MAX_LONG = 12.458
-global MIN_LONG = 9.948
-global NUM_ROWS = 5
-global NUM_COLS = 5
-
-
+#==
+# Method to load simulation data 
+==#
 function load_simulation_data(input_dir::String)
     location_df = CSV.read(joinpath(input_dir, "location_matrix.csv"), DataFrame)
-    location_matrix = hcat(location_df.longitude, location_df.latitude)
+    location_matrix = hcat(Float64.(location_df.longitude), Float64.(location_df.latitude))
 
-    requestTimePickUp = CSV.read(joinpath(input_dir, "request_time_pickup.csv"), DataFrame).time
-    requestTimeDropOff = CSV.read(joinpath(input_dir, "request_time_dropoff.csv"), DataFrame).time
+    requestTimePickUp = Int.(CSV.read(joinpath(input_dir, "request_time_pickup.csv"), DataFrame).time)
+    requestTimeDropOff = Int.(CSV.read(joinpath(input_dir, "request_time_dropoff.csv"), DataFrame).time)
 
     requests_df = CSV.read(joinpath(input_dir, "requests.csv"), DataFrame)
     requests = [(r.request_type, r.pickup_latitude, r.pickup_longitude, r.dropoff_latitude, r.dropoff_longitude)
                 for r in eachrow(requests_df)]
 
-    distanceDriven = CSV.read(joinpath(input_dir, "distance_driven.csv"), DataFrame).distance
-    probabilities_distance = CSV.read(joinpath(input_dir, "distance_distribution.csv"), DataFrame).probability
-    density_distance = CSV.read(joinpath(input_dir, "density_distance.csv"), DataFrame).density
-    distance_range = CSV.read(joinpath(input_dir, "distance_range.csv"), DataFrame).distance
+    distanceDriven = Float64.(CSV.read(joinpath(input_dir, "distance_driven.csv"), DataFrame).distance)
+    probabilities_distance = Float64.(CSV.read(joinpath(input_dir, "distance_distribution.csv"), DataFrame).probability)
+    density_distance = Float64.(CSV.read(joinpath(input_dir, "density_distance.csv"), DataFrame).density)
+    distance_range = Float64.(CSV.read(joinpath(input_dir, "distance_range.csv"), DataFrame).distance)
 
-    probabilities_pickUpTime = CSV.read(joinpath(input_dir, "pickup_time_distribution.csv"), DataFrame).probability
-    density_pickUp = CSV.read(joinpath(input_dir, "density_pickup_time.csv"), DataFrame).density
-    probabilities_dropOffTime = CSV.read(joinpath(input_dir, "dropoff_time_distribution.csv"), DataFrame).probability
-    density_dropOff = CSV.read(joinpath(input_dir, "density_dropoff_time.csv"), DataFrame).density
+    probabilities_pickUpTime =Float64.(CSV.read(joinpath(input_dir, "pickup_time_distribution.csv"), DataFrame).probability)
+    density_pickUp = Float64.(CSV.read(joinpath(input_dir, "density_pickup_time.csv"), DataFrame).density)
+    probabilities_dropOffTime = Float64.(CSV.read(joinpath(input_dir, "dropoff_time_distribution.csv"), DataFrame).probability)
+    density_dropOff = Float64.(CSV.read(joinpath(input_dir, "density_dropoff_time.csv"), DataFrame).density)
 
-    x_range = CSV.read(joinpath(input_dir, "x_range.csv"), DataFrame).x
-    y_range = CSV.read(joinpath(input_dir, "y_range.csv"), DataFrame).y
+    x_range = Float64.(CSV.read(joinpath(input_dir, "x_range.csv"), DataFrame).x)
+    y_range = Float64.(CSV.read(joinpath(input_dir, "y_range.csv"), DataFrame).y)
 
-    density_flat = CSV.read(joinpath(input_dir, "density_grid.csv"), DataFrame).density
+    density_flat = Float64.(CSV.read(joinpath(input_dir, "density_grid.csv"), DataFrame).density)
     density_grid = reshape(density_flat, length(y_range), length(x_range))
 
-    probabilities_location = CSV.read(joinpath(input_dir, "probabilities_location.csv"), DataFrame).probability
+    # Replace missing values with 0.0 
+    # TODO: why are there missing values ? 
+    probabilities_location = coalesce.(Float64.(CSV.read(joinpath(input_dir, "probabilities_location.csv"), DataFrame).probability), 0.0)
 
     println("✅ All simulation data loaded from $input_dir")
 
@@ -78,87 +63,80 @@ function load_simulation_data(input_dir::String)
     )
 end
 
+#==
+# Generate data sets and vehicles
+==#
+function generateDataSets(nRequest,nData,time_range,max_lat, min_lat, max_long, min_long, nRows, nCols)
+    # Load simulation data
+    probabilities_pickUpTime,
+        probabilities_dropOffTime,
+        density_pickUp,
+        density_dropOff,
+        probabilities_location,
+        density_grid,
+        x_range,
+        y_range,
+        probabilities_distance,
+        density_distance,
+        distance_range,
+        location_matrix,
+        requestTimePickUp,
+        requestTimeDropOff,
+        requests,
+        distanceDriven= load_simulation_data("Data/Simulation data/")
 
-function find_dropoff(pickup::Tuple{Float64, Float64}, grid_coords::Vector{Tuple{Float64, Float64}},distance_sample::Float64,probabilities::Vector{Float64},x_range::Vector{Float64},y_range::Vector{Float64};tolerance_km::Float64 = 1.0)
+    # Generate request data 
+    newDataList, df_list = generateData(nRequest,nData,probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long, nRows, nCols)
 
-    # Compute distances from pickup to all grid coordinates
-    distances = [haversine_distance(pickup[2], pickup[1], lat, lon)[1] for (lon, lat) in grid_coords]
-
-    # Find grid indices within tolerance
-    candidate_idxs = findall(abs.(distances .- distance_sample) .<= tolerance_km)
-
-    # Remove pickup location itself from candidates
-    candidate_idxs = filter(i -> grid_coords[i] != pickup, candidate_idxs)
-
-    if isempty(candidate_idxs)
-    error("No candidates found within tolerance range of sampled distance.")
-    end
-
-    # Sample one index based on probabilities
-    probability_distances = [probabilities[i] for i in candidate_idxs]
-    probabilities_sum = sum(probability_distances)
-    probabilities_distance_norm = [p / probabilities_sum for p in probability_distances]
-    selected_idx = sample(candidate_idxs, Weights(probabilities_distance_norm))
-
-    return grid_coords[selected_idx][1], grid_coords[selected_idx][2] 
+    return location_matrix, requestTimePickUp, requestTimeDropOff, newDataList, df_list, probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff, probabilities_location, density_grid, x_range, y_range, requests, distanceDriven
 end
 
-function getNewLocations(probabilities::Vector{Float64},x_range::Vector{Float64},y_range::Vector{Float64}, distance_range::Vector{Float64},probabilities_distance::Vector{Float64}; tolerance_km::Float64 = 1.0)
-    n = length(probabilities)
-    ny = length(y_range)
-    nd = length(distance_range)
 
-    # Sample pickup location
-    pickup_idx = sample(1:n, Weights(probabilities))
-    pickup_x = x_range[(pickup_idx - 1) ÷ ny + 1]
-    pickup_y = y_range[(pickup_idx - 1) % ny + 1]
+#==
+# Generate data sets
+==#
+function generateData(nRequest,nData,probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long, nRows, nCols)
+    df_list = []
+    newDataList = Vector{String}()  
+    for i in 1:nData
 
-    # Sample target distance
-    distance_idx = sample(1:nd, Weights(probabilities_distance))
-    sampled_distance = distance_range[distance_idx]
-    sampled_distance = max(sampled_distance, 0.1) 
+        # Make requests and save to CSV
+        output_file = "Data/Konsentra/"*string(nRequest)*"/GeneratedRequests_"*string(nRequest)*"_" * string(i) * ".csv"
+        push!(newDataList, output_file)
+        retry_count = 0
+        while retry_count < 5
+            try
+                # Call the function that may throw the error
+                results = makeRequests(nRequest, probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range, output_file,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long, nRows, nCols)
+                
+                println("Request generation succeeded!")
+                push!(df_list,results)
+                break  # Exit the loop if successful
+        
+            catch e
+                if occursin("Degree of dynamism too low", sprint(showerror, e))
+                    retry_count += 1
+                    println("Error encountered: ", e)
+                    println("Retrying... Attempt: ", retry_count)
+                    sleep(1)  # Optional: Wait a second before retrying
+                else
+                    rethrow(e)  # Let other errors propagate
+                end
+            end
+            if retry_count == 5
+                println("Failed after 5 attempts. Exiting.")
+            end
+        end
 
-    # Find drop off
-    grid_coords = [(x, y) for x in x_range for y in y_range]
-    dropoff_x, dropoff_y = find_dropoff((pickup_x, pickup_y), grid_coords, sampled_distance, probabilities, x_range, y_range; tolerance_km=tolerance_km)
-
-    # Make sure location is in grid 
-    if pickup_x < MIN_LONG 
-        pickup_x = MIN_LONG
-    elseif pickup_x > MAX_LONG
-        pickup_x = MAX_LONG
-    end
-    if pickup_y < MIN_LAT 
-        pickup_y = MIN_LAT
-    elseif pickup_y > MAX_LAT
-        pickup_y = MAX_LAT
-    end
-
-    if dropoff_x < MIN_LONG 
-        dropoff_x = MIN_LONG
-    elseif dropoff_x > MAX_LONG
-        dropoff_x = MAX_LONG
-    end
-    if dropoff_y < MIN_LAT 
-        dropoff_y = MIN_LAT
-    elseif dropoff_y > MAX_LAT
-        dropoff_y = MAX_LAT
     end
 
-    return [(pickup_x, pickup_y), (dropoff_x, dropoff_y)]
-end
-
-function getNewLocations(probabilities::Vector{Float64},x_range::Vector{Float64}, y_range::Vector{Float64})
-    # Sample locations based on probabilities
-    sampled_indices = sample(1:length(probabilities), Weights(probabilities), 2)
-    sampled_locations = [ (x_range[(i - 1) ÷ length(y_range) + 1], y_range[(i - 1) % length(y_range) + 1]) for i in sampled_indices]
-    return sampled_locations
+    return newDataList, df_list
 end
 
 #==
 # Make request
 ==#
-function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, probabilities_dropOffTime::Vector{Float64}, probabilities_location::Vector{Float64}, time_range::Vector{Int}, x_range::Vector{Float64}, y_range::Vector{Float64}, output_file::String,distance_range::Vector{Float64},probabilities_distance::Vector{Float64})
+function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, probabilities_dropOffTime::Vector{Float64}, probabilities_location::Vector{Float64}, time_range::Vector{Int}, x_range::Vector{Float64}, y_range::Vector{Float64}, output_file::String,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long, nRows, nCols)
     results = DataFrame(
         id = Int[],
         pickup_latitude = Float64[],
@@ -175,7 +153,7 @@ function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, p
     # Loop to generate samples
     for i in 1:nSample
         # Sample new location based on KDE probabilities
-        sampled_location = getNewLocations(probabilities_location, x_range, y_range, distance_range,probabilities_distance)
+        sampled_location = getNewLocations(probabilities_location, x_range, y_range, distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long, nRows, nCols)
         pickup_longitude, pickup_latitude = sampled_location[1]
         dropoff_longitude, dropoff_latitude = sampled_location[2]
 
@@ -222,129 +200,83 @@ function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, p
     return results
 end
 
+function getNewLocations(probabilities::Vector{Float64},x_range::Vector{Float64},y_range::Vector{Float64}, distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long, nRows, nCols; tolerance_km::Float64 = 1.0)
+    n = length(probabilities)
+    ny = length(y_range)
+    nd = length(distance_range)
 
-function generateDataSets(nRequest,nData,probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range,distance_range::Vector{Float64},probabilities_distance::Vector{Float64})
-    df_list = []
-    newDataList = Vector{String}()  
-    for i in 1:nData
+    # Sample pickup location
+    pickup_idx = sample(1:n, Weights(probabilities))
+    pickup_x = x_range[(pickup_idx - 1) ÷ ny + 1]
+    pickup_y = y_range[(pickup_idx - 1) % ny + 1]
 
-        # Make requests and save to CSV
-        output_file = "Data/Konsentra/"*string(nRequest)*"/GeneratedRequests_"*string(nRequest)*"_" * string(i) * ".csv"
-        push!(newDataList, output_file)
-        retry_count = 0
-        while retry_count < 5
-            try
-                # Call the function that may throw the error
-                results = makeRequests(nRequest, probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range, output_file,distance_range,probabilities_distance)
-                
-                println("Request generation succeeded!")
-                push!(df_list,results)
-                break  # Exit the loop if successful
-        
-            catch e
-                if occursin("Degree of dynamism too low", sprint(showerror, e))
-                    retry_count += 1
-                    println("Error encountered: ", e)
-                    println("Retrying... Attempt: ", retry_count)
-                    sleep(1)  # Optional: Wait a second before retrying
-                else
-                    rethrow(e)  # Let other errors propagate
-                end
-            end
-            if retry_count == 5
-                println("Failed after 5 attempts. Exiting.")
-            end
-        end
+    # Sample target distance
+    distance_idx = sample(1:nd, Weights(probabilities_distance))
+    sampled_distance = distance_range[distance_idx]
+    sampled_distance = max(sampled_distance, 0.1) 
 
+    # Find drop off
+    grid_coords = [(x, y) for x in x_range for y in y_range]
+    dropoff_x, dropoff_y = find_dropoff((pickup_x, pickup_y), grid_coords, sampled_distance, probabilities, x_range, y_range; tolerance_km=tolerance_km)
+
+    # Make sure location is in grid 
+    if pickup_x < min_long 
+        pickup_x = min_long
+    elseif pickup_x > max_long
+        pickup_x = max_long
+    end
+    if pickup_y < min_lat 
+        pickup_y = min_lat
+    elseif pickup_y > max_lat
+        pickup_y = max_lat
     end
 
-    return newDataList, df_list
-end
-
-
-# Find grid centers
-function findGridCenters()
-    # Compute grid spacing
-    lat_step = (MAX_LAT - MIN_LAT) / NUM_ROWS
-    long_step = (MAX_LONG - MIN_LONG) / NUM_COLS
-
-    # Generate grid cell centers
-    grid_centers_lat = [MIN_LAT + (i + 0.5) * lat_step for i in 0:NUM_ROWS-1]
-    grid_centers_long = [MIN_LONG + (j + 0.5) * long_step for j in 0:NUM_COLS-1]
-    grid_centers = [(lat, lon) for lat in grid_centers_lat for lon in grid_centers_long]
-
-    return lat_step, long_step, grid_centers
-end
-
-function findClosestGridCenter(loc, grid_centers)
-    lat, lon = loc
-    closest_center = nothing
-    min_dist = Inf
-
-    for (clat, clon) in grid_centers
-        dist = haversine_distance(lat, lon, clat, clon)
-        if dist < min_dist
-            min_dist = dist
-            closest_center = (clat, clon)
-        end
+    if dropoff_x < min_long 
+        dropoff_x = min_long
+    elseif dropoff_x > max_long
+        dropoff_x = max_long
     end
-    return closest_center
-end
-
-
-# Generate vehicles
-function generateVehicles(shifts,df_list, probabilities_location, x_range, y_range)
-    grid_centers = findGridCenters()[3]
-
-    computeShiftCoverage!(shifts)
-    average_demand_per_hour = generateAverageDemandPerHour(df_list)
-
-    generateNumberOfVehiclesKonsentra!(average_demand_per_hour, shifts)
-
-    locations = []
-    total_nVehicles = sum(shift["nVehicles"] for shift in values(shifts))
-    for _ in 1:total_nVehicles
-        original_loc = getNewLocations(probabilities_location, x_range, y_range)[1]
-        closest_center = findClosestGridCenter(original_loc, grid_centers)
-        push!(locations, closest_center)
+    if dropoff_y < min_lat 
+        dropoff_y = min_lat
+    elseif dropoff_y > max_lat
+        dropoff_y = max_lat
     end
-    generateVehiclesKonsentra(shifts, locations,"Data/Konsentra/"*string(nRequest)*"/Vehicles_"*string(nRequest)*".csv")
 
-    return average_demand_per_hour
+    return [(pickup_x, pickup_y), (dropoff_x, dropoff_y)]
 end
 
 
 #==
-# Generate data sets and vehicles
+# Method to sample drop off location  
 ==#
-function generateDataSetsAndvehicles(nRequest,nData,shifts)
-    # Load simulation data
-    probabilities_pickUpTime,
-        probabilities_dropOffTime,
-        density_pickUp,
-        density_dropOff,
-        probabilities_location,
-        density_grid,
-        x_range,
-        y_range,
-        probabilities_distance,
-        density_distance,
-        distance_range,
-        location_matrix,
-        requestTimePickUp,
-        requestTimeDropOff,
-        requests,
-        distanceDriven= load_simulation_data("Data/Simulation data/")
+function find_dropoff(pickup::Tuple{Float64, Float64}, grid_coords::Vector{Tuple{Float64, Float64}},distance_sample::Float64,probabilities::Vector{Float64},x_range::Vector{Float64},y_range::Vector{Float64};tolerance_km::Float64 = 1.0)
 
-    # Generate request data 
-    newDataList, df_list = generateDataSets(nRequest,nData,probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range,distance_range,probabilities_distance)
+    # Compute distances from pickup to all grid coordinates
+    distances = [haversine_distance(pickup[2], pickup[1], lat, lon)[1] for (lon, lat) in grid_coords]
 
-    # Generate vehicles 
-    average_demand_per_hour = generateVehicles(shifts,df_list, probabilities_location, x_range, y_range)
+    # Find grid indices within tolerance
+    candidate_idxs = findall(abs.(distances .- distance_sample) .<= tolerance_km)
 
-    return location_matrix, requestTimePickUp, requestTimeDropOff, newDataList, df_list, average_demand_per_hour, probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff, probabilities_location, density_grid, x_range, y_range, requests, distanceDriven
+    # Remove pickup location itself from candidates
+    candidate_idxs = filter(i -> grid_coords[i] != pickup, candidate_idxs)
+
+    if isempty(candidate_idxs)
+    error("No candidates found within tolerance range of sampled distance.")
+    end
+
+    # Sample one index based on probabilities
+    probability_distances = [probabilities[i] for i in candidate_idxs]
+    probabilities_sum = sum(probability_distances)
+    probabilities_distance_norm = [p / probabilities_sum for p in probability_distances]
+    selected_idx = sample(candidate_idxs, Weights(probabilities_distance_norm))
+
+    return grid_coords[selected_idx][1], grid_coords[selected_idx][2] 
 end
 
+
+#==========================================================#
+# Plots 
+#==========================================================#
 #==
 # Create plots 
 ==#
@@ -477,163 +409,54 @@ function createGantChartOfRequestsAndVehicles(vehicles, requests, requestBank,ti
 end
 
 
-#================================================#
-# Generate data 
-#================================================#
-# oldDataList = ["Data/Konsentra/TransformedData_30.01.csv",
-#             "Data/Konsentra/TransformedData_06.02.csv",
-#             "Data/Konsentra/TransformedData_09.01.csv",
-#             "Data/Konsentra/TransformedData_16.01.csv",
-#             "Data/Konsentra/TransformedData_23.01.csv",
-#             "Data/Konsentra/TransformedData_Data.csv"]
 
-# Set probabilities and time range
-time_range = collect(range(6*60,23*60))
-
-# Shifts for vehicles 
-shifts = Dict(
-    "Morning"    => Dict("TimeWindow" => [6*60, 12*60], "cost" => 2.0, "nVehicles" => 0, "y" => []),
-    "Noon"       => Dict("TimeWindow" => [10*60, 16*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
-    "Afternoon"  => Dict("TimeWindow" => [14*60, 20*60], "cost" => 3.0, "nVehicles" => 0, "y" => []),
-    "Evening"    => Dict("TimeWindow" => [18*60, 24*60], "cost" => 4.0, "nVehicles" => 0, "y" => [])
-)
-
-# Smooting factors for KDE 
-bandwidth_factor_time = 1.5 
-bandwidth_factor_location = 1.25
-
-location_matrix, requestTimePickUp, requestTimeDropOff, newDataList, df_list, average_demand_per_hour, probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff, probabilities_location, density_grid, x_range, y_range,requests, distanceDriven = generateDataSetsAndvehicles(nRequest,nData,shifts)
-#plotDemandAndShifts(average_demand_per_hour,shifts)
-
-prefix = "Base Data"
-heatMapBase, pickUpTimeHistBase, dropOffTimeHistBase, requestTimeBase, distanceDrivenBase = plotDataSets(x_range,y_range,density_grid,location_matrix,requestTimePickUp,requestTimeDropOff,probabilities_pickUpTime,probabilities_dropOffTime,serviceWindow,prefix,distanceDriven)
-
-#=================================================#
-# Generate time and distance matrices  
-#================================================#
-for i in 1:nData
-    println("n = ",nRequest," i = ",i)
-    requestFile = string("Data/Konsentra/",nRequest,"/GeneratedRequests_",nRequest,"_",i,".csv")
-    vehicleFile = string("Data/Konsentra/",nRequest,"/Vehicles_",nRequest,".csv")
-    dataName = string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",i)
-    
-    getTimeDistanceMatrix(requestFile, vehicleFile, dataName)
-end
+function createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,density_grid,location_matrix,requestTimePickUp,requestTimeDropOff,probabilities_pickUpTime,probabilities_dropOffTime,serviceWindow,distanceDriven)
+    # Create plots for base data 
+    prefix = "Base Data"
+    heatMapBase, pickUpTimeHistBase, dropOffTimeHistBase, requestTimeBase, distanceDrivenBase = plotDataSets(x_range,y_range,density_grid,location_matrix,requestTimePickUp,requestTimeDropOff,probabilities_pickUpTime,probabilities_dropOffTime,serviceWindow,prefix,distanceDriven)
 
 
-#================================================#
-# Plot new data
-#================================================#
-prefix_new = "Gen. Data"
+    prefix_new = "Gen. Data"
 
-# Generate plot for each new data set 
-for (idx,file) in enumerate(newDataList)
-    location_matrix_new, requestTimePickUp_new, requestTimeDropOff_new, _, distanceDriven_new = getOldData([file];checkUnique=false)
-    probabilities_pickUpTime_new, probabilities_dropOffTime_new, density_pickUp_new, density_dropOff_new = getRequestTimeDistribution(requestTimePickUp_new, requestTimeDropOff_new, time_range)
-    probabilities_location_new, density_grid_new,x_range_new,y_range_new = getLocationDistribution(location_matrix_new)
-    probabilities_distance_new, density_distance_new, distance_range_new = getDistanceDistribution(distanceDriven_new)
+    # Generate plot for each new data set 
+    for (idx,file) in enumerate(newDataList)
+        location_matrix_new, requestTimePickUp_new, requestTimeDropOff_new, _, distanceDriven_new = getOldData([file];checkUnique=false)
+        probabilities_pickUpTime_new, probabilities_dropOffTime_new, density_pickUp_new, density_dropOff_new = getRequestTimeDistribution(requestTimePickUp_new, requestTimeDropOff_new, time_range)
+        probabilities_location_new, density_grid_new,x_range_new,y_range_new = getLocationDistribution(location_matrix_new)
+        probabilities_distance_new, density_distance_new, distance_range_new = getDistanceDistribution(distanceDriven_new)
 
-    # Plot data 
-    heatMapGen, pickUpTimeHistGen, dropOffTimeHistGen, requestTimeGen, distanceDrivenGen = plotDataSets(x_range_new,y_range_new,density_grid_new,location_matrix_new,requestTimePickUp_new,requestTimeDropOff_new,probabilities_pickUpTime_new,probabilities_dropOffTime_new,serviceWindow,prefix_new,distanceDriven_new)
+        # Plot data 
+        heatMapGen, pickUpTimeHistGen, dropOffTimeHistGen, requestTimeGen, distanceDrivenGen = plotDataSets(x_range_new,y_range_new,density_grid_new,location_matrix_new,requestTimePickUp_new,requestTimeDropOff_new,probabilities_pickUpTime_new,probabilities_dropOffTime_new,serviceWindow,prefix_new,distanceDriven_new)
 
-    p = plot(
-        heatMapBase, heatMapGen, pickUpTimeHistBase, pickUpTimeHistGen,
-        dropOffTimeHistBase, dropOffTimeHistGen, requestTimeBase, requestTimeGen,distanceDrivenBase, distanceDrivenGen,
-        layout=(5,2), size=(2000,1500),
-        plot_title="No. generated requests = " * string(nRequest),
-        bottom_margin=5mm,
-        left_margin=12mm, 
-        top_margin=5mm,
-        right_margin=5mm
-    )
-    display(p)
-    savefig(p, string("plots/DataGeneration/Plot_",nRequest,"_",idx,".svg"))
+        p = plot(
+            heatMapBase, heatMapGen, pickUpTimeHistBase, pickUpTimeHistGen,
+            dropOffTimeHistBase, dropOffTimeHistGen, requestTimeBase, requestTimeGen,distanceDrivenBase, distanceDrivenGen,
+            layout=(5,2), size=(2000,1500),
+            plot_title="No. generated requests = " * string(nRequest),
+            bottom_margin=5mm,
+            left_margin=12mm, 
+            top_margin=5mm,
+            right_margin=5mm
+        )
+        display(p)
+        savefig(p, string("plots/DataGeneration/Plot_",nRequest,"_",idx,".svg"))
 
-    # Plot gant chart 
-    requestFile = file
-    vehiclesFile = string("Data/Konsentra/",nRequest,"/Vehicles_",nRequest,".csv")
-    parametersFile = "tests/resources/Parameters.csv"
-    distanceMatrixFile = string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",idx,"_distance.txt")
-    timeMatrixFile =  string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",idx,"_time.txt")
-    scenarioName = "No. requests = " * string(nRequest)
+        # Plot gant chart 
+        requestFile = file
+        vehiclesFile = string("Data/Konsentra/",nRequest,"/Vehicles_",nRequest,".csv")
+        parametersFile = "tests/resources/Parameters.csv"
+        distanceMatrixFile = string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",idx,"_distance.txt")
+        timeMatrixFile =  string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",idx,"_time.txt")
+        scenarioName = "No. requests = " * string(nRequest)
 
-    # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
+        # Read instance 
+        scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
-    p2 = createGantChartOfRequestsAndVehicles(scenario.vehicles, scenario.requests, [],scenarioName)
-    display(p2)
-    savefig(p2, string("plots/DataGeneration/GantChart_",nRequest,"_",idx,".svg"))
+        p2 = createGantChartOfRequestsAndVehicles(scenario.vehicles, scenario.requests, [],scenarioName)
+        display(p2)
+        savefig(p2, string("plots/DataGeneration/GantChart_",nRequest,"_",idx,".svg"))
+    end
 
 end
 
 
-
-
-#======================================================#
-# # Find min and max lat and long
-# #======================================================#
-# maxLong = 0.0
-# maxLat = 0.0
-# minLong = typemax(Float64)
-# minLat = typemax(Float64)
-# for n in [20,100,300,500]
-#     for i in 1:10 
-#         fileName = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
-#         requestsDf = CSV.read(fileName, DataFrame)
-
-#         currentMaxLat = maximum(vcat(requestsDf.pickup_latitude,requestsDf.dropoff_latitude))
-#         currentMinLat = minimum(vcat(requestsDf.pickup_latitude,requestsDf.dropoff_latitude))
-
-#         currentMaxLong = maximum(vcat(requestsDf.pickup_longitude,requestsDf.dropoff_longitude))
-#         currentMinLong = minimum(vcat(requestsDf.pickup_longitude,requestsDf.dropoff_longitude))
-
-#         maxLat = max(maxLat,currentMaxLat)
-#         maxLong = max(maxLong,currentMaxLong)
-#         minLat = min(minLat,currentMinLat)
-#         minLong = min(minLong,currentMinLong)
-#     end
-# end 
-
-# println("Max Lat: ", maxLat)
-# println("Min Lat: ", minLat)
-# println("Max Long: ", maxLong)
-# println("Min Long: ", minLong)
-
-
-
-
-
-
-# # Generate grid cell centers
-# lat_step, long_step, grid_centers = findGridCenters()
-
-# for n in [20, 100, 300, 500]
-#     for i in 1:10
-#         fileName = string("Data/Konsentra/", n, "/GeneratedRequests_", n, "_", i, ".csv")
-#         requestsDf = CSV.read(fileName, DataFrame)
-
-#         p = plot(size = (1000, 800))
-#         scatter!(p, requestsDf.pickup_longitude, requestsDf.pickup_latitude, label = "Pick-up", color = :blue, markersize = 3)
-#         scatter!(p, requestsDf.dropoff_longitude, requestsDf.dropoff_latitude, label = "Drop-off", color = :red, markersize = 3)
-
-#         # Bounding box
-#         lons = [MIN_LONG, MAX_LONG, MAX_LONG, MIN_LONG, MIN_LONG]
-#         lats = [MIN_LAT, MIN_LAT, MAX_LAT, MAX_LAT, MIN_LAT]
-#         plot!(p, lons, lats, label = "", color = :green, linewidth = 2)
-
-#         # Grid lines
-#         for lat in [MIN_LAT + i * lat_step for i in 0:NUM_ROWS]
-#             plot!(p, [MIN_LONG, MAX_LONG], [lat, lat], color = :gray, linestyle = :dash, label = "")
-#         end
-#         for lon in [MIN_LONG + j * long_step for j in 0:NUM_COLS]
-#             plot!(p, [lon, lon], [MIN_LAT, MAX_LAT], color = :gray, linestyle = :dash, label = "")
-#         end
-
-#         # Plot grid cell centers
-#         for (lat,lon) in grid_centers
-#             scatter!(p, [lon], [lat], color = :black, marker = (:cross, 4), label = "")
-#         end
-
-#         display(p)
-#     end
-# end

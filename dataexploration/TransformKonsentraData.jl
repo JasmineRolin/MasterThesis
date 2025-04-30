@@ -7,18 +7,6 @@ using StatsBase
 
 export preKnownRequests, callTime
 
-
-# ------
-# Define parameters
-# ------
-sheets_5days = ["30.01", "06.02", "23.01", "16.01", "09.01"]
-sheets_data = ["Data"]
-DoD = 0.4 # Degree of dynamism
-ageLimit = 18
-serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
-callBuffer = 2*60 # 2 hours buffer
-
-
 # ------
 # Function to determine pre-known requests
 # ------
@@ -175,6 +163,17 @@ function transformData(sheet_name, filename)
 
     
 end
+
+
+# ------
+# Define parameters
+# ------
+# sheets_5days = ["30.01", "06.02", "23.01", "16.01", "09.01"]
+# sheets_data = ["Data"]
+# DoD = 0.4 # Degree of dynamism
+# ageLimit = 18
+# serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
+# callBuffer = 2*60 # 2 hours buffer
 
 
 # ------

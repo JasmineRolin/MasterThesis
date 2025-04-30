@@ -6,18 +6,6 @@ using StatsBase
 using domain, utils
 using Plots.PlotMeasures
 
-#include("TransformKonsentraData.jl")
-#include("GenerateLargeVehiclesKonsentra.jl")
-#include("MakeAndSaveDistanceAndTimeMatrix.jl")
-
-global DoD = 0.4 # Degree of dynamism
-global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
-global callBuffer = 2*60 # 2 hours buffer
-global nData = 1
-global nRequest = 20 
-global MAX_DELAY = 15 # TODO Astrid I just put something
-
-
 #==
 # Function to calculate the Silverman rule bandwidth
 ==#
@@ -180,14 +168,14 @@ function run_and_save_simulation(data_files::Vector{String}, output_dir::String,
 
     # Find time and location distributions
     probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff = getRequestTimeDistribution(requestTimePickUp, requestTimeDropOff, time_range,bandwidth_factor=bandwidth_factor_time)
-    #probabilities_location, density_grid, x_range, y_range = getLocationDistribution(location_matrix;bandwidth_factor = bandwidth_factor_location)
-    #probabilities_distance, density_distance, distance_range = getDistanceDistribution(distanceDriven; bandwidth_factor=bandwidth_factor_distance)
+    probabilities_location, density_grid, x_range, y_range = getLocationDistribution(location_matrix;bandwidth_factor = bandwidth_factor_location)
+    probabilities_distance, density_distance, distance_range = getDistanceDistribution(distanceDriven; bandwidth_factor=bandwidth_factor_distance)
+    
     p = histogram(requestTimeDropOff;bins=50,normalize=true,label="Histogram",alpha=0.5,xlabel="Distance Driven",ylabel="Density",title="Distance Driven Distribution")
     plot!(time_range, probabilities_dropOffTime;lw=2,color=:red,label="Density Estimate")
     display(p)
 
     # Save everything
-    #==
     CSV.write(joinpath(output_dir, "location_matrix.csv"), DataFrame(longitude=location_matrix[:,1], latitude=location_matrix[:,2]))
     CSV.write(joinpath(output_dir, "request_time_pickup.csv"), DataFrame(time=requestTimePickUp))
     CSV.write(joinpath(output_dir, "request_time_dropoff.csv"), DataFrame(time=requestTimeDropOff))
@@ -199,11 +187,11 @@ function run_and_save_simulation(data_files::Vector{String}, output_dir::String,
         dropoff_latitude = [r[4] for r in requests],
         dropoff_longitude = [r[5] for r in requests]
     ))
-    ==#
-    #CSV.write(joinpath(output_dir, "distance_driven.csv"), DataFrame(distance=distanceDriven))
-    #CSV.write(joinpath(output_dir, "distance_distribution.csv"), DataFrame(probability=probabilities_distance))
-    #CSV.write(joinpath(output_dir, "density_distance.csv"), DataFrame(density=density_distance))
-    #CSV.write(joinpath(output_dir, "distance_range.csv"), DataFrame(distance=distance_range))
+
+    CSV.write(joinpath(output_dir, "distance_driven.csv"), DataFrame(distance=distanceDriven))
+    CSV.write(joinpath(output_dir, "distance_distribution.csv"), DataFrame(probability=probabilities_distance))
+    CSV.write(joinpath(output_dir, "density_distance.csv"), DataFrame(density=density_distance))
+    CSV.write(joinpath(output_dir, "distance_range.csv"), DataFrame(distance=distance_range))
     
     
     CSV.write(joinpath(output_dir, "pickup_time_distribution.csv"), DataFrame(probability=probabilities_pickUpTime))
@@ -211,32 +199,11 @@ function run_and_save_simulation(data_files::Vector{String}, output_dir::String,
     CSV.write(joinpath(output_dir, "dropoff_time_distribution.csv"), DataFrame(probability=probabilities_dropOffTime))
     CSV.write(joinpath(output_dir, "density_dropoff_time.csv"), DataFrame(density=density_dropOff))
 
-    #==
     CSV.write(joinpath(output_dir, "x_range.csv"), DataFrame(x=x_range))
     CSV.write(joinpath(output_dir, "y_range.csv"), DataFrame(y=y_range))
     CSV.write(joinpath(output_dir, "density_grid.csv"), DataFrame(density=vec(density_grid)))
     CSV.write(joinpath(output_dir, "probabilities_location.csv"), DataFrame(probability=probabilities_location))
-    ==#
 
     println("✅ All simulation outputs saved to $output_dir")
 end
 
-#================================================#
-# Generate simulation data 
-#================================================#
-oldDataList = ["Data/Konsentra/TransformedData_30.01.csv",
-            "Data/Konsentra/TransformedData_06.02.csv",
-            "Data/Konsentra/TransformedData_09.01.csv",
-            "Data/Konsentra/TransformedData_16.01.csv",
-            "Data/Konsentra/TransformedData_23.01.csv",
-            "Data/Konsentra/TransformedData_Data.csv"]
-
-# Smooting factors for KDE 
-bandwidth_factor_time = 1.5 
-bandwidth_factor_location = 1.25
-bandwidth_factor_distance = 2.0
-
-# Set probabilities and time range
-time_range = collect(range(6*60,23*60))
-
-#run_and_save_simulation(oldDataList, "Data/Simulation data/", bandwidth_factor_location, bandwidth_factor_time, bandwidth_factor_distance,time_range)

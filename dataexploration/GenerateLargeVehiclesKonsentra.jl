@@ -46,7 +46,7 @@ end
 # ------
 # Make MILP model to generate number of vehicles
 # ------
-function generateNumberOfVehiclesKonsentra!(average_demand_per_hour, shifts)
+function generateNumberOfVehiclesKonsentra!(average_demand_per_hour, shifts,Gamma)
     model = Model(HiGHS.Optimizer)
     set_silent(model)
 
@@ -92,7 +92,7 @@ function generateVehiclesKonsentra(shifts, locations,vehicle_file::String)
             id += 1
             location = locations[id]
             push!(vehicles, [id, data["TimeWindow"][1], data["TimeWindow"][2],
-                             Int(floor((data["TimeWindow"][2] - data["TimeWindow"][1]) * maxRideTimeRatio / 60)), nWalking, location[2], location[1]])
+                             Int(floor((data["TimeWindow"][2] - data["TimeWindow"][1]) * maxRideTimeRatio / 60)), nWalking, location[1], location[2]])
         end
     end
 
@@ -100,10 +100,10 @@ function generateVehiclesKonsentra(shifts, locations,vehicle_file::String)
     CSV.write(vehicle_file, vehicles)
 end
 
-function load_request_data(nRequests::Int)
+function load_request_data(nRequests::Int,nData::Int)
     df_list = []
 
-    for i in 1:10
+    for i in 1:nData
         filename = "Data/Konsentra/"*string(nRequests)*"/GeneratedRequests_"*string(nRequests)*"_"*string(i)*".csv"
         if isfile(filename)
             df = CSV.read(filename, DataFrame)
@@ -116,29 +116,93 @@ function load_request_data(nRequests::Int)
     return df_list
 end
 
+#==
+# Method to generate vehicles for generated data 
+==#
+function generateVehicles(shifts,df_list, probabilities_location, x_range, y_range,Gamma,nRequest,max_lat,min_lat,max_long,min_long,nRows,nCols)
+    # Find possible depots locations 
+    grid_centers = findGridCenters(max_lat,min_lat,max_long,min_long,nRows,nCols)[3]
 
-function generateVehicles(shifts,df_list, probabilities_location, x_range, y_range)
+    # Compute shift coverage 
     computeShiftCoverage!(shifts)
     average_demand_per_hour = generateAverageDemandPerHour(df_list)
 
-    generateNumberOfVehiclesKonsentra!(average_demand_per_hour, shifts)
+    # Generate number of vehicles
+    generateNumberOfVehiclesKonsentra!(average_demand_per_hour, shifts,Gamma)
 
+    # Determine depot locations 
     locations = []
     total_nVehicles = sum(shift["nVehicles"] for shift in values(shifts))
     for i in 1:total_nVehicles
-        push!(locations,getNewLocations(probabilities_location,x_range, y_range)[1])
+        original_loc = getNewLocations(probabilities_location, x_range, y_range)
+        closest_center = findClosestGridCenter(original_loc, grid_centers)
+        push!(locations, closest_center)
     end
+
+    # Generate vehicles 
     generateVehiclesKonsentra(shifts, locations,"Data/Konsentra/"*string(nRequest)*"/Vehicles_"*string(nRequest)*"_"*string(Gamma)*".csv")
 
     return average_demand_per_hour
 end
 
-function plotDemandAndShifts(average_demand_per_hour, shifts)
+#==
+# Method to sample new locati$ns 
+==#
+function getNewLocations(probabilities::Vector{Float64},x_range::Vector{Float64}, y_range::Vector{Float64})
+    # Sample locations based on probabilities
+    sampled_idx = sample(1:length(probabilities), Weights(probabilities))
+    sampled_location = (y_range[(sampled_idx - 1) % length(y_range) + 1],x_range[(sampled_idx - 1) ÷ length(y_range) + 1])
+
+    return sampled_location
+end
+
+
+
+#==
+# Method to find grid centers 
+==#
+function findGridCenters(max_lat, min_lat, max_long, min_long, nRows, nCols)
+    # Compute grid spacing
+    lat_step = (max_lat - min_lat) / nRows
+    long_step = (max_long - min_long) / nCols
+
+    # Generate grid cell centers
+    grid_centers_lat = [min_lat + (i + 0.5) * lat_step for i in 0:nRows-1]
+    grid_centers_long = [min_long + (j + 0.5) * long_step for j in 0:nCols-1]
+    grid_centers = [(lat, lon) for lat in grid_centers_lat, lon in grid_centers_long]
+
+    return lat_step, long_step, grid_centers
+end
+
+#==
+# Method to find the closest grid center to a given location    
+==#
+function findClosestGridCenter(loc, grid_centers)
+    lat, lon = loc
+    closest_center = nothing
+    min_dist = Inf
+
+    for (clat, clon) in grid_centers
+        dist = haversine_distance(lat, lon, clat, clon)[1]
+        if dist < min_dist
+            min_dist = dist
+            closest_center = (clat, clon)
+        end
+    end
+ 
+    return closest_center
+end
+
+
+#==
+# Plot demand and shifts
+==#
+function plotDemandAndShifts(average_demand_per_hour, shifts,gamma)
     hours = 1:24  # X-axis
 
     # Create bar plot for demand
     bar_plot = bar(hours, average_demand_per_hour, label="Avg Demand", xlabel="Hour", ylabel="Requests",
-                   title="Average Demand & Shift Coverage", legend=:topleft, alpha=0.6, color=:blue,size=(900,500))
+                   title=string("Average Demand & Shift Coverage, gamma: ",gamma), legend=:topleft, alpha=0.6, color=:blue,size=(900,500))
 
     # Overlay shifts as horizontal lines
     for (shift, data) in shifts
@@ -154,53 +218,55 @@ function plotDemandAndShifts(average_demand_per_hour, shifts)
 end
 
 
-# --------
-# Constants
-# --------
 
-global maxRideTimeRatio = 1
-global Gamma = 0.9
-global nWalking = 4
+# Plot request locations and vehicles 
+function plotRequestsAndVehicles(n,nData,gamma,max_lat,min_lat,max_long,min_long,NUM_ROWS,nCols,grid_centers,lat_step, long_step)
+    vehiclesFile = string("Data/Konsentra/", n, "/Vehicles_",n,"_", gamma, ".csv")
+    vehiclesDf = CSV.read(vehiclesFile, DataFrame)
 
+    for i in 1:nData
+        fileName = string("Data/Konsentra/", n, "/GeneratedRequests_", n, "_", i, ".csv")
+        requestsDf = CSV.read(fileName, DataFrame)
 
-##################################################
-# Generate vehicles
-##################################################
-# nRequest = 20 # Number of requests
+        p = plot(size = (1500, 1000))
+        scatter!(p, requestsDf.pickup_longitude, requestsDf.pickup_latitude, label = "Pick-up", color = :blue, markersize = 3)
+        scatter!(p, requestsDf.dropoff_longitude, requestsDf.dropoff_latitude, label = "Drop-off", color = :red, markersize = 3)
+        scatter!(p, vehiclesDf.depot_longitude, vehiclesDf.depot_latitude, label = "Vehicles", color = :black, markersize = 5,marker=:square)
 
-# # Set probabilities and time range
-# time_range = collect(range(6*60,23*60))
+        offset = 0.001
+        for (idx, row) in enumerate(eachrow(requestsDf))
+            annotate!(p, (row.pickup_longitude, row.pickup_latitude-offset, text("PU$idx", :blue, 8,:top)))
+            annotate!(p, (row.dropoff_longitude, row.dropoff_latitude-offset, text("DO$idx", :red, 8,:top)))
+        end
 
-# # Shifts for vehicles 
-# shiftTypes = ["Morning", "Noon", "Afternoon", "Evening"]
-# shifts = Dict(
-#     "Morning"    => Dict("TimeWindow" => [6*60, 12*60], "cost" => 2.0, "nVehicles" => 0, "y" => []),
-#     "Noon"       => Dict("TimeWindow" => [10*60, 16*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
-#     "Afternoon"  => Dict("TimeWindow" => [14*60, 20*60], "cost" => 3.0, "nVehicles" => 0, "y" => []),
-#     "Evening"    => Dict("TimeWindow" => [18*60, 24*60], "cost" => 4.0, "nVehicles" => 0, "y" => [])
-# )
+        coord_counts = Dict{Tuple{Float64, Float64}, Int}()
+        for (idx, row) in enumerate(eachrow(vehiclesDf))
+            pos = (row.depot_longitude, row.depot_latitude)
+            count = get!(coord_counts, pos, 0)
+            y_offset = 0.01 * count  # tune this offset as needed
+            annotate!(p, (row.depot_longitude, row.depot_latitude + offset + y_offset, text("D$idx", :black, 8,:bottom)))
+            coord_counts[pos] += 1
+        end
+        
+        # Bounding box
+        lons = [min_long, max_long, max_long, min_long, min_long]
+        lats = [min_lat, min_lat, max_lat, max_lat, min_lat]
+        plot!(p, lons, lats, label = "", color = :green, linewidth = 2)
 
-# # Load simulation data
-# probabilities_pickUpTime,
-# probabilities_dropOffTime,
-# density_pickUp,
-# density_dropOff,
-# probabilities_location,
-# density_grid,
-# x_range,
-# y_range,
-# probabilities_distance,
-# density_distance,
-# distance_range,
-# location_matrix,
-# requestTimePickUp,
-# requestTimeDropOff,
-# requests,
-# distanceDriven= load_simulation_data("Data/Simulation data/")
+        # Grid lines
+        for lat in [min_lat + i * lat_step for i in 0:NUM_ROWS]
+            plot!(p, [min_long, max_long], [lat, lat], color = :gray, linestyle = :dash, label = "")
+        end
+        for lon in [min_long + j * long_step for j in 0:nCols]
+            plot!(p, [lon, lon], [min_lat, max_lat], color = :gray, linestyle = :dash, label = "")
+        end
 
-# # Read data
-# df_list = load_request_data(nRequest)
+        # Plot grid cell centers
+        for (lat,lon) in grid_centers
+            scatter!(p, [lon], [lat], color = :gray, marker = (:cross, 4), label = "")
+        end
 
-# # Generate vehicles 
-# average_demand_per_hour = generateVehicles(shifts,df_list, probabilities_location, x_range, y_range)
-
+        display(p)
+        savefig(p, string("plots/DataGeneration/RequestsAndVehicles_",n,"_",i,".svg"))
+    end
+end
