@@ -440,13 +440,17 @@ function createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,de
         )
         display(p)
         savefig(p, string("plots/DataGeneration/Plot_",nRequest,"_",idx,".svg"))
+    end
+end
 
+function plotAndSaveGantChart(nRequest::Int,nData::Int,gamma::Float64)
+    for idx in 1:nData
         # Plot gant chart 
-        requestFile = file
-        vehiclesFile = string("Data/Konsentra/",nRequest,"/Vehicles_",nRequest,".csv")
+        requestFile = string("Data/Konsentra/",nRequest,"/GeneratedRequests_",nRequest,"_",idx,".csv")
+        vehiclesFile = string("Data/Konsentra/",nRequest,"/Vehicles_",nRequest,"_",gamma,".csv")
         parametersFile = "tests/resources/Parameters.csv"
-        distanceMatrixFile = string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",idx,"_distance.txt")
-        timeMatrixFile =  string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",idx,"_time.txt")
+        distanceMatrixFile = string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",gamma,"_",idx,"_distance.txt")
+        timeMatrixFile =  string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",gamma,"_",idx,"_time.txt")
         scenarioName = "No. requests = " * string(nRequest)
 
         # Read instance 
@@ -454,9 +458,8 @@ function createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,de
 
         p2 = createGantChartOfRequestsAndVehicles(scenario.vehicles, scenario.requests, [],scenarioName)
         display(p2)
-        savefig(p2, string("plots/DataGeneration/GantChart_",nRequest,"_",idx,".svg"))
+        savefig(p2, string("plots/DataGeneration/GantChart_",nRequest,"_",gamma,"_",idx,".svg"))
     end
-
 end
 
 

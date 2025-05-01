@@ -59,7 +59,6 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     depotCoordinates = [(l.lat,l.long) for l in values(depotLocations)]
     nDepots = length(depotLocations)
 
-
     # Get parameters 
     planningPeriod = TimeWindow(parametersDf[1,"start_of_planning_period"],parametersDf[1,"end_of_planning_period"])
     serviceTimes = parametersDf[1,"service_time_walking"]

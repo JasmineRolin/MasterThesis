@@ -40,7 +40,7 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String;eventI
                 markersize = 15
 
                 scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
-                annotate!(p, assignment.startOfServiceTime, yPos, text("D"*string(schedule.vehicle.id), :white, 8))
+                annotate!(p, assignment.startOfServiceTime, yPos, text("D"*string(schedule.vehicle.depotId), :white, 8))
             else
                 offset = 0
                 color = :gray67
@@ -260,7 +260,7 @@ function createGantChartOfSolutionAndEventOnline(solution::Solution,title::Strin
                 markersize = 15
 
                 scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
-                annotate!(p, assignment.startOfServiceTime, yPos, text("D"*string(schedule.vehicle.id), :white, 8))
+                annotate!(p, assignment.startOfServiceTime, yPos, text("D"*string(schedule.vehicle.depotId), :white, 8))
                 scatter!(p, [assignment.activity.timeWindow.startTime], [yPos], linewidth=11.5, label="", color=:darkgray, marker=:circle,markerstrokewidth=0,markersize=7)
                 scatter!(p, [assignment.activity.timeWindow.endTime], [yPos], linewidth=11.5, label="", color=:darkgray, marker=:circle,markerstrokewidth=0,markersize=7)
             else

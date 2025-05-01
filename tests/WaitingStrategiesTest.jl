@@ -6,8 +6,8 @@ using Plots.PlotMeasures
 
 gamma = 0.9
 nData = 10
-n = 20 
-i = 1
+n = 50 
+i = 5
 gridFile = "Data/Konsentra/grid.json"
 historicIndexes = setdiff(1:nData,i)
 hours = 1:24
@@ -19,28 +19,28 @@ for j in historicIndexes
 end
 
 # Read grid definition
-gridJSON = JSON.parsefile(gridFile) # TODO: jas - i scenario ? 
-maxLat = gridJSON["max_latitude"]
-minLat = gridJSON["min_latitude"]
-maxLong = gridJSON["max_longitude"]
-minLong = gridJSON["min_longitude"]
-nRows = gridJSON["num_rows"]
-nCols = gridJSON["num_columns"]
-latStep = (maxLat - minLat) / nRows
-longStep = (maxLong - minLong) / nCols
+# gridJSON = JSON.parsefile(gridFile) # TODO: jas - i scenario ? 
+# maxLat = gridJSON["max_latitude"]
+# minLat = gridJSON["min_latitude"]
+# maxLong = gridJSON["max_longitude"]
+# minLong = gridJSON["min_longitude"]
+# nRows = gridJSON["num_rows"]
+# nCols = gridJSON["num_columns"]
+# latStep = (maxLat - minLat) / nRows
+# longStep = (maxLong - minLong) / nCols
 
-grid = Grid(maxLat,minLat,maxLong,minLong,nRows,nCols,latStep,longStep)
+# grid = Grid(maxLat,minLat,maxLong,minLong,nRows,nCols,latStep,longStep)
 
 
-averageDemand = generatePredictedDemand(grid, historicRequestFiles)
-vehicleDemand = generatePredictedVehiclesDemand(grid, gamma, averageDemand)
+# averageDemand = generatePredictedDemand(grid, historicRequestFiles)
+# vehicleDemand = generatePredictedVehiclesDemand(grid, gamma, averageDemand)
 
 #======================================#
 #
 #=====================================#
 requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
-distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
-timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
+distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
 scenarioName = string("Generated_Data_",n,"_",i)
 vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
 parametersFile = "tests/resources/Parameters.csv"
@@ -69,8 +69,10 @@ depotLocations = findDepotLocations(grid,n)
 
 outPutFolder = "tests/output/OnlineSimulation/"*string(n)
 
-solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma)
+relocateVehicles = true
+solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = false,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles);
 
+print("end")
 # #==============================#
 # # Plot 
 # #==============================#

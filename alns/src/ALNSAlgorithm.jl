@@ -178,9 +178,9 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
     println("Total number of iterations: ", iteration)
     println("Termination: max since last improvement: ", numberOfIterationsSinceLastImprovement > maxNumberOfIterationsWithoutImprovement,
         ", max since last best: ", numberOfIterationsSinceLastBest > maxNumberOfIterationsWithoutNewBest)
-    println("\n Timing Breakdown:")
+    # println("\n Timing Breakdown:")
     
-    show(TO)
+    # show(TO)
 
     return currentState.bestSolution, currentState.bestRequestBank, pVals, deltaVals, isImprovedVec, isAcceptedVec, isNewBestVec
 end
