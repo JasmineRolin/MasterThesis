@@ -6,6 +6,6 @@ export generatePredictedDemand,generatePredictedVehiclesDemand
 
 include("RelocateVehicleUtils.jl")
 using .RelocateVehicleUtils
-export determineWaitingLocation,determineActiveVehiclesPrCell
+export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBalancePrCell
 
 end # module waitingstrategies

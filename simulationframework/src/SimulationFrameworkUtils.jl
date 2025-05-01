@@ -356,6 +356,9 @@ function determineCurrentState(solution::Solution,event::Request,finalSolution::
     currentState = State(scenario,event,visitedRoute,0)
     currentState.solution = copySolution(solution)
 
+    # Determine current vehicle balance 
+    vehicleBalance = determineVehicleBalancePrCell(grid,vehicleDemand,currentState.solution)
+
     # Initialize 
     idx = -1
     splitTime = -1
@@ -387,12 +390,24 @@ function determineCurrentState(solution::Solution,event::Request,finalSolution::
             # TODO: hvilken tid skal det være ? 
             relocationTime = currentState.solution.vehicleSchedules[vehicle].route[waitingIdx].startOfServiceTime
 
+            # Determine hour 
+            hour = ceil(Int,relocationTime/60) + 1
+
             # Find waiting location
             # TODO: skal det være solution eller currentState
-            depotId,depotLocation,gridCell,activeVehiclesPerCell, vehicleBalance = determineWaitingLocation(depotLocations,grid,nRequests,vehicleDemand,solution,relocationTime)
+            waitingLocationId,waitingLocation,gridCell = determineWaitingLocation(depotLocations,grid,nRequests,vehicleBalance,hour)
 
-            # Update waiting activity 
-            splitTime = updateWaitingActivityInRoute!(time,distance,currentState,solution.vehicleSchedules[vehicle],currentState.solution.vehicleSchedules[vehicle],waitingIdx,depotId,depotLocation) 
+            # Is there time to relocate vehicle 
+            if schedule.route[end-1].endOfServiceTime + time[schedule.route[end-1].activity.id,waitingLocationId] + time[waitingLocationId,schedule.vehicle.depotId] <= schedule.vehicle.availableTimeWindow.endTime
+                # Update waiting activity 
+                splitTime = updateWaitingActivityInRoute!(time,distance,currentState,solution.vehicleSchedules[vehicle],currentState.solution.vehicleSchedules[vehicle],waitingIdx,waitingLocationId,waitingLocation) 
+                
+                # Update vehicle balance
+                # TODO: skal det opdateres sådan?
+                gridCellDepot = determineGridCell(schedule.vehicle.depotLocation,grid)
+                vehicleBalance[hour,gridCellDepot[1],gridCellDepot[2]] -= 1
+                vehicleBalance[hour,gridCell[1],gridCell[2]] += 1
+            end
 
           #  print("- completed route but still available \n")
         # Check if vehicle has not been assigned yet

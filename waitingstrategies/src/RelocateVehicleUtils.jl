@@ -3,43 +3,53 @@ module RelocateVehicleUtils
 using domain 
 using UnPack 
 
-export determineWaitingLocation,determineActiveVehiclesPrCell
+export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBalancePrCell
 
 #==
  Method to determine waiting location of a vehicle
 ==#
-# Assuming hour is in the future 
-function determineWaitingLocation(depotLocations::Dict{Tuple{Int,Int},Location},grid::Grid,nRequests::Int, vehicleDemand::Array{Int,3},solution::Solution,time::Int)
+# Assuming hour is in the future (?)
+function determineWaitingLocation(depotLocations::Dict{Tuple{Int,Int},Location},grid::Grid,nRequests::Int, vehicleBalance::Array{Int,3},hour::Int)
+    # Determine cell with most deficit of vehicles
+    minIndexes = argmin(vehicleBalance[hour,:,:])
+    minRowIdx = minIndexes[1]
+    minColIdx = minIndexes[2]
+    depotId = findDepotIdFromGridCell(grid,nRequests,(minRowIdx,minColIdx))
+
+    return depotId,depotLocations[(minRowIdx,minColIdx)],(minRowIdx,minColIdx)
+end
+
+#==
+ Method to determine vehicle balance in grid cells
+==#
+function determineVehicleBalancePrCell(grid::Grid,vehicleDemand::Array{Int,3},solution::Solution)
     # unpack grid 
     @unpack minLat,maxLat,minLong,maxLong, nRows,nCols,latStep,longStep = grid 
 
     # TODO: do not include current schedule ? 
     # TODO: account for current planned demand 
 
-    # Determine relevant hour 
-    hour = Int(floor(time / 60)) + 1
-    startOfHourInMinutes = (hour - 1) * 60
-    endOfHourInMinutes = hour * 60
+    # Initialize vehicle balance
+    nHours = 24
+    vehicleBalance = zeros(Int,nHours,nRows,nCols)
 
-    # Vehicle demand in hour 
-    vehicleDemandInHour = vehicleDemand[hour,:,:]
+    # Find vehicle balance for each hour
+    for hour in 1:nHours
+        # Determine minutes
+        startOfHourInMinutes = (hour - 1) * 60
+        endOfHourInMinutes = hour * 60
 
-    # Determine currently planned active vehicles pr. cell  
-    activeVehiclesPerCell = determineActiveVehiclesPrCell(solution,endOfHourInMinutes,startOfHourInMinutes,minLat,minLong,nRows,nCols,latStep,longStep)
+        # Vehicle demand in hour 
+        vehicleDemandInHour = vehicleDemand[hour,:,:]
 
-    # Determine surplus/deficit of vehicles in grid cells
-    vehicleBalance = activeVehiclesPerCell - vehicleDemandInHour
+        # Determine currently planned active vehicles pr. cell  
+        activeVehiclesPerCell = determineActiveVehiclesPrCell(solution,endOfHourInMinutes,startOfHourInMinutes,minLat,minLong,nRows,nCols,latStep,longStep)
 
-    # Determine cell with most deficit of vehicles
-    minIndexes = argmin(vehicleBalance)
-    minRowIdx = minIndexes[1]
-    minColIdx = minIndexes[2]
-    depotId = findDepotIdFromGridCell(grid,nRequests,(minRowIdx,minColIdx))
-
-    # TODO: return depot id 
-    # TODO: check if we can relocate (time)
-
-    return depotId,depotLocations[(minRowIdx,minColIdx)],(minRowIdx,minColIdx), activeVehiclesPerCell, vehicleBalance
+        # Determine surplus/deficit of vehicles in grid cells
+        vehicleBalance[hour,:,:] = vehicleDemandInHour .- activeVehiclesPerCell
+    end
+   
+    return vehicleBalance
 end
 
 function determineActiveVehiclesPrCell(solution::Solution,endOfHourInMinutes::Int,startOfHourInMinutes::Int,minLat::Float64,minLong::Float64, nRows::Int,nCols::Int,latStep::Float64,longStep::Float64)

@@ -19,6 +19,18 @@ end
 #==
  Method to detmine grid cell of location
 ==#
+function determineGridCell(location::Location,grid::Grid)
+    # Unpack grid 
+    minLat = grid.minLat
+    minLong = grid.minLong
+    nRows = grid.nRows
+    nCols = grid.nCols
+    latStep = grid.latStep
+    longStep = grid.longStep
+
+    return determineGridCell(location.lat,location.long,minLat,minLong,nRows,nCols,latStep,longStep)
+end
+
 function determineGridCell(latitude::Float64,longitude::Float64,minLat::Float64,minLong::Float64, nRows::Int,nCols::Int,latStep::Float64,longStep::Float64)
      # Find grid cell of activity 
      rowIdx = floor(Int, (latitude - minLat) / latStep)
