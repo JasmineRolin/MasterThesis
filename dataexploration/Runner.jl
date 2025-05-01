@@ -139,14 +139,15 @@ if GENERATE_DATA_AND_VEHICLES
         end
 
         # Generate time and distance matrices  
+        depotLocations = Vector{Tuple{Float64,Float64}}()
+        [push!(depotLocations,(loc[1],loc[2])) for loc in grid_centers]
         for gamma in GammaList
             for i in 1:nData
                 println("n = ",nRequest," i = ",i)
                 requestFile = string("Data/Konsentra/",nRequest,"/GeneratedRequests_",nRequest,"_",i,".csv")
-                vehicleFile = string("Data/Konsentra/",nRequest,"/Vehicles_",nRequest,".csv")
-                dataName = string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",i)
+                dataName = string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",gamma,"_",i)
                 
-                getTimeDistanceMatrix(requestFile, vehicleFile, dataName)
+                getTimeDistanceMatrix(requestFile, depotLocations, dataName)
             end
         end
 
@@ -202,14 +203,16 @@ if GENERATE_VEHICLES
         end
 
         # Generate time and distance matrices  
+        depotLocations = Vector{Tuple{Float64,Float64}}()
+        [push!(depotLocations,(loc[1],loc[2])) for loc in grid_centers]
         for gamma in GammaList
             for i in 1:nData
                 println("n = ",nRequest," i = ",i)
                 requestFile = string("Data/Konsentra/",nRequest,"/GeneratedRequests_",nRequest,"_",i,".csv")
                 vehicleFile = string("Data/Konsentra/",nRequest,"/Vehicles_",nRequest,".csv")
-                dataName = string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",i)
+                dataName = string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",gamma,"_",i)
                 
-                getTimeDistanceMatrix(requestFile, vehicleFile, dataName)
+                getTimeDistanceMatrix(requestFile, depotLocations, dataName)
             end
         end
     end

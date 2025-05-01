@@ -3,7 +3,7 @@ module ALNSResults
 using DataFrames, CSV, Plots, JSON, domain,..ALNSDomain
 using Plots.PlotMeasures
 
-export ALNSResult
+export ALNSResult, plotRoutes
 
 #==
  Method to plot ALNS results  
@@ -363,7 +363,7 @@ function plotRoutes(solution::Solution,scenario::Scenario,requestBank::Vector{In
     firstDropoff = true 
     firstDepot = true 
     firstWaiting = true 
-    offset = 0.025
+    offset = 0.02
     assignedRequests = Vector{Int}()
 
     # Plot routes 
@@ -422,11 +422,11 @@ function plotRoutes(solution::Solution,scenario::Scenario,requestBank::Vector{In
                 if firstDepot
                     firstDepot = false
                     v = schedule.vehicle
-                    scatter!([v.depotLocation.long], [v.depotLocation.lat], label = "Depot", color = :black, markersize = 10, marker = :star,markerstrokewidth=0)
+                    scatter!([v.depotLocation.long], [v.depotLocation.lat], label = "Depot", color = :black, markersize = 12, marker = :star,markerstrokewidth=0)
                     annotate!(v.depotLocation.long, v.depotLocation.lat+offset, text("D$(v.id)", :center, 8, color = :black))
                 else
                     v = schedule.vehicle
-                    scatter!([v.depotLocation.long], [v.depotLocation.lat], label = "", color = :black, markersize = 10, marker = :star,markerstrokewidth=0)
+                    scatter!([v.depotLocation.long], [v.depotLocation.lat], label = "", color = :black, markersize = 12, marker = :star,markerstrokewidth=0)
                     annotate!(v.depotLocation.long, v.depotLocation.lat+offset, text("D$(v.id)", :center, 8, color = :black))
                 end
             else

@@ -6,6 +6,7 @@ using domain
 using offlinesolution
 using onlinesolution
 using alns
+using waitingstrategies
 
 export simulateScenario
 
@@ -78,6 +79,8 @@ function updateCurrentScheduleRouteCompleted!(currentState::State,schedule::Vehi
     arrivalAtDepot = schedule.route[end].startOfServiceTime
     endOfAvailableTimeWindow = schedule.vehicle.availableTimeWindow.endTime
 
+    # Find waiting location
+
     # Create waiting activity to replace depot activity
     waitingActivityCompletedRoute = ActivityAssignment(Activity(schedule.vehicle.depotId,-1,WAITING, schedule.vehicle.depotLocation,TimeWindow(arrivalAtDepot,endOfAvailableTimeWindow)), schedule.vehicle,arrivalAtDepot,endOfAvailableTimeWindow)
 
@@ -108,7 +111,6 @@ function updateCurrentScheduleRouteCompleted!(currentState::State,schedule::Vehi
 
     return idx, arrivalAtDepot
 end
-
 
 # ------
 # Function to update current state if vehicle is not available yet or has not started service yet
@@ -203,6 +205,56 @@ end
 
 
 # ------
+# Function to update waiting activity in route 
+# ------
+# Assuming waiting activity is the last activity in the route before depot 
+function updateWaitingActivityInRoute!(time::Array{Int,2},distance::Array{Float64,2},currentState::State,schedule::VehicleSchedule,currentSchedule::VehicleSchedule,waitingIdx::Int,waitingLocationId::Int,location::Location)
+    
+    # Update KPIs 
+    currentState.solution.totalIdleTime -= currentSchedule.totalIdleTime
+    currentState.solution.totalRideTime -= currentSchedule.totalTime
+    currentState.solution.totalDistance -= currentSchedule.totalDistance
+    currentSchedule.totalIdleTime = 0
+    
+    waitingActivity = currentSchedule.route[waitingIdx]
+    waitingActivity.activity.location = location
+    waitingActivity.activity.id = waitingLocationId
+
+    # Find arrival at waiting node 
+    previousActivity = schedule.route[end-1]
+    depotActivity = currentSchedule.route[end]
+    endOfAvailableTimeWindow = currentSchedule.vehicle.availableTimeWindow.endTime
+
+    timePreviousNode = time[previousActivity.activity.id,waitingLocationId]
+    timeDepot = time[waitingLocationId,depotActivity.activity.id]
+    arrivalAtWaiting = schedule.route[end-1].endOfServiceTime + timePreviousNode
+
+    waitingActivity.startOfServiceTime = arrivalAtWaiting
+    waitingActivity.endOfServiceTime = currentSchedule.vehicle.availableTimeWindow.endTime - timeDepot
+    waitingActivity.activity.timeWindow = TimeWindow(waitingActivity.startOfServiceTime,waitingActivity.endOfServiceTime)
+
+    # Update depot 
+    depotActivity.startOfServiceTime = endOfAvailableTimeWindow
+    depotActivity.endOfServiceTime = endOfAvailableTimeWindow
+
+    # Update active time window
+    currentSchedule.activeTimeWindow.startTime = arrivalAtWaiting
+    currentSchedule.activeTimeWindow.endTime = endOfAvailableTimeWindow
+
+    # Update KPIs
+    currentSchedule.totalIdleTime = waitingActivity.endOfServiceTime - arrivalAtWaiting
+    currentSchedule.totalDistance = distance[waitingLocationId,depotActivity.activity.id]
+    currentSchedule.totalTime = endOfAvailableTimeWindow - arrivalAtWaiting
+
+    # Update current state pro
+    currentState.solution.totalDistance += currentSchedule.totalDistance
+    currentState.solution.totalRideTime += currentSchedule.totalTime
+    currentState.solution.totalIdleTime += currentSchedule.totalIdleTime
+
+    return arrivalAtWaiting
+ end
+
+# ------
 # Function to update final solution for given vehicle 
 # ------
 function updateFinalSolution!(scenario::Scenario,finalSolution::Solution,solution::Solution,vehicle::Int,idx::Int,splitTime::Int,visitedRoute::Dict{Int,Dict{String,Int}})
@@ -295,7 +347,10 @@ end
 # ------
 # Function to determine current state
 # ------
-function determineCurrentState(solution::Solution,event::Request,finalSolution::Solution,scenario::Scenario,visitedRoute::Dict{Int,Dict{String,Int}})
+function determineCurrentState(solution::Solution,event::Request,finalSolution::Solution,scenario::Scenario,visitedRoute::Dict{Int,Dict{String,Int}},grid::Grid,depotLocations::Dict{Tuple{Int,Int},Location},vehicleDemand::Array{Int,3})
+    nRequests = length(scenario.requests)
+    time = scenario.time
+    distance = scenario.distance
 
     # Initialize current state
     currentState = State(scenario,event,visitedRoute,0)
@@ -323,6 +378,22 @@ function determineCurrentState(solution::Solution,event::Request,finalSolution::
         # We have completed the last activity and the vehicle is on-route to the depot but still available 
         elseif schedule.route[end-1].activity.activityType != DEPOT && schedule.route[end-1].endOfServiceTime < currentTime
             idx,splitTime = updateCurrentScheduleRouteCompleted!(currentState,schedule,vehicle)
+
+            # Update waiting locations for vehicles that have completed their route but are still available 
+            # TODO: add keep track of active vehicles here 
+            # Determine time 
+            waitingIdx = length(currentState.solution.vehicleSchedules[vehicle].route) - 1
+
+            # TODO: hvilken tid skal det være ? 
+            relocationTime = currentState.solution.vehicleSchedules[vehicle].route[waitingIdx].startOfServiceTime
+
+            # Find waiting location
+            # TODO: skal det være solution eller currentState
+            depotId,depotLocation,gridCell,activeVehiclesPerCell, vehicleBalance = determineWaitingLocation(depotLocations,grid,nRequests,vehicleDemand,solution,relocationTime)
+
+            # Update waiting activity 
+            splitTime = updateWaitingActivityInRoute!(time,distance,currentState,solution.vehicleSchedules[vehicle],currentState.solution.vehicleSchedules[vehicle],waitingIdx,depotId,depotLocation) 
+
           #  print("- completed route but still available \n")
         # Check if vehicle has not been assigned yet
         elseif length(schedule.route) == 2 && schedule.route[1].activity.activityType == DEPOT
@@ -362,7 +433,14 @@ end
 # ------
 # Function to simulate a scenario
 # ------
-function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false)
+function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = [],gamma::Float64=0.5)
+    # Retrieve info 
+    grid = scenario.grid
+    depotLocations = scenario.depotLocations
+
+    # Generate predicted demand
+    averageDemand = generatePredictedDemand(grid, historicRequestFiles)
+    vehicleDemand = generatePredictedVehiclesDemand(grid, gamma, averageDemand)
 
     # Choose destroy methods
     destroyMethods = Vector{GenericMethod}()
@@ -390,7 +468,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
         printSolution(initialSolution,printRouteHorizontal)
     end
     if displayPlots
-        display(createGantChartOfSolutionOnline(initialSolution,"Initial Solution"))
+        #display(createGantChartOfSolutionOnline(initialSolution,"Initial Solution"))
         display(plotRoutes(initialSolution,scenario,initialRequestBank,"Initial Solution"))
     end
 
@@ -410,7 +488,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
         printSolution(solution,printRouteHorizontal)
     end
     if displayPlots
-        display(createGantChartOfSolutionOnline(solution,"Initial Solution after ALNS"))
+        #display(createGantChartOfSolutionOnline(solution,"Initial Solution after ALNS"))
         display(plotRoutes(solution,scenario,requestBank,"Initial Solution after ALNS"))
     end
 
@@ -428,7 +506,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
         println("----------------")
 
         # Determine current state
-        currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario,visitedRoute)
+        currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario,visitedRoute,grid,depotLocations,vehicleDemand)
         
         if printResults
             println("------------------------------------------------------------------------------------------------------------------------------------------------")
@@ -467,11 +545,11 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
         end
 
         if displayPlots && event.id in requestBank
-            display(createGantChartOfSolutionAndEventOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event))
-            display(plotRoutes(solution,scenario,requestBank,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime)))       
+            #display(createGantChartOfSolutionAndEventOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event))
+            display(plotRoutesOnline(solution,scenario,requestBank,event,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime)))       
         elseif displayPlots
-            display(createGantChartOfSolutionOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime))
-            display(plotRoutes(solution,scenario,requestBank,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime)))       
+           # display(createGantChartOfSolutionOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime))
+            display(plotRoutesOnline(solution,scenario,requestBank,event,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime)))       
         end
 
     end

@@ -7,6 +7,6 @@ export onlineAlgorithm
 
 include("OnlineSolutionResults.jl")
 using .OnlineSolutionResults
-export createGantChartOfSolutionOnline,writeOnlineKPIsToFile, processResults,plotRoutes,createGantChartOfSolutionAndEventOnline
+export createGantChartOfSolutionOnline,writeOnlineKPIsToFile, processResults,createGantChartOfSolutionAndEventOnline,plotRoutesOnline
 
 end

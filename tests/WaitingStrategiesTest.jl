@@ -1,5 +1,5 @@
 
-using waitingstrategies, domain, offlinesolution, utils
+using waitingstrategies, domain, offlinesolution, utils, simulationframework
 using Plots, JSON, Test
 using Plots.PlotMeasures
 
@@ -46,60 +46,103 @@ vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
 parametersFile = "tests/resources/Parameters.csv"
 
 # Read instance 
-scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
-depotLocations = findDepotLocations(grid)
+scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile,gridFile)
+depotLocations = findDepotLocations(grid,n)
  
 # Construct solution 
-initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
-state = State(initialSolution,scenario.onlineRequests[end],0)
-feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-@test feasible == true
-@test msg == ""
-println(msg)
+# initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
+# state = State(initialSolution,scenario.onlineRequests[end],0)
+# feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+# @test feasible == true
+# @test msg == ""
+# println(msg)
 
-printSolution(initialSolution,printRouteHorizontal)
+# printSolution(initialSolution,printRouteHorizontal)
 
-schedule = solution.vehicleSchedules[7]
-waitingActivityCompletedRoute = ActivityAssignment(Activity(schedule.vehicle.depotId,-1,WAITING, schedule.vehicle.depotLocation,TimeWindow(459,720)), schedule.vehicle,459,720)
+#schedule = solution.vehicleSchedules[7]
+#waitingActivityCompletedRoute = ActivityAssignment(Activity(schedule.vehicle.depotId,-1,WAITING, schedule.vehicle.depotLocation,TimeWindow(459,720)), schedule.vehicle,459,720)
 
 
 # Determine waiting location 
-location = determineWaitingLocation(depotLocations,grid,vehicleDemand,initialSolution,100)
+# time = 460
+# hour = Int(floor(time / 60)) + 1acklocation,gridCell,activeVehiclesPerCell, vehicleBalance = determineWaitingLocation(depotLocations,grid,vehicleDemand,initialSolution,time)
 
+outPutFolder = "tests/output/OnlineSimulation/"*string(n)
 
-#==============================#
-# Plot 
-#==============================#
-avg_min = minimum(averageDemand)
-avg_max = maximum(averageDemand)
+solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma)
 
-vehicle_min = minimum(vehicleDemand)
-vehicle_max = maximum(vehicleDemand)
+# #==============================#
+# # Plot 
+# #==============================#
+# avg_min = minimum(averageDemand)
+# avg_max = maximum(averageDemand)
 
-for h in hours
-    p1 = heatmap(averageDemand[h,:,:], 
-            c=:viridis,         # color map
-            clim=(avg_min, avg_max),
-            xlabel="Longitude (grid cols)", 
-            ylabel="Latitude (grid rows)", 
-            title="Average Demand per Grid Cell, hour = $(h)",
-            colorbar_title="Avg Requests")
+# vehicle_min = minimum(vehicleDemand)
+# vehicle_max = maximum(vehicleDemand)
 
-    p2 = heatmap(vehicleDemand[h,:,:], 
-            c=:viridis,         # color map
-            clim=(vehicle_min, vehicle_max),
-            xlabel="Longitude (grid cols)", 
-            ylabel="Latitude (grid rows)", 
-            title="Vehicle Demand per Grid Cell, hour = $(h)",
-            colorbar_title="Vehicle Demand")
+# for h in hours
+#     p1 = heatmap(averageDemand[h,:,:], 
+#             c=:viridis,         # color map
+#             clim=(avg_min, avg_max),
+#             xlabel="Longitude (grid cols)", 
+#             ylabel="Latitude (grid rows)", 
+#             title="Average Demand per Grid Cell, hour = $(h)",
+#             colorbar_title="Avg Requests")
+
+#     p2 = heatmap(vehicleDemand[h,:,:], 
+#             c=:viridis,         # color map
+#             clim=(vehicle_min, vehicle_max),
+#             xlabel="Longitude (grid cols)", 
+#             ylabel="Latitude (grid rows)", 
+#             title="Vehicle Demand per Grid Cell, hour = $(h)",
+#             colorbar_title="Vehicle Demand")
     
-    p = plot(p1,p2, 
-            layout = (1,2),
-            size = (1500,1000),  
-            bottom_margin=5mm,
-            left_margin=12mm, 
-            top_margin=5mm,
-            right_margin=5mm)
+#     p = plot(p1,p2, 
+#             layout = (1,2),
+#             size = (1500,1000),  
+#             bottom_margin=5mm,
+#             left_margin=12mm, 
+#             top_margin=5mm,
+#             right_margin=5mm)
 
-    display(p)
-end
+#     display(p)
+# end
+
+# # Plot for chosen hour 
+# p1 = heatmap(vehicleDemand[hour,:,:], 
+# c=:viridis,         # color map
+# clim=(avg_min, avg_max),
+# xlabel="Longitude (grid cols)", 
+# ylabel="Latitude (grid rows)", 
+# title="Predicted Vehicle Demand",
+# colorbar_title="Avg Requests")
+# scatter!(p1,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:red)
+
+
+# p2 = heatmap(activeVehiclesPerCell[:,:], 
+# c=:viridis,         # color map
+# xlabel="Longitude (grid cols)", 
+# ylabel="Latitude (grid rows)", 
+# title="Vehicles per Grid Cell in solution",
+# colorbar_title="Vehicle Demand")
+# scatter!(p2,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:red)
+
+
+# p3 = heatmap(vehicleBalance[:,:], 
+# c=:viridis,         # color map
+# xlabel="Longitude (grid cols)", 
+# ylabel="Latitude (grid rows)", 
+# title="Vehicle balance",
+# colorbar_title="Vehicle Demand")
+# scatter!(p3,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:red)
+
+# p = plot(p1,p2,p3, 
+# layout = (1,3),
+# size = (1500,1000),  
+# bottom_margin=5mm,
+# left_margin=12mm, 
+# top_margin=5mm,
+# right_margin=5mm,
+# title ="hour = $(hour)")
+
+# display(p)
