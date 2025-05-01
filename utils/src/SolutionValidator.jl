@@ -186,10 +186,6 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
         elseif activity.activityType == DROPOFF 
             pickUpId = findCorrespondingId(activity,nRequests)
             if !(pickUpId in hasBeenServicedRequest || pickUpId in keys(visitedRoute)) 
-                println(hasBeenServicedRequest)
-                println(pickUpId)
-                println(activity.id)
-                println(nRequests)
                 msg = "ROUTE INFEASIBLE: Drop-off $(activity.id) before pick-up, vehicle: $(vehicle.id)"
                 return false, msg, Set{Int}(), Set{Int}()
             end

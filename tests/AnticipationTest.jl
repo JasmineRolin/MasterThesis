@@ -76,8 +76,8 @@ include("../decisionstrategies/anticipation.jl")
     
     
 #end
-
 ==#
+
 
 #@testset "Complete Anticipation Test" begin 
     requestFile = "Data/Konsentra/TransformedData_Data.csv"
@@ -87,7 +87,7 @@ include("../decisionstrategies/anticipation.jl")
     scenarioName = "Konsentra_Data"
     
     nExpected = 10
-    bestSolution, bestRequestBank, results, scenario, scenario2 = offlineSolutionWithAnticipation(requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,scenario)
+    bestSolution, bestRequestBank, results, scenario, scenario2,feasible, msg = offlineSolutionWithAnticipation(requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected)
 
     println(results)
 
