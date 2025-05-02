@@ -52,11 +52,14 @@ function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::A
     # Choose requests to remove  
     selectedIdx = randperm(nRequests-length(notMoveRequests))[1:nRequestsToRemove]
     requestsToRemove = Set(possibleToRemove[selectedIdx])
+    nRequestsToRemoveFixed = sum(requestsToRemove .<= scenario.nFixed)
+    nRequestsToRemoveExpected = sum(requestsToRemove .> scenario.nFixed)
     append!(requestBank,requestsToRemove)
     setdiff!(assignedRequests, requestsToRemove)
     currentState.nAssignedRequests -= nRequestsToRemove
-    currentState.currentSolution.nTaxi += nRequestsToRemove
-    currentState.currentSolution.totalCost += nRequestsToRemove*scenario.taxiParameter
+    currentState.currentSolution.nTaxi += nRequestsToRemoveFixed
+    currentState.currentSolution.nTaxiExpected += nRequestsToRemoveExpected
+    currentState.currentSolution.totalCost += nRequestsToRemoveFixed*scenario.taxiParameter + nRequestsToRemoveExpected*scenario.taxiParameterExpected
 
     removeRequestsFromSolution!(time,distance,serviceTimes,requests,currentSolution,requestsToRemove,visitedRoute = visitedRoute,scenario = scenario,TO=TO)
 
@@ -113,8 +116,11 @@ function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::
     append!(requestBank, requestsToRemove)
     setdiff!(assignedRequests, requestsToRemove)
     currentState.nAssignedRequests -= nRequestsToRemove
-    currentState.currentSolution.nTaxi += nRequestsToRemove
-    currentState.currentSolution.totalCost += nRequestsToRemove *scenario.taxiParameter
+    nRequestsToRemoveFixed = sum(requestsToRemove .<= scenario.nFixed)
+    nRequestsToRemoveExpected = sum(requestsToRemove .> scenario.nFixed)
+    currentState.currentSolution.nTaxi += nRequestsToRemoveFixed
+    currentState.currentSolution.nTaxiExpected += nRequestsToRemoveExpected
+    currentState.currentSolution.totalCost += nRequestsToRemoveFixed*scenario.taxiParameter + nRequestsToRemoveExpected*scenario.taxiParameterExpected
         
     # Remove requests from solution
     removeRequestsFromSolution!(time, distance,serviceTimes,requests, currentSolution, requestsToRemove,visitedRoute=visitedRoute,scenario=scenario,TO=TO)
@@ -186,9 +192,12 @@ function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::A
     end
     append!(requestBank, requestsToRemove)
     currentState.nAssignedRequests -= nRequestsToRemove
-    currentState.currentSolution.nTaxi += nRequestsToRemove
-    currentState.currentSolution.totalCost += nRequestsToRemove *scenario.taxiParameter
-
+    nRequestsToRemoveFixed = sum(requestsToRemove .<= scenario.nFixed)
+    nRequestsToRemoveExpected = sum(requestsToRemove .> scenario.nFixed)
+    currentState.currentSolution.nTaxi += nRequestsToRemoveFixed
+    currentState.currentSolution.nTaxiExpected += nRequestsToRemoveExpected
+    currentState.currentSolution.totalCost += nRequestsToRemoveFixed*scenario.taxiParameter + nRequestsToRemoveExpected*scenario.taxiParameterExpected
+        
     # Remove requests 
     removeRequestsFromSolution!(time, distance, serviceTimes,requests,currentSolution, requestsToRemove,visitedRoute = visitedRoute,scenario = scenario,TO=TO)
 end

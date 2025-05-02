@@ -28,7 +28,7 @@ function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{
     nVehicles = length(vehicleSchedules)
 
     # TODO: remove when stable also in other places
-    if length(requestBank) != state.currentSolution.nTaxi
+    if length(requestBank) != state.currentSolution.nTaxi + state.currentSolution.nTaxiExpected
         println(requestBank)
         throw("Error: requestBank length does not match currentSolution.nTaxi")
         return
@@ -110,10 +110,18 @@ function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{
             insertRequest!(requests[bestRequest], bestSchedule, pickUp, dropOff, scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete,totalCost = totalCost, totalDistance = totalDistance, totalIdleTime = totalIdleTime, totalTime = totalTime,visitedRoute=visitedRoute, waitingActivitiesToAdd=waitingActivitiesToAdd)
             append!(state.assignedRequests, bestRequest)
             
+            
+            if requests[bestRequest].id <= scenario.nFixed
+                cost = scenario.taxiParameter
+                state.currentSolution.nTaxi -= 1
+            else
+                cost = scenario.taxiParameterExpected
+                state.currentSolution.nTaxiExpected -= 1
+            end 
+
             # Update solution pro
             state.nAssignedRequests += 1
-            state.currentSolution.nTaxi -= 1
-            state.currentSolution.totalCost -= scenario.taxiParameter
+            state.currentSolution.totalCost -= cost
             state.currentSolution.totalCost += bestSchedule.totalCost
             state.currentSolution.totalDistance += bestSchedule.totalDistance
             state.currentSolution.totalRideTime += bestSchedule.totalTime
@@ -151,7 +159,7 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
     nRequestBank = length(requestBank)
 
     # TODO: remove when stable also in other places
-    if length(requestBank) != state.currentSolution.nTaxi
+    if length(requestBank) != state.currentSolution.nTaxi + state.currentSolution.nTaxiExpected
         println(requestBank)
         throw("Error: requestBank length does not match currentSolution.nTaxi")
         return
@@ -220,10 +228,17 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
             insertRequest!(request, bestSchedule, bestPickUp, bestDropOff, scenario,bestNewStartOfServiceTimes,bestNewEndOfServiceTimes, bestWaitingActivitiesToDelete,totalCost = bestCost, totalDistance = bestDistance, totalIdleTime = bestIdleTime, totalTime = bestTime,visitedRoute=visitedRoute, waitingActivitiesToAdd=bestWaitingActivitiesToAdd)
             append!(state.assignedRequests, r)
 
+            if request.id <= scenario.nFixed
+                cost = scenario.taxiParameter
+                state.currentSolution.nTaxi -= 1
+            else
+                cost = scenario.taxiParameterExpected
+                state.currentSolution.nTaxiExpected -= 1
+            end 
+
              # Update solution pro
             state.nAssignedRequests += 1
-            state.currentSolution.nTaxi -= 1
-            state.currentSolution.totalCost -= scenario.taxiParameter
+            state.currentSolution.totalCost -= cost
             state.currentSolution.totalCost += bestSchedule.totalCost
             state.currentSolution.totalDistance += bestSchedule.totalDistance
             state.currentSolution.totalRideTime += bestSchedule.totalTime

@@ -1,7 +1,7 @@
 
 include("../decisionstrategies/anticipation.jl")
 
-#==
+
 #@testset "Anticipation Test" begin 
     requestFile = "Data/Konsentra/TransformedData_Data.csv"
     vehiclesFile = "tests/resources/Vehicles.csv"
@@ -11,8 +11,9 @@ include("../decisionstrategies/anticipation.jl")
     
     # Make scenario
     nExpected = 10
-    scenario, nFixed, originalExpectedRequestsDf = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile, scenarioName)
-    
+    scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile, scenarioName)
+    nFixed = scenario.nFixed
+
     # Choose destroy methods
     destroyMethods = Vector{GenericMethod}()
     addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
@@ -49,8 +50,9 @@ include("../decisionstrategies/anticipation.jl")
     distance = scenario.distance
     serviceTimes = scenario.serviceTimes
     requests = scenario.requests
+    taxiParameterExpected = scenario.taxiParameterExpected
     
-    removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,solution,nExpected,nFixed,nNotServicedExpectedRequests,requestBank,scenario.taxiParameter)
+    removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,solution,nExpected,nFixed,nNotServicedExpectedRequests,requestBank,taxiParameterExpected)
     
     state = State(solution,Request(),0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state;nExpected=nExpected)
@@ -60,7 +62,7 @@ include("../decisionstrategies/anticipation.jl")
     
     # Generate new scenario
     nExpected = 10
-    scenario2, nFixed = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName)
+    scenario2 = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName)
     
     # Insert expected requests randomly into solution using regret insertion
     expectedRequestsIds = collect(nFixed+1:nFixed+nExpected)
@@ -76,9 +78,9 @@ include("../decisionstrategies/anticipation.jl")
     
     
 #end
-==#
 
 
+#==
 #@testset "Complete Anticipation Test" begin 
     requestFile = "Data/Konsentra/TransformedData_Data.csv"
     vehiclesFile = "tests/resources/Vehicles.csv"
@@ -97,3 +99,4 @@ include("../decisionstrategies/anticipation.jl")
     #@test feasible == true
     
 #end
+==#

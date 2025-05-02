@@ -14,7 +14,7 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,state::State;nExpecte
 end
 
 function checkSolutionFeasibilityOnline(scenario::Scenario,solution::Solution,event::Request,visitedRoute::Dict{Int, Dict{String, Int}}, totalNTaxi::Int;nExpected::Int=0)
-    @unpack vehicleSchedules, totalCost, nTaxi, totalRideTime, totalDistance, totalIdleTime = solution
+    @unpack vehicleSchedules, totalCost, nTaxi, nTaxiExpected, totalRideTime, totalDistance, totalIdleTime = solution
 
     # Keep track of serviced activities assuming that activity 
     servicedActivities = Set{Int}()
@@ -78,14 +78,20 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,solution::Solution,ev
     end
     notServicedRequests = setdiff(considered, servicedPickUpActivities)
 
-    if totalNTaxi + nTaxi + nExpected != length(notServicedRequests) 
+    if totalNTaxi + nTaxi + nTaxiExpected + nExpected != length(notServicedRequests) 
         msg = "SOLUTION INFEASIBLE: Not all requests are serviced. Serviced: $(length(servicedPickUpActivities)), not serviced: $(length(notServicedRequests)), nTaxi: $(nTaxi)"
         return false, msg
     end
 
     # Check cost, distance and time of solution 
-    totalCostCheck += (nTaxi + totalNTaxi) * scenario.taxiParameter #?
+    totalCostCheck += (nTaxi+totalNTaxi) * scenario.taxiParameter + (nTaxiExpected) * scenario.taxiParameterExpected
     if !isapprox(totalCostCheck,totalCost,atol=0.0001) 
+        println("--------")
+        println(nTaxiExpected)
+        println(nTaxi)
+        println(nExpected)
+        println(totalNTaxi)
+        println(notServicedRequests)
         msg = "SOLUTION INFEASIBLE: Total cost of solution is incorrect. Calculated: $(totalCostCheck), actual: $(totalCost), diff: $(abs(totalCostCheck-totalCost))"
         return false, msg
     end

@@ -116,6 +116,7 @@ function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicle
     maximumRideTimePercent = parametersDf[1,"maximum_ride_time_percent"]
     minimumMaximumRideTime = parametersDf[1,"minimum_maximum_ride_time"]
     taxiParameter = Float64(parametersDf[1,"taxi_parameter"])
+    taxiParameterExpected = Float64(parametersDf[1,"taxi_parameter_expected"])
     
 
     # Get vehicles 
@@ -137,14 +138,14 @@ function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicle
     onlineRequests, offlineRequests = splitRequests(allRequests)
 
     # Get distance and time matrix
-    scenario = Scenario(scenarioName,allRequests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots,depots,taxiParameter)
+    scenario = Scenario(scenarioName,allRequests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots,depots,taxiParameter,nNewExpected,taxiParameterExpected,nRequests)
 
-    return scenario, nRequests, newExpectedRequestsDf
+    return scenario
 
 end
 
 
-function removeExpectedRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},solution::Solution,nExpected::Int,nFixed::Int,nNotServicedExpectedRequests::Int,requestBank::Vector{Int},taxiParameter::Float64;TO::TimerOutput=TimerOutput())
+function removeExpectedRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},solution::Solution,nExpected::Int,nFixed::Int,nNotServicedExpectedRequests::Int,requestBank::Vector{Int},taxiParameterExpected::Float64;TO::TimerOutput=TimerOutput())
     
     # Determine remaining requests to remove
     requestsToRemove = Set{Int}()
@@ -161,8 +162,13 @@ function removeExpectedRequestsFromSolution!(time::Array{Int,2},distance::Array{
     removeRequestsFromSolution!(time,distance,serviceTimes,requests,solution,requestsToRemove,remover=remover,nFixed=nFixed,nExpected=nExpected)
 
     # Remove taxis for expected requests
-    solution.nTaxi -= nNotServicedExpectedRequests
-    solution.totalCost -= nNotServicedExpectedRequests * taxiParameter
+    println("HERE")
+    println(nNotServicedExpectedRequests)
+    println(solution.nTaxiExpected)
+    println(solution.totalCost)
+    solution.nTaxiExpected -= nNotServicedExpectedRequests
+    solution.totalCost -= nNotServicedExpectedRequests * taxiParameterExpected
+    println(solution.totalCost)
 
 
 end
@@ -299,12 +305,14 @@ function offlineSolutionWithAnticipation(requestFile::String,vehiclesFile::Strin
     for i in 1:10
         println("------------ Solution "*string(i)*"-------------")
         # Make scenario
-        scenario, nFixed = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName)
+        scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName)
         time = scenario.time
         distance = scenario.distance
         serviceTimes = scenario.serviceTimes
         requests = scenario.requests
         taxiParameter = scenario.taxiParameter
+        nFixed = scenario.nFixed
+        taxiParameterExpected = scenario.taxiParameterExpected
 
         # Get solution
         initialSolution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
@@ -319,7 +327,7 @@ function offlineSolutionWithAnticipation(requestFile::String,vehiclesFile::Strin
         beforeSolution = copySolution(originalSolution)
 
         # Remove expected requests from solution
-        removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,originalSolution,nExpected,nFixed,nNotServicedExpectedRequests,originalRequestBank,scenario.taxiParameter)
+        removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,originalSolution,nExpected,nFixed,nNotServicedExpectedRequests,originalRequestBank,taxiParameterExpected)
 
         # TODO remove when stable
         state = State(originalSolution,Request(),0)
@@ -349,12 +357,12 @@ function offlineSolutionWithAnticipation(requestFile::String,vehiclesFile::Strin
             solution = copySolution(originalSolution)
             
             # Generate new scenario
-            scenario2, nFixed = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName)
+            scenario2 = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName)
 
             # Insert expected requests randomly into solution using regret insertion
             expectedRequestsIds = collect(nFixed+1:nFixed+nExpected)
-            solution.nTaxi = nExpected
-            solution.totalCost += nExpected * scenario.taxiParameter
+            solution.nTaxiExpected = nExpected
+            solution.totalCost += nExpected * taxiParameterExpected
             stateALNS = ALNSState(solution,1,1,expectedRequestsIds)
             regretInsertion(stateALNS,scenario2)
 
@@ -372,7 +380,7 @@ function offlineSolutionWithAnticipation(requestFile::String,vehiclesFile::Strin
             end
 
             # Calculate SAE
-            averageSAE += solution.totalCost + originalSolution.nTaxi * taxiParameter
+            averageSAE += solution.totalCost + originalSolution.nTaxi * taxiParameter ## TODO Dobbeltjek den her
             averageNotServicedExpectedRequests += length(stateALNS.requestBank)
         end
         averageSAE /= 10
