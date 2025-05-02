@@ -23,7 +23,7 @@ function generatePredictedDemand(grid::Grid, historicRequestFiles::Vector{String
             lon = row.pickup_longitude
 
             # TODO: jas - only true for pick-up requests - need to use calc. time window for drop off requests 
-            hour = Int(floor(row.request_time / 60)) + 1
+            hour = Int(ceil(row.request_time / 60))
 
             rowIdx, colIdx = determineGridCell(lat, lon, minLat, minLong, nRows, nCols, latStep, longStep)
 

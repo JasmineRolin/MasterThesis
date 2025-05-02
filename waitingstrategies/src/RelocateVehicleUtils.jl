@@ -34,6 +34,7 @@ function determineVehicleBalancePrCell(grid::Grid,vehicleDemand::Array{Int,3},so
     # Initialize vehicle balance
     nHours = 24
     vehicleBalance = zeros(Int,nHours,nRows,nCols)
+    activeVehiclesPerCell = zeros(Int,nHours,nRows,nCols) # TODO: remove returning this (only for test)
 
     # Find vehicle balance for each hour
     for hour in 1:nHours
@@ -45,13 +46,13 @@ function determineVehicleBalancePrCell(grid::Grid,vehicleDemand::Array{Int,3},so
         vehicleDemandInHour = vehicleDemand[hour,:,:]
 
         # Determine currently planned active vehicles pr. cell  
-        activeVehiclesPerCell = determineActiveVehiclesPrCell(solution,endOfHourInMinutes,startOfHourInMinutes,minLat,minLong,nRows,nCols,latStep,longStep)
+        activeVehiclesPerCell[hour,:,:] = determineActiveVehiclesPrCell(solution,endOfHourInMinutes,startOfHourInMinutes,minLat,minLong,nRows,nCols,latStep,longStep)
 
         # Determine surplus/deficit of vehicles in grid cells
-        vehicleBalance[hour,:,:] = vehicleDemandInHour .- activeVehiclesPerCell
+        vehicleBalance[hour,:,:] = vehicleDemandInHour .- activeVehiclesPerCell[hour,:,:]
     end
    
-    return vehicleBalance
+    return vehicleBalance, activeVehiclesPerCell
 end
 
 function determineActiveVehiclesPrCell(solution::Solution,endOfHourInMinutes::Int,startOfHourInMinutes::Int,minLat::Float64,minLong::Float64, nRows::Int,nCols::Int,latStep::Float64,longStep::Float64)

@@ -215,12 +215,13 @@ function plotRoutesOnline(solution::Solution,scenario::Scenario,requestBank::Vec
     # end
   
     # Event 
-    r = event
-    scatter!([r.pickUpActivity.location.long], [r.pickUpActivity.location.lat], label = "PU Event", color = :magenta2, markersize = 10, marker = :circle,markerstrokewidth=0)
-    annotate!(r.pickUpActivity.location.long, r.pickUpActivity.location.lat+offset, text("PU$(r.id)", :center, 8, color = :magenta2))
-    scatter!([r.dropOffActivity.location.long], [r.dropOffActivity.location.lat], label = "DO Event", color = :magenta2, markersize = 10, marker = :square,markerstrokewidth=0)
-    annotate!(r.dropOffActivity.location.long, r.dropOffActivity.location.lat+offset, text("DO$(r.id)", :center, 8, color = :magenta2))
-
+    if event.id != 0
+        r = event
+        scatter!([r.pickUpActivity.location.long], [r.pickUpActivity.location.lat], label = "PU Event", color = :magenta2, markersize = 10, marker = :circle,markerstrokewidth=0)
+        annotate!(r.pickUpActivity.location.long, r.pickUpActivity.location.lat+offset, text("PU$(r.id)", :center, 8, color = :magenta2))
+        scatter!([r.dropOffActivity.location.long], [r.dropOffActivity.location.lat], label = "DO Event", color = :magenta2, markersize = 10, marker = :square,markerstrokewidth=0)
+        annotate!(r.dropOffActivity.location.long, r.dropOffActivity.location.lat+offset, text("DO$(r.id)", :center, 8, color = :magenta2))
+    end
    
 
     title!(title)
@@ -372,6 +373,8 @@ function writeOnlineKPIsToFile(fileName::String, scenario::Scenario,solution::So
     file = open(fileName, "w") 
     write(file, JSON.json(KPIDict))
     close(file)
+
+    return KPIDict
 end 
 
 #==

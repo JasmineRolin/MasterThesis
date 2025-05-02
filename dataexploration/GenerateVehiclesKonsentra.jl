@@ -66,7 +66,7 @@ function generateAverageDemandPerHour(df_list)
     for df in df_list
         for i in 1:nrow(df)
             request_time = df[i, :request_time]
-            hour = Int(floor(request_time / 60)) + 1
+            hour = Int(ceil(request_time / 60))
             demand_per_hour[hour] += 1
         end
     end
@@ -83,8 +83,8 @@ function computeShiftCoverage!(shifts)
     for (shift, data) in shifts
         y = zeros(Int, T)
         start_time, end_time = data["TimeWindow"]
-        start_hour = Int(floor(start_time / 60)) + 1
-        end_hour = Int(floor(end_time / 60))
+        start_hour = Int(ceil(start_time / 60))
+        end_hour = Int(ceil(end_time / 60))
 
         for t in start_hour:end_hour
             y[t] = 1
@@ -140,8 +140,8 @@ function plotDemandAndShifts(average_demand_per_hour, shifts)
 
     # Overlay shifts as horizontal lines
     for (shift, data) in shifts
-        start_hour = Int(floor(data["TimeWindow"][1] / 60)) + 1
-        end_hour = Int(floor(data["TimeWindow"][2] / 60))
+        start_hour = Int(ceil(data["TimeWindow"][1] / 60))
+        end_hour = Int(ceil(data["TimeWindow"][2] / 60))
 
         # Plot shift as a horizontal line
         plot!(hours[start_hour:end_hour], fill(data["nVehicles"], end_hour - start_hour + 1),

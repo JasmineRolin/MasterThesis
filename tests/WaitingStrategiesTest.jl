@@ -3,11 +3,12 @@ using waitingstrategies, domain, offlinesolution, utils, simulationframework
 using Plots, JSON, Test
 using Plots.PlotMeasures
 
+# print("\033c")
 
-gamma = 0.9
+gamma = 0.5
 nData = 10
 n = 50 
-i = 5
+i = 2
 gridFile = "Data/Konsentra/grid.json"
 historicIndexes = setdiff(1:nData,i)
 hours = 1:24
@@ -18,7 +19,18 @@ for j in historicIndexes
     push!(historicRequestFiles,"Data/Konsentra/$(n)/GeneratedRequests_$(n)_$(j).csv")
 end
 
-# Read grid definition
+
+outPutFolder = "tests/output/OnlineSimulation/"*string(n)
+
+relocateVehicles = true
+solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles);
+
+print("end")
+
+#   printSolution(solution,printRouteHorizontal)
+
+
+# # Read grid definition
 # gridJSON = JSON.parsefile(gridFile) # TODO: jas - i scenario ? 
 # maxLat = gridJSON["max_latitude"]
 # minLat = gridJSON["min_latitude"]
@@ -35,21 +47,21 @@ end
 # averageDemand = generatePredictedDemand(grid, historicRequestFiles)
 # vehicleDemand = generatePredictedVehiclesDemand(grid, gamma, averageDemand)
 
-#======================================#
-#
-#=====================================#
-requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
-distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
-timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
-scenarioName = string("Generated_Data_",n,"_",i)
-vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
-parametersFile = "tests/resources/Parameters.csv"
+# #======================================#
+# #
+# #=====================================#
+# requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
+# distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+# timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
+# scenarioName = string("Generated_Data_",n,"_",i)
+# vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
+# parametersFile = "tests/resources/Parameters.csv"
 
-# Read instance 
-scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile,gridFile)
-depotLocations = findDepotLocations(grid,n)
+# # Read instance 
+# scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile,gridFile)
+# depotLocations = findDepotLocations(grid,n)
  
-# Construct solution 
+# #Construct solution 
 # initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
 # state = State(initialSolution,scenario.onlineRequests[end],0)
 # feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
@@ -59,20 +71,16 @@ depotLocations = findDepotLocations(grid,n)
 
 # printSolution(initialSolution,printRouteHorizontal)
 
-#schedule = solution.vehicleSchedules[7]
-#waitingActivityCompletedRoute = ActivityAssignment(Activity(schedule.vehicle.depotId,-1,WAITING, schedule.vehicle.depotLocation,TimeWindow(459,720)), schedule.vehicle,459,720)
-
-
-# Determine waiting location 
+# #Determine waiting location 
 # time = 460
-# hour = Int(floor(time / 60)) + 1acklocation,gridCell,activeVehiclesPerCell, vehicleBalance = determineWaitingLocation(depotLocations,grid,vehicleDemand,initialSolution,time)
+# hour = Int(ceil(time / 60))
+# vehicleBalance,activeVehiclesPerCell = determineVehicleBalancePrCell(grid,vehicleDemand,initialSolution)
 
-outPutFolder = "tests/output/OnlineSimulation/"*string(n)
+# depotId,location, gridCell = determineWaitingLocation(depotLocations,grid,n,vehicleBalance,hour)
 
-relocateVehicles = true
-solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = false,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles);
 
-print("end")
+
+
 # #==============================#
 # # Plot 
 # #==============================#
@@ -121,7 +129,7 @@ print("end")
 # scatter!(p1,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:red)
 
 
-# p2 = heatmap(activeVehiclesPerCell[:,:], 
+# p2 = heatmap(activeVehiclesPerCell[hour,:,:], 
 # c=:viridis,         # color map
 # xlabel="Longitude (grid cols)", 
 # ylabel="Latitude (grid rows)", 
@@ -130,7 +138,7 @@ print("end")
 # scatter!(p2,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:red)
 
 
-# p3 = heatmap(vehicleBalance[:,:], 
+# p3 = heatmap(vehicleBalance[hour,:,:], 
 # c=:viridis,         # color map
 # xlabel="Longitude (grid cols)", 
 # ylabel="Latitude (grid rows)", 

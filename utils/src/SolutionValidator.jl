@@ -8,12 +8,12 @@ export checkSolutionFeasibility,checkRouteFeasibility, checkSolutionFeasibilityO
 #==
 # Function to check feasibility of online solution 
 ==#
-function checkSolutionFeasibilityOnline(scenario::Scenario,state::State)
+function checkSolutionFeasibilityOnline(scenario::Scenario,state::State; checkOnline::Bool=false)
     @unpack solution, event, visitedRoute, totalNTaxi = state
-    checkSolutionFeasibilityOnline(scenario,solution,event,visitedRoute,totalNTaxi)
+    checkSolutionFeasibilityOnline(scenario,solution,event,visitedRoute,totalNTaxi,checkOnline=checkOnline)
 end
 
-function checkSolutionFeasibilityOnline(scenario::Scenario,solution::Solution,event::Request,visitedRoute::Dict{Int, Dict{String, Int}}, totalNTaxi::Int)
+function checkSolutionFeasibilityOnline(scenario::Scenario,solution::Solution,event::Request,visitedRoute::Dict{Int, Dict{String, Int}}, totalNTaxi::Int; checkOnline::Bool=false)
     @unpack vehicleSchedules, totalCost, nTaxi, totalRideTime, totalDistance, totalIdleTime = solution
 
     # Keep track of serviced activities assuming that activity 
@@ -68,10 +68,13 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,solution::Solution,ev
     # Check that all activities are serviced
     considered = Set{Int}()
     union!(considered, (r.id for r in scenario.offlineRequests))  
-    if event.id != 0  
+    order = []
+    if event.id != 0  || checkOnline
         for onlineRequest in scenario.onlineRequests
-            push!(considered, onlineRequest.id)
-            if event.id == onlineRequest.id
+            if onlineRequest.callTime <= event.callTime
+                push!(considered, onlineRequest.id)
+                push!(order, onlineRequest.id)
+            else
                 break
             end
         end
@@ -79,7 +82,13 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,solution::Solution,ev
     notServicedRequests = setdiff(considered, servicedPickUpActivities)
 
     if totalNTaxi + nTaxi != length(notServicedRequests) 
-        msg = "SOLUTION INFEASIBLE: Not all requests are serviced. Serviced: $(length(servicedPickUpActivities)), not serviced: $(length(notServicedRequests)), nTaxi: $(nTaxi)"
+        println("checkOnline: $(checkOnline)")
+        println(notServicedRequests)
+        println(servicedPickUpActivities)
+        println("considered: $(considered)")
+        println("order: $(order)")
+        println([r.id for r in scenario.onlineRequests])
+        msg = "SOLUTION INFEASIBLE: Not all requests are serviced. Serviced: $(length(servicedPickUpActivities)), not serviced: $(length(notServicedRequests)), nTaxi: $(nTaxi), totalNTaxi: $(totalNTaxi)"
         return false, msg
     end
 

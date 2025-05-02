@@ -25,7 +25,7 @@ global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:
 global callBuffer = 2*60 # 2 hours buffer
 global nData = 10
 global nRequestList = [50] #[20,100,300,500]
-global MAX_DELAY = 5 # TODO Astrid I just put something
+global MAX_DELAY = 15 # TODO Astrid I just put something
 
 #==
 # Constant for vehicle generation  
