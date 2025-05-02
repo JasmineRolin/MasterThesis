@@ -104,9 +104,13 @@ end
     New insert request 
 ==#
 function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPickUp::Int,idxDropOff::Int,scenario::Scenario,newStartOfServiceTimes::Vector{Int},newEndOfServiceTimes::Vector{Int},waitingActivitiesToDelete::Vector{Int};totalCost::Float64=-1.0,totalDistance::Float64=-1.0,totalIdleTime::Int=-1,totalTime::Int=-1,visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(),waitingActivitiesToAdd::Vector{Int} = Vector{Int}())
-
     route = vehicleSchedule.route
     vehicle = vehicleSchedule.vehicle
+
+    firstActivity = false 
+    if length(route) == 2 && route[1].activity.activityType == DEPOT && route[2].activity.activityType == DEPOT
+        firstActivity = true 
+    end
 
     # Insert request
     insert!(route,idxPickUp+1,ActivityAssignment(request.pickUpActivity,vehicle,0,0))
@@ -141,6 +145,19 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPic
     if length(waitingActivitiesToAdd) > 0
         insertWaiting!(waitingActivitiesToAdd, waitingActivitiesToDelete,vehicleSchedule,scenario,newStartOfServiceTimes,newEndOfServiceTimes)
     end
+
+    # TODO: is this best ? 
+    # If first activity in route, insert waiting activity before depot 
+    if firstActivity
+        arrivalAtDepot = route[end].startOfServiceTime
+        endOfAvailableTimeWindow = vehicleSchedule.vehicle.availableTimeWindow.endTime
+        waitingActivity = ActivityAssignment(Activity(vehicleSchedule.vehicle.depotId,-1,WAITING, vehicleSchedule.vehicle.depotLocation,TimeWindow(arrivalAtDepot,endOfAvailableTimeWindow)), vehicleSchedule.vehicle,arrivalAtDepot,endOfAvailableTimeWindow)
+        route[end].startOfServiceTime = endOfAvailableTimeWindow
+        route[end].endOfServiceTime = endOfAvailableTimeWindow
+        vehicleSchedule.numberOfWalking = vcat(vehicleSchedule.numberOfWalking,[0])
+        vehicleSchedule.route = vcat(vehicleSchedule.route[1:(end-1)],[waitingActivity],[vehicleSchedule.route[end]])
+        vehicleSchedule.activeTimeWindow.endTime = endOfAvailableTimeWindow
+   end
 
     # Update KPIs 
     if totalCost != -1 && length(waitingActivitiesToAdd) == 0

@@ -14,8 +14,8 @@ include("GenerateLargeDataSets.jl")
 
 
 global GENERATE_SIMULATION_DATA = false
-global GENERATE_DATA_AND_VEHICLES = false
-global GENERATE_VEHICLES = true
+global GENERATE_DATA_AND_VEHICLES = true
+global GENERATE_VEHICLES = false
 
 #==
 # Constants for data generation 
@@ -24,7 +24,7 @@ global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 2*60 # 2 hours buffer
 global nData = 10
-global nRequestList = [50] #[20,100,300,500]
+global nRequestList = [20] #[20,100,300,500]
 global MAX_DELAY = 15 # TODO Astrid I just put something
 
 #==

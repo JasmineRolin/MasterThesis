@@ -71,10 +71,14 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,solution::Solution,ev
     order = []
     if event.id != 0  || checkOnline
         for onlineRequest in scenario.onlineRequests
-            if onlineRequest.callTime <= event.callTime
-                push!(considered, onlineRequest.id)
-                push!(order, onlineRequest.id)
-            else
+            if onlineRequest.callTime > event.callTime
+                break
+            end
+
+            push!(considered, onlineRequest.id)
+            push!(order, onlineRequest.id)
+
+            if (event.id == onlineRequest.id)
                 break
             end
         end

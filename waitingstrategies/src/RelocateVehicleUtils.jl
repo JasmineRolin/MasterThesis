@@ -49,7 +49,7 @@ function determineVehicleBalancePrCell(grid::Grid,vehicleDemand::Array{Int,3},so
         activeVehiclesPerCell[hour,:,:] = determineActiveVehiclesPrCell(solution,endOfHourInMinutes,startOfHourInMinutes,minLat,minLong,nRows,nCols,latStep,longStep)
 
         # Determine surplus/deficit of vehicles in grid cells
-        vehicleBalance[hour,:,:] = vehicleDemandInHour .- activeVehiclesPerCell[hour,:,:]
+        vehicleBalance[hour,:,:] = activeVehiclesPerCell[hour,:,:] .- vehicleDemandInHour
     end
    
     return vehicleBalance, activeVehiclesPerCell

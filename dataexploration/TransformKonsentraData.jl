@@ -21,12 +21,11 @@ function preKnownRequests(df, DoD, serviceWindow, callBuffer)
     # Known due to time
     for i in 1:nrow(df)
         # Calculate direct pickup time for drop off requests
-        if df[i,:request_type] == 1
-            pick_up_location = (Float64(df[i,:pickup_latitude]), Float64(df[i,:pickup_longitude]))
-            drop_off_location = (Float64(df[i,:dropoff_latitude]), Float64(df[i,:dropoff_longitude]))
-            _, time = getDistanceAndTimeMatrixFromLocations([pick_up_location, drop_off_location])
-            df[i,"direct_drive_time"] = time[1,2]
-        end
+        pick_up_location = (Float64(df[i,:pickup_latitude]), Float64(df[i,:pickup_longitude]))
+        drop_off_location = (Float64(df[i,:dropoff_latitude]), Float64(df[i,:dropoff_longitude]))
+        _, time = getDistanceAndTimeMatrixFromLocations([pick_up_location, drop_off_location])
+        df[i,"direct_drive_time"] = time[1,2]
+        
 
         request_time = df[!,:request_time][i]
         if  request_time < serviceWindow[1] + callBuffer || (df[i,:request_type] == 1 && df[i, :request_time] - df[i,"direct_drive_time"] < serviceWindow[1] + callBuffer)

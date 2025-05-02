@@ -22,8 +22,12 @@ function generatePredictedDemand(grid::Grid, historicRequestFiles::Vector{String
             lat = row.pickup_latitude
             lon = row.pickup_longitude
 
-            # TODO: jas - only true for pick-up requests - need to use calc. time window for drop off requests 
-            hour = Int(ceil(row.request_time / 60))
+            if row.request_type == 0
+                # TODO: jas - only true for pick-up requests - need to use calc. time window for drop off requests 
+                hour = Int(ceil(row.request_time / 60))
+            else 
+                hour = Int(ceil((row.request_time- row.direct_drive_time) / 60)) 
+            end
 
             rowIdx, colIdx = determineGridCell(lat, lon, minLat, minLong, nRows, nCols, latStep, longStep)
 
@@ -33,7 +37,7 @@ function generatePredictedDemand(grid::Grid, historicRequestFiles::Vector{String
 
     averageDemand = demandGrid ./ nFiles
 
-    return averageDemand  # shape: 24 × nRows × nCols
+    return averageDemand  
 end
 
 
