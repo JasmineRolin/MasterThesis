@@ -30,6 +30,8 @@ function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{
     # TODO: remove when stable also in other places
     if length(requestBank) != state.currentSolution.nTaxi + state.currentSolution.nTaxiExpected
         println(requestBank)
+        println(state.currentSolution.nTaxi)
+        println(state.currentSolution.nTaxiExpected)
         throw("Error: requestBank length does not match currentSolution.nTaxi")
         return
     end

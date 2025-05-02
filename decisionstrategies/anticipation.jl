@@ -162,13 +162,8 @@ function removeExpectedRequestsFromSolution!(time::Array{Int,2},distance::Array{
     removeRequestsFromSolution!(time,distance,serviceTimes,requests,solution,requestsToRemove,remover=remover,nFixed=nFixed,nExpected=nExpected)
 
     # Remove taxis for expected requests
-    println("HERE")
-    println(nNotServicedExpectedRequests)
-    println(solution.nTaxiExpected)
-    println(solution.totalCost)
     solution.nTaxiExpected -= nNotServicedExpectedRequests
     solution.totalCost -= nNotServicedExpectedRequests * taxiParameterExpected
-    println(solution.totalCost)
 
 
 end
@@ -332,9 +327,6 @@ function offlineSolutionWithAnticipation(requestFile::String,vehiclesFile::Strin
         # TODO remove when stable
         state = State(originalSolution,Request(),0)
         feasible, msg = checkSolutionFeasibilityOnline(scenario,state;nExpected=nExpected)
-        for v in 1:length(scenario.vehicles)
-            println(originalSolution.vehicleSchedules[v].numberOfWalking)
-        end
         if !feasible
             println("BEFORE:::")
             printSolution(beforeSolution,printRouteHorizontal)
@@ -363,6 +355,7 @@ function offlineSolutionWithAnticipation(requestFile::String,vehiclesFile::Strin
             expectedRequestsIds = collect(nFixed+1:nFixed+nExpected)
             solution.nTaxiExpected = nExpected
             solution.totalCost += nExpected * taxiParameterExpected
+            solution.nTaxi = 0
             stateALNS = ALNSState(solution,1,1,expectedRequestsIds)
             regretInsertion(stateALNS,scenario2)
 
@@ -380,7 +373,7 @@ function offlineSolutionWithAnticipation(requestFile::String,vehiclesFile::Strin
             end
 
             # Calculate SAE
-            averageSAE += solution.totalCost + originalSolution.nTaxi * taxiParameter ## TODO Dobbeltjek den her
+            averageSAE += solution.totalCost + originalSolution.nTaxi * taxiParameter 
             averageNotServicedExpectedRequests += length(stateALNS.requestBank)
         end
         averageSAE /= 10

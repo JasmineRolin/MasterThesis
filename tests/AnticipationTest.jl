@@ -1,7 +1,7 @@
 
 include("../decisionstrategies/anticipation.jl")
 
-
+#==
 #@testset "Anticipation Test" begin 
     requestFile = "Data/Konsentra/TransformedData_Data.csv"
     vehiclesFile = "tests/resources/Vehicles.csv"
@@ -67,7 +67,7 @@ include("../decisionstrategies/anticipation.jl")
     # Insert expected requests randomly into solution using regret insertion
     expectedRequestsIds = collect(nFixed+1:nFixed+nExpected)
     solution.nTaxi = nExpected
-    solution.totalCost += nExpected * scenario.taxiParameter
+    solution.totalCost += nExpected * scenario.taxiParameterExpected
     stateALNS = ALNSState(solution,1,1,expectedRequestsIds)
     regretInsertion(stateALNS,scenario2)
 
@@ -78,9 +78,9 @@ include("../decisionstrategies/anticipation.jl")
     
     
 #end
+==#
 
 
-#==
 #@testset "Complete Anticipation Test" begin 
     requestFile = "Data/Konsentra/TransformedData_Data.csv"
     vehiclesFile = "tests/resources/Vehicles.csv"
@@ -99,4 +99,3 @@ include("../decisionstrategies/anticipation.jl")
     #@test feasible == true
     
 #end
-==#
