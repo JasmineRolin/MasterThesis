@@ -309,6 +309,8 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
     bestCost = typemax(Float64)
     route = vehicleSchedule.route
 
+    @unpack vehicle = vehicleSchedule
+
     # Initialize arrays to reuse in checkFeasibilityOfInsertionAtPosition
     # TODO: is this actually better than copying newStartOfServiceTimes etc in loop ?
     arraySize = length(route) + 2
@@ -318,13 +320,22 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
     waitingActivitiesToAdd = zeros(Int, 0)
     visitedRouteIds = Set(keys(visitedRoute))
 
+    # Check that vehicle window fits request window
+    pickUpActivity = request.pickUpActivity
+    dropOffActivity = request.dropOffActivity
+    if vehicle.availableTimeWindow.startTime > pickUpActivity.timeWindow.endTime || vehicle.availableTimeWindow.endTime < dropOffActivity.timeWindow.startTime
+        return EMPTY_RESULT
+    end
+
     # Loop through each position in route 
+    break_PICKUP = false
+    break_DROPOFF = false
     for i in 1:length(route)-1
         for j in i:length(route)-1
             countTotal[] += 1
 
             # Check if position is feasible
-            feasible, _, _,_, totalCost, _, _, _, _  = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,i,j,scenario,visitedRoute=visitedRoute,
+            feasible, _, _,_, totalCost, _, _, _, _, break_PICKUP, break_DROPOFF  = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,i,j,scenario,visitedRoute=visitedRoute,
                                                                                             newStartOfServiceTimes=newStartOfServiceTimes,newEndOfServiceTimes=newEndOfServiceTimes,waitingActivitiesToDelete=waitingActivitiesToDelete,
                                                                                             waitingActivitiesToAdd=waitingActivitiesToAdd,visitedRouteIds=visitedRouteIds,TO=TO)
 
@@ -336,7 +347,16 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
 
                 countFeasible[] += 1
             end
+
+            if break_DROPOFF
+                break
+            end
         end
+
+        if break_PICKUP
+            break
+        end
+
     end
 
     # Return if feasible position is found 
