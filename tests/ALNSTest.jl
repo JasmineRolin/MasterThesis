@@ -119,7 +119,7 @@ end
   
     initialSolution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
 
-    finalSolution, requestBank = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank,displayPlots)
+    finalSolution, requestBank = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
 
     state = State(finalSolution,Request(),0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)

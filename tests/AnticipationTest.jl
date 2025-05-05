@@ -93,9 +93,7 @@ include("../decisionstrategies/anticipation.jl")
 
     println(results)
 
-    #state = State(solution,Request(),0)
-    #feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-    #@test msg == ""
-    #@test feasible == true
+    @test msg == ""
+    @test feasible == true
     
 #end

@@ -98,6 +98,7 @@ function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{
             pickUp, dropOff = positions[bestRequest,overallBestVehicle]
 
             # Find best insertion position
+            # TODO Astrid: Save best position in positions array so we do not have to run this again
             feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd = checkFeasibilityOfInsertionAtPosition(requests[bestRequest],bestSchedule,pickUp,dropOff,scenario,visitedRoute=visitedRoute,TO=TO,
                                                                                                                                                                                                                 newStartOfServiceTimes=newStartOfServiceTimes,newEndOfServiceTimes=newEndOfServiceTimes,waitingActivitiesToDelete=waitingActivitiesToDelete,
                                                                                                                                                                                                                 waitingActivitiesToAdd=waitingActivitiesToAdd,visitedRouteIds=visitedRouteIds)
@@ -340,7 +341,10 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
         for j in i:length(route)-1
             countTotal[] += 1
 
-            # Check if position is feasible
+            # Check if position is feasible 
+            ## TODO Astrid: If not feasible because pickup is after activity, then do not calculate more  
+            ## TODO Astrid: Other initial test for vehicle
+ 
             feasible, _, _,_, totalCost, _, _, _, _  = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,i,j,scenario,visitedRoute=visitedRoute,
                                                                                             newStartOfServiceTimes=newStartOfServiceTimes,newEndOfServiceTimes=newEndOfServiceTimes,waitingActivitiesToDelete=waitingActivitiesToDelete,
                                                                                             waitingActivitiesToAdd=waitingActivitiesToAdd,visitedRouteIds=visitedRouteIds,TO=TO)
