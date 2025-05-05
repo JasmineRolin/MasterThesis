@@ -5,10 +5,10 @@ using Plots.PlotMeasures
 
 # print("\033c")
 
-gamma = 0.5
+gamma = 0.7
 nData = 10
-n = 20 
-i = 10
+n = 50 
+i = 3
 gridFile = "Data/Konsentra/grid.json"
 historicIndexes = setdiff(1:nData,i)
 hours = 1:24
@@ -33,6 +33,12 @@ outPutFolder = "tests/output/OnlineSimulation/"*string(n)
 
 relocateVehicles = true
 solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles);
+
+state = State(solution,scenario.onlineRequests[end],0)
+feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+@test feasible == true
+@test msg == ""
+println(msg)
 
 print("end")
 

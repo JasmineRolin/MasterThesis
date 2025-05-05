@@ -146,19 +146,6 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPic
         insertWaiting!(waitingActivitiesToAdd, waitingActivitiesToDelete,vehicleSchedule,scenario,newStartOfServiceTimes,newEndOfServiceTimes)
     end
 
-    # TODO: is this best ? 
-    # If first activity in route, insert waiting activity before depot 
-    if firstActivity
-        arrivalAtDepot = route[end].startOfServiceTime
-        endOfAvailableTimeWindow = vehicleSchedule.vehicle.availableTimeWindow.endTime
-        waitingActivity = ActivityAssignment(Activity(vehicleSchedule.vehicle.depotId,-1,WAITING, vehicleSchedule.vehicle.depotLocation,TimeWindow(arrivalAtDepot,endOfAvailableTimeWindow)), vehicleSchedule.vehicle,arrivalAtDepot,endOfAvailableTimeWindow)
-        route[end].startOfServiceTime = endOfAvailableTimeWindow
-        route[end].endOfServiceTime = endOfAvailableTimeWindow
-        vehicleSchedule.numberOfWalking = vcat(vehicleSchedule.numberOfWalking,[0])
-        vehicleSchedule.route = vcat(vehicleSchedule.route[1:(end-1)],[waitingActivity],[vehicleSchedule.route[end]])
-        vehicleSchedule.activeTimeWindow.endTime = endOfAvailableTimeWindow
-   end
-
     # Update KPIs 
     if totalCost != -1 && length(waitingActivitiesToAdd) == 0
         vehicleSchedule.totalCost = totalCost
@@ -443,7 +430,12 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                 end  
 
                 # Check if we can drive from previous activity to activity after waiting 
-                feasible, maximumShiftBackwardTrial, maximumShiftForwardTrial = canActivityBeInserted(firstActivity.activity,nextActivity,arrivalAtNextActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
+                if idx == nActivities-1 
+                    # TODO: jas - we dont want to remove the waiting activity before depot 
+                    feasible = false
+                else
+                    feasible, maximumShiftBackwardTrial, maximumShiftForwardTrial = canActivityBeInserted(firstActivity.activity,nextActivity,arrivalAtNextActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
+                end
 
                 # Remove waiting activity 
                 if feasible
