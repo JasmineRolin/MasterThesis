@@ -246,22 +246,22 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
         dropOffStartTime = dropOffActivity.timeWindow.startTime
         dropOffEndTime = dropOffActivity.timeWindow.endTime
 
-        @views for i in pickUpIdx:dropOffIdx
-            if numberOfWalking[i] + 1 > vehicle.totalCapacity
-                return INFEASIBLE_RESULT
-            end
-        end
-
         if route[pickUpIdx+1].activity.timeWindow.endTime < pickUpStartTime
             return INFEASIBLE_ROUTE_PICKUP
         elseif route[pickUpIdx].activity.timeWindow.startTime > pickUpEndTime 
-            return INFEASIBLE_RESULT
+            return INFEASIBLE_ROUTE_DROPOFF
         end
 
         if route[dropOffIdx+1].activity.timeWindow.endTime < dropOffStartTime
             return INFEASIBLE_ROUTE_DROPOFF
         elseif route[dropOffIdx].activity.timeWindow.startTime > dropOffEndTime 
             return INFEASIBLE_RESULT
+        end
+
+        @views for i in pickUpIdx:dropOffIdx
+            if numberOfWalking[i] + 1 > vehicle.totalCapacity
+                return INFEASIBLE_ROUTE_DROPOFF
+            end
         end
     end
 

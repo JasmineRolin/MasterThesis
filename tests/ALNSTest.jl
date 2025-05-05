@@ -197,8 +197,8 @@ end
     alnsParameters = "tests/resources/ALNSParameters3.json"
 
     # Set both true to see plots 
-    displayPlots = true
-    saveResults = true
+    displayPlots = false
+    saveResults = false
 
     #for i in 1:10
         requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
