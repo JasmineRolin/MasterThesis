@@ -5,9 +5,10 @@ using UnPack, domain, Printf, ..CostCalculator, TimerOutputs
 export printRoute,printSimpleRoute,insertRequest!,checkFeasibilityOfInsertionAtPosition,printRouteHorizontal,printSolution,updateRoute!,checkFeasibilityOfInsertionInRoute
 export insertWaiting!, feasibleWhenInsertWaiting!
 
-const INFEASIBLE_RESULT = (false, Any[], Any[], Any[], 0.0, 0.0, 0, 0, Any[], false, false)
-const INFEASIBLE_ROUTE_PICKUP = (false, Any[], Any[], Any[], 0.0, 0.0, 0, 0, Any[], true, true)
-const INFEASIBLE_ROUTE_DROPOFF = (false, Any[], Any[], Any[], 0.0, 0.0, 0, 0, Any[], false, true)
+const INFEASIBLE_RESULT = (false, Any[], Any[], Any[], 0.0, 0.0, 0, 0, Any[], false, false, false)
+const INFEASIBLE_ROUTE_PICKUP = (false, Any[], Any[], Any[], 0.0, 0.0, 0, 0, Any[], true, true, false)
+const INFEASIBLE_ROUTE_DROPOFF = (false, Any[], Any[], Any[], 0.0, 0.0, 0, 0, Any[], false, true, false)
+const INFEASIBLE_ROUTE__DROPOFF_FOREVER = (false, Any[], Any[], Any[], 0.0, 0.0, 0, 0, Any[], false, true, true)
 
 
 #==
@@ -246,16 +247,12 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
         dropOffStartTime = dropOffActivity.timeWindow.startTime
         dropOffEndTime = dropOffActivity.timeWindow.endTime
 
-        if route[pickUpIdx+1].activity.timeWindow.endTime < pickUpStartTime
+        if route[pickUpIdx+1].activity.timeWindow.endTime < pickUpStartTime || route[pickUpIdx].activity.timeWindow.startTime > pickUpEndTime 
             return INFEASIBLE_ROUTE_PICKUP
-        elseif route[pickUpIdx].activity.timeWindow.startTime > pickUpEndTime 
-            return INFEASIBLE_ROUTE_DROPOFF
         end
 
-        if route[dropOffIdx+1].activity.timeWindow.endTime < dropOffStartTime
-            return INFEASIBLE_ROUTE_DROPOFF
-        elseif route[dropOffIdx].activity.timeWindow.startTime > dropOffEndTime 
-            return INFEASIBLE_RESULT
+        if route[dropOffIdx+1].activity.timeWindow.endTime < dropOffStartTime || route[dropOffIdx].activity.timeWindow.startTime > dropOffEndTime 
+            return INFEASIBLE_ROUTE__DROPOFF_FOREVER
         end
 
         @views for i in pickUpIdx:dropOffIdx
@@ -359,7 +356,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
     #end
 
     if detour > idleTime && detour > maximumShiftBackward + maximumShiftForward
-        return false, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false
+        return false, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
     end
 
 
@@ -390,7 +387,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                     newEndOfServiceTimePickUp = requestId in visitedRouteIds ? visitedRoute[requestId]["PickUpServiceStart"] + serviceTimes : newEndOfServiceTimes[pickUpIndexes[requestId]]
 
                     if newStartOfServiceTimes[idx] - newEndOfServiceTimePickUp > r.maximumRideTime
-                        return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false
+                        return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
                     end
 
                     # Update total cost
@@ -458,7 +455,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
                         
                         if !feasible
-                            return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false
+                            return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
                         end
 
                         # Update total idle time 
@@ -478,7 +475,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                 
                 if !feasible
                     # No possible way to insert it
-                    return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false
+                    return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
                 end
 
                 # Update total distance 
@@ -493,7 +490,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                 r = requests[requestId]
                 newEndOfServiceTimePickUp = requestId in visitedRouteIds ? visitedRoute[requestId]["PickUpServiceStart"] + serviceTimes : newEndOfServiceTimes[pickUpIndexes[requestId]]
                 if newStartOfServiceTimes[idx] - newEndOfServiceTimePickUp > r.maximumRideTime
-                    return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false
+                    return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
                 end
 
                 # Update total cost
@@ -508,7 +505,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
     # Update total time 
     totalTime = newEndOfServiceTimes[end] - newStartOfServiceTimes[1]
 
-    return true, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd, false, false
+    return true, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd, false, false, false
 end
 
 #==
