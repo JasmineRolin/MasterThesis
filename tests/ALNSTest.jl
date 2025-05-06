@@ -92,8 +92,9 @@ Test ALNSFunctions
     @test msg == ""
       
 end
+==#
 
-
+#==
 @testset "ALNS RUN test - Big Test" begin 
     requestFile = "Data/Konsentra/TransformedData_Data.csv"
     vehiclesFile = "Data/Konsentra/Vehicles_0.9.csv"
