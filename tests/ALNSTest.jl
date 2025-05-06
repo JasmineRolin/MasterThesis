@@ -4,6 +4,7 @@ using alns, domain, utils, offlinesolution, TimerOutputs
 #==
 Test ALNSFunctions
 ==#
+#==
 @testset "ALNS test - Big Test" begin 
     requestFile = "Data/Konsentra/TransformedData_Data.csv"
     vehiclesFile = "Data/Konsentra/Vehicles_0.9.csv"
@@ -91,8 +92,9 @@ Test ALNSFunctions
     @test msg == ""
       
 end
+==#
 
-
+#==
 @testset "ALNS RUN test - Big Test" begin 
     requestFile = "Data/Konsentra/TransformedData_Data.csv"
     vehiclesFile = "Data/Konsentra/Vehicles_0.9.csv"
@@ -132,7 +134,7 @@ end
     printSolution(finalSolution,printRouteHorizontal)
       
 end
-
+==#
 
 
 # @testset "Run all konsentra data sets " begin
@@ -184,60 +186,60 @@ end
 
 # #@testset "Run all generated data sets " begin
 
-#     # Number of requests in scenario - 20, 100, 300 or 500 
-#     n = 500
+    # Number of requests in scenario - 20, 100, 300 or 500 
+    n = 500
 
 #     # Scenario number - 1:10
-#     i = 1
+    i = 1
 
-#     # Files 
-#     gamma = 0.5
-#     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
-#     parametersFile = "tests/resources/Parameters.csv"
-#     alnsParameters = "tests/resources/ALNSParameters3.json"
+    # Files 
+    gamma = 0.5
+    vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
+    parametersFile = "tests/resources/Parameters.csv"
+    alnsParameters = "tests/resources/ALNSParameters3.json"
 
-#     # Set both true to see plots 
-#     displayPlots = true
-#     saveResults = true
+    # Set both true to see plots 
+    displayPlots = false
+    saveResults = false
 
-#     #for i in 1:10
-#         requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
-#         distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
-#         timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
-#         scenarioName = string("Generated_Data_",n,"_",i)
+    #for i in 1:10
+        requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
+        distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
+        timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
+        scenarioName = string("Generated_Data_",n,"_",i)
         
-#         # Read instance 
-#         scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
+        # Read instance 
+        scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
         
-#         # Choose destroy methods
-#         destroyMethods = Vector{GenericMethod}()
-#         addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
-#         addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
-#         addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
+        # Choose destroy methods
+        destroyMethods = Vector{GenericMethod}()
+        addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
+        addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
+        addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
 
-#         # Choose repair methods
-#         repairMethods = Vector{GenericMethod}()
-#         addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
-#         addMethod!(repairMethods,"regretInsertion",regretInsertion)
+        # Choose repair methods
+        repairMethods = Vector{GenericMethod}()
+        addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
+        addMethod!(repairMethods,"regretInsertion",regretInsertion)
         
-#         TO = TimerOutput()
-#         initialSolution, requestBank = simpleConstruction(scenario,scenario.requests,TO=TO)
-#         finalSolution,requestBank,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=saveResults,stage="Offline")
+        TO = TimerOutput()
+        initialSolution, requestBank = simpleConstruction(scenario,scenario.requests,TO=TO)
+        finalSolution,requestBank,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=saveResults,stage="Offline")
 
-#         state = State(finalSolution,scenario.onlineRequests[end],0)
-#         feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-#         @test feasible == true
-#         @test msg == ""
-#         println(msg)
+        state = State(finalSolution,scenario.onlineRequests[end],0)
+        feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+        @test feasible == true
+        @test msg == ""
+        println(msg)
 
-#         println(rpad("Metric", 40), "Value")
-#         println("-"^45)
-#         println(rpad("Final nTaxi", 40), finalSolution.nTaxi)
-#         println(rpad("Final cost", 40), finalSolution.totalCost)
-#         println(rpad("Final distance", 40), finalSolution.totalDistance)
-#         println(rpad("Final ride time (veh)", 40), finalSolution.totalRideTime)
-#         println(rpad("Final idle time", 40), finalSolution.totalIdleTime)
-#    # end
+        println(rpad("Metric", 40), "Value")
+        println("-"^45)
+        println(rpad("Final nTaxi", 40), finalSolution.nTaxi)
+        println(rpad("Final cost", 40), finalSolution.totalCost)
+        println(rpad("Final distance", 40), finalSolution.totalDistance)
+        println(rpad("Final ride time (veh)", 40), finalSolution.totalRideTime)
+        println(rpad("Final idle time", 40), finalSolution.totalIdleTime)
+   # end
     
 # #end
 
