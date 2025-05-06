@@ -26,6 +26,10 @@ mutable struct Request
         new(0, PICKUP_REQUEST, 0, Activity(), Activity(), 0, 0)
     end
 
+    function Request(callTime::Int)
+        new(0, PICKUP_REQUEST, callTime, Activity(), Activity(), 0, 0)
+    end
+
     function Request(id::Int, requestType::RequestType, callTime::Int, pickUpActivity::Activity, dropOffActivity::Activity, directDriveTime::Int, maximumRideTime::Int)
         new(id, requestType, callTime, pickUpActivity, dropOffActivity, directDriveTime, maximumRideTime)
     end

@@ -1,6 +1,6 @@
 module Scenarios 
 
-using ..Requests, ..Vehicles, ..TimeWindows
+using ..Requests, ..Vehicles, ..TimeWindows, ..Grids, ..Locations
 
 export Scenario 
 
@@ -22,6 +22,8 @@ struct Scenario
     nDepots::Int
     depots::Dict
     taxiParameter::Float64
+    grid::Grid
+    depotLocations::Dict{Tuple{Int,Int},Location} # possible depot locations in grid 
 
     # All-args constructor
     function Scenario(name::String,requests::Vector{Request}, onlineRequests::Vector{Request}, offlineRequests::Vector{Request}, 
@@ -30,6 +32,14 @@ struct Scenario
         nDepots::Int, depots::Dict,taxiParameter::Float64)
     return new(name,requests, onlineRequests, offlineRequests, serviceTimes, vehicles, vehicleCostPrHour, vehicleStartUpCost, 
         planningPeriod, bufferTime, maximumDriveTimePercent, minimumMaximumDriveTime, distance, time, nDepots, depots, taxiParameter)
+    end
+
+    function Scenario(name::String,requests::Vector{Request}, onlineRequests::Vector{Request}, offlineRequests::Vector{Request}, 
+        serviceTimes::Int, vehicles::Vector{Vehicle}, vehicleCostPrHour::Float64, vehicleStartUpCost::Float64, planningPeriod::TimeWindow, 
+        bufferTime::Int, maximumDriveTimePercent::Int, minimumMaximumDriveTime::Int, distance::Array{Float64, 2}, time::Array{Int, 2}, 
+        nDepots::Int, depots::Dict,taxiParameter::Float64,grid::Grid,depotLocations::Dict{Tuple{Int,Int},Location})
+    return new(name,requests, onlineRequests, offlineRequests, serviceTimes, vehicles, vehicleCostPrHour, vehicleStartUpCost, 
+        planningPeriod, bufferTime, maximumDriveTimePercent, minimumMaximumDriveTime, distance, time, nDepots, depots, taxiParameter,grid,depotLocations)
     end
 
     # No-args constructor

@@ -121,7 +121,8 @@ end
   
     initialSolution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
 
-    finalSolution, requestBank = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank,displayPlots)
+    displayPlots = false
+    finalSolution, requestBank = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank,displayPlots = displayPlots)
 
     state = State(finalSolution,Request(),0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
@@ -188,11 +189,12 @@ end
     # Number of requests in scenario - 20, 100, 300 or 500 
     n = 500
 
-    # Scenario number - 1:10
-    i = 8
+#     # Scenario number - 1:10
+    i = 1
 
     # Files 
-    vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
+    gamma = 0.5
+    vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters3.json"
 

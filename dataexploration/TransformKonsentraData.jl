@@ -7,18 +7,6 @@ using StatsBase
 
 export preKnownRequests, callTime
 
-
-# ------
-# Define parameters
-# ------
-sheets_5days = ["30.01", "06.02", "23.01", "16.01", "09.01"]
-sheets_data = ["Data"]
-DoD = 0.4 # Degree of dynamism
-ageLimit = 18
-serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
-callBuffer = 2*60 # 2 hours buffer
-
-
 # ------
 # Function to determine pre-known requests
 # ------
@@ -32,13 +20,12 @@ function preKnownRequests(df, DoD, serviceWindow, callBuffer)
    
     # Known due to time
     for i in 1:nrow(df)
-        # Calculate direct pickup time for drop off requests
-        if df[i,:request_type] == 1
-            pick_up_location = (Float64(df[i,:pickup_latitude]), Float64(df[i,:pickup_longitude]))
-            drop_off_location = (Float64(df[i,:dropoff_latitude]), Float64(df[i,:dropoff_longitude]))
-            _, time = getDistanceAndTimeMatrixFromLocations([pick_up_location, drop_off_location])
-            df[i,"direct_drive_time"] = time[1,2]
-        end
+        # Calculate direct pickup time for requests
+        pick_up_location = (Float64(df[i,:pickup_latitude]), Float64(df[i,:pickup_longitude]))
+        drop_off_location = (Float64(df[i,:dropoff_latitude]), Float64(df[i,:dropoff_longitude]))
+        _, time = getDistanceAndTimeMatrixFromLocations([pick_up_location, drop_off_location])
+        df[i,"direct_drive_time"] = time[1,2]
+        
 
         request_time = df[!,:request_time][i]
         if  request_time < serviceWindow[1] + callBuffer || (df[i,:request_type] == 1 && df[i, :request_time] - df[i,"direct_drive_time"] < serviceWindow[1] + callBuffer)
@@ -175,6 +162,17 @@ function transformData(sheet_name, filename)
 
     
 end
+
+
+# ------
+# Define parameters
+# ------
+# sheets_5days = ["30.01", "06.02", "23.01", "16.01", "09.01"]
+# sheets_data = ["Data"]
+# DoD = 0.4 # Degree of dynamism
+# ageLimit = 18
+# serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
+# callBuffer = 2*60 # 2 hours buffer
 
 
 # ------
