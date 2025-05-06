@@ -368,19 +368,22 @@ function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nReques
 
     # Go through current schedules and relocate vehicles 
     for currentSchedule in currentState.solution.vehicleSchedules
-        if  length(currentSchedule.route) == 1 || currentSchedule.vehicle.availableTimeWindow.endTime <= currentTime
-            continue
-        end
-
         route = currentSchedule.route
         routeLength  = length(route)
         vehicle = currentSchedule.vehicle
+        endOfAvailableTimeWindow = currentSchedule.vehicle.availableTimeWindow.endTime
         schedule = vehicleSchedules[vehicle.id]
 
+        # Check if vehicle should be relocated 
+        # Either the route is completed or the route is "full" and there is no room for waiting activity 
+        if  routeLength == 1 || endOfAvailableTimeWindow <= currentTime ||
+            (routeLength > 1 && (route[end-1].activity.activityType != WAITING) && route[end].startOfServiceTime == endOfAvailableTimeWindow)
+            continue
+        end
+
         # Add waiting to empty route 
-        if length(route) == 2 && route[1].activity.activityType == DEPOT && route[end].activity.activityType == DEPOT 
+        if routeLength == 2 && route[1].activity.activityType == DEPOT && route[end].activity.activityType == DEPOT 
                 arrivalAtDepot = currentSchedule.route[1].endOfServiceTime
-                endOfAvailableTimeWindow = currentSchedule.vehicle.availableTimeWindow.endTime
             
                 # Create waiting activity to replace depot activity
                 waitingActivity = ActivityAssignment(Activity(vehicle.depotId,-1,WAITING, vehicle.depotLocation,TimeWindow(arrivalAtDepot,endOfAvailableTimeWindow)), vehicle,arrivalAtDepot,endOfAvailableTimeWindow)
@@ -425,7 +428,6 @@ function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nReques
         end
 
         # Relocate waiting activity 
-
         relocateWaitingActivityBeforeDepot!(time,distance,nRequests,grid,depotLocations,vehicleBalance,activeVehiclesPerCell,vehicleDemand,
         currentState.solution,schedule,currentSchedule,finalSolution)
 
@@ -604,9 +606,9 @@ function determineCurrentState(solution::Solution,event::Event,finalSolution::So
     currentState.solution.totalCost += scenario.taxiParameter*addTaxi
     currentState.totalNTaxi = finalSolution.nTaxi 
 
-    # Relocate vehicles
+    # Relocate vehicles if relocation event 
     # Relocate vehicles when they have serviced all customers in route 
-    if relocateVehicles 
+    if relocateVehicles && event.id == 0
         relocateVehicles!(time,distance,nRequests,grid,depotLocations,
         vehicleBalance,activeVehiclesPerCell,vehicleDemand,
         currentState,solution,finalSolution,currentTime)
