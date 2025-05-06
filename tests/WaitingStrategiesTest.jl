@@ -5,9 +5,9 @@ using Plots.PlotMeasures
 
 # print("\033c")
 
-gamma = 0.7
+gamma = 0.9
 nData = 10
-n = 50 
+n = 20 
 i = 3
 gridFile = "Data/Konsentra/grid.json"
 historicIndexes = setdiff(1:nData,i)

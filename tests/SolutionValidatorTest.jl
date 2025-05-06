@@ -67,7 +67,7 @@ end
     state = State(solution,Request(),0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == false
-    @test msg == "SOLUTION INFEASIBLE: Not all requests are serviced. Serviced: 2, not serviced: 1, nTaxi: 0"
+    @test msg == "SOLUTION INFEASIBLE: Not all requests are serviced. Serviced: 2, not serviced: 1, nTaxi: 0, totalNTaxi: 0"
 end
 
 @testset "checkSolutionFeasibility test - activity already rejected" begin
