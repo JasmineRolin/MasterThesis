@@ -267,7 +267,7 @@ function updateLastWaitingActivityInRoute!(time::Array{Int,2},distance::Array{Fl
     return arrivalAtWaiting
 end
 
-function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{Float64,2},nRequests::Int,grid::Grid,depotLocations::Dict{Tuple{Int,Int},Location},vehicleBalance::Array{Int,3},activeVehiclesPerCell::Array{Int,3},vehicleDemand::Array{Int,3},
+function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{Float64,2},nRequests::Int,grid::Grid,depotLocations::Dict{Tuple{Int,Int},Location},vehicleBalance::Array{Int,3},activeVehiclesPerCell::Array{Int,3},realisedDemand::Array{Int,3},predictedDemand::Array{Float64,3},
     currentSolution::Solution,schedule::VehicleSchedule,currentSchedule::VehicleSchedule,finalSolution::Solution,nTimePeriods::Int,periodLength::Int)
     
     vehicle = schedule.vehicle
@@ -309,15 +309,20 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
         previousGridCell = determineGridCell(previousWaitingLocation,grid)
 
         # TODO: remove plot 
-        display(plotRelocation(vehicleDemand,activeVehiclesPerCell,vehicleBalance,gridCell,previousGridCell,period,periodLength,vehicle.id))
+        display(plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,vehicleBalance,gridCell,previousGridCell,period,periodLength,vehicle.id))
 
         # Update vehicle balance
         # TODO: skal det opdateres sådan?
-        vehicleBalance[period,previousGridCell[1],previousGridCell[2]] -= 1
-        vehicleBalance[period,gridCell[1],gridCell[2]] += 1
+        waitingActivityStartTime = currentSchedule.route[waitingIdx].startOfServiceTime
+        waitingActivityEndTime = currentSchedule.route[waitingIdx].endOfServiceTime
+        waitingStartPeriod = min(Int(ceil(waitingActivityStartTime / periodLength)), nTimePeriods)
+        waitingEndPeriod = min(Int(ceil(waitingActivityEndTime / periodLength)), nTimePeriods)
 
-        activeVehiclesPerCell[period,previousGridCell[1],previousGridCell[2]] -= 1
-        activeVehiclesPerCell[period,gridCell[1],gridCell[2]] += 1
+        vehicleBalance[waitingStartPeriod:waitingEndPeriod,previousGridCell[1],previousGridCell[2]] .-= 1
+        vehicleBalance[waitingStartPeriod:waitingEndPeriod,gridCell[1],gridCell[2]] .+= 1
+
+        activeVehiclesPerCell[waitingStartPeriod:waitingEndPeriod,previousGridCell[1],previousGridCell[2]] .-= 1
+        activeVehiclesPerCell[waitingStartPeriod:waitingEndPeriod,gridCell[1],gridCell[2]] .+= 1
 
         # Update final solution 
         if currentRouteLength == 2 && length(finalSchedule.route) > 0 # If previous activity is in final solution 
@@ -346,7 +351,7 @@ end
 # Function to relocate vehicles
 #------
 function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nRequests::Int,grid::Grid,depotLocations::Dict{Tuple{Int,Int},Location},
-    vehicleBalance::Array{Int,3},activeVehiclesPerCell::Array{Int,3},vehicleDemand::Array{Int,3},
+    vehicleBalance::Array{Int,3},activeVehiclesPerCell::Array{Int,3},realisedDemand::Array{Int,3},predictedDemand::Array{Float64,3},
     currentState::State,solution::Solution,finalSolution::Solution,currentTime::Int,nTimePeriods::Int,periodLength::Int)
    
     # Retrieve vehicle schedules in solution 
@@ -426,7 +431,7 @@ function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nReques
 
         # Relocate waiting activity 
 
-        relocateWaitingActivityBeforeDepot!(time,distance,nRequests,grid,depotLocations,vehicleBalance,activeVehiclesPerCell,vehicleDemand,
+        relocateWaitingActivityBeforeDepot!(time,distance,nRequests,grid,depotLocations,vehicleBalance,activeVehiclesPerCell,realisedDemand,predictedDemand,
         currentState.solution,schedule,currentSchedule,finalSolution,nTimePeriods,periodLength)
 
     end 
@@ -527,7 +532,7 @@ end
 # ------
 # Function to determine current state
 # ------
-function determineCurrentState(solution::Solution,event::Event,finalSolution::Solution,scenario::Scenario,visitedRoute::Dict{Int,Dict{String,Int}},grid::Grid,depotLocations::Dict{Tuple{Int,Int},Location},vehicleDemand::Array{Int,3};relocateVehicles::Bool=false,nTimePeriods::Int=24,periodLength::Int=60)
+function determineCurrentState(solution::Solution,event::Event,finalSolution::Solution,scenario::Scenario,visitedRoute::Dict{Int,Dict{String,Int}},grid::Grid,depotLocations::Dict{Tuple{Int,Int},Location},predictedDemand::Array{Float64,3};relocateVehicles::Bool=false,nTimePeriods::Int=24,periodLength::Int=60,gamma::Float64=0.5)
     nRequests = length(scenario.requests)
     time = scenario.time
     distance = scenario.distance
@@ -535,14 +540,6 @@ function determineCurrentState(solution::Solution,event::Event,finalSolution::So
     # Initialize current state
     currentState = State(scenario,event.request,visitedRoute,0)
     currentState.solution = copySolution(solution)
-
-    # Determine current vehicle balance 
-    if relocateVehicles
-        vehicleBalance,activeVehiclesPerCell = determineVehicleBalancePrCell(grid,vehicleDemand,currentState.solution,nTimePeriods,periodLength)
-    else
-        vehicleBalance = zeros(Int,0,0,0)
-        activeVehiclesPerCell = zeros(Int,0,0,0)
-    end
 
     # Initialize 
     idx = -1
@@ -605,10 +602,15 @@ function determineCurrentState(solution::Solution,event::Event,finalSolution::So
     currentState.totalNTaxi = finalSolution.nTaxi 
 
     # Relocate vehicles
+
     # Relocate vehicles when they have serviced all customers in route 
     if relocateVehicles 
+        # Determine current vehicle balance 
+        vehicleBalance,activeVehiclesPerCell,realisedDemand, vehicleDemand = determineVehicleBalancePrCell(grid,gamma,predictedDemand,currentState.solution,nTimePeriods,periodLength)
+
+
         relocateVehicles!(time,distance,nRequests,grid,depotLocations,
-        vehicleBalance,activeVehiclesPerCell,vehicleDemand,
+        vehicleBalance,activeVehiclesPerCell,realisedDemand,predictedDemand,
         currentState,solution,finalSolution,currentTime,nTimePeriods,periodLength)
     end
 
@@ -627,10 +629,10 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
 
     # Generate predicted demand
     if relocateVehicles
-        averageDemand = generatePredictedDemand(grid, historicRequestFiles,nTimePeriods,periodLength)
-        vehicleDemand = generatePredictedVehiclesDemand(grid, gamma, averageDemand,nTimePeriods)
+        predictedDemand = generatePredictedDemand(grid, historicRequestFiles,nTimePeriods,periodLength)
+       # vehicleDemand = generatePredictedVehiclesDemand(grid, gamma, predictedDemand,nTimePeriods)
     else 
-        vehicleDemand = zeros(Int,0,0,0)
+        predictedDemand = zeros(Int,0,0,0)
     end
 
     # Choose destroy methods
@@ -714,7 +716,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
         println("----------------")
 
         # Determine current state
-        currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario,visitedRoute,grid,depotLocations,vehicleDemand,relocateVehicles=relocateVehicles)
+        currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario,visitedRoute,grid,depotLocations,predictedDemand,relocateVehicles=relocateVehicles,gamma=gamma)
         
         if printResults
             println("------------------------------------------------------------------------------------------------------------------------------------------------")

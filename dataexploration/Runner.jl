@@ -23,7 +23,7 @@ global GENERATE_VEHICLES = false
 global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 2*60 # 2 hours buffer
-global nData = 10
+global nData = 20
 global nRequestList = [20] #[20,100,300,500]
 global MAX_DELAY = 15 # TODO Astrid I just put something
 
@@ -33,6 +33,7 @@ global MAX_DELAY = 15 # TODO Astrid I just put something
 global vehicleCapacity = 4
 global GammaList = [0.5,0.7,0.9]
 
+# TODO: burde vi bare have flad cost ? vi er jo ligeglade med cost faktisk 
 global shifts = Dict(
     "Morning"    => Dict("TimeWindow" => [6*60, 12*60], "cost" => 2.0, "nVehicles" => 0, "y" => []),
     "Noon"       => Dict("TimeWindow" => [10*60, 16*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),

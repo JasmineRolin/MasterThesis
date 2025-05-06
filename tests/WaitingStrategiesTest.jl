@@ -3,12 +3,12 @@ using waitingstrategies, domain, offlinesolution, utils, simulationframework
 using Plots, JSON, Test
 using Plots.PlotMeasures
 
-# print("\033c")
+print("\033c")
 
 gamma = 0.9
-nData = 10
-n = 20 
-i = 3
+nData = 20
+n = 50 
+i = 7
 gridFile = "Data/Konsentra/grid.json"
 historicIndexes = setdiff(1:nData,i)
 nPeriods = 48
@@ -83,7 +83,7 @@ print("end")
 # grid = Grid(maxLat,minLat,maxLong,minLong,nRows,nCols,latStep,longStep)
 
 
-# averageDemand = generatePredictedDemand(grid, historicRequestFiles)
+# averageDemand = generatePredictedDemand(grid, historicRequestFiles,nPeriods,periodLength)
 # vehicleDemand = generatePredictedVehiclesDemand(grid, gamma, averageDemand)
 
 # #======================================#
@@ -121,13 +121,16 @@ print("end")
 # vehicle_max = maximum(vehicleDemand)
 
 # for h in hours
+# for h in 1:nPeriods
 #     p1 = heatmap(averageDemand[h,:,:], 
 #             c=:viridis,         # color map
-#             clim=(avg_min, avg_max),
+#            # clim=(avg_min, avg_max),
 #             xlabel="Longitude (grid cols)", 
 #             ylabel="Latitude (grid rows)", 
 #             title="Average Demand per Grid Cell, hour = $(h)",
 #             colorbar_title="Avg Requests")
+#             display(p1)
+# end
 
 #     p2 = heatmap(vehicleDemand[h,:,:], 
 #             c=:viridis,         # color map

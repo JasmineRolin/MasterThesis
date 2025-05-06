@@ -251,17 +251,27 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
         dropOffStartTime = dropOffActivity.timeWindow.startTime
         dropOffEndTime = dropOffActivity.timeWindow.endTime
 
-        if route[pickUpIdx+1].activity.timeWindow.endTime < pickUpStartTime || route[pickUpIdx].activity.timeWindow.startTime > pickUpEndTime 
-            return INFEASIBLE_ROUTE_PICKUP
+        # TODO: lav lige et dobbelt check med astrid 
+        if route[pickUpIdx+1].activity.timeWindow.endTime < pickUpStartTime 
+            return INFEASIBLE_RESULT
+        end
+
+        if route[pickUpIdx].activity.timeWindow.startTime > pickUpEndTime 
+          #  println("HERE 1")
+            return INFEASIBLE_RESULT #INFEASIBLE_ROUTE_PICKUP
         end
 
         if route[dropOffIdx+1].activity.timeWindow.endTime < dropOffStartTime || route[dropOffIdx].activity.timeWindow.startTime > dropOffEndTime 
-            return INFEASIBLE_ROUTE__DROPOFF_FOREVER
+            #println("HERE 2")
+
+            return INFEASIBLE_RESULT#INFEASIBLE_ROUTE__DROPOFF_FOREVER
         end
 
         @views for i in pickUpIdx:dropOffIdx
             if numberOfWalking[i] + 1 > vehicle.totalCapacity
-                return INFEASIBLE_ROUTE_DROPOFF
+               # println("HERE 3")
+
+                return INFEASIBLE_RESULT#INFEASIBLE_ROUTE_DROPOFF
             end
         end
     end
@@ -285,6 +295,13 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
      newStartOfServiceTimes::Vector{Int},newEndOfServiceTimes::Vector{Int},waitingActivitiesToDelete::Vector{Int},waitingActivitiesToAdd::Vector{Int};
      pickUpIdxInBlock::Int=-1, dropOffIdxInBlock::Int=-1,request::Union{Request,Nothing}=nothing,visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(), state::String = "Repair",TO::TimerOutput=TimerOutput(),visitedRouteIds::Set{Int}=Set{Int}()) 
    
+     printInf = false
+     if vehicleSchedule.vehicle.id == 3 && !isnothing(request) && request.id == 2 
+        printInf = true
+        println("=====================> CHECKING ")
+        printRouteHorizontal(vehicleSchedule)
+     end
+
      #@timeit TO "BEFORELOOP" begin 
         # Initialize 
         route = vehicleSchedule.route
@@ -366,6 +383,9 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
         return false, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
     end
 
+    if printInf
+        println(" AFTER DETOUR")
+    end
 
     # Find new service times 
     idxActivityInSchedule = 1
@@ -411,6 +431,11 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
         
             # Check if we can remove a waiting activity 
             if activityType == WAITING
+                if printInf 
+                    println("IN WAITING ACTIVITY")
+                end
+
+                
                 isActivityInSchedule = false
                 if idx+1 == pickUpIdxInBlock
                     nextActivity = pickUpActivity
@@ -451,6 +476,9 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
                 # Keep waiting activity     
                 else
+                    if printInf 
+                        println("KEEP WAITING ACTIVITY")
+                    end
                     # Check if we can minimize waiting node
                     earliestArrivalFromCurrent = newEndOfServiceTimes[idx-1] + time[previousActivityId,currentActivityId] + time[currentActivityId,nextActivity.id]
                     latestArrival = currentActivity.timeWindow.endTime + time[currentActivityId,nextActivity.id]
@@ -465,7 +493,13 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                         # Keep waiting activity but try to shift route
                         feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(firstActivity.activity,currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
 
+                        if printInf 
+                            println("KEEP WAITING SHIFT ROUTE")
+                        end
                         
+                        if printInf 
+                            println("feasible: ", feasible) 
+                        end
                         if !feasible
                             return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
                         end

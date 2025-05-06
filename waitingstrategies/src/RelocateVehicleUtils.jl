@@ -2,6 +2,7 @@ module RelocateVehicleUtils
 
 using domain 
 using UnPack 
+using ..GeneratePredictedDemand
 
 export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBalancePrCell
 
@@ -24,7 +25,7 @@ end
 #==
  Method to determine vehicle balance in grid cells
 ==#
-function determineVehicleBalancePrCell(grid::Grid,vehicleDemand::Array{Int,3},solution::Solution,nTimePeriods::Int,periodLength::Int)
+function determineVehicleBalancePrCell(grid::Grid,gamma::Float64,predictedDemand::Array{Float64,3},solution::Solution,nTimePeriods::Int,periodLength::Int)
     # unpack grid 
     @unpack minLat,maxLat,minLong,maxLong, nRows,nCols,latStep,longStep = grid 
 
@@ -33,30 +34,46 @@ function determineVehicleBalancePrCell(grid::Grid,vehicleDemand::Array{Int,3},so
 
     # Initialize vehicle balance
     vehicleBalance = zeros(Int,nTimePeriods,nRows,nCols)
+    vehicleDemand = zeros(Int,nTimePeriods,nRows,nCols)
+    realisedDemand = zeros(Int,nTimePeriods,nRows,nCols)
     activeVehiclesPerCell = zeros(Int,nTimePeriods,nRows,nCols) # TODO: remove returning this (only for test)
 
+    # TODO: set correctly 
+    planningHorizon = 4
+
     # Find vehicle balance for each hour
+    # TODO: update to only be future time periods 
     for period in 1:nTimePeriods
         # Determine minutes
         startOfPeriodInMinutes = (period - 1) * periodLength
         endOfPeriodInMinutes = period * periodLength
 
-        # Vehicle demand in hour 
-        vehicleDemandInHour = vehicleDemand[period,:,:]
+        # Predicted demand in period 
+        predictedDemandInPeriod = predictedDemand[period,:,:]
 
         # Determine currently planned active vehicles pr. cell  
-        activeVehiclesPerCell[period,:,:] = determineActiveVehiclesPrCell(solution,endOfPeriodInMinutes,startOfPeriodInMinutes,minLat,minLong,nRows,nCols,latStep,longStep)
+        activeVehiclesPerCell[period,:,:],realisedDemand[period,:,:] = determineActiveVehiclesAndDemandPrCell(solution,endOfPeriodInMinutes,startOfPeriodInMinutes,minLat,minLong,nRows,nCols,latStep,longStep)
+
+        # Determine vehicle demand in period
+        endPeriod = min(period + planningHorizon, nTimePeriods)
+        vehicleDemandInPeriod = generatePredictedVehiclesDemandInHorizon(gamma,predictedDemand,period,endPeriod)
+        vehicleDemand[period,:,:] = vehicleDemandInPeriod
 
         # Determine surplus/deficit of vehicles in grid cells
-        vehicleBalance[period,:,:] = activeVehiclesPerCell[period,:,:] .- vehicleDemandInHour
+        # Use maximum of predicted demand and realised demand (worst case scenario ?)
+        # TODO: add time horizon 
+        vehicleBalance[period,:,:] = activeVehiclesPerCell[period,:,:] .- vehicleDemandInPeriod
     end
    
-    return vehicleBalance, activeVehiclesPerCell
+    return vehicleBalance, activeVehiclesPerCell, realisedDemand, vehicleDemand
 end
 
-function determineActiveVehiclesPrCell(solution::Solution,endOfPeriodInMinutes::Int,startOfPeriodInMinutes::Int,minLat::Float64,minLong::Float64, nRows::Int,nCols::Int,latStep::Float64,longStep::Float64)
+function determineActiveVehiclesAndDemandPrCell(solution::Solution,endOfPeriodInMinutes::Int,startOfPeriodInMinutes::Int,minLat::Float64,minLong::Float64, nRows::Int,nCols::Int,latStep::Float64,longStep::Float64)
     # Initialize surplus/deficit of vehicles 
     activeVehiclesPerCell = zeros(Int,nRows,nCols)
+
+    # Initializse actual demand 
+    realisedDemand = zeros(Int,nRows,nCols)
 
     # Go through current solution and determine current vehicles and demand in grid cells
     for schedule in solution.vehicleSchedules
@@ -74,7 +91,7 @@ function determineActiveVehiclesPrCell(solution::Solution,endOfPeriodInMinutes::
         end
 
         # Active grid cells in the hour
-        # TODO: how are we supposed to count this ? Is a vehicle active in all grid cells in the hour ?
+        # TODO: how are we supposed to count this ? Is a vehicle active in all grid cells in the hour ? but only once pr. grid cell ? 
         activeGridCells = Set{Tuple{Int,Int}}()
 
         # Find activity assignments in hour 
@@ -89,6 +106,15 @@ function determineActiveVehiclesPrCell(solution::Solution,endOfPeriodInMinutes::
 
             # Add grid cell to set of active grid cells
             push!(activeGridCells, (rowIdx, colIdx))
+
+            # Update demand 
+            if a.activity.activityType == PICKUP
+                realisedDemand[rowIdx,colIdx] += 1
+            elseif a.activity.activityType == DROPOFF
+              #  realisedDemand[rowIdx,colIdx] -= 1
+
+                realisedDemand[rowIdx,colIdx] -= 0
+            end
         end
 
         # Update current vehicles in grid cell 
@@ -97,7 +123,7 @@ function determineActiveVehiclesPrCell(solution::Solution,endOfPeriodInMinutes::
         end
     end
 
-    return activeVehiclesPerCell
+    return activeVehiclesPerCell, realisedDemand
 
 end
 
