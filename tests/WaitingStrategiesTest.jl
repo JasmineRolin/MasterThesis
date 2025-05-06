@@ -11,7 +11,9 @@ n = 20
 i = 3
 gridFile = "Data/Konsentra/grid.json"
 historicIndexes = setdiff(1:nData,i)
-hours = 1:24
+nPeriods = 48
+maximumTime = 24*60 
+periodLength = Int(maximumTime / nPeriods)
 
 # List of historic requests 
 historicRequestFiles = Vector{String}()
@@ -32,7 +34,7 @@ scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,dis
 outPutFolder = "tests/output/OnlineSimulation/"*string(n)
 
 relocateVehicles = true
-solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles);
+solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles,nTimePeriods=nPeriods,periodLength=periodLength);
 
 state = State(solution,scenario.onlineRequests[end],0)
 feasible, msg = checkSolutionFeasibilityOnline(scenario,state)

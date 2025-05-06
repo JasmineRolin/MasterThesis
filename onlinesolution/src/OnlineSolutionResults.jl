@@ -309,12 +309,12 @@ end
 #==
  Plot relocation event
 ==#
-function plotRelocation(vehicleDemand,activeVehiclesPerCell,vehicleBalance,gridCell,depotGridCell,hour,vehicle)
+function plotRelocation(vehicleDemand,activeVehiclesPerCell,vehicleBalance,gridCell,depotGridCell,period,periodLength,vehicle)
     avg_min = min(minimum(vehicleBalance),minimum(vehicleDemand))
     avg_max = max(maximum(vehicleDemand),maximum(vehicleBalance))
 
-    # Plot for chosen hour 
-    p1 = heatmap(vehicleDemand[hour,:,:], 
+    # Plot for chosen period 
+    p1 = heatmap(vehicleDemand[period,:,:], 
     c=:viridis,         # color map
     clim=(avg_min, avg_max),
     xlabel="Longitude (grid cols)", 
@@ -325,7 +325,7 @@ function plotRelocation(vehicleDemand,activeVehiclesPerCell,vehicleBalance,gridC
     scatter!(p1,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
 
 
-    p2 = heatmap(activeVehiclesPerCell[hour,:,:], 
+    p2 = heatmap(activeVehiclesPerCell[period,:,:], 
     clim=(avg_min, avg_max),
     c=:viridis,         # color map
     xlabel="Longitude (grid cols)", 
@@ -336,7 +336,7 @@ function plotRelocation(vehicleDemand,activeVehiclesPerCell,vehicleBalance,gridC
     scatter!(p2,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
 
 
-    p3 = heatmap(vehicleBalance[hour,:,:], 
+    p3 = heatmap(vehicleBalance[period,:,:], 
     c=:viridis,         # color map
     clim=(avg_min, avg_max),
     xlabel="Longitude (grid cols)", 
@@ -346,7 +346,7 @@ function plotRelocation(vehicleDemand,activeVehiclesPerCell,vehicleBalance,gridC
     scatter!(p3,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:green)
     scatter!(p3,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
 
-    super_title = plot(title = "Vehicle Demand Overview - Hour $(hour), vehicle $(vehicle)", grid=false, framestyle=:none)
+    super_title = plot(title = "Vehicle Demand Overview - period start $(period*periodLength), vehicle $(vehicle)", grid=false, framestyle=:none)
 
     # Combine all into a vertical layout: super title + 3 plots
     p = plot(super_title, plot(p1, p2, p3, layout=(1,3)), layout = @layout([a{0.01h}; b{0.99h}]), size=(1500,1100))

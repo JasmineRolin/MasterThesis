@@ -8,11 +8,10 @@ export generatePredictedDemand,generatePredictedVehiclesDemand
  Method to generate predicted demand  
 ==#
 # TODO: jas - do something else than plain average
-function generatePredictedDemand(grid::Grid, historicRequestFiles::Vector{String})
+function generatePredictedDemand(grid::Grid, historicRequestFiles::Vector{String}, nTimePeriods::Int,periodLength::Int)
     @unpack minLat,maxLat,minLong,maxLong, nRows,nCols,latStep,longStep = grid 
 
-    nHours = 24
-    demandGrid = zeros(Int, nHours, nRows, nCols)
+    demandGrid = zeros(Int, nTimePeriods, nRows, nCols)
     nFiles = length(historicRequestFiles)
 
     for requestFile in historicRequestFiles
@@ -24,14 +23,18 @@ function generatePredictedDemand(grid::Grid, historicRequestFiles::Vector{String
 
             if row.request_type == 0
                 # TODO: jas - only true for pick-up requests - need to use calc. time window for drop off requests 
-                hour = Int(ceil(row.request_time / 60))
+                timeVal = row.request_time
             else 
-                hour = Int(ceil((row.request_time- row.direct_drive_time) / 60)) 
+                timeVal = row.request_time- row.direct_drive_time
             end
+
+            # Determine time period 
+            period = min(Int(ceil(timeVal / periodLength)), nTimePeriods)
+
 
             rowIdx, colIdx = determineGridCell(lat, lon, minLat, minLong, nRows, nCols, latStep, longStep)
 
-            demandGrid[hour, rowIdx, colIdx] += 1
+            demandGrid[period, rowIdx, colIdx] += 1
         end
     end
 
@@ -44,15 +47,14 @@ end
 #==
  Generate predicted demand of vehicles 
 ==#
-function generatePredictedVehiclesDemand(grid::Grid,gamma::Float64, averageDemand::Array{Float64,3})
+function generatePredictedVehiclesDemand(grid::Grid,gamma::Float64, averageDemand::Array{Float64,3},nTimePeriods::Int)
     @unpack minLat,maxLat,minLong,maxLong, nRows,nCols,latStep,longStep = grid 
 
-    nHours = 24 
-    vehicleDemand = zeros(Int,nHours,nRows,nCols)
+    vehicleDemand = zeros(Int,nTimePeriods,nRows,nCols)
 
     # Find predicted vehicle demand for each hour 
-    for h in 1:nHours 
-        vehicleDemand[h,:,:] = Int.(ceil.(averageDemand[h,:,:].*gamma))
+    for p in 1:nTimePeriods 
+        vehicleDemand[p,:,:] = Int.(ceil.(averageDemand[p,:,:].*gamma))
     end 
 
     return vehicleDemand
