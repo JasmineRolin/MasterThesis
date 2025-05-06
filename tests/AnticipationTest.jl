@@ -80,7 +80,7 @@ include("../decisionstrategies/anticipation.jl")
 #end
 ==#
 
-
+#==
 #@testset "Complete Anticipation Test" begin 
     requestFile = "Data/Konsentra/TransformedData_Data.csv"
     vehiclesFile = "tests/resources/Vehicles.csv"
@@ -97,3 +97,38 @@ include("../decisionstrategies/anticipation.jl")
     @test feasible == true
     
 #end
+==#
+
+# #@testset "Run all generated data sets " begin
+
+    # Number of requests in scenario - 20, 100, 300 or 500 
+    n = 100
+
+    # Scenario number - 1:10
+    #i = 1
+
+    # Files 
+    vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
+    parametersFile = "tests/resources/Parameters.csv"
+    alnsParameters = "tests/resources/ALNSParameters3.json"
+
+    # Set both true to see plots 
+    displayPlots = false
+    saveResults = false
+
+    for i in 1:10
+        requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
+        distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
+        timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
+        scenarioName = string("Generated_Data_",n,"_",i)
+    
+        nExpected = Int(floor(n/10))
+        bestSolution, bestRequestBank, results, scenario, scenario2,feasible, msg = offlineSolutionWithAnticipation(requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected)
+
+        println(results)
+
+        @test msg == ""
+        @test feasible == true
+    end
+    
+# #end

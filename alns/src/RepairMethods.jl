@@ -340,10 +340,6 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
     for i in 1:length(route)-1
         for j in i:length(route)-1
             countTotal[] += 1
-
-            # Check if position is feasible 
-            ## TODO Astrid: If not feasible because pickup is after activity, then do not calculate more  
-            ## TODO Astrid: Other initial test for vehicle
  
             feasible, _, _,_, totalCost, _, _, _, _  = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,i,j,scenario,visitedRoute=visitedRoute,
                                                                                             newStartOfServiceTimes=newStartOfServiceTimes,newEndOfServiceTimes=newEndOfServiceTimes,waitingActivitiesToDelete=waitingActivitiesToDelete,
