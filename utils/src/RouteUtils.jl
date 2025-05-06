@@ -296,11 +296,11 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
      pickUpIdxInBlock::Int=-1, dropOffIdxInBlock::Int=-1,request::Union{Request,Nothing}=nothing,visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(), state::String = "Repair",TO::TimerOutput=TimerOutput(),visitedRouteIds::Set{Int}=Set{Int}()) 
    
      printInf = false
-     if vehicleSchedule.vehicle.id == 3 && !isnothing(request) && request.id == 2 
-        printInf = true
-        println("=====================> CHECKING ")
-        printRouteHorizontal(vehicleSchedule)
-     end
+    #  if vehicleSchedule.vehicle.id == 3 && !isnothing(request) && request.id == 2 
+    #     printInf = true
+    #     println("=====================> CHECKING ")
+    #     printRouteHorizontal(vehicleSchedule)
+    #  end
 
      #@timeit TO "BEFORELOOP" begin 
         # Initialize 

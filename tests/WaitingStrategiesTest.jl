@@ -5,8 +5,11 @@ using Plots.PlotMeasures
 
 print("\033c")
 
+# Er der for mange ved hvert depot ???? 
+# Gør så der bliver valgt ud fra en vægt af demand ? 
+
 gamma = 0.9
-nData = 20
+nData = 10
 n = 50 
 i = 7
 gridFile = "Data/Konsentra/grid.json"
