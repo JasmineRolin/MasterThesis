@@ -8,6 +8,9 @@ using onlinesolution
 using alns
 using waitingstrategies
 
+
+include("../../decisionstrategies/anticipation.jl")
+
 export simulateScenario
 
 struct Event 
@@ -621,7 +624,11 @@ end
 # ------
 # Function to simulate a scenario
 # ------
-function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false)
+function simulateScenario(requestFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, anticipationParams::NamedTuple = (;))
+    
+    # Read scenario 
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
+    
     # Retrieve info 
     grid = scenario.grid
     depotLocations = scenario.depotLocations
@@ -651,23 +658,12 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
     finalSolution = Solution(initialVehicleSchedules, 0.0, 0, 0, 0.0, 0) 
     currentState = State(scenario,Request(),0)
 
-    # Get solution for initial solution (offline problem)
-    initialSolution, initialRequestBank = simpleConstruction(scenario,scenario.offlineRequests) 
-    
-    if printResults
-        println("------------------------------------------------------------------------------------------------------------------------------------------------")
-        println("Intitial before  ALNS")
-        println("----------------")
-        printSolution(initialSolution,printRouteHorizontal)
-    end
-    if displayPlots
-        display(createGantChartOfSolutionOnline(initialSolution,"Initial Solution"))
-        display(plotRoutes(initialSolution,scenario,initialRequestBank,"Initial Solution"))
+    if anticipation == false
+        solution, requestBank = offlineSolution(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName)
+    else
+        solution, requestBank = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected)
     end
 
-    # Run ALNS for offline solution 
-    # TODO: set correct parameters for alns
-    solution,requestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters_offline.json",initialSolution =  initialSolution, requestBank = initialRequestBank, displayPlots = displayALNSPlots, saveResults = saveALNSResults)
     requestBankOffline = deepcopy(requestBank)
 
     # Update time windows 
@@ -816,6 +812,11 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
         end
     end
     
+    state = State(finalSolution,scenario.onlineRequests[end],0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+    printSolution(solution,printRouteHorizontal)
+    @test msg == ""
+    @test feasible == true
 
     return finalSolution, requestBank
 

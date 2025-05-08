@@ -4,6 +4,15 @@ authors = ["JasmineRolin <75620908+JasmineRolin@users.noreply.github.com>"]
 version = "0.1.0"
 
 [deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+KernelDensity = "5ab0869b-81aa-558d-bb23-cbf5423bbe9b"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 alns = "923737b8-2e4c-4886-b2ed-ac7b70d13e65"
 domain = "734a5951-1d14-4631-9222-bf0d0da96408"
 offlinesolution = "a9fb1b74-13ee-4d8c-9e56-7a41bc88c15d"
