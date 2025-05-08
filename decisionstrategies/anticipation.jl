@@ -145,7 +145,7 @@ function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicle
 end
 
 
-function removeExpectedRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},solution::Solution,nExpected::Int,nFixed::Int,nNotServicedExpectedRequests::Int,requestBank::Vector{Int},taxiParameterExpected::Float64;TO::TimerOutput=TimerOutput())
+function removeExpectedRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},solution::Solution,nExpected::Int,nFixed::Int,nNotServicedExpectedRequests::Int,requestBank::Vector{Int},taxiParameter::Float64,taxiParameterExpected::Float64;TO::TimerOutput=TimerOutput())
     
     # Determine remaining requests to remove
     requestsToRemove = Set{Int}()
@@ -160,6 +160,7 @@ function removeExpectedRequestsFromSolution!(time::Array{Int,2},distance::Array{
     # Choice of removal of activity
     remover = removeRequestsFromScheduleAnticipation!
     removeRequestsFromSolution!(time,distance,serviceTimes,requests,solution,requestsToRemove,remover=remover,nFixed=nFixed,nExpected=nExpected)
+    uppdateExpectedWaiting!(time,distance,serviceTimes,solution,taxiParameter,taxiParameterExpected,nFixed=nFixed,nExpected=nExpected)
 
     # Remove taxis for expected requests
     solution.nTaxiExpected -= nNotServicedExpectedRequests
@@ -224,6 +225,7 @@ end
 
 function removeRequestsFromScheduleAnticipation!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},schedule::VehicleSchedule,requestsToRemove::Vector{Int},visitedRoute::Dict{Int, Dict{String, Int}},scenario::Scenario;TO::TimerOutput=TimerOutput(),nFixed::Int=0,nExpected::Int=0)
 
+    println("____ I AM USED_______")
     # Remove requests from schedule
     for requestToRemove in requestsToRemove
         # Find positions of pick up and drop off activity   
@@ -242,33 +244,55 @@ function removeRequestsFromScheduleAnticipation!(time::Array{Int,2},distance::Ar
 
     end
 
-    # Change location of lonely waiting nodes with expected request location (Comes from ALNS)
-    for idx in 2:length(schedule.route)-1
-        activity = schedule.route[idx].activity
-        activityAssignment = schedule.route[idx]
-        activityAssignmentBefore = schedule.route[idx-1]
-        activityBefore = activityAssignmentBefore.activity
-        activityAssignmentAfter = schedule.route[idx+1]
-        id = activity.id
-    
-        isLocationExpected = (id > nFixed && id <= nFixed + nExpected) || (id > 2*nFixed + nExpected && id <= 2*nFixed + 2*nExpected)
-        if activity.activityType == WAITING && isLocationExpected
-            activity.location = activityBefore.location
-            activity.id = activityBefore.id
-            activity.timeWindow.startTime = activityAssignmentBefore.endOfServiceTime
-            activity.timeWindow.endTime = activityAssignmentAfter.startOfServiceTime - time[activity.id, activityAssignmentAfter.activity.id]
-            activityAssignment.startOfServiceTime = activity.timeWindow.startTime
-            activityAssignment.endOfServiceTime = activity.timeWindow.endTime
+    # Update KPIs 
+    #schedule.totalDistance = getTotalDistanceRoute(schedule.route,distance)
+    #schedule.totalIdleTime = getTotalIdleTimeRoute(schedule.route) 
+    #schedule.totalCost = getTotalCostRouteOnline(time,schedule.route,visitedRoute,serviceTimes)
+
+end
+
+
+function uppdateExpectedWaiting!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,solution::Solution,taxiParameter::Float64,taxiParameterExpected::Float64;nFixed::Int=0,nExpected::Int=0)
+
+    # Update solution
+    solution.totalDistance = 0.0
+    solution.totalIdleTime = 0
+    solution.totalCost = solution.nTaxi * taxiParameter + solution.nTaxiExpected * taxiParameterExpected
+
+    for schedule in solution.vehicleSchedules
+
+        # Change location of lonely waiting nodes with expected request location (Comes from ALNS)
+        for idx in 2:length(schedule.route)-1
+            activity = schedule.route[idx].activity
+            activityAssignment = schedule.route[idx]
+            activityAssignmentBefore = schedule.route[idx-1]
+            activityBefore = activityAssignmentBefore.activity
+            activityAssignmentAfter = schedule.route[idx+1]
+            id = activity.id
+        
+            isLocationExpected = (id > nFixed && id <= nFixed + nExpected) || (id > 2*nFixed + nExpected && id <= 2*nFixed + 2*nExpected)
+            if activity.activityType == WAITING && isLocationExpected  
+                activity.location = activityBefore.location
+                activity.id = activityBefore.id
+                activity.timeWindow.startTime = activityAssignmentBefore.endOfServiceTime
+                activity.timeWindow.endTime = activityAssignmentAfter.startOfServiceTime - time[activity.id, activityAssignmentAfter.activity.id]
+                activityAssignment.startOfServiceTime = activity.timeWindow.startTime
+                activityAssignment.endOfServiceTime = activity.timeWindow.endTime
+            end
         end
+
+        # Update KPIs 
+        schedule.totalDistance = getTotalDistanceRoute(schedule.route,distance)
+        schedule.totalIdleTime = getTotalIdleTimeRoute(schedule.route) 
+        schedule.totalCost = getTotalCostRouteOnline(time,schedule.route,Dict{Int, Dict{String, Int}}(),serviceTimes)
+        solution.totalDistance += schedule.totalDistance
+        solution.totalIdleTime += schedule.totalIdleTime
+        solution.totalCost += schedule.totalCost
     end
 
-    # Update KPIs 
-    schedule.totalDistance = getTotalDistanceRoute(schedule.route,distance)
-    schedule.totalIdleTime = getTotalIdleTimeRoute(schedule.route) 
-    schedule.totalCost = getTotalCostRouteOnline(time,schedule.route,visitedRoute,serviceTimes)
+    
 
 
-    return
 end
 
 
@@ -322,7 +346,7 @@ function offlineSolutionWithAnticipation(requestFile::String,vehiclesFile::Strin
         beforeSolution = copySolution(originalSolution)
 
         # Remove expected requests from solution
-        removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,originalSolution,nExpected,nFixed,nNotServicedExpectedRequests,originalRequestBank,taxiParameterExpected)
+        removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,originalSolution,nExpected,nFixed,nNotServicedExpectedRequests,originalRequestBank,taxiParameter,taxiParameterExpected)
 
         # TODO remove when stable
         state = State(originalSolution,Request(),0)
@@ -363,8 +387,10 @@ function offlineSolutionWithAnticipation(requestFile::String,vehiclesFile::Strin
             state = State(solution,Request(),nNotServicedFixedRequests)
             feasible, msg = checkSolutionFeasibilityOnline(scenario2,state)
             if !feasible
-                println("---Original---")
-                printSolution(originalSolution,printRouteHorizontal)
+                println("BEFORE:::")
+                printSolution(beforeSolution,printRouteHorizontal)
+                #println("---Original---")
+                #printSolution(originalSolution,printRouteHorizontal)
                 println("---After regret Insertion---")
                 printSolution(solution,printRouteHorizontal)
                 println("Solution is not feasible2")

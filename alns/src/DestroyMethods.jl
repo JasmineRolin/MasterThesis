@@ -266,7 +266,7 @@ function removeRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,
 
             # Remove requests from schedule
             # If remover is "removeRequestsFromScheduleAnticipation!" then it also need nFixed and nExpected as input, but the standard one does not have it
-            remover(time,distance,serviceTimes,requests,schedule,requestsToRemoveInSchedule,visitedRoute,nFixed=nFixed,nExpected=nExpected,scenario,TO=TO) 
+            remover(time,distance,serviceTimes,requests,schedule,requestsToRemoveInSchedule,visitedRoute,scenario,nFixed=nFixed,nExpected=nExpected,TO=TO) 
 
             # Update solution KPIs
             solution.totalDistance += schedule.totalDistance

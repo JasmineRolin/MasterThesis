@@ -222,6 +222,7 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
 
             # Check that start of service and end of service are feasible 
             if idx > 1 && startOfServiceTime < route[idx-1].endOfServiceTime + time[route[idx-1].activity.id,activity.id]
+                println(time[route[idx-1].activity.id,activity.id])
                 msg = "ROUTE INFEASIBLE: Start of service time $(startOfServiceTime) of activity $(activity.id) is not correct on vehicle $(vehicle.id)"
                 return false, msg, Set{Int}(), Set{Int}()
             end
