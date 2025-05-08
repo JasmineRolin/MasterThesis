@@ -632,7 +632,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
         predictedDemand = generatePredictedDemand(grid, historicRequestFiles,nTimePeriods,periodLength)
        # vehicleDemand = generatePredictedVehiclesDemand(grid, gamma, predictedDemand,nTimePeriods)
     else 
-        predictedDemand = zeros(Int,0,0,0)
+        predictedDemand = zeros(Float64,0,0,0)
     end
 
     # Choose destroy methods

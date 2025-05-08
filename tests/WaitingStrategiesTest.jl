@@ -36,7 +36,7 @@ scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,dis
 
 outPutFolder = "tests/output/OnlineSimulation/"*string(n)
 
-relocateVehicles = true
+relocateVehicles = false
 solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles,nTimePeriods=nPeriods,periodLength=periodLength);
 
 state = State(solution,scenario.onlineRequests[end],0)
@@ -54,7 +54,23 @@ print("end")
 # initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
 # display(createGantChartOfSolutionOnline(initialSolution,"Final Solution after merge"))
 
-# schedule = deepcopy(initialSolution.vehicleSchedules[66])
+schedule = deepcopy(solution.vehicleSchedules[2])
+request = scenario.requests[20]
+posPU = 4
+posDO = 4
+feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd =
+ checkFeasibilityOfInsertionAtPosition(request,schedule,posPU,posDO,scenario)
+
+ const EMPTY_RESULT = (false, -1, -1, Vector{Int}(), Vector{Int}(), Vector{Int}(), typemax(Float64), typemax(Float64), typemax(Int), typemax(Int), Vector{Int}())
+
+# TODO: delete 
+global countTotal = Ref(0)
+global countFeasible = Ref(0)
+
+# ewa = findBestFeasibleInsertionRoute(request,schedule,scenario)
+
+
+
 # arrivalAtDepot = schedule.route[end].startOfServiceTime
 # endOfAvailableTimeWindow = schedule.vehicle.availableTimeWindow.endTime
 # waitingActivityCompletedRoute = ActivityAssignment(Activity(schedule.vehicle.depotId,-1,WAITING, schedule.vehicle.depotLocation,TimeWindow(arrivalAtDepot,endOfAvailableTimeWindow)), schedule.vehicle,arrivalAtDepot,endOfAvailableTimeWindow)
@@ -72,13 +88,6 @@ print("end")
 
 # insertRequest!(scenario.requests[20],schedule,6,6,scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete,waitingActivitiesToAdd=waitingActivitiesToAdd)
 
-# const EMPTY_RESULT = (false, -1, -1, Vector{Int}(), Vector{Int}(), Vector{Int}(), typemax(Float64), typemax(Float64), typemax(Int), typemax(Int), Vector{Int}())
-
-# # TODO: delete 
-# global countTotal = Ref(0)
-# global countFeasible = Ref(0)
-
-# ewa = findBestFeasibleInsertionRoute(scenario.requests[20],solution.vehicleSchedules[2],scenario)
 
 #   printSolution(solution,printRouteHorizontal)
 

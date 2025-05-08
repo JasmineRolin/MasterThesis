@@ -328,10 +328,10 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
     end
 
     printval = false
-    if request.id == 20 && vehicleSchedule.vehicle.id == 2
-      printRouteHorizontal(vehicleSchedule)
-      printval = true
-    end
+    # if request.id == 20 && vehicleSchedule.vehicle.id == 2
+    #   printRouteHorizontal(vehicleSchedule)
+    #   printval = true
+    # end
 
     # Loop through each position in route 
     break_PICKUP = false
