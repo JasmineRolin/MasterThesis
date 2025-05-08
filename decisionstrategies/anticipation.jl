@@ -119,7 +119,7 @@ function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicle
     taxiParameterExpected = Float64(parametersDf[1,"taxi_parameter_expected"])
     
 
-    # Get vehicles 
+    # Get vehicles # TODO change output
     vehicles,depots, depotLocations = readVehicles(vehiclesDf,nRequests+nNewExpected)
     nDepots = length(depots)
 
@@ -149,7 +149,7 @@ function removeExpectedRequestsFromSolution!(time::Array{Int,2},distance::Array{
     
     # Determine remaining requests to remove
     requestsToRemove = Set{Int}()
-    for i in nFixed+1:nFixed+nExpected
+    for i in (nFixed+1):(nFixed+nExpected)
         if i in requestBank
             continue
         end
@@ -170,13 +170,44 @@ function removeExpectedRequestsFromSolution!(time::Array{Int,2},distance::Array{
 end
 
 
+#-----------
+# Function to remove expected requests from schedule and insert waiting activities instead
+#-----------
+function removeRequestsFromScheduleAnticipation!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},schedule::VehicleSchedule,requestsToRemove::Vector{Int},visitedRoute::Dict{Int, Dict{String, Int}},scenario::Scenario;TO::TimerOutput=TimerOutput(),nFixed::Int=0,nExpected::Int=0)
+
+    # Remove requests from schedule
+    for requestToRemove in requestsToRemove
+        # Find positions of pick up and drop off activity   
+        pickUpPosition,dropOffPosition = findPositionOfRequest(schedule,requestToRemove)
+
+        # Remove pickup activity 
+        newPickUpIdx, routeReductionPickUp = removeExpectedActivityFromRouteWF!(time,schedule,pickUpPosition)
+
+        # Remove drop off activity 
+        newDropOffIdx, _ = removeExpectedActivityFromRouteWF!(time,schedule,dropOffPosition-routeReductionPickUp)
+
+        # Update capacity
+        for idx in newPickUpIdx+1:newDropOffIdx
+            schedule.numberOfWalking[idx] -= 1
+        end
+
+    end
+
+    # Update KPIs # TODO skal tilføjes når uppdateExpectedWaiting! fjernes
+    #schedule.totalDistance = getTotalDistanceRoute(schedule.route,distance)
+    #schedule.totalIdleTime = getTotalIdleTimeRoute(schedule.route) 
+    #schedule.totalCost = getTotalCostRouteOnline(time,schedule.route,visitedRoute,serviceTimes)
+
+end
+
+
 function removeExpectedActivityFromRouteWF!(time::Array{Int,2}, schedule::VehicleSchedule, idx::Int)
     route = schedule.route
     numberOfWalking = schedule.numberOfWalking
 
     # Find number of WAITING activities before idx
     nActivitiesBefore = 0
-    for i in idx-1:-1:1
+    for i in (idx-1):-1:1
         if route[i].activity.activityType == WAITING
             nActivitiesBefore += 1
         else
@@ -204,7 +235,7 @@ function removeExpectedActivityFromRouteWF!(time::Array{Int,2}, schedule::Vehicl
     activityAssignmentBefore = route[idxStart - 1]
     activityAssignmentAfter = route[idxEnd + 1]
 
-    # Remove activities (from end to start to avoid index shifting)
+    # Remove expected activities and consecutive waiting activities 
     for _ in idxStart:idxEnd
         deleteat!(route, idxStart)
         deleteat!(numberOfWalking, idxStart)
@@ -223,36 +254,10 @@ function removeExpectedActivityFromRouteWF!(time::Array{Int,2}, schedule::Vehicl
 end
 
 
-function removeRequestsFromScheduleAnticipation!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},schedule::VehicleSchedule,requestsToRemove::Vector{Int},visitedRoute::Dict{Int, Dict{String, Int}},scenario::Scenario;TO::TimerOutput=TimerOutput(),nFixed::Int=0,nExpected::Int=0)
-
-    println("____ I AM USED_______")
-    # Remove requests from schedule
-    for requestToRemove in requestsToRemove
-        # Find positions of pick up and drop off activity   
-        pickUpPosition,dropOffPosition = findPositionOfRequest(schedule,requestToRemove)
-
-        # Remove pickup activity 
-        newPickUpIdx, routeReductionPickUp = removeExpectedActivityFromRouteWF!(time,schedule,pickUpPosition)
-
-        # Remove drop off activity 
-        newDropOffIdx, _ = removeExpectedActivityFromRouteWF!(time,schedule,dropOffPosition-routeReductionPickUp)
-
-        # Update capacity
-        for idx in newPickUpIdx+1:newDropOffIdx
-            schedule.numberOfWalking[idx] -= 1
-        end
-
-    end
-
-    # Update KPIs 
-    #schedule.totalDistance = getTotalDistanceRoute(schedule.route,distance)
-    #schedule.totalIdleTime = getTotalIdleTimeRoute(schedule.route) 
-    #schedule.totalCost = getTotalCostRouteOnline(time,schedule.route,visitedRoute,serviceTimes)
-
-end
-
-
-function uppdateExpectedWaiting!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,solution::Solution,taxiParameter::Float64,taxiParameterExpected::Float64;nFixed::Int=0,nExpected::Int=0)
+#-------
+# Function to update expected waiting activities in solution so they have location as the activity right before
+#-------
+function updateExpectedWaiting!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,solution::Solution,taxiParameter::Float64,taxiParameterExpected::Float64;nFixed::Int=0,nExpected::Int=0)
 
     # Update solution
     solution.totalDistance = 0.0
@@ -296,6 +301,9 @@ function uppdateExpectedWaiting!(time::Array{Int,2},distance::Array{Float64,2},s
 end
 
 
+#-------
+# Determine offline solution with anticipation
+#-------
 function offlineSolutionWithAnticipation(requestFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String,nExpected::Int)
 
     # Choose destroy methods
@@ -310,19 +318,19 @@ function offlineSolutionWithAnticipation(requestFile::String,vehiclesFile::Strin
     addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
     # Variables to determine best solution
-    bestAverageSAE = typemax(Float64)
+    bestAverageObj = typemax(Float64)
     bestSolution::Union{Nothing, Solution} = nothing
     bestRequestBank::Union{Nothing, Vector{Int}} = nothing
     bestNotServicedExpectedRequests = typemax(Int)
     results = DataFrame(runId = String[],
-                        averageSAE = Float64[],
+                        averageObj = Float64[],
                         averageNotServicedExpectedRequests = Float64[],
                         nInitialNotServicedFixedRequests = Int[],
                         nInitialNotServicedExpectedRequests = Int[])
 
 
     for i in 1:10
-        println("------------ Solution "*string(i)*"-------------")
+
         # Make scenario
         scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName)
         time = scenario.time
@@ -343,8 +351,6 @@ function offlineSolutionWithAnticipation(requestFile::String,vehiclesFile::Strin
         nServicedFixedRequests = nFixed - nNotServicedFixedRequests
         nServicedExpectedRequests = nExpected - nNotServicedExpectedRequests
 
-        beforeSolution = copySolution(originalSolution)
-
         # Remove expected requests from solution
         removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,originalSolution,nExpected,nFixed,nNotServicedExpectedRequests,originalRequestBank,taxiParameter,taxiParameterExpected)
 
@@ -352,23 +358,14 @@ function offlineSolutionWithAnticipation(requestFile::String,vehiclesFile::Strin
         state = State(originalSolution,Request(),0)
         feasible, msg = checkSolutionFeasibilityOnline(scenario,state;nExpected=nExpected)
         if !feasible
-            println("BEFORE:::")
-            printSolution(beforeSolution,printRouteHorizontal)
-            println("AFTER:::")
-            printSolution(originalSolution,printRouteHorizontal)
-            println("Solution is not feasible1")
             return originalSolution, requestBank, results, scenario, Scenario(), false, msg
-            throw(msg)
         end
-        #println("BEFORE LOOP:")
-        #printSolution(originalSolution,printRouteHorizontal)
 
-        # Determine SAE
-        averageSAE = 0.0
+        # Determine Obj
+        averageObj = 0.0
         averageNotServicedExpectedRequests = 0.0
         for j in 1:10
 
-            println("------------ Solution "*string(i)*" time: "*string(j)*"-------------")
             # Get solution
             solution = copySolution(originalSolution)
             
@@ -387,27 +384,19 @@ function offlineSolutionWithAnticipation(requestFile::String,vehiclesFile::Strin
             state = State(solution,Request(),nNotServicedFixedRequests)
             feasible, msg = checkSolutionFeasibilityOnline(scenario2,state)
             if !feasible
-                println("BEFORE:::")
-                printSolution(beforeSolution,printRouteHorizontal)
-                #println("---Original---")
-                #printSolution(originalSolution,printRouteHorizontal)
-                println("---After regret Insertion---")
-                printSolution(solution,printRouteHorizontal)
-                println("Solution is not feasible2")
-                println(msg)
                 return solution, requestBank, results, scenario, scenario2, feasible, msg
             end
 
-            # Calculate SAE
-            averageSAE += solution.totalCost + originalSolution.nTaxi * taxiParameter 
+            # Calculate Obj
+            averageObj += solution.totalCost + originalSolution.nTaxi * taxiParameter 
             averageNotServicedExpectedRequests += length(stateALNS.requestBank)
         end
-        averageSAE /= 10
+        averageObj /= 10
         averageNotServicedExpectedRequests /= 10
 
         # Check if solution is better than best solution
-        if averageSAE < bestAverageSAE 
-            bestAverageSAE = averageSAE
+        if averageObj < bestAverageObj 
+            bestAverageObj = averageObj
             bestNotServicedExpectedRequests = averageNotServicedExpectedRequests
             bestSolution = copySolution(originalSolution)
             bestRequestBank = copy(originalRequestBank)
@@ -415,7 +404,7 @@ function offlineSolutionWithAnticipation(requestFile::String,vehiclesFile::Strin
         
 
         # Save results
-        push!(results, (runId = "Run $i", averageSAE = averageSAE, averageNotServicedExpectedRequests = averageNotServicedExpectedRequests, 
+        push!(results, (runId = "Run $i", averageObj = averageobj, averageNotServicedExpectedRequests = averageNotServicedExpectedRequests, 
                         nInitialNotServicedFixedRequests = nNotServicedFixedRequests, nInitialNotServicedExpectedRequests = nNotServicedExpectedRequests))
     end
 
