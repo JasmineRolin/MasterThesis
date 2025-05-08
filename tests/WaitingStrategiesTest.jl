@@ -10,11 +10,11 @@ print("\033c")
 
 gamma = 0.9
 nData = 10
-n = 50 
+n = 20 
 i = 7
 gridFile = "Data/Konsentra/grid.json"
 historicIndexes = setdiff(1:nData,i)
-nPeriods = 48
+nPeriods = 24
 maximumTime = 24*60 
 periodLength = Int(maximumTime / nPeriods)
 
@@ -47,6 +47,9 @@ println(msg)
 
 print("end")
 
+# Event 20 veh 2
+
+
 
 # initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
 # display(createGantChartOfSolutionOnline(initialSolution,"Final Solution after merge"))
@@ -65,9 +68,17 @@ print("end")
 
 
 # feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd =
-#  checkFeasibilityOfInsertionAtPosition(scenario.requests[299],schedule,4,4,scenario)
+#  checkFeasibilityOfInsertionAtPosition(scenario.requests[20],schedule,6,6,scenario)
 
-# insertRequest!(scenario.requests[299],schedule,4,4,scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete,waitingActivitiesToAdd=waitingActivitiesToAdd)
+# insertRequest!(scenario.requests[20],schedule,6,6,scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete,waitingActivitiesToAdd=waitingActivitiesToAdd)
+
+# const EMPTY_RESULT = (false, -1, -1, Vector{Int}(), Vector{Int}(), Vector{Int}(), typemax(Float64), typemax(Float64), typemax(Int), typemax(Int), Vector{Int}())
+
+# # TODO: delete 
+# global countTotal = Ref(0)
+# global countFeasible = Ref(0)
+
+# ewa = findBestFeasibleInsertionRoute(scenario.requests[20],solution.vehicleSchedules[2],scenario)
 
 #   printSolution(solution,printRouteHorizontal)
 
