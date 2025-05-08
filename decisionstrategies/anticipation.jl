@@ -185,7 +185,7 @@ function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicle
     # Split into offline and online requests
     onlineRequests, offlineRequests = splitRequests(allRequests)
 
-    # Get distance and time matrix
+    # Get distance and time matrix # TODO add grid?
     scenario = Scenario(scenarioName,allRequests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots,depots,taxiParameter,nNewExpected,taxiParameterExpected,nRequests)
 
     return scenario

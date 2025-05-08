@@ -14,6 +14,15 @@ struct Grid
     nCols::Int
     latStep::Float64
     longStep::Float64
+
+    function Grid()
+        new(0.0, 0.0, 0.0, 0.0, 0, 0, 0.0, 0.0)
+    end
+
+    function Grid(maxLat::Float64, minLat::Float64, maxLong::Float64, minLong::Float64, nRows::Int, nCols::Int, latStep::Float64, longStep::Float64)
+        new(maxLat, minLat, maxLong, minLong, nRows, nCols, latStep, longStep)
+    end
+
 end 
 
 #==
