@@ -7,7 +7,54 @@ using alns
 using Test
 using TimerOutputs
 
+global GENERATE_SIMULATION_DATA = false
+global GENERATE_DATA_AND_VEHICLES = true
+global GENERATE_VEHICLES = false
+
+#==
+# Constants for data generation 
+==#
+global DoD = 0.4 # Degree of dynamism
+global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
+global callBuffer = 2*60 # 2 hours buffer
+global nData = 10
+global nRequestList = [20] #[20,100,300,500]
+global MAX_DELAY = 15 # TODO Astrid I just put something
+
+#==
+# Constant for vehicle generation  
+==#
+global vehicleCapacity = 4
+global GammaList = [0.5,0.7,0.9]
+
+global shifts = Dict(
+    "Morning"    => Dict("TimeWindow" => [6*60, 12*60], "cost" => 2.0, "nVehicles" => 0, "y" => []),
+    "Noon"       => Dict("TimeWindow" => [10*60, 16*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
+    "Afternoon"  => Dict("TimeWindow" => [14*60, 20*60], "cost" => 3.0, "nVehicles" => 0, "y" => []),
+    "Evening"    => Dict("TimeWindow" => [18*60, 24*60], "cost" => 4.0, "nVehicles" => 0, "y" => [])
+)
+
+
+#==
+# Grid constants 
+==#
+global MAX_LAT = 60.721
+global MIN_LAT = 59.165
+global MAX_LONG = 12.458
+global MIN_LONG = 9.948
+global NUM_ROWS = 5
+global NUM_COLS = 5
+
+
+#==
+# Common 
+==#
+global time_range = collect(range(6*60,23*60))
+
+
 include("../dataexploration/GenerateLargeDataSets.jl")
+
+
 
 function createExpectedRequests(N::Int,nFixedRequests::Int)
     
@@ -29,11 +76,12 @@ function createExpectedRequests(N::Int,nFixedRequests::Int)
 
     probabilities_pickUpTime,probabilities_dropOffTime,_,_,probabilities_location,_,x_range,y_range,probabilities_distance,_,distance_range,_,_,_,_,_= load_simulation_data("Data/Simulation data/")
     time_range = collect(range(6*60,23*60))
+    max_lat, min_lat, max_long, min_long = MAX_LAT, MIN_LAT, MAX_LONG, MIN_LONG
 
     # Generate expected request DF
     for i in 1:N
         # Sample new location based on KDE probabilities
-        sampled_location = getNewLocations(probabilities_location, x_range, y_range, distance_range,probabilities_distance)
+        sampled_location = getNewLocations(probabilities_location, x_range, y_range, distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long)
         pickup_longitude, pickup_latitude = sampled_location[1]
         dropoff_longitude, dropoff_latitude = sampled_location[2]
 
@@ -160,7 +208,7 @@ function removeExpectedRequestsFromSolution!(time::Array{Int,2},distance::Array{
     # Choice of removal of activity
     remover = removeRequestsFromScheduleAnticipation!
     removeRequestsFromSolution!(time,distance,serviceTimes,requests,solution,requestsToRemove,remover=remover,nFixed=nFixed,nExpected=nExpected)
-    uppdateExpectedWaiting!(time,distance,serviceTimes,solution,taxiParameter,taxiParameterExpected,nFixed=nFixed,nExpected=nExpected)
+    updateExpectedWaiting!(time,distance,serviceTimes,solution,taxiParameter,taxiParameterExpected,nFixed=nFixed,nExpected=nExpected)
 
     # Remove taxis for expected requests
     solution.nTaxiExpected -= nNotServicedExpectedRequests
@@ -404,7 +452,7 @@ function offlineSolutionWithAnticipation(requestFile::String,vehiclesFile::Strin
         
 
         # Save results
-        push!(results, (runId = "Run $i", averageObj = averageobj, averageNotServicedExpectedRequests = averageNotServicedExpectedRequests, 
+        push!(results, (runId = "Run $i", averageObj = averageObj, averageNotServicedExpectedRequests = averageNotServicedExpectedRequests, 
                         nInitialNotServicedFixedRequests = nNotServicedFixedRequests, nInitialNotServicedExpectedRequests = nNotServicedExpectedRequests))
     end
 

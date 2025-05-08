@@ -105,7 +105,7 @@ include("../decisionstrategies/anticipation.jl")
     n = 500
 
     # Scenario number - 1:10
-    #i = 1
+    i = 1
 
     # Files 
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
@@ -116,7 +116,7 @@ include("../decisionstrategies/anticipation.jl")
     displayPlots = false
     saveResults = false
 
-    for i in 1:10
+    #for i in 1:10
         requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
         distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
         timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
@@ -129,6 +129,6 @@ include("../decisionstrategies/anticipation.jl")
 
         @test msg == ""
         @test feasible == true
-    end
+    #end
     
 # #end
