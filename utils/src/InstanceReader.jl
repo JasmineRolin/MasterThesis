@@ -1,6 +1,6 @@
 module InstanceReaders 
 
-using DataFrames, CSV, domain
+using DataFrames, CSV, domain, JSON
 using ..utils
 
 
@@ -20,7 +20,7 @@ global MAX_EARLY_ARRIVAL = 15
  Function to read instance 
  Takes request, vehicles and parameters .csv as input 
 ==#
-function readInstance(requestFile::String, vehicleFile::String, parametersFile::String,scenarioName=""::String,distanceMatrixFile=""::String,timeMatrixFile=""::String)::Scenario
+function readInstance(requestFile::String, vehicleFile::String, parametersFile::String,scenarioName=""::String,distanceMatrixFile=""::String,timeMatrixFile=""::String,gridFile::String = "")::Scenario
 
     # Check that files exist 
     if !isfile(requestFile)
@@ -32,7 +32,14 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     if !isfile(parametersFile)
         error("Error: Parameters file $parametersFile does not exist.")
     end
-   
+    if gridFile == ""
+        useGrid = false
+    else
+        useGrid = true
+        if !isfile(gridFile)
+            error("Error: Grid file $gridFile does not exist.")
+        end
+    end
 
     # Read request, vehicle and parameters dataframes from input
     requestsDf = CSV.read(requestFile, DataFrame)
@@ -40,6 +47,26 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     parametersDf = CSV.read(parametersFile, DataFrame)
     nRequests = nrow(requestsDf)
     
+        
+    # Read grid and depot locations 
+    grid = nothing
+    if useGrid
+        gridJSON = JSON.parsefile(gridFile) 
+        maxLat = gridJSON["max_latitude"]
+        minLat = gridJSON["min_latitude"]
+        maxLong = gridJSON["max_longitude"]
+        minLong = gridJSON["min_longitude"]
+        nRows = gridJSON["num_rows"]
+        nCols = gridJSON["num_columns"]
+        latStep = (maxLat - minLat) / nRows
+        longStep = (maxLong - minLong) / nCols
+ 
+        grid = Grid(maxLat,minLat,maxLong,minLong,nRows,nCols,latStep,longStep)
+        depotLocationsGrid = findDepotLocations(grid,nRequests)
+        depotCoordinates = [(l.lat,l.long) for l in values(depotLocationsGrid)]
+        nDepots = length(depotLocationsGrid)
+    end
+
     # Get parameters 
     planningPeriod = TimeWindow(parametersDf[1,"start_of_planning_period"],parametersDf[1,"end_of_planning_period"])
     serviceTimes = parametersDf[1,"service_time_walking"]
@@ -50,13 +77,16 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     minimumMaximumRideTime = parametersDf[1,"minimum_maximum_ride_time"]
     taxiParameter = Float64(parametersDf[1,"taxi_parameter"])
     
-
     # Get vehicles 
-    vehicles,depots, depotLocations = readVehicles(vehiclesDf,nRequests)
-    nDepots = length(depots)
+    vehicles,depots, depotLocations = readVehicles(vehiclesDf,nRequests,grid,useGrid)
+    if !useGrid 
+        depotCoordinates = collect(keys(depotLocations))
+        nDepots = length(depotCoordinates)
+    end
 
     # Read time and distance matrices from input or initialize empty matrices
-    distance, time = getDistanceAndTimeMatrix(distanceMatrixFile,timeMatrixFile,requestFile,collect(keys(depotLocations)))
+    # TODO: collect depot locations correctly 
+    distance, time = getDistanceAndTimeMatrix(distanceMatrixFile,timeMatrixFile,requestFile,depotCoordinates)
 
     # Get requests 
     requests = readRequests(requestsDf,nRequests,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time)
@@ -64,25 +94,34 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     # Split into offline and online requests
     onlineRequests, offlineRequests = splitRequests(requests)
 
-    # Get distance and time matrix
-    scenario = Scenario(scenarioName,requests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots,depots,taxiParameter)
-
-    return scenario
-
+    if useGrid 
+        return Scenario(scenarioName,requests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots,depots,taxiParameter,grid,depotLocationsGrid)
+    else 
+        return Scenario(scenarioName,requests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots,depots,taxiParameter)
+    end
 end
 
 
 #==
  Function to read vehicles  
 ==#
-function readVehicles(vehiclesDf::DataFrame, nRequests::Int)
+function readVehicles(vehiclesDf::DataFrame, nRequests::Int,grid=nothing,useGrid::Bool=false)
+    # Get grid 
+    if useGrid
+        minLat = grid.minLat
+        minLong = grid.minLong
+        nRows = grid.nRows
+        nCols = grid.nCols
+        latStep = grid.latStep
+        longStep = grid.longStep
+    end
+
     # Get vehicles
     vehicles = Vector{Vehicle}()
-    depotLocations = Dict{Tuple{Float64,Float64},Int}() # Keep track of depots to give them an Id 
     depotDictionary = Dict{Int, Vector{Int}}()
+    depotLocations = Dict{Tuple{Float64,Float64},Int}() # Keep track of depots to give them an Id if no grid 
 
     currentDepotId = 2*nRequests + 1
-    nDepots = 0
     for row in eachrow(vehiclesDf)
         id = row.id
 
@@ -99,18 +138,32 @@ function readVehicles(vehiclesDf::DataFrame, nRequests::Int)
         depotLatitude = row.depot_latitude 
         depotLongitude = row.depot_longitude 
 
-        depotId = get!(depotLocations, (depotLatitude, depotLongitude), currentDepotId) # Get or default
-        if depotId == currentDepotId  
-            currentDepotId += 1
-            nDepots += 1
-        end
+        if useGrid
+            # Determine grid cell 
+            gridCell = determineGridCell(depotLatitude,depotLongitude,minLat,minLong,nRows,nCols,latStep,longStep)
 
-        # Add depot to dictionary
-        if haskey(depotDictionary, depotId)
-            push!(depotDictionary[depotId], id)  # Append vehicle ID to existing vector
+            # Determine depot id
+            depotId = findDepotIdFromGridCell(grid,nRequests,gridCell)
+
+            # Add depot to dictionary
+            if haskey(depotDictionary, depotId)
+                push!(depotDictionary[depotId], id)  # Append vehicle ID to existing vector
+            else
+                depotDictionary[depotId] = [id]  # Create new vector with the first vehicle ID
+            end
         else
-            depotDictionary[depotId] = [id]  # Create new vector with the first vehicle ID
-        end
+            depotId = get!(depotLocations, (depotLatitude, depotLongitude), currentDepotId) # Get or default
+            if depotId == currentDepotId  
+                currentDepotId += 1
+            end
+    
+            # Add depot to dictionary
+            if haskey(depotDictionary, depotId)
+                push!(depotDictionary[depotId], id)  # Append vehicle ID to existing vector
+            else
+                depotDictionary[depotId] = [id]  # Create new vector with the first vehicle ID
+            end
+            end
 
         depotLocation = Location(string("Depot ",depotId),depotLatitude,depotLongitude)
 

@@ -3,7 +3,7 @@ module ALNSResults
 using DataFrames, CSV, Plots, JSON, domain,..ALNSDomain
 using Plots.PlotMeasures
 
-export ALNSResult
+export ALNSResult, plotRoutes
 
 #==
  Method to plot ALNS results  
@@ -355,80 +355,16 @@ end
 ==#
 function plotRoutes(solution::Solution,scenario::Scenario,requestBank::Vector{Int},title::String)
 
-    p = plot(size = (2000, 1500))
+    p = plot(size = (2000, 1500),bottom_margin=12mm, left_margin=12mm,
+    top_margin=5mm, right_margin=5mm)
 
     # Retrieve assigned requests
     firstPickUp = true 
     firstDropoff = true 
     firstDepot = true 
     firstWaiting = true 
-    offset = 0.025
+    offset = 0.02
     assignedRequests = Vector{Int}()
-    for schedule in solution.vehicleSchedules
-        for assignment in schedule.route
-            if assignment.activity.activityType == PICKUP
-                push!(assignedRequests, assignment.activity.requestId)
-
-                
-            end
-
-            if assignment.activity.activityType == PICKUP
-                if firstPickUp
-                    firstPickUp = false 
-                    r = scenario.requests[assignment.activity.requestId]
-                    scatter!([r.pickUpActivity.location.lat], [r.pickUpActivity.location.long], label = "Pick Up", color = :lightgreen, markersize = 10, marker = :circle,markerstrokewidth=0)
-                    annotate!(r.pickUpActivity.location.lat, r.pickUpActivity.location.long+offset, text("PU$(r.id)", :center, 8, color = :green))
-                else
-                    r = scenario.requests[assignment.activity.requestId]
-                    scatter!([r.pickUpActivity.location.lat], [r.pickUpActivity.location.long], label = "", color = :lightgreen, markersize = 10, marker = :circle,markerstrokewidth=0)
-                    annotate!(r.pickUpActivity.location.lat, r.pickUpActivity.location.long+offset, text("PU$(r.id)", :center, 8, color = :green))
-                end
-            elseif assignment.activity.activityType == DROPOFF
-                if firstDropoff
-                    firstDropoff = false
-                    r = scenario.requests[assignment.activity.requestId]
-                    scatter!([r.dropOffActivity.location.lat], [r.dropOffActivity.location.long], label = "Pick Up", color = :tomato, markersize = 10, marker = :square,markerstrokewidth=0)
-                    annotate!(r.dropOffActivity.location.lat, r.dropOffActivity.location.long+offset, text("DO$(r.id)", :center, 8, color = :green))
-                else 
-                    r = scenario.requests[assignment.activity.requestId]
-                    scatter!([r.dropOffActivity.location.lat], [r.dropOffActivity.location.long], label = "", color = :tomato, markersize = 10, marker = :square,markerstrokewidth=0)
-                    annotate!(r.dropOffActivity.location.lat, r.dropOffActivity.location.long+offset, text("DO$(r.id)", :center, 8, color = :green))
-                end
-            elseif assignment.activity.activityType == DEPOT
-                if firstDepot
-                    firstDepot = false
-                    v = schedule.vehicle
-                    scatter!([v.depotLocation.lat], [v.depotLocation.long], label = "Depot", color = :black, markersize = 10, marker = :star,markerstrokewidth=0)
-                    annotate!(v.depotLocation.lat, v.depotLocation.long+offset, text("D$(v.id)", :center, 8, color = :black))
-                else
-                    v = schedule.vehicle
-                    scatter!([v.depotLocation.lat], [v.depotLocation.long], label = "", color = :black, markersize = 10, marker = :star,markerstrokewidth=0)
-                    annotate!(v.depotLocation.lat, v.depotLocation.long+offset, text("D$(v.id)", :center, 8, color = :black))
-                end
-            else
-                if firstWaiting
-                    firstWaiting = false
-                    scatter!([assignment.activity.location.lat], [assignment.activity.location.long], label = "Waiting", color = :grey, markersize = 10, marker = :circle,markerstrokewidth=0)
-                    annotate!(assignment.activity.location.lat, assignment.activity.location.long+offset, text("W$(assignment.activity.id)", :center, 8, color = :grey))
-                else 
-                    scatter!([assignment.activity.location.lat], [assignment.activity.location.long], label = "", color = :grey, markersize = 10, marker = :circle,markerstrokewidth=0)
-                    annotate!(assignment.activity.location.lat,assignment.activity.location.long+offset, text("W$(assignment.activity.id)", :center, 8, color = :grey))
-                end
-            end
-        end
-    end
-
-  
-    # Request bank 
-    for r in requestBank
-        scatter!([scenario.requests[r].pickUpActivity.location.lat], [scenario.requests[r].pickUpActivity.location.long], label = "", color = :grey, markersize = 10, marker = :circle,markerstrokewidth=1,markerstrokecolor=:red)
-        annotate!(scenario.requests[r].pickUpActivity.location.lat, scenario.requests[r].pickUpActivity.location.long+offset, text("PU$(r)", :center, 8, color = :grey))
-
-        scatter!([scenario.requests[r].dropOffActivity.location.lat], [scenario.requests[r].dropOffActivity.location.long], label = "", color = :grey, markersize = 10, marker = :square,markerstrokewidth=1,markerstrokecolor=:red)
-        annotate!(scenario.requests[r].dropOffActivity.location.lat, scenario.requests[r].dropOffActivity.location.long+offset, text("DO$(r)", :center, 8, color = :grey))
-
-    end
-  
 
     # Plot routes 
     palette_func = palette(:rainbow, length(solution.vehicleSchedules))
@@ -441,18 +377,96 @@ function plotRoutes(solution::Solution,scenario::Scenario,requestBank::Vector{In
         # Cycle through colors if there are more vehicles than colors
         c = colors[i]
 
-        plot!(routeLats, routeLongs, label = "Vehicle $i", color = c, linewidth = 2)
+        plot!(routeLongs, routeLats, label = "Vehicle $i", color = c, linewidth = 2)
         # Plot arrows (quiver from each point to the next)
         for j in 1:(length(routeLats)-1)
-            x = routeLats[j]
-            y = routeLongs[j]
-            dx = routeLats[j+1] - x
-            dy = routeLongs[j+1] - y
+            y = routeLats[j]
+            x = routeLongs[j]
+            dx = routeLongs[j+1] - x
+            dy = routeLats[j+1] - y
             quiver!([x], [y], quiver=([arrow_scale * dx], [arrow_scale * dy]), color=c, arrow=:small, linewidth=1)
         end
     end
 
+    for schedule in solution.vehicleSchedules
+        for assignment in schedule.route
+            if assignment.activity.activityType == PICKUP
+                push!(assignedRequests, assignment.activity.requestId)
+
+                
+            end
+
+            if assignment.activity.activityType == PICKUP
+                if firstPickUp
+                    firstPickUp = false 
+                    r = scenario.requests[assignment.activity.requestId]
+                    scatter!([r.pickUpActivity.location.long], [r.pickUpActivity.location.lat], label = "Pick Up", color = :lightgreen, markersize = 10, marker = :circle,markerstrokewidth=0)
+                    annotate!(r.pickUpActivity.location.long, r.pickUpActivity.location.lat+offset, text("PU$(r.id)", :center, 8, color = :green))
+                else
+                    r = scenario.requests[assignment.activity.requestId]
+                    scatter!([r.pickUpActivity.location.long], [r.pickUpActivity.location.lat], label = "", color = :lightgreen, markersize = 10, marker = :circle,markerstrokewidth=0)
+                    annotate!(r.pickUpActivity.location.long, r.pickUpActivity.location.lat+offset, text("PU$(r.id)", :center, 8, color = :green))
+                end
+            elseif assignment.activity.activityType == DROPOFF
+                if firstDropoff
+                    firstDropoff = false
+                    r = scenario.requests[assignment.activity.requestId]
+                    scatter!([r.dropOffActivity.location.long], [r.dropOffActivity.location.lat], label = "Drop off", color = :darkgreen, markersize = 10, marker = :square,markerstrokewidth=0)
+                    annotate!(r.dropOffActivity.location.long, r.dropOffActivity.location.lat+offset, text("DO$(r.id)", :center, 8, color = :green))
+                else 
+                    r = scenario.requests[assignment.activity.requestId]
+                    scatter!([r.dropOffActivity.location.long], [r.dropOffActivity.location.lat], label = "", color = :darkgreen, markersize = 10, marker = :square,markerstrokewidth=0)
+                    annotate!(r.dropOffActivity.location.long, r.dropOffActivity.location.lat+offset, text("DO$(r.id)", :center, 8, color = :green))
+                end
+            elseif assignment.activity.activityType == DEPOT
+                if firstDepot
+                    firstDepot = false
+                    v = schedule.vehicle
+                    scatter!([v.depotLocation.long], [v.depotLocation.lat], label = "Depot", color = :black, markersize = 12, marker = :star,markerstrokewidth=0)
+                    annotate!(v.depotLocation.long, v.depotLocation.lat+offset, text("D$(v.id)", :center, 8, color = :black))
+                else
+                    v = schedule.vehicle
+                    scatter!([v.depotLocation.long], [v.depotLocation.lat], label = "", color = :black, markersize = 12, marker = :star,markerstrokewidth=0)
+                    annotate!(v.depotLocation.long, v.depotLocation.lat+offset, text("D$(v.id)", :center, 8, color = :black))
+                end
+            else
+                if firstWaiting
+                    firstWaiting = false
+                    scatter!([assignment.activity.location.long], [assignment.activity.location.lat], label = "Waiting", color = :grey, markersize = 10, marker = :diamond,markerstrokewidth=0)
+                    annotate!(assignment.activity.location.long, assignment.activity.location.lat+offset, text("W$(assignment.activity.id)", :center, 8, color = :grey))
+                else 
+                    scatter!([assignment.activity.location.long], [assignment.activity.location.lat], label = "", color = :grey, markersize = 10, marker = :diamond,markerstrokewidth=0)
+                    annotate!(assignment.activity.location.long,assignment.activity.location.lat+offset, text("W$(assignment.activity.id)", :center, 8, color = :grey))
+                end
+            end
+        end
+    end
+
+  
+    # Request bank 
+    for (idx,r) in enumerate(requestBank)
+        if idx == 1
+            scatter!([scenario.requests[r].pickUpActivity.location.long], [scenario.requests[r].pickUpActivity.location.lat], label = "PU request bank", color = :red, markersize = 10, marker = :circle,markerstrokewidth=1,markerstrokecolor=:red)
+            annotate!(scenario.requests[r].pickUpActivity.location.long, scenario.requests[r].pickUpActivity.location.lat+offset, text("PU$(r)", :center, 8, color = :red))
+
+            scatter!([scenario.requests[r].dropOffActivity.location.long], [scenario.requests[r].dropOffActivity.location.lat], label = "DO request bank", color = :red, markersize = 10, marker = :square,markerstrokewidth=1,markerstrokecolor=:red)
+            annotate!(scenario.requests[r].dropOffActivity.location.long, scenario.requests[r].dropOffActivity.location.lat+offset, text("DO$(r)", :center, 8, color = :red))
+        else
+            scatter!([scenario.requests[r].pickUpActivity.location.long], [scenario.requests[r].pickUpActivity.location.lat], label = "", color = :red, markersize = 10, marker = :circle,markerstrokewidth=1,markerstrokecolor=:red)
+            annotate!(scenario.requests[r].pickUpActivity.location.long, scenario.requests[r].pickUpActivity.location.lat+offset, text("PU$(r)", :center, 8, color = :red))
+
+            scatter!([scenario.requests[r].dropOffActivity.location.long], [scenario.requests[r].dropOffActivity.location.lat], label = "", color = :red, markersize = 10, marker = :square,markerstrokewidth=1,markerstrokecolor=:red)
+            annotate!(scenario.requests[r].dropOffActivity.location.long, scenario.requests[r].dropOffActivity.location.lat+offset, text("DO$(r)", :center, 8, color = :red))
+        end
+
+    end
+  
+
+  
+
     title!(title)
+    xlabel!("Longitude")
+    ylabel!("Latitude")
     return p 
 end
 

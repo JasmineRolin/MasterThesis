@@ -5,7 +5,10 @@ using UnPack, domain, Printf, ..CostCalculator, TimerOutputs
 export printRoute,printSimpleRoute,insertRequest!,checkFeasibilityOfInsertionAtPosition,printRouteHorizontal,printSolution,updateRoute!,checkFeasibilityOfInsertionInRoute
 export insertWaiting!, feasibleWhenInsertWaiting!
 
-const INFEASIBLE_RESULT = (false, Any[], Any[], Any[], 0.0, 0.0, 0, 0, Any[])
+const INFEASIBLE_RESULT = (false, Any[], Any[], Any[], 0.0, 0.0, 0, 0, Any[], false, false, false)
+const INFEASIBLE_ROUTE_PICKUP = (false, Any[], Any[], Any[], 0.0, 0.0, 0, 0, Any[], true, true, false)
+const INFEASIBLE_ROUTE_DROPOFF = (false, Any[], Any[], Any[], 0.0, 0.0, 0, 0, Any[], false, true, false)
+const INFEASIBLE_ROUTE__DROPOFF_FOREVER = (false, Any[], Any[], Any[], 0.0, 0.0, 0, 0, Any[], false, true, true)
 
 
 #==
@@ -104,9 +107,13 @@ end
     New insert request 
 ==#
 function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPickUp::Int,idxDropOff::Int,scenario::Scenario,newStartOfServiceTimes::Vector{Int},newEndOfServiceTimes::Vector{Int},waitingActivitiesToDelete::Vector{Int};totalCost::Float64=-1.0,totalDistance::Float64=-1.0,totalIdleTime::Int=-1,totalTime::Int=-1,visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(),waitingActivitiesToAdd::Vector{Int} = Vector{Int}())
-
     route = vehicleSchedule.route
     vehicle = vehicleSchedule.vehicle
+
+    firstActivity = false 
+    if length(route) == 2 && route[1].activity.activityType == DEPOT && route[2].activity.activityType == DEPOT
+        firstActivity = true 
+    end
 
     # Insert request
     insert!(route,idxPickUp+1,ActivityAssignment(request.pickUpActivity,vehicle,0,0))
@@ -237,8 +244,6 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
     end
 
     @timeit TO "CheckHighLevelConstraints" begin
-        vehicleStartTime = vehicle.availableTimeWindow.startTime
-        vehicleEndTime = vehicle.availableTimeWindow.endTime
         pickUpActivity = request.pickUpActivity
         dropOffActivity = request.dropOffActivity
         pickUpStartTime = pickUpActivity.timeWindow.startTime
@@ -246,24 +251,18 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
         dropOffStartTime = dropOffActivity.timeWindow.startTime
         dropOffEndTime = dropOffActivity.timeWindow.endTime
 
-        if vehicleStartTime > pickUpEndTime || vehicleEndTime < dropOffStartTime
-            return INFEASIBLE_RESULT
+        if route[pickUpIdx+1].activity.timeWindow.endTime < pickUpStartTime || route[pickUpIdx].activity.timeWindow.startTime > pickUpEndTime 
+            return INFEASIBLE_ROUTE_PICKUP
+        end
+
+        if route[dropOffIdx+1].activity.timeWindow.endTime < dropOffStartTime || route[dropOffIdx].activity.timeWindow.startTime > dropOffEndTime 
+            return INFEASIBLE_ROUTE__DROPOFF_FOREVER
         end
 
         @views for i in pickUpIdx:dropOffIdx
             if numberOfWalking[i] + 1 > vehicle.totalCapacity
-                return INFEASIBLE_RESULT
+                return INFEASIBLE_ROUTE_DROPOFF
             end
-        end
-
-        if route[pickUpIdx].activity.timeWindow.startTime > pickUpEndTime || 
-           route[pickUpIdx+1].activity.timeWindow.endTime < pickUpStartTime
-            return INFEASIBLE_RESULT
-        end
-
-        if route[dropOffIdx].activity.timeWindow.startTime > dropOffEndTime || 
-           route[dropOffIdx+1].activity.timeWindow.endTime < dropOffStartTime
-            return INFEASIBLE_RESULT
         end
     end
 
@@ -342,10 +341,13 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
         if firstActivity.activity.activityType == DROPOFF || firstActivity.activity.activityType == PICKUP 
             maximumShiftForward = 0
+            
         elseif route[end-1].activity.activityType == WAITING && length(route) != 2 # Waiting activity but not in route with only [waiting,depot] # Astrid Here
             maximumShiftForward =  route[end-1].activity.timeWindow.endTime - route[end-1].startOfServiceTime
+
         elseif length(route) == 2 && firstActivity.activity.activityType == DEPOT && route[2].activity.activityType == DEPOT # EMmty route 
             maximumShiftForward = firstActivity.activity.timeWindow.endTime - firstActivity.activity.timeWindow.startTime
+
         else # Depot but non-empty route or [waiting,depot]
             maximumShiftForward = firstActivity.startOfServiceTime - firstActivity.activity.timeWindow.startTime
         end
@@ -361,7 +363,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
     #end
 
     if detour > idleTime && detour > maximumShiftBackward + maximumShiftForward
-        return false, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd
+        return false, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
     end
 
 
@@ -392,7 +394,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                     newEndOfServiceTimePickUp = requestId in visitedRouteIds ? visitedRoute[requestId]["PickUpServiceStart"] + serviceTimes : newEndOfServiceTimes[pickUpIndexes[requestId]]
 
                     if newStartOfServiceTimes[idx] - newEndOfServiceTimePickUp > r.maximumRideTime
-                        return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd
+                        return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
                     end
 
                     # Update total cost
@@ -423,7 +425,12 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                 end  
 
                 # Check if we can drive from previous activity to activity after waiting 
-                feasible, maximumShiftBackwardTrial, maximumShiftForwardTrial = canActivityBeInserted(firstActivity.activity,nextActivity,arrivalAtNextActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
+                if idx == nActivities-1 
+                    # TODO: jas - we dont want to remove the waiting activity before depot 
+                    feasible = false
+                else
+                    feasible, maximumShiftBackwardTrial, maximumShiftForwardTrial = canActivityBeInserted(firstActivity.activity,nextActivity,arrivalAtNextActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
+                end
 
                 # Remove waiting activity 
                 if feasible
@@ -460,7 +467,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
                         
                         if !feasible
-                            return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd
+                            return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
                         end
 
                         # Update total idle time 
@@ -480,7 +487,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                 
                 if !feasible
                     # No possible way to insert it
-                    return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd
+                    return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
                 end
 
                 # Update total distance 
@@ -495,7 +502,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                 r = requests[requestId]
                 newEndOfServiceTimePickUp = requestId in visitedRouteIds ? visitedRoute[requestId]["PickUpServiceStart"] + serviceTimes : newEndOfServiceTimes[pickUpIndexes[requestId]]
                 if newStartOfServiceTimes[idx] - newEndOfServiceTimePickUp > r.maximumRideTime
-                    return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd
+                    return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
                 end
 
                 # Update total cost
@@ -510,7 +517,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
     # Update total time 
     totalTime = newEndOfServiceTimes[end] - newStartOfServiceTimes[1]
 
-    return true, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd
+    return true, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd, false, false, false
 end
 
 #==

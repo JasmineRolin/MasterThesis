@@ -8,12 +8,12 @@ export checkSolutionFeasibility,checkRouteFeasibility, checkSolutionFeasibilityO
 #==
 # Function to check feasibility of online solution 
 ==#
-function checkSolutionFeasibilityOnline(scenario::Scenario,state::State;nExpected::Int=0)
+function checkSolutionFeasibilityOnline(scenario::Scenario,state::State; checkOnline::Bool=false, nExpected::Int=0)
     @unpack solution, event, visitedRoute, totalNTaxi = state
-    checkSolutionFeasibilityOnline(scenario,solution,event,visitedRoute,totalNTaxi; nExpected=nExpected)
+    checkSolutionFeasibilityOnline(scenario,solution,event,visitedRoute,totalNTaxi,checkOnline=checkOnline; nExpected=nExpected)
 end
 
-function checkSolutionFeasibilityOnline(scenario::Scenario,solution::Solution,event::Request,visitedRoute::Dict{Int, Dict{String, Int}}, totalNTaxi::Int;nExpected::Int=0)
+function checkSolutionFeasibilityOnline(scenario::Scenario,solution::Solution,event::Request,visitedRoute::Dict{Int, Dict{String, Int}}, totalNTaxi::Int; checkOnline::Bool=false,nExpected::Int=0)
     @unpack vehicleSchedules, totalCost, nTaxi, nTaxiExpected, totalRideTime, totalDistance, totalIdleTime = solution
 
     # Keep track of serviced activities assuming that activity 
@@ -68,10 +68,17 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,solution::Solution,ev
     # Check that all activities are serviced
     considered = Set{Int}()
     union!(considered, (r.id for r in scenario.offlineRequests))  
-    if event.id != 0  
+    order = []
+    if event.id != 0  || checkOnline
         for onlineRequest in scenario.onlineRequests
+            if onlineRequest.callTime > event.callTime
+                break
+            end
+
             push!(considered, onlineRequest.id)
-            if event.id == onlineRequest.id
+            push!(order, onlineRequest.id)
+
+            if (event.id == onlineRequest.id)
                 break
             end
         end
@@ -79,7 +86,7 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,solution::Solution,ev
     notServicedRequests = setdiff(considered, servicedPickUpActivities)
 
     if totalNTaxi + nTaxi + nTaxiExpected + nExpected != length(notServicedRequests) 
-        msg = "SOLUTION INFEASIBLE: Not all requests are serviced. Serviced: $(length(servicedPickUpActivities)), not serviced: $(length(notServicedRequests)), nTaxi: $(nTaxi)"
+        msg = "SOLUTION INFEASIBLE: Not all requests are serviced. Serviced: $(length(servicedPickUpActivities)), not serviced: $(length(notServicedRequests)), nTaxi: $(nTaxi), totalNTaxi: $(totalNTaxi)"
         return false, msg
     end
 

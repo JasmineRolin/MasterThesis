@@ -64,6 +64,14 @@ using .VehicleSchedules
 export VehicleSchedule, findPositionOfRequest, isVehicleScheduleEmpty, copyVehicleSchedule
 
 #==
+ Export from grid module
+==#
+include("Grid.jl")
+using .Grids 
+export Grid,determineGridCell,findDepotLocations,findDepotIdFromGridCell
+
+
+#==
  Export from Scenario module 
 ==#
 include("Scenario.jl")
