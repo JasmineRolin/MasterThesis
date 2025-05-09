@@ -125,16 +125,8 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPic
 
         # Update waiting activities if it should not be deleted
         if a.activity.activityType == WAITING && !(i in waitingActivitiesToDelete)
-            # # TODO: 
             # Check if waiting activity follows wait first 
-            # if vehicleSchedule.vehicle.id == 3
-            #     println("activity.id: " ,a.activity.id)
-            #     println("route[i-1].activity.id: ",route[i-1].activity.id)
-            #     println("i: ",i)
-            # end 
-
             if (i != 1) && (i != (nActivities-1)) && (a.activity.id != route[i-1].activity.id)
-                #println("Entered")
                 activityAssignmentBefore = route[i-1]
                 activityAssignmentAfter = route[i+1]
 
@@ -411,7 +403,6 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
         return false, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
     end
 
-
     # Find new service times 
     idxActivityInSchedule = 1
     #@timeit TO "loopOverActivities" begin
@@ -526,8 +517,18 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                 feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(firstActivity.activity,currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
 
                 # Check if can insert by inserting waiting activity 
-                if !feasible && idx <= routeLength && state == "Repair"
-                    feasible, maximumShiftBackward, maximumShiftForward = feasibleWhenInsertWaiting!(time,requests,serviceTimes,currentActivity,activityType,previousActivity,vehicleSchedule,idx,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToAdd,maximumShiftBackward, maximumShiftForward)
+                if state == "Repair" && !feasible && idx <= routeLength
+
+                    # Extend waiting 
+                    if previousActivity.activityType == WAITING 
+                        endOfWaitingActivity = currentActivity.timeWindow.startTime - time[previousActivity.id,currentActivityId]
+                        newEndOfServiceTimes[idx-1] = endOfWaitingActivity
+
+                        feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(firstActivity.activity,currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
+                    # Attempt to insert waiting activity
+                    else
+                      feasible, maximumShiftBackward, maximumShiftForward = feasibleWhenInsertWaiting!(time,requests,serviceTimes,currentActivity,activityType,previousActivity,vehicleSchedule,idx,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToAdd,maximumShiftBackward, maximumShiftForward)                        
+                    end
                 end
                 
                 if !feasible

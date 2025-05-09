@@ -27,11 +27,11 @@ function simpleConstruction(scenario::Scenario,requests::Vector{Request};visited
         else
             append!(requestBank,request.id)
         end
-        
-        if closestVehicleIdx == 6
-            printRouteHorizontal(solution.vehicleSchedules[closestVehicleIdx])
-        end
 
+        # if closestVehicleIdx == 1
+        #     println("waiting to add: ",waitingActivitiesToAdd)
+        #     printRouteHorizontal(solution.vehicleSchedules[closestVehicleIdx])
+        # end
     end
 
     # Update solution

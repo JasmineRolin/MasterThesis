@@ -7,7 +7,7 @@ using Plots.PlotMeasures
 
 gamma = 0.9
 nData = 10
-n = 20 
+n = 300 
 i = 3
 gridFile = "Data/Konsentra/grid.json"
 historicIndexes = setdiff(1:nData,i)
@@ -32,7 +32,7 @@ scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,dis
 outPutFolder = "tests/output/OnlineSimulation/"*string(n)
 
 relocateVehicles = false
-solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles);
+solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = false,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles);
 
 state = State(solution,scenario.onlineRequests[end],0)
 feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
