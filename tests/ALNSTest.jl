@@ -190,7 +190,7 @@ end
     n = 500
 
 #     # Scenario number - 1:10
-    i = 1
+    i = 7
 
     # Files 
     gamma = 0.5
