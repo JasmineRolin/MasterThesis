@@ -44,7 +44,7 @@ end
     state = State(solution,Request(),0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == false
-    @test msg == "SOLUTION INFEASIBLE: Total cost of solution is incorrect. Calculated: 30.0, actual: 90.0, diff: 60.0"
+    @test msg == "SOLUTION INFEASIBLE: Total cost of solution is incorrect. Calculated: 47.77777777777778, actual: 90.0, diff: 42.22222222222222"
 end
 
 
