@@ -80,7 +80,7 @@ gridFile = string("Data/Konsentra/grid.json")
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile,gridFile)
 
     # Simulate scenario 
-    solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder)
+    solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = false,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder)
 
     state = State(solution,scenario.onlineRequests[end],0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)

@@ -2,7 +2,7 @@ module Locations
 
 export Location
 
-struct Location 
+mutable struct Location 
     name::String 
     lat::Float64
     long::Float64

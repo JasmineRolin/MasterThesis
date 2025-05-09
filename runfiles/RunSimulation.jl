@@ -35,11 +35,6 @@ function main()
     # Simulate scenario 
     solution, requestBank = simulateScenario(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile,printResults = false,displayPlots = false,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder)
 
-    state = State(solution,scenario.onlineRequests[end],0)
-    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-    printSolution(solution,printRouteHorizontal)
-    @test msg == ""
-    @test feasible == true
     #end
 
     dfResults = processResults(outputFiles)

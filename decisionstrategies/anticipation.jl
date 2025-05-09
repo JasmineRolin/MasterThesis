@@ -348,22 +348,45 @@ function updateExpectedWaiting!(time::Array{Int,2},distance::Array{Float64,2},se
 
 end
 
+#------ 
+# Update ids in route
+#------
+function updateIds!(solution::Solution,nFixed::Int,nExpected::Int)
+
+    for schedule in solution.vehicleSchedules
+        # Update depotId
+        schedule.vehicle.depotId -= 2*nExpected
+        schedule.vehicle.depotLocation.name = String("Depot $(schedule.vehicle.depotId)")
+
+        # Update ids in route
+        for activityAssignment in schedule.route
+
+            # Update vehicle
+            activityAssignment.vehicle.depotId = schedule.vehicle.depotId
+            activityAssignment.vehicle.depotLocation.name = schedule.vehicle.depotLocation.name
+
+            # If activity is a depot, update id
+            if activityAssignment.activity.activityType == DEPOT
+                activityAssignment.activity.id -= 2*nExpected
+                activityAssignment.activity.location.name = String("Depot $(activityAssignment.activity.id)")
+            elseif activityAssignment.activity.activityType == DROPOFF
+                activityAssignment.activity.id -= nExpected
+            elseif activityAssignment.activity.activityType == WAITING && activityAssignment.activity.id > nFixed && activityAssignment.activity.id <= 2*nFixed + 2*nExpected
+                activityAssignment.activity.id -= nExpected
+            elseif activityAssignment.activity.activityType == WAITING && activityAssignment.activity.id > nFixed && activityAssignment.activity.id > 2*nFixed + 2*nExpected
+                activityAssignment.activity.id -= 2*nExpected
+                activityAssignment.activity.location.name = String("Depot $(activityAssignment.activity.id)")
+            end
+
+        end
+    end
+
+end
 
 #-------
 # Determine offline solution with anticipation
 #-------
-function offlineSolutionWithAnticipation(requestFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String,nExpected::Int)
-
-    # Choose destroy methods
-    destroyMethods = Vector{GenericMethod}()
-    addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
-    addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
-    addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
-
-    #Choose repair methods
-    repairMethods = Vector{GenericMethod}()
-    addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
-    addMethod!(repairMethods,"regretInsertion",regretInsertion)
+function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},destroyMethods::Vector{GenericMethod},requestFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String,nExpected::Int)
 
     # Variables to determine best solution
     bestAverageObj = typemax(Float64)
@@ -376,8 +399,8 @@ function offlineSolutionWithAnticipation(requestFile::String,vehiclesFile::Strin
                         nInitialNotServicedFixedRequests = Int[],
                         nInitialNotServicedExpectedRequests = Int[])
 
-
-    for i in 1:10
+    # TODO remember to chage to 10
+    for i in 1:2
 
         # Make scenario
         scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName)

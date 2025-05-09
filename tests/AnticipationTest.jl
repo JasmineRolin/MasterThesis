@@ -116,6 +116,18 @@ include("../decisionstrategies/anticipation.jl")
     displayPlots = false
     saveResults = false
 
+
+    # Choose destroy methods
+    destroyMethods = Vector{GenericMethod}()
+    addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
+    addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
+    addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
+
+    # Choose repair methods
+    repairMethods = Vector{GenericMethod}()
+    addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
+    addMethod!(repairMethods,"regretInsertion",regretInsertion)
+
     #for i in 1:10
         requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
         distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
@@ -123,7 +135,7 @@ include("../decisionstrategies/anticipation.jl")
         scenarioName = string("Generated_Data_",n,"_",i)
     
         nExpected = Int(floor(n/10))
-        bestSolution, bestRequestBank, results, scenario, scenario2,feasible, msg = offlineSolutionWithAnticipation(requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected)
+        bestSolution, bestRequestBank, results, scenario, scenario2,feasible, msg = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected)
 
         println(results)
 
