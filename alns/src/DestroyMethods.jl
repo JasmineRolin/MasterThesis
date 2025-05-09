@@ -391,7 +391,7 @@ function removeActivityFromRoute!(time::Array{Int,2},schedule::VehicleSchedule,i
 
     # Retrieve activities before and after activity to remove
     route = schedule.route
-    activityAssignmentBefore = route[idx-1] # TODO: jas - how has this not caused issues ? 
+    activityAssignmentBefore = route[idx-1]
     activityAssignmentAfter = route[idx+1]
 
     # How much did the route length reduce 
