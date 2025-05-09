@@ -71,6 +71,7 @@ function getTotalCostRoute(time::Array{Int,2},route::Vector{ActivityAssignment})
 end
 
 function getTotalCostRouteOnline(time::Array{Int,2},route::Vector{ActivityAssignment},visitedRoute::Dict{Int, Dict{String, Int}},serviceTime::Int)
+    
     ratio = 0.0
     pickupTimes = Dict{Int, Int}()
     
@@ -95,7 +96,6 @@ function getTotalCostRouteOnline(time::Array{Int,2},route::Vector{ActivityAssign
             ratio += actualTime/directTime
         end
     end
-    
     return ratio*10.0
 end
 
@@ -149,7 +149,7 @@ function getTotalCostDistanceTimeOfSolution(scenario::Scenario,solution::Solutio
         totalIdleTime += schedule.totalIdleTime
     end
 
-    totalCost += solution.nTaxi * scenario.taxiParameter
+    totalCost += solution.nTaxi * scenario.taxiParameter + solution.nTaxiExpected * scenario.taxiParameterExpected
 
     return totalCost, totalDistance, totalTime, totalIdleTime
 end
@@ -158,7 +158,7 @@ end
  Function to get taxi cost of solution 
 ==#
 function getTaxiCostOfSolution(scenario::Scenario,solution::Solution)
-    return solution.nTaxi * scenario.taxiParameter
+    return solution.nTaxi * scenario.taxiParameter + solution.nTaxiExpected * scenario.taxiParameterExpected
 end
 
 

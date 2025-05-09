@@ -2,7 +2,7 @@ module DestroyMethods
 
 using Random, UnPack, LinearAlgebra, domain, utils, ..ALNSDomain, TimerOutputs
 
-export randomDestroy!, worstRemoval!, shawRemoval!, findNumberOfRequestToRemove
+export randomDestroy!, worstRemoval!, shawRemoval!, findNumberOfRequestToRemove, removeRequestsFromSolution!
 
 #==
  Set seed each time module is reloaded
@@ -52,11 +52,14 @@ function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::A
     # Choose requests to remove  
     selectedIdx = randperm(nRequests-length(notMoveRequests))[1:nRequestsToRemove]
     requestsToRemove = Set(possibleToRemove[selectedIdx])
+    nRequestsToRemoveFixed = sum(requestsToRemove .<= scenario.nFixed)
+    nRequestsToRemoveExpected = sum(requestsToRemove .> scenario.nFixed)
     append!(requestBank,requestsToRemove)
     setdiff!(assignedRequests, requestsToRemove)
     currentState.nAssignedRequests -= nRequestsToRemove
-    currentState.currentSolution.nTaxi += nRequestsToRemove
-    currentState.currentSolution.totalCost += nRequestsToRemove*scenario.taxiParameter
+    currentState.currentSolution.nTaxi += nRequestsToRemoveFixed
+    currentState.currentSolution.nTaxiExpected += nRequestsToRemoveExpected
+    currentState.currentSolution.totalCost += nRequestsToRemoveFixed*scenario.taxiParameter + nRequestsToRemoveExpected*scenario.taxiParameterExpected
 
     removeRequestsFromSolution!(time,distance,serviceTimes,requests,currentSolution,requestsToRemove,visitedRoute = visitedRoute,scenario = scenario,TO=TO)
 
@@ -113,8 +116,11 @@ function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::
     append!(requestBank, requestsToRemove)
     setdiff!(assignedRequests, requestsToRemove)
     currentState.nAssignedRequests -= nRequestsToRemove
-    currentState.currentSolution.nTaxi += nRequestsToRemove
-    currentState.currentSolution.totalCost += nRequestsToRemove *scenario.taxiParameter
+    nRequestsToRemoveFixed = sum(requestsToRemove .<= scenario.nFixed)
+    nRequestsToRemoveExpected = sum(requestsToRemove .> scenario.nFixed)
+    currentState.currentSolution.nTaxi += nRequestsToRemoveFixed
+    currentState.currentSolution.nTaxiExpected += nRequestsToRemoveExpected
+    currentState.currentSolution.totalCost += nRequestsToRemoveFixed*scenario.taxiParameter + nRequestsToRemoveExpected*scenario.taxiParameterExpected
         
     # Remove requests from solution
     removeRequestsFromSolution!(time, distance,serviceTimes,requests, currentSolution, requestsToRemove,visitedRoute=visitedRoute,scenario=scenario,TO=TO)
@@ -186,9 +192,12 @@ function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::A
     end
     append!(requestBank, requestsToRemove)
     currentState.nAssignedRequests -= nRequestsToRemove
-    currentState.currentSolution.nTaxi += nRequestsToRemove
-    currentState.currentSolution.totalCost += nRequestsToRemove *scenario.taxiParameter
-
+    nRequestsToRemoveFixed = sum(requestsToRemove .<= scenario.nFixed)
+    nRequestsToRemoveExpected = sum(requestsToRemove .> scenario.nFixed)
+    currentState.currentSolution.nTaxi += nRequestsToRemoveFixed
+    currentState.currentSolution.nTaxiExpected += nRequestsToRemoveExpected
+    currentState.currentSolution.totalCost += nRequestsToRemoveFixed*scenario.taxiParameter + nRequestsToRemoveExpected*scenario.taxiParameterExpected
+        
     # Remove requests 
     removeRequestsFromSolution!(time, distance, serviceTimes,requests,currentSolution, requestsToRemove,visitedRoute = visitedRoute,scenario = scenario,TO=TO)
 end
@@ -235,7 +244,7 @@ end
 #==
  Method to remove requests
 ==#
-function removeRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},solution::Solution,requestsToRemove::Set{Int};visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}(),scenario::Scenario=Scenario(),TO::TimerOutput=TimerOutput())   
+function removeRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},solution::Solution,requestsToRemove::Set{Int};visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}(),scenario::Scenario=Scenario(),TO::TimerOutput=TimerOutput(),remover::Function = removeRequestsFromSchedule!,nFixed::Int=0,nExpected::Int=0)   
     # Create a mutable copy of requestsToRemove
     remainingRequests = copy(requestsToRemove)
 
@@ -255,8 +264,9 @@ function removeRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,
             solution.totalCost -= schedule.totalCost
             solution.totalRideTime -= schedule.totalTime
 
-            # Remove requests from schedule 
-            removeRequestsFromSchedule!(time,distance,serviceTimes,requests,schedule,requestsToRemoveInSchedule,visitedRoute,scenario,TO=TO) 
+            # Remove requests from schedule
+            # If remover is "removeRequestsFromScheduleAnticipation!" then it also need nFixed and nExpected as input, but the standard one does not have it
+            remover(time,distance,serviceTimes,requests,schedule,requestsToRemoveInSchedule,visitedRoute,scenario,nFixed=nFixed,nExpected=nExpected,TO=TO) 
 
             # Update solution KPIs
             solution.totalDistance += schedule.totalDistance
@@ -273,7 +283,7 @@ end
 #==
  Method to remove list of requests from schedule
 ==#
-function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},schedule::VehicleSchedule,requestsToRemove::Vector{Int},visitedRoute::Dict{Int, Dict{String, Int}},scenario::Scenario;TO::TimerOutput=TimerOutput())
+function removeRequestsFromSchedule!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},schedule::VehicleSchedule,requestsToRemove::Vector{Int},visitedRoute::Dict{Int, Dict{String, Int}},scenario::Scenario;TO::TimerOutput=TimerOutput(),nFixed::Int=0,nExpected::Int=0)
 
     # Remove requests from schedule
     for requestToRemove in requestsToRemove

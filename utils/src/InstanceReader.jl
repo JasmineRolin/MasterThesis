@@ -180,12 +180,12 @@ end
 #==
  Function to read requests 
 ==#
-function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maximumRideTimePercent::Int, minimumMaximumRideTime::Int,time::Array{Int,2})
+function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maximumRideTimePercent::Int, minimumMaximumRideTime::Int,time::Array{Int,2};extraN::Int=0)
     requests = Vector{Request}()
 
     for row in eachrow(requestDf)
-        id = row.id 
-        dropOffId = nRequests + id
+        id = row.id + extraN
+        dropOffId = nRequests + id + extraN
 
         # Read location 
         pickUpLocation = Location(string("PU R",id),row.pickup_latitude,row.pickup_longitude) 

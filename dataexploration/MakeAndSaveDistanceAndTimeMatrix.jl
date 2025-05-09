@@ -62,18 +62,18 @@ end
 
 
 ################
-
-# for gamma in [0.5,0.7,0.9]
-#     for nRequests in [20,100,300,500]
-#         for i in 1:10
-#             requestFile = string("Data/Konsentra/"*string(nRequests)*"/GeneratedRequests_"*string(nRequests)*"_"*string(i)*".csv")
-#             vehicleFile = "Data/Konsentra/"*string(nRequests)*"/Vehicles_"*string(nRequests)*"_"*string(gamma)*".csv"
-#             dataName = string("Data/Matrices/"*string(nRequests)*"/GeneratedRequests_",nRequests,"_",gamma,"_",i)
-#             getTimeDistanceMatrix(requestFile, vehicleFile, dataName)
-#         end
-#     end
-# end
-
+#==
+for gamma in [0.5,0.7,0.9]
+    for nRequests in [20,100,300,500]
+        for i in 1:10
+            requestFile = string("Data/Konsentra/"*string(nRequests)*"/GeneratedRequests_"*string(nRequests)*"_"*string(i)*".csv")
+            vehicleFile = "Data/Konsentra/"*string(nRequests)*"/Vehicles_"*string(nRequests)*"_"*string(gamma)*".csv"
+            dataName = string("Data/Matrices/"*string(nRequests)*"/GeneratedRequests_",nRequests,"_",gamma,"_",i)
+            getTimeDistanceMatrix(requestFile, vehicleFile, dataName)
+        end
+    end
+end
+==#
 
 
 

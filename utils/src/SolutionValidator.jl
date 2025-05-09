@@ -8,13 +8,13 @@ export checkSolutionFeasibility,checkRouteFeasibility, checkSolutionFeasibilityO
 #==
 # Function to check feasibility of online solution 
 ==#
-function checkSolutionFeasibilityOnline(scenario::Scenario,state::State; checkOnline::Bool=false)
+function checkSolutionFeasibilityOnline(scenario::Scenario,state::State; checkOnline::Bool=false, nExpected::Int=0)
     @unpack solution, event, visitedRoute, totalNTaxi = state
-    checkSolutionFeasibilityOnline(scenario,solution,event,visitedRoute,totalNTaxi,checkOnline=checkOnline)
+    checkSolutionFeasibilityOnline(scenario,solution,event,visitedRoute,totalNTaxi,checkOnline=checkOnline; nExpected=nExpected)
 end
 
-function checkSolutionFeasibilityOnline(scenario::Scenario,solution::Solution,event::Request,visitedRoute::Dict{Int, Dict{String, Int}}, totalNTaxi::Int; checkOnline::Bool=false)
-    @unpack vehicleSchedules, totalCost, nTaxi, totalRideTime, totalDistance, totalIdleTime = solution
+function checkSolutionFeasibilityOnline(scenario::Scenario,solution::Solution,event::Request,visitedRoute::Dict{Int, Dict{String, Int}}, totalNTaxi::Int; checkOnline::Bool=false,nExpected::Int=0)
+    @unpack vehicleSchedules, totalCost, nTaxi, nTaxiExpected, totalRideTime, totalDistance, totalIdleTime = solution
 
     # Keep track of serviced activities assuming that activity 
     servicedActivities = Set{Int}()
@@ -85,20 +85,20 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,solution::Solution,ev
     end
     notServicedRequests = setdiff(considered, servicedPickUpActivities)
 
-    if totalNTaxi + nTaxi != length(notServicedRequests) 
-        println("checkOnline: $(checkOnline)")
-        println(notServicedRequests)
-        println(servicedPickUpActivities)
-        println("considered: $(considered)")
-        println("order: $(order)")
-        println([r.id for r in scenario.onlineRequests])
+    if totalNTaxi + nTaxi + nTaxiExpected + nExpected != length(notServicedRequests) 
         msg = "SOLUTION INFEASIBLE: Not all requests are serviced. Serviced: $(length(servicedPickUpActivities)), not serviced: $(length(notServicedRequests)), nTaxi: $(nTaxi), totalNTaxi: $(totalNTaxi)"
         return false, msg
     end
 
     # Check cost, distance and time of solution 
-    totalCostCheck += (nTaxi + totalNTaxi) * scenario.taxiParameter #?
+    totalCostCheck += (nTaxi+totalNTaxi) * scenario.taxiParameter + (nTaxiExpected) * scenario.taxiParameterExpected
     if !isapprox(totalCostCheck,totalCost,atol=0.0001) 
+        println("--------")
+        println(nTaxiExpected)
+        println(nTaxi)
+        println(nExpected)
+        println(totalNTaxi)
+        println(notServicedRequests)
         msg = "SOLUTION INFEASIBLE: Total cost of solution is incorrect. Calculated: $(totalCostCheck), actual: $(totalCost), diff: $(abs(totalCostCheck-totalCost))"
         return false, msg
     end
@@ -168,8 +168,6 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
         return false, msg, Set{Int}(), Set{Int}()
     end
     if !isapprox(totalCost, getTotalCostRouteOnline(scenario.time,route,visitedRoute,scenario.serviceTimes),atol=0.0001) 
-        println(route)
-        println(visitedRoute)
         msg = "ROUTE INFEASIBLE: Total cost is incorrect for vehicle $(vehicle.id). Calculated cost $(getTotalCostRouteOnline(scenario.time,route,visitedRoute,scenario.serviceTimes)), actual cost $(totalCost), diff $(abs(totalCost-getTotalCostRouteOnline(scenario.time,route,visitedRoute,scenario.serviceTimes))))"
         return false, msg, Set{Int}(), Set{Int}()
     end
@@ -231,6 +229,7 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
 
             # Check that start of service and end of service are feasible 
             if idx > 1 && startOfServiceTime < route[idx-1].endOfServiceTime + time[route[idx-1].activity.id,activity.id]
+                println(time[route[idx-1].activity.id,activity.id])
                 msg = "ROUTE INFEASIBLE: Start of service time $(startOfServiceTime) of activity $(activity.id) is not correct on vehicle $(vehicle.id)"
                 return false, msg, Set{Int}(), Set{Int}()
             end

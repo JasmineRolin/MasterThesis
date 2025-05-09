@@ -1,5 +1,5 @@
 {
-    "timeLimit": 2.0,
+    "timeLimit": 15.0,
     "printSegmentSize":1000,
     "segmentSize": 100,
     "w": 0.05, 
