@@ -31,7 +31,7 @@ scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,dis
 
 outPutFolder = "tests/output/OnlineSimulation/"*string(n)
 
-relocateVehicles = true
+relocateVehicles = false
 solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles);
 
 state = State(solution,scenario.onlineRequests[end],0)
@@ -44,6 +44,12 @@ print("end")
 
 
 # initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
+# state = State(initialSolution,scenario.onlineRequests[end],0)
+# feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+# @test feasible == true
+# @test msg == ""
+# println(msg)
+
 # display(createGantChartOfSolutionOnline(initialSolution,"Final Solution after merge"))
 
 # schedule = deepcopy(initialSolution.vehicleSchedules[66])

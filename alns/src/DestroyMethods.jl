@@ -393,7 +393,7 @@ function removeActivityFromRoute!(time::Array{Int,2},schedule::VehicleSchedule,i
 
     # Retrieve activities before and after activity to remove
     route = schedule.route
-    activityAssignmentBefore = route[idx-1]
+    activityAssignmentBefore = route[idx-1] # TODO: jas - how has this not caused issues ? 
     activityAssignmentAfter = route[idx+1]
 
     # How much did the route length reduce 
@@ -402,10 +402,19 @@ function removeActivityFromRoute!(time::Array{Int,2},schedule::VehicleSchedule,i
     # Remove activity 
     # If there is a waiting activity both before and after 
     if activityAssignmentBefore.activity.activityType == WAITING && activityAssignmentAfter.activity.activityType == WAITING
+        # Update location of waiting activity before if it is not first activity in route 
+        waitingActivityId = activityAssignmentBefore.activity.id
+        if idx != 2 && route[idx-2].activity.id != waitingActivityId
+            waitingActivityId = route[idx-2].activity.id
+            activityAssignmentBefore.activity.id = waitingActivityId
+            activityAssignmentBefore.activity.location = route[idx-2].activity.location
+            activityAssignmentBefore.startOfServiceTime = route[idx-2].endOfServiceTime
+            activityAssignmentBefore.activity.timeWindow.startTime = activityAssignmentBefore.startOfServiceTime
+        end
 
         # Update waiting activity 
         activityAssignemntAfterWaiting = route[idx+2]
-        activityAssignmentBefore.endOfServiceTime = activityAssignemntAfterWaiting.startOfServiceTime - time[activityAssignmentBefore.activity.id,activityAssignemntAfterWaiting.activity.id]
+        activityAssignmentBefore.endOfServiceTime = activityAssignemntAfterWaiting.startOfServiceTime - time[waitingActivityId,activityAssignemntAfterWaiting.activity.id]
         activityAssignmentBefore.activity.timeWindow.endTime = activityAssignmentBefore.endOfServiceTime
 
         # Delete activity
@@ -416,8 +425,18 @@ function removeActivityFromRoute!(time::Array{Int,2},schedule::VehicleSchedule,i
 
     # Extend waiting activity before activity to remove
     elseif activityAssignmentBefore.activity.activityType == WAITING
+        # Update location of waiting activity before if it is not first activity in route 
+        waitingActivityId = activityAssignmentBefore.activity.id
+        if idx != 2 && route[idx-2].activity.id != waitingActivityId
+            waitingActivityId = route[idx-2].activity.id
+            activityAssignmentBefore.activity.id = waitingActivityId
+            activityAssignmentBefore.activity.location = route[idx-2].activity.location
+            activityAssignmentBefore.startOfServiceTime = route[idx-2].endOfServiceTime
+            activityAssignmentBefore.activity.timeWindow.startTime = activityAssignmentBefore.startOfServiceTime
+        end
+
         # Update waiting activity 
-        activityAssignmentBefore.endOfServiceTime = activityAssignmentAfter.startOfServiceTime - time[activityAssignmentBefore.activity.id,activityAssignmentAfter.activity.id]
+        activityAssignmentBefore.endOfServiceTime = activityAssignmentAfter.startOfServiceTime - time[waitingActivityId,activityAssignmentAfter.activity.id]
         activityAssignmentBefore.activity.timeWindow.endTime = activityAssignmentBefore.endOfServiceTime
 
         # Delete activity
@@ -427,8 +446,18 @@ function removeActivityFromRoute!(time::Array{Int,2},schedule::VehicleSchedule,i
 
     # Extend waiting activity after activity to remove
     elseif activityAssignmentAfter.activity.activityType == WAITING
+        # Update location of waiting activity after 
+        waitingActivityId = activityAssignmentAfter.activity.id
+        if idx != 1 && activityAssignmentBefore.activity.id != waitingActivityId
+            waitingActivityId = activityAssignmentBefore.activity.id
+            activityAssignmentAfter.activity.id = waitingActivityId
+            activityAssignmentAfter.activity.location = activityAssignmentBefore.activity.location
+            activityAssignmentAfter.startOfServiceTime = activityAssignmentBefore.endOfServiceTime
+            activityAssignmentAfter.activity.timeWindow.startTime = activityAssignmentAfter.startOfServiceTime
+        end
+
         # Update waiting activity
-        activityAssignmentAfter.startOfServiceTime = activityAssignmentBefore.endOfServiceTime + time[activityAssignmentBefore.activity.id,activityAssignmentAfter.activity.id]
+        activityAssignmentAfter.startOfServiceTime = activityAssignmentBefore.endOfServiceTime + time[activityAssignmentBefore.activity.id,waitingActivityId]
         activityAssignmentAfter.activity.timeWindow.startTime = activityAssignmentAfter.startOfServiceTime
         
         # Delete activity 

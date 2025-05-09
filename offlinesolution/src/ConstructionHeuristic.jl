@@ -27,6 +27,10 @@ function simpleConstruction(scenario::Scenario,requests::Vector{Request};visited
         else
             append!(requestBank,request.id)
         end
+        
+        if closestVehicleIdx == 6
+            printRouteHorizontal(solution.vehicleSchedules[closestVehicleIdx])
+        end
 
     end
 

@@ -187,7 +187,7 @@ end
 # #@testset "Run all generated data sets " begin
 
     # Number of requests in scenario - 20, 100, 300 or 500 
-    n = 500
+    n = 20
 
 #     # Scenario number - 1:10
     i = 1
@@ -199,8 +199,8 @@ end
     alnsParameters = "tests/resources/ALNSParameters3.json"
 
     # Set both true to see plots 
-    displayPlots = false
-    saveResults = false
+    displayPlots = true
+    saveResults = true
 
     #for i in 1:10
         requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
