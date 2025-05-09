@@ -384,13 +384,11 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
     # Check if there is room for detour 
     detour = 0 
-    #@timeit TO "detourCalc" begin
-        if pickUpIdxInBlock == dropOffIdxInBlock - 1
-            detour = findDetour(time,serviceTimes,route[pickUpIdxInBlock-1].activity.id,route[pickUpIdxInBlock].activity.id,pickUpActivity.id,dropOffActivity.id)
-        elseif pickUpIdxInBlock != -1 
-            detour = findDetour(time,serviceTimes,route[pickUpIdxInBlock-1].activity.id,route[pickUpIdxInBlock].activity.id,pickUpActivity.id) + findDetour(time,serviceTimes,route[dropOffIdxInBlock-2].activity.id,route[dropOffIdxInBlock-2].activity.id,dropOffActivity.id) 
-        end
-    #end
+    if pickUpIdxInBlock == dropOffIdxInBlock - 1
+        detour = findDetour(time,serviceTimes,route[pickUpIdxInBlock-1].activity.id,route[pickUpIdxInBlock].activity.id,pickUpActivity.id,dropOffActivity.id)
+    elseif pickUpIdxInBlock != -1 
+        detour = findDetour(time,serviceTimes,route[pickUpIdxInBlock-1].activity.id,route[pickUpIdxInBlock].activity.id,pickUpActivity.id) + findDetour(time,serviceTimes,route[dropOffIdxInBlock-2].activity.id,route[dropOffIdxInBlock-2].activity.id,dropOffActivity.id) 
+    end
 
     # Detour just has to be "swallowed" by time in start and end 
     slackTime = 0
@@ -405,17 +403,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
             slackTime += firstActivity.startOfServiceTime - firstActivity.activity.timeWindow.startTime
         end
     end
-
-    if printInf
-        println("detour = ",detour, " slackTime = ",slackTime)
-    end
-
-    if detour > idleTime && detour > slackTime
-        if printInf
-            println(" IN DETOUR: detor = ",detour, " > idleTime = ",idleTime, " + maximumShiftBackward = ",maximumShiftBackward, " + maximumShiftForward = ",maximumShiftForward)
-        end
-
-
+    if detour > idleTime && detour > slackTime    
         return false, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
     end
 

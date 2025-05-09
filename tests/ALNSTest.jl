@@ -190,7 +190,7 @@ end
     n = 500
 
 #     # Scenario number - 1:10
-    i = 7
+    i = 1
 
     # Files 
     gamma = 0.5
@@ -204,8 +204,8 @@ end
 
     #for i in 1:10
         requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
-        distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
-        timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
+        distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+        timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
         scenarioName = string("Generated_Data_",n,"_",i)
         
         # Read instance 
