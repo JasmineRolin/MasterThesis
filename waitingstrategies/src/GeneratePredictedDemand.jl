@@ -45,38 +45,6 @@ function generatePredictedDemand(grid::Grid, historicRequestFiles::Vector{String
     return averageDemand  
 end
 
-# function generatePredictedDemand(grid::Grid, historicRequestFiles::Vector{String}, nTimePeriods::Int, periodLength::Int; quantileLevel=0.8)
-#     @unpack minLat,maxLat,minLong,maxLong, nRows,nCols,latStep,longStep = grid 
-
-#     nFiles = length(historicRequestFiles)
-#     demandSamples = Array{Int, 4}(undef, nTimePeriods, nRows, nCols, nFiles)
-
-#     for (fileIdx, requestFile) in enumerate(historicRequestFiles)
-#         demandGrid = zeros(Int, nTimePeriods, nRows, nCols)
-#         df = CSV.read(requestFile, DataFrame)
-
-#         for row in eachrow(df)
-#             lat = row.pickup_latitude
-#             lon = row.pickup_longitude
-
-#             timeVal = row.request_type == 0 ? row.request_time : row.request_time - row.direct_drive_time
-#             period = min(Int(ceil(timeVal / periodLength)), nTimePeriods)
-#             rowIdx, colIdx = determineGridCell(lat, lon, minLat, minLong, nRows, nCols, latStep, longStep)
-
-#             demandGrid[period, rowIdx, colIdx] += 1
-#         end
-
-#         demandSamples[:, :, :, fileIdx] = demandGrid
-#     end
-
-#     # Compute quantile across samples
-#     predictedDemand = mapslices(x -> quantile(x, quantileLevel), demandSamples; dims=4)
-
-#     return Float64.(predictedDemand)
-# end
-
-
-
 #==
  Generate predicted capacity of vehicles 
 ==#
@@ -93,11 +61,6 @@ function generatePredictedVehiclesDemand(grid::Grid,gamma::Float64, averageDeman
 end
 
 function generatePredictedVehiclesDemandInPeriod(gamma::Float64, predictedDemand::Array{Float64,2},realisedDemand::Array{Int,2})
-    # Find predicted vehicle demand for each hour 
-    # TODO: does it maje sense to use max ? 
-    worstCaseDemand = max.(predictedDemand, realisedDemand)
-
-   # return Int.(ceil.(worstCaseDemand.*gamma))
    return Int.(ceil.(predictedDemand.*gamma))
 end
 
@@ -106,8 +69,7 @@ function generatePredictedVehiclesDemandInHorizon(gamma::Float64, predictedDeman
     maxDemandInHorizon = maximum(predictedDemand[period:endPeriod,:,:], dims=1)
     maxDemandInHorizon = dropdims(maxDemandInHorizon, dims=1)
 
-   # return Int.(ceil.(worstCaseDemand.*gamma))
-   return Int.(ceil.(maxDemandInHorizon.*gamma))
+    return Int.(ceil.(maxDemandInHorizon.*gamma))
 end
 
 

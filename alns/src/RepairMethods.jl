@@ -327,12 +327,6 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
         return EMPTY_RESULT
     end
 
-    printval = false
-    # if request.id == 20 && vehicleSchedule.vehicle.id == 2
-    #   printRouteHorizontal(vehicleSchedule)
-    #   printval = true
-    # end
-
     # Loop through each position in route 
     break_PICKUP = false
     break_DROPOFF = false
@@ -341,23 +335,12 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
         for j in i:min_j_to_consider
             countTotal[] += 1
 
-            if printval
-                println("i = ",i," j = ",j)
-            end
-
             # Check if position is feasible
             feasible, _, _,_, totalCost, _, _, _, _, break_PICKUP, break_DROPOFF, break_DROPOFF_update_J  = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,i,j,scenario,visitedRoute=visitedRoute,
                                                                                             newStartOfServiceTimes=newStartOfServiceTimes,newEndOfServiceTimes=newEndOfServiceTimes,waitingActivitiesToDelete=waitingActivitiesToDelete,
                                                                                             waitingActivitiesToAdd=waitingActivitiesToAdd,visitedRouteIds=visitedRouteIds,TO=TO)
 
-                                                                                            
-             if printval 
-                println("feasible = ",feasible)
-                println("break_PICKUP = ",break_PICKUP)
-                println("break_DROPOFF = ",break_DROPOFF)
-                println("break_DROPOFF_update_J = ",break_DROPOFF_update_J)
-             end
-
+    
             # Update best position if feasible                                                                           
             if feasible && (totalCost < bestCost)
                 bestPickUp = i
@@ -383,13 +366,7 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
 
     # Return if feasible position is found 
     feasible = (bestPickUp != -1 && bestDropOff != -1 && bestCost < typemax(Float64))
-
-    if printval
-        println("bestPickUp = ",bestPickUp)
-        println("bestDropOff = ",bestDropOff)
-        println("bestCost = ",bestCost)
-    end
-
+    
     # TODO: is this actually better than copying newStartOfServiceTimes etc in loop ? 
     if feasible
        feasible, bestNewStartOfServiceTimes, bestNewEndOfServiceTimes,bestWaitingActivitiesToDelete, bestCost, bestDistance, bestIdleTime, bestTime, bestWaitingActivitiesToAdd =    checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,bestPickUp,bestDropOff,scenario,visitedRoute=visitedRoute,TO=TO,
