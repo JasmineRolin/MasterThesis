@@ -61,13 +61,13 @@ end
 
     # Construct solution
     solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
-    solution.vehicleSchedules[4] = VehicleSchedule(solution.vehicleSchedules[4].vehicle,true)
+    solution.vehicleSchedules[1] = VehicleSchedule(solution.vehicleSchedules[1].vehicle,true)
     
     # Check solution
     state = State(solution,Request(),0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == false
-    @test msg == "SOLUTION INFEASIBLE: Not all requests are serviced. Serviced: 2, not serviced: 1, nTaxi: 0, totalNTaxi: 0"
+    @test msg == "SOLUTION INFEASIBLE: Not all requests are serviced. Serviced: 0, not serviced: 3, nTaxi: 0, totalNTaxi: 0"
 end
 
 @testset "checkSolutionFeasibility test - activity already rejected" begin
@@ -83,15 +83,15 @@ end
 
     # Construct solution
     solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
-    solution.totalCost -= solution.vehicleSchedules[4].totalCost
-    solution.totalRideTime -= solution.vehicleSchedules[4].totalTime
-    solution.totalDistance -= solution.vehicleSchedules[4].totalDistance
-    solution.totalIdleTime -= solution.vehicleSchedules[4].totalIdleTime
-    solution.vehicleSchedules[4] = VehicleSchedule(solution.vehicleSchedules[4].vehicle,true)
-    solution.totalCost += scenario.taxiParameter
+    solution.totalCost -= solution.vehicleSchedules[1].totalCost
+    solution.totalRideTime -= solution.vehicleSchedules[1].totalTime
+    solution.totalDistance -= solution.vehicleSchedules[1].totalDistance
+    solution.totalIdleTime -= solution.vehicleSchedules[1].totalIdleTime
+    solution.vehicleSchedules[1] = VehicleSchedule(solution.vehicleSchedules[1].vehicle,true)
+    solution.totalCost += 3*scenario.taxiParameter
 
     # Check solution
-    state = State(solution,Request(),1)
+    state = State(solution,Request(),3)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == true
     @test msg == ""
