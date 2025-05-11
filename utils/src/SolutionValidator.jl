@@ -285,6 +285,7 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
 
     if totalTime != activeTime
         msg = "ROUTE INFEASIBLE: Total time based on waiting nodes $(totalTime) is incorrect compared to active time $(activeTime) for vehicle $(vehicle.id)"
+        printRouteHorizontal(vehicleSchedule)
         return false, msg, Set{Int}(), Set{Int}()
     end
 

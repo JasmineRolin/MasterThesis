@@ -107,13 +107,12 @@ end
     New insert request 
 ==#
 function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPickUp::Int,idxDropOff::Int,scenario::Scenario,newStartOfServiceTimes::Vector{Int},newEndOfServiceTimes::Vector{Int},waitingActivitiesToDelete::Vector{Int};totalCost::Float64=-1.0,totalDistance::Float64=-1.0,totalIdleTime::Int=-1,totalTime::Int=-1,visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(),waitingActivitiesToAdd::Vector{Int} = Vector{Int}())
+    time = scenario.time
+    distance = scenario.distance
     route = vehicleSchedule.route
     vehicle = vehicleSchedule.vehicle
+    nActivities = length(route) + 2
 
-    firstActivity = false 
-    if length(route) == 2 && route[1].activity.activityType == DEPOT && route[2].activity.activityType == DEPOT
-        firstActivity = true 
-    end
 
     # Insert request
     insert!(route,idxPickUp+1,ActivityAssignment(request.pickUpActivity,vehicle,0,0))
@@ -124,9 +123,47 @@ function insertRequest!(request::Request,vehicleSchedule::VehicleSchedule,idxPic
         a.startOfServiceTime = newStartOfServiceTimes[i]
         a.endOfServiceTime = newEndOfServiceTimes[i]
 
-        if a.activity.activityType == WAITING
-            a.activity.timeWindow.startTime = newStartOfServiceTimes[i]
-            a.activity.timeWindow.endTime = newEndOfServiceTimes[i]
+        # Update waiting activities if it should not be deleted
+        if a.activity.activityType == WAITING && !(i in waitingActivitiesToDelete)
+            # Check if waiting activity follows wait first 
+            if (i != 1) && (i != (nActivities-1)) && (a.activity.id != route[i-1].activity.id)
+                activityAssignmentBefore = route[i-1]
+                activityAssignmentAfter = route[i+1]
+
+                oldDistance = distance[activityAssignmentBefore.activity.id,a.activity.id] + distance[a.activity.id,activityAssignmentAfter.activity.id]
+                oldIdleTime = newEndOfServiceTimes[i] - newStartOfServiceTimes[i]
+
+                startOfWaiting = newEndOfServiceTimes[i-1]
+                endOfWaiting = newStartOfServiceTimes[i+1] - time[activityAssignmentBefore.activity.id,activityAssignmentAfter.activity.id]
+
+                # Is it feasible to change to wait first 
+                if startOfWaiting > endOfWaiting
+                    a.activity.timeWindow.startTime = newStartOfServiceTimes[i]
+                    a.activity.timeWindow.endTime = newEndOfServiceTimes[i]    
+                    continue
+                end
+
+                # Update waiting activity
+                a.startOfServiceTime = startOfWaiting
+                a.endOfServiceTime = endOfWaiting
+                a.activity.timeWindow.startTime = startOfWaiting
+                a.activity.timeWindow.endTime = endOfWaiting
+
+                a.activity.id = activityAssignmentBefore.activity.id
+                a.activity.location = activityAssignmentBefore.activity.location
+
+                # Update KPIs 
+                newDistance = distance[activityAssignmentBefore.activity.id,activityAssignmentAfter.activity.id]
+                totalDistance -= oldDistance
+                totalDistance += newDistance
+
+                newIdleTime = endOfWaiting - startOfWaiting
+                totalIdleTime -= oldIdleTime
+                totalIdleTime += newIdleTime
+            else
+                a.activity.timeWindow.startTime = newStartOfServiceTimes[i]
+                a.activity.timeWindow.endTime = newEndOfServiceTimes[i]    
+            end
         end
     end
 
@@ -378,7 +415,6 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
         return false, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
     end
 
-
     # Find new service times 
     idxActivityInSchedule = 1
     #@timeit TO "loopOverActivities" begin
@@ -490,8 +526,18 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                 feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(firstActivity.activity,currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
 
                 # Check if can insert by inserting waiting activity 
-                if !feasible && idx < nActivities && state == "Repair"
-                    feasible, maximumShiftBackward, maximumShiftForward = feasibleWhenInsertWaiting!(time,requests,serviceTimes,currentActivity,activityType,previousActivity,vehicleSchedule,idx,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToAdd,maximumShiftBackward, maximumShiftForward)
+                if state == "Repair" && !feasible && idx <= routeLength
+
+                    # Extend waiting 
+                    if previousActivity.activityType == WAITING 
+                        endOfWaitingActivity = currentActivity.timeWindow.startTime - time[previousActivity.id,currentActivityId]
+                        newEndOfServiceTimes[idx-1] = endOfWaitingActivity
+
+                        feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(firstActivity.activity,currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
+                    # Attempt to insert waiting activity
+                    else
+                      feasible, maximumShiftBackward, maximumShiftForward = feasibleWhenInsertWaiting!(time,requests,serviceTimes,currentActivity,activityType,previousActivity,vehicleSchedule,idx,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToAdd,maximumShiftBackward, maximumShiftForward)                        
+                    end
                 end
                 
                 if !feasible

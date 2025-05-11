@@ -59,6 +59,12 @@ end
 
 
 # initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
+# state = State(initialSolution,scenario.onlineRequests[end],0)
+# feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+# @test feasible == true
+# @test msg == ""
+# println(msg)
+
 # display(createGantChartOfSolutionOnline(initialSolution,"Final Solution after merge"))
 
 # schedule = deepcopy(solution.vehicleSchedules[2])
