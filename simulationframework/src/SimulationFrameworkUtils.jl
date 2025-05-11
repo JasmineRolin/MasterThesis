@@ -716,7 +716,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
     for (itr,event) in enumerate(events)
         startTimeEvent = time()
         println("------------------------------------------------------------------------------------------------------------------------------------------------")
-        println("Event: id: ", itr, ", time: ", event.callTime, " request id: ", event.id)
+        println("Event: id: ", itr, ", time: ", event.callTime, " request id: ", event.id, " pick up time: ",event.request.pickUpActivity.timeWindow)
         println("----------------")
 
         # Determine current state

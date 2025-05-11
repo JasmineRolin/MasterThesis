@@ -10,8 +10,8 @@ print("\033c")
 
 gamma = 0.9
 nData = 10
-n = 20 
-i = 7
+n = 50 
+i = 1
 gridFile = "Data/Konsentra/grid.json"
 historicIndexes = setdiff(1:nData,i)
 nPeriods = 24
@@ -29,7 +29,7 @@ distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma
 timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
 scenarioName = string("Generated_Data_",n,"_",i)
 vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
-parametersFile = "tests/resources/Parameters.csv"
+parametersFile = "tests/resources/ParametersShortCallTime.csv"
 
 # Read instance 
 scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile,gridFile)
@@ -49,23 +49,30 @@ print("end")
 
 # Event 20 veh 2
 
+durations = [r.pickUpActivity.timeWindow.startTime-r.callTime for r in scenario.requests if r.callTime != 0]
+
+for r in scenario.requests
+    if r.callTime != 0
+        println("Request $(r.id) - Call time: $(r.callTime) - Pick up time: $(r.pickUpActivity.timeWindow.startTime) - Duration: $(r.pickUpActivity.timeWindow.startTime - r.callTime)")
+    end
+end
 
 
 # initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
 # display(createGantChartOfSolutionOnline(initialSolution,"Final Solution after merge"))
 
-schedule = deepcopy(solution.vehicleSchedules[2])
-request = scenario.requests[20]
-posPU = 4
-posDO = 4
-feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd =
- checkFeasibilityOfInsertionAtPosition(request,schedule,posPU,posDO,scenario)
+# schedule = deepcopy(solution.vehicleSchedules[2])
+# request = scenario.requests[20]
+# posPU = 4
+# posDO = 4
+# feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd =
+#  checkFeasibilityOfInsertionAtPosition(request,schedule,posPU,posDO,scenario)
 
- const EMPTY_RESULT = (false, -1, -1, Vector{Int}(), Vector{Int}(), Vector{Int}(), typemax(Float64), typemax(Float64), typemax(Int), typemax(Int), Vector{Int}())
+#  const EMPTY_RESULT = (false, -1, -1, Vector{Int}(), Vector{Int}(), Vector{Int}(), typemax(Float64), typemax(Float64), typemax(Int), typemax(Int), Vector{Int}())
 
-# TODO: delete 
-global countTotal = Ref(0)
-global countFeasible = Ref(0)
+# # TODO: delete 
+# global countTotal = Ref(0)
+# global countFeasible = Ref(0)
 
 # ewa = findBestFeasibleInsertionRoute(request,schedule,scenario)
 
