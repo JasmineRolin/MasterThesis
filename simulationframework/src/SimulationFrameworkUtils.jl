@@ -268,7 +268,7 @@ function updateLastWaitingActivityInRoute!(time::Array{Int,2},distance::Array{Fl
 end
 
 function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{Float64,2},nRequests::Int,grid::Grid,depotLocations::Dict{Tuple{Int,Int},Location},vehicleBalance::Array{Int,3},activeVehiclesPerCell::Array{Int,3},realisedDemand::Array{Int,3},predictedDemand::Array{Float64,3},
-    currentSolution::Solution,schedule::VehicleSchedule,currentSchedule::VehicleSchedule,finalSolution::Solution,nTimePeriods::Int,periodLength::Int)
+    currentSolution::Solution,schedule::VehicleSchedule,currentSchedule::VehicleSchedule,finalSolution::Solution,nTimePeriods::Int,periodLength::Int,vehicleDemand::Array{Int,3})
     
     vehicle = schedule.vehicle
     currentRouteLength = length(currentSchedule.route)
@@ -309,7 +309,7 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
         previousGridCell = determineGridCell(previousWaitingLocation,grid)
 
         # TODO: remove plot 
-        display(plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,vehicleBalance,gridCell,previousGridCell,period,periodLength,vehicle.id))
+        display(plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,vehicleBalance,gridCell,previousGridCell,period,periodLength,vehicle.id,vehicleDemand))
 
         # Update vehicle balance
         # TODO: skal det opdateres sådan?
@@ -352,7 +352,7 @@ end
 #------
 function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nRequests::Int,grid::Grid,depotLocations::Dict{Tuple{Int,Int},Location},
     vehicleBalance::Array{Int,3},activeVehiclesPerCell::Array{Int,3},realisedDemand::Array{Int,3},predictedDemand::Array{Float64,3},
-    currentState::State,solution::Solution,finalSolution::Solution,currentTime::Int,nTimePeriods::Int,periodLength::Int)
+    currentState::State,solution::Solution,finalSolution::Solution,currentTime::Int,nTimePeriods::Int,periodLength::Int,vehicleDemand::Array{Int,3})
    
     # Retrieve vehicle schedules in solution 
     vehicleSchedules = solution.vehicleSchedules
@@ -373,10 +373,6 @@ function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nReques
 
     # Go through current schedules in order and relocate vehicles 
     for currentSchedule in currentVehicleSchedules[sortedIdx]
-        if  length(currentSchedule.route) == 1 || currentSchedule.vehicle.availableTimeWindow.endTime <= currentTime
-            continue
-        end
-
         route = currentSchedule.route
         routeLength  = length(route)
         vehicle = currentSchedule.vehicle
@@ -386,7 +382,7 @@ function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nReques
         # Check if vehicle should be relocated 
         # Either the route is completed or the route is "full" and there is no room for waiting activity 
         if  routeLength == 1 || endOfAvailableTimeWindow <= currentTime ||
-            (routeLength > 1 && (route[end-1].activity.activityType != WAITING) && route[end].startOfServiceTime == endOfAvailableTimeWindow)
+            (routeLength > 2 && (route[end-1].activity.activityType != WAITING) && route[end].startOfServiceTime == endOfAvailableTimeWindow)
             continue
         end
 
@@ -438,7 +434,7 @@ function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nReques
 
         # Relocate waiting activity 
         relocateWaitingActivityBeforeDepot!(time,distance,nRequests,grid,depotLocations,vehicleBalance,activeVehiclesPerCell,realisedDemand,predictedDemand,
-        currentState.solution,schedule,currentSchedule,finalSolution,nTimePeriods,periodLength)
+        currentState.solution,schedule,currentSchedule,finalSolution,nTimePeriods,periodLength,vehicleDemand)
 
     end 
 end
@@ -556,27 +552,28 @@ function determineCurrentState(solution::Solution,event::Event,finalSolution::So
 
     # Update vehicle schedule
     for (vehicle,schedule) in enumerate(solution.vehicleSchedules)
-       # print("UPDATING SCHEDULE: ",vehicle)
+        print("UPDATING SCHEDULE: ",vehicle)
 
         # TODO: extract route 
 
         # Check if vehicle is not available yet or has not started service yet
         if schedule.vehicle.availableTimeWindow.startTime > currentTime || schedule.route[1].startOfServiceTime > currentTime
             idx, splitTime = updateCurrentScheduleNotAvailableYet(schedule,currentState,vehicle)
-            #print(" - not available yet or not started service yet \n")
+            print(" - not available yet or not started service yet \n")
         # Check if entire route has been served and vehicle is not available anymore
         elseif schedule.vehicle.availableTimeWindow.endTime < currentTime || length(schedule.route) == 1|| (schedule.route[end-1].endOfServiceTime < currentTime && schedule.route[end].startOfServiceTime == schedule.vehicle.availableTimeWindow.endTime)
             idx, splitTime = updateCurrentScheduleNotAvailableAnymore!(currentState,schedule,vehicle)
-            #print(" - not available anymore \n")
-        # We have completed the last activity and the vehicle is on-route to the depot but still available 
-        elseif length(schedule.route) > 1 && schedule.route[end-1].endOfServiceTime < currentTime
-            idx,splitTime = updateCurrentScheduleRouteCompleted!(currentState,schedule,vehicle)
-        # TODO: add case to split waiting activitiy if we are relocation vehicles 
-           # print("- completed route but still available \n")
+            print(" - not available anymore \n")
         # Check if vehicle has not been assigned yet
         elseif length(schedule.route) == 2 && schedule.route[1].activity.activityType == DEPOT
             idx, splitTime = updateCurrentScheduleNoAssignement!(vehicle,currentTime,currentState)
-            #print(" - no assignments \n")
+            print(" - no assignments \n")
+
+        # We have completed the last activity and the vehicle is on-route to the depot but still available 
+        elseif length(schedule.route) > 1 && schedule.route[end-1].endOfServiceTime < currentTime 
+            idx,splitTime = updateCurrentScheduleRouteCompleted!(currentState,schedule,vehicle)
+        # TODO: add case to split waiting activitiy if we are relocation vehicles 
+           print("- completed route but still available \n")
         else
             # Determine index to split
             didSplit = false
@@ -584,14 +581,14 @@ function determineCurrentState(solution::Solution,event::Event,finalSolution::So
                if assignment.endOfServiceTime < currentTime && schedule.route[split + 1].endOfServiceTime > currentTime
                     idx, splitTime  = updateCurrentScheduleAtSplit!(scenario,schedule,vehicle,currentState,split)
                     didSplit = true
-                   #print(" - still available, split at ",split, ", \n")
+                   print(" - still available, split at ",split, ", \n")
                     break
                 end
             end
 
             if didSplit == false
                 idx, splitTime = updateCurrentScheduleAvailableKeepEntireRoute(schedule,currentState,vehicle)
-               #print(" - still available, keep entire route, \n")
+               print(" - still available, keep entire route, \n")
             end
         end
 
@@ -615,7 +612,7 @@ function determineCurrentState(solution::Solution,event::Event,finalSolution::So
 
         relocateVehicles!(time,distance,nRequests,grid,depotLocations,
         vehicleBalance,activeVehiclesPerCell,realisedDemand,predictedDemand,
-        currentState,solution,finalSolution,currentTime,nTimePeriods,periodLength)
+        currentState,solution,finalSolution,currentTime,nTimePeriods,periodLength,vehicleDemand)
     end
 
     return currentState, finalSolution

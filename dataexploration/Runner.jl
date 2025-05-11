@@ -24,7 +24,7 @@ global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 15 #2*60 # 2 hours buffer
 global nData = 10
-global nRequestList = [50]#[20,100,300,500]
+global nRequestList = [100]#[20,100,300,500]
 global MAX_DELAY = 15 # TODO Astrid I just put something
 
 #==

@@ -2301,7 +2301,7 @@ uuid = "d9eeeeb4-94be-4641-9ce8-3b648504a7dd"
 version = "0.1.0"
 
 [[deps.waitingstrategies]]
-deps = ["CSV", "DataFrames", "JSON", "Statistics", "UnPack", "domain"]
+deps = ["CSV", "DataFrames", "JSON", "Random", "Statistics", "UnPack", "domain"]
 path = "waitingstrategies"
 uuid = "2f908f9c-ad06-472f-9d26-c6c1af45f96b"
 version = "0.1.0"

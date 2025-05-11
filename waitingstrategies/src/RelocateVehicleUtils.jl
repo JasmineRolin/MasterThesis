@@ -1,7 +1,7 @@
 module RelocateVehicleUtils
 
 using domain 
-using UnPack 
+using UnPack, Random 
 using ..GeneratePredictedDemand
 
 export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBalancePrCell
@@ -14,10 +14,20 @@ export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBa
     # Vehicles are being relocated to the depot of the previously relocated vehicle 
 function determineWaitingLocation(depotLocations::Dict{Tuple{Int,Int},Location},grid::Grid,nRequests::Int, vehicleBalance::Array{Int,3},period::Int)
     # Determine cell with most deficit of vehicles
-    minIndexes = argmin(vehicleBalance[period,:,:])
-    minRowIdx = minIndexes[1]
-    minColIdx = minIndexes[2]
-    depotId = findDepotIdFromGridCell(grid,nRequests,(minRowIdx,minColIdx))
+    vehicleBalanceInPeriod = vehicleBalance[period, :, :]
+
+    # Find the minimum value
+    minValue = minimum(vehicleBalanceInPeriod)
+
+    # Get all indices where the value equals the minimum
+    minIndices = findall(x -> x == minValue, vehicleBalanceInPeriod)
+
+    # Randomly select one of the indices
+    chosenIdx = rand(minIndices)
+
+    minRowIdx = chosenIdx[1]
+    minColIdx = chosenIdx[2]
+    depotId = findDepotIdFromGridCell(grid, nRequests, (minRowIdx, minColIdx))
 
     return depotId,depotLocations[(minRowIdx,minColIdx)],(minRowIdx,minColIdx)
 end

@@ -10,11 +10,11 @@ print("\033c")
 
 gamma = 0.9
 nData = 10
-n = 50 
+n = 100
 i = 1
 gridFile = "Data/Konsentra/grid.json"
 historicIndexes = setdiff(1:nData,i)
-nPeriods = 24
+nPeriods = 48
 maximumTime = 24*60 
 periodLength = Int(maximumTime / nPeriods)
 
@@ -49,13 +49,11 @@ print("end")
 
 # Event 20 veh 2
 
-durations = [r.pickUpActivity.timeWindow.startTime-r.callTime for r in scenario.requests if r.callTime != 0]
-
-for r in scenario.requests
-    if r.callTime != 0
-        println("Request $(r.id) - Call time: $(r.callTime) - Pick up time: $(r.pickUpActivity.timeWindow.startTime) - Duration: $(r.pickUpActivity.timeWindow.startTime - r.callTime)")
-    end
-end
+# for r in scenario.requests
+#     if r.callTime != 0
+#         println("Request $(r.id) - Call time: $(r.callTime) - Pick up time: $(r.pickUpActivity.timeWindow.startTime) - Duration: $(r.pickUpActivity.timeWindow.startTime - r.callTime), pick up time window: $(r.pickUpActivity.timeWindow.startTime) - $(r.pickUpActivity.timeWindow.endTime), drop off time window: $(r.dropOffActivity.timeWindow.startTime) - $(r.dropOffActivity.timeWindow.endTime)")
+#     end
+# end
 
 
 # initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
@@ -119,8 +117,10 @@ end
 # grid = Grid(maxLat,minLat,maxLong,minLong,nRows,nCols,latStep,longStep)
 
 
-# averageDemand = generatePredictedDemand(grid, historicRequestFiles,nPeriods,periodLength)
-# vehicleDemand = generatePredictedVehiclesDemand(grid, gamma, averageDemand)
+averageDemand = generatePredictedDemand(scenario.grid, historicRequestFiles,nPeriods,periodLength)
+#vehicleDemand = generatePredictedVehiclesDemand(scenario.grid, gamma, averageDemand,nPeriods)
+period = Int(ceil(1140/periodLength))
+vehicleDemand = generatePredictedVehiclesDemandInHorizon(gamma,averageDemand,period,period+3)
 
 # #======================================#
 # #
