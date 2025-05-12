@@ -23,8 +23,8 @@ global GENERATE_VEHICLES = false
 global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 2*60 # 2 hours buffer
-global nData = 10
-global nRequestList = [20] #[20,100,300,500]
+global nData = 20
+global nRequestList = [20,100,300,500]
 global MAX_DELAY = 15 # TODO Astrid I just put something
 
 #==
@@ -33,6 +33,7 @@ global MAX_DELAY = 15 # TODO Astrid I just put something
 global vehicleCapacity = 4
 global GammaList = [0.5,0.7,0.9]
 
+# TODO: burde vi bare have flad cost ? vi er jo ligeglade med cost faktisk 
 global shifts = Dict(
     "Morning"    => Dict("TimeWindow" => [6*60, 12*60], "cost" => 2.0, "nVehicles" => 0, "y" => []),
     "Noon"       => Dict("TimeWindow" => [10*60, 16*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
@@ -48,8 +49,8 @@ global MAX_LAT = 60.721
 global MIN_LAT = 59.165
 global MAX_LONG = 12.458
 global MIN_LONG = 9.948
-global NUM_ROWS = 5
-global NUM_COLS = 5
+global NUM_ROWS = 15
+global NUM_COLS = 15
 
 
 #==
@@ -156,14 +157,12 @@ if GENERATE_DATA_AND_VEHICLES
         # Plot new data
         #================================================#
         createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,density_grid,location_matrix,requestTimePickUp,requestTimeDropOff,probabilities_pickUpTime,probabilities_dropOffTime,serviceWindow,distanceDriven)
-
         for gamma in GammaList
-            for nRequest in nRequestList
-                plotAndSaveGantChart(nRequest,nData,gamma)
-            end
+            plotAndSaveGantChart(nRequest,nData,gamma)
         end
-
     end
+
+   
 end
 
 
