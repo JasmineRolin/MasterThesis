@@ -664,7 +664,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     currentState = State(scenario,Request(),0)
 
     if anticipation == false
-        solution, requestBank = offlineSolution(scenario,repairMethods,destroyMethods,parametersFile)
+        solution, requestBank = offlineSolution(scenario,repairMethods,destroyMethods,parametersFile,alnsParameters,scenarioName)
     else
         solution, requestBank = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile)
         updateIds!(solution,length(scenario.requests),nExpected)
