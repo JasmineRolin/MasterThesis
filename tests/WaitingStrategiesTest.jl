@@ -99,6 +99,12 @@ predictedDemand = generatePredictedDemand(scenario.grid, historicRequestFiles,nP
 vehicleDemand = zeros(Int,nPeriods,scenario.grid.nRows,scenario.grid.nCols)
 planningHorizon = 4 
 
+avg_min = minimum(vehicleDemand)
+avg_max = maximum(vehicleDemand)
+
+demand_min = minimum(predictedDemand)
+demand_max = maximum(predictedDemand)
+
 for period in 1:nPeriods
     endPeriod = min(period + planningHorizon, nPeriods)
 
