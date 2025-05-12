@@ -420,7 +420,7 @@ end
 #-------
 # Determine offline solution with anticipation
 #-------
-function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},destroyMethods::Vector{GenericMethod},requestFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String,nExpected::Int,gridFile::String)
+function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},destroyMethods::Vector{GenericMethod},requestFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String,nExpected::Int,gridFile::String;displayPlots::Bool=false)
 
     # Variables to determine best solution
     bestAverageObj = typemax(Float64)
@@ -434,7 +434,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
                         nInitialNotServicedExpectedRequests = Int[])
 
     # TODO remember to chage to 10
-    for i in 1:10
+    for i in 1:1
 
         # Make scenario
         scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile)
@@ -450,6 +450,11 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         initialSolution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
         originalSolution, originalRequestBank,_,_, _,_,_ = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
 
+        if displayPlots
+            display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and before removing expected requests"))
+            display(plotRoutes(originalSolution,scenario,requestBank,"Initial Solution "*string(i)*" before ALNS and before removing expected requests"))
+        end
+
         # Determine number of serviced requests
         nNotServicedFixedRequests = sum(originalRequestBank .<= nFixed)
         nNotServicedExpectedRequests = sum(originalRequestBank .> nFixed)
@@ -458,6 +463,12 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
 
         # Remove expected requests from solution
         removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,originalSolution,nExpected,nFixed,nNotServicedExpectedRequests,originalRequestBank,taxiParameter,taxiParameterExpected)
+
+        if displayPlots
+            display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and after removing expected requests"))
+            #display(plotRoutes(originalSolution,scenario,originalRequestBank,"Initial Solution "*string(i)*" before ALNS and after removing expected requests"))
+        end
+
 
         # TODO remove when stable
         state = State(originalSolution,Request(),0)

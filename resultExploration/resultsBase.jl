@@ -19,7 +19,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
 
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"
-    alnsParameters = "tests/resources/ALNSParameters2.json"
+    alnsParameters = "tests/resources/ALNSParameters_offline.json"
     outPutFolder = string("resultExploration/results/",date,"/",resultType,"/",n)
     outputFiles = Vector{String}()
     gridFile = string("Data/Konsentra/grid.json")

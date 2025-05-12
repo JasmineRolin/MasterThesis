@@ -666,7 +666,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     if anticipation == false
         solution, requestBank = offlineSolution(scenario,repairMethods,destroyMethods,parametersFile,alnsParameters,scenarioName)
     else
-        solution, requestBank = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile)
+        solution, requestBank = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,displayPlots=displayPlots)
         updateIds!(solution,length(scenario.requests),nExpected)
     end
 
@@ -685,7 +685,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     end
     if displayPlots
         display(createGantChartOfSolutionOnline(solution,"Initial Solution after ALNS"))
-        display(plotRoutes(solution,scenario,requestBank,"Initial Solution after ALNS"))
+        #display(plotRoutes(solution,scenario,requestBank,"Initial Solution after ALNS"))
     end
 
     # Initialize visited routes 
@@ -714,6 +714,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     nOnline = 0
 
     for (itr,event) in enumerate(events)
+
         startTimeEvent = time()
         println("------------------------------------------------------------------------------------------------------------------------------------------------")
         println("Event: id: ", itr, ", time: ", event.callTime, " request id: ", event.id)
@@ -791,7 +792,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     end
     if displayPlots
         display(createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge"))
-        display(plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge"))
+        #display(plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge"))
     end
 
 
