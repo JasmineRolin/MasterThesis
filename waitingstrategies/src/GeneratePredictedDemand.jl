@@ -1,7 +1,7 @@
 module GeneratePredictedDemand
 
 using CSV, DataFrames, JSON, domain, UnPack
-using Statistics
+using Statistics, ImageFiltering
 
 export generatePredictedDemand,generatePredictedVehiclesDemand,generatePredictedVehiclesDemandInPeriod,generatePredictedVehiclesDemandInHorizon
 
@@ -41,8 +41,20 @@ function generatePredictedDemand(grid::Grid, historicRequestFiles::Vector{String
     end
 
     averageDemand = demandGrid ./ nFiles
+    #averageDemand = smoothSpatial(averageDemand)
 
     return averageDemand  
+end
+
+
+function smoothSpatial(demandGrid::Array{Float64,3})
+    smoothedGrid = similar(demandGrid)
+
+    for t in 1:size(demandGrid, 1)
+        smoothedGrid[t, :, :] = imfilter(demandGrid[t,:,:], Kernel.gaussian(0.1));
+    end
+
+    return smoothedGrid
 end
 
 #==

@@ -183,6 +183,8 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
     currentSchedule.totalDistance = getTotalDistanceRoute(currentSchedule.route,scenario)
     currentSchedule.totalTime = getTotalTimeRoute(currentSchedule)
     currentSchedule.totalCost = getTotalCostRouteOnline(scenario.time,currentSchedule.route,currentState.visitedRoute,scenario.serviceTimes)
+    
+        
     currentSchedule.totalIdleTime = getTotalIdleTimeRoute(currentSchedule.route)    
     currentSchedule.numberOfWalking = schedule.numberOfWalking[idx+1:end]
 
@@ -191,6 +193,11 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
     currentState.solution.totalRideTime += currentSchedule.totalTime
     currentState.solution.totalCost += currentSchedule.totalCost
     currentState.solution.totalIdleTime += currentSchedule.totalIdleTime
+
+    if vehicle == 7 || vehicle == 9 
+        println("Total cost: ", currentSchedule.totalCost)
+        printRouteHorizontal(currentSchedule)
+    end
 
     return idx, currentSchedule.activeTimeWindow.startTime
 end
@@ -277,6 +284,7 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
     previousWaitingLocation = currentSchedule.route[waitingIdx].activity.location
     previousWaitingLocationId = currentSchedule.route[waitingIdx].activity.id
 
+
     # Determine relocation time 
     # TODO: hvilken tid skal det være ? 
     relocationTime = currentSchedule.route[waitingIdx].startOfServiceTime
@@ -284,19 +292,34 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
     # Determine period 
     period = min(Int(ceil(relocationTime / periodLength)), nTimePeriods)
 
-    # Find waiting location
-    waitingLocationId,waitingLocation,gridCell = determineWaitingLocation(depotLocations,grid,nRequests,vehicleBalance,period)
+    if all(vehicleBalance[period,:,:] .>= 0)
+        previousGridCell = determineGridCell(previousWaitingLocation,grid)
 
-    if waitingLocationId == previousWaitingLocationId
+        println("==> No relocation needed for vehicle ",vehicle.id," in period ",period, " minimum: ",minimum(vehicleBalance[period,:,:]))
+        display(plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,vehicleBalance,previousGridCell,previousGridCell,period,periodLength,vehicle.id,vehicleDemand))
         return
     end
- 
+
+    # Find waiting location
+    waitingLocationId,waitingLocation,gridCell = determineWaitingLocation(depotLocations,grid,nRequests,vehicleBalance,period,predictedDemand)
+
     # Determine previous activity 
     if currentRouteLength == 2 # If only waiting and depot left in current schedule 
         activityBeforeWaiting = finalSchedule.route[end]
     else
         activityBeforeWaiting = currentSchedule.route[waitingIdx-1]
     end
+
+    println("==> Waiting location: ",waitingLocationId, ", period: ",period, ", relocation time: ",relocationTime) 
+    tttt = activityBeforeWaiting.endOfServiceTime + time[activityBeforeWaiting.activity.id,waitingLocationId] + time[waitingLocationId,vehicle.depotId]
+    println("Activity before waiting: ",activityBeforeWaiting.activity.id, " arrival with new: ",tttt, " end time: ",vehicle.availableTimeWindow.endTime)
+
+    if waitingLocationId == previousWaitingLocationId
+        println("Did not relocate vehicle ",vehicle.id," as same depot")
+        return
+    end
+ 
+  
 
 
     # Is there time to relocate vehicle 
@@ -344,7 +367,9 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
 
 
         println("Relocating vehicle ",vehicle.id," to waiting location ",waitingLocationId," from depot ",vehicle.depotId, " in period ",period)
+        return 
     end
+    println("Did not relocate vehicle ",vehicle.id," as no time")
 end
 
 #------
@@ -695,7 +720,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
     onlineCallTimes = [r.callTime for r in scenario.onlineRequests]
     periodicRelocationEvent = []
     if relocateVehicles
-        for t in scenario.planningPeriod.startTime:60:scenario.planningPeriod.endTime
+        for t in scenario.planningPeriod.startTime:periodLength:scenario.planningPeriod.endTime
             if !(t in onlineCallTimes)
                 push!(periodicRelocationEvent,Event(0,t,Request(t)))
             end

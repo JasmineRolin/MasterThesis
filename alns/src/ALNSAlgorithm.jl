@@ -59,10 +59,29 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
         @timeit TO "Destroy!" begin
             destroyIdx = destroy!(scenario, trialState, parameters, configuration, visitedRoute=visitedRoute,TO=TO)
         end
-
+        @timeit TO "Feasibility Check" begin
+            state = State(trialState.currentSolution, event, visitedRoute, alreadyRejected)
+            feasible, msg = checkSolutionFeasibilityOnline(scenario, state)
+            if !feasible
+                println("ALNS: INFEASIBLE SOLUTION IN ITERATION destroy:", iteration)
+                printSolution(trialState.currentSolution, printRouteHorizontal)
+                show(TO)
+                throw(msg)
+            end
+        end
 
         @timeit TO "Repair!" begin
             repairIdx = repair!(scenario, trialState, configuration, visitedRoute=visitedRoute,TO=TO)
+        end
+        @timeit TO "Feasibility Check" begin
+            state = State(trialState.currentSolution, event, visitedRoute, alreadyRejected)
+            feasible, msg = checkSolutionFeasibilityOnline(scenario, state)
+            if !feasible
+                println("ALNS: INFEASIBLE SOLUTION IN ITERATION REPAIR:", iteration)
+                printSolution(trialState.currentSolution, printRouteHorizontal)
+                show(TO)
+                throw(msg)
+            end
         end
 
         @timeit TO "Hash solution" begin 

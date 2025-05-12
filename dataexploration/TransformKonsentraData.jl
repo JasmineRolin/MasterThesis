@@ -61,7 +61,7 @@ end
 function callTime(df, serviceWindow, callBuffer, preKnown)
 
     # TODO: remove  
-    latestCallTimeBuffer = 20 # Minutes 
+    latestCallTimeBuffer = 30 # Minutes 
 
     for i in 1:nrow(df)
         if preKnown[i]

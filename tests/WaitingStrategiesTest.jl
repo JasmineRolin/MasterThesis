@@ -8,13 +8,13 @@ print("\033c")
 # Er der for mange ved hvert depot ???? 
 # Gør så der bliver valgt ud fra en vægt af demand ? 
 
-gamma = 0.9
-nData = 10
+gamma = 0.7
+nData = 20
 n = 100
-i = 1
+i = 2
 gridFile = "Data/Konsentra/grid.json"
 historicIndexes = setdiff(1:nData,i)
-nPeriods = 48
+nPeriods =  96 # equiv. 15 minute intervals 
 maximumTime = 24*60 
 periodLength = Int(maximumTime / nPeriods)
 
@@ -34,22 +34,22 @@ parametersFile = "tests/resources/ParametersShortCallTime.csv"
 # Read instance 
 scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile,gridFile)
 
-# outPutFolder = "tests/output/OnlineSimulation/"*string(n)
+outPutFolder = "tests/output/OnlineSimulation/"*string(n)
 
-# relocateVehicles = false
-# solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles,nTimePeriods=nPeriods,periodLength=periodLength);
+relocateVehicles = true
+solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles,nTimePeriods=nPeriods,periodLength=periodLength);
 
-# state = State(solution,scenario.onlineRequests[end],0)
-# feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-# @test feasible == true
-# @test msg == ""
-# println(msg)
+state = State(solution,scenario.onlineRequests[end],0)
+feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+@test feasible == true
+@test msg == ""
+println(msg)
 
-# for r in scenario.requests[requestBank]
-#     println("Request: $(r.id), call time: $(r.callTime)")
-# end
+for r in scenario.requests[requestBank]
+    println("Request: $(r.id), call time: $(r.callTime)")
+end
 
-# print("end")
+print("end")
 
 # Dummy example assuming scenario.onlineRequests is available
 requests = scenario.onlineRequests
@@ -99,44 +99,45 @@ predictedDemand = generatePredictedDemand(scenario.grid, historicRequestFiles,nP
 vehicleDemand = zeros(Int,nPeriods,scenario.grid.nRows,scenario.grid.nCols)
 planningHorizon = 4 
 
-avg_min = minimum(vehicleDemand)
-avg_max = maximum(vehicleDemand)
+avg_min = 0
+avg_max = 10
 
 demand_min = minimum(predictedDemand)
 demand_max = maximum(predictedDemand)
 
-for period in 1:nPeriods
-    endPeriod = min(period + planningHorizon, nPeriods)
+# for period in 1:nPeriods
+#     endPeriod = min(period + planningHorizon, nPeriods)
 
-    vehicleDemandInPeriod,maxDemandInHorizonPeriod = generatePredictedVehiclesDemandInHorizon(gamma,predictedDemand,period,endPeriod)
+#     vehicleDemandInPeriod,maxDemandInHorizonPeriod = generatePredictedVehiclesDemandInHorizon(gamma,predictedDemand,period,endPeriod)
+#    # gridCell = determineWaitingLocation(scenario.depotLocations,scenario.grid,nRequests, vehicleBalance,period)
 
-    vehicleDemand[period,:,:] = vehicleDemandInPeriod
-    p4 = heatmap(vehicleDemand[period,:,:], 
-    c=:viridis,         # color map
-    clim=(avg_min, avg_max),
-    xlabel="Longitude (grid cols)", 
-    ylabel="Latitude (grid rows)", 
-    title="Vehicle demand",
-    colorbar_title="Vehicle Demand")
-    scatter!(p4,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:green)
-    scatter!(p4,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
+#     vehicleDemand[period,:,:] = vehicleDemandInPeriod
+#     p4 = heatmap(vehicleDemandInPeriod, 
+#     c=:viridis,         # color map
+#     clim=(avg_min, avg_max),
+#     xlabel="Longitude (grid cols)", 
+#     ylabel="Latitude (grid rows)", 
+#     title="Vehicle demand",
+#     colorbar_title="Vehicle Demand")
+#     #scatter!(p4,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:green)
+#     #scatter!(p4,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
    
-    p5 = heatmap(maxDemandInHorizon[:,:], 
-    c=:viridis,         # color map
-    clim=(demand_min, demand_max),
-    xlabel="Longitude (grid cols)", 
-    ylabel="Latitude (grid rows)", 
-    title="Demand over horizon",
-    colorbar_title="Requests")
-    scatter!(p5,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:green)
-    scatter!(p5,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
+#     p5 = heatmap(maxDemandInHorizonPeriod[:,:], 
+#     c=:viridis,         # color map
+#     clim=(demand_min, demand_max),
+#     xlabel="Longitude (grid cols)", 
+#     ylabel="Latitude (grid rows)", 
+#     title="Demand over horizon",
+#     colorbar_title="Requests")
+#     #scatter!(p5,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:green)
+#     #scatter!(p5,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
 
-    super_title = plot(title = "Vehicle Demand Overview - period start $((period-1)*periodLength), vehicle $(vehicle)", grid=false, framestyle=:none)
+#     super_title = plot(title = "Vehicle Demand Overview - period start $((period-1)*periodLength)", grid=false, framestyle=:none)
 
-    # Combine all into a vertical layout: super title + 3 plots
-    p = plot(super_title, plot(p4,p5, layout=(1,2)), layout = @layout([a{0.01h}; b{0.99h}]), size=(1500,1100))
-    display(p)
-end
+#     # Combine all into a vertical layout: super title + 3 plots
+#     p = plot(super_title, plot(p4,p5, layout=(1,2)), layout = @layout([a{0.01h}; b{0.99h}]), size=(1500,1100))
+#     display(p)
+# end
 
 
 

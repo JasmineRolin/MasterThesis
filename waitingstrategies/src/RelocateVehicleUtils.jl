@@ -3,6 +3,7 @@ module RelocateVehicleUtils
 using domain 
 using UnPack, Random 
 using ..GeneratePredictedDemand
+using StatsBase 
 
 export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBalancePrCell
 
@@ -12,7 +13,7 @@ export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBa
 # Assuming hour is in the future (?)
 # TODO: 
     # Vehicles are being relocated to the depot of the previously relocated vehicle 
-function determineWaitingLocation(depotLocations::Dict{Tuple{Int,Int},Location},grid::Grid,nRequests::Int, vehicleBalance::Array{Int,3},period::Int)
+function determineWaitingLocation(depotLocations::Dict{Tuple{Int,Int},Location},grid::Grid,nRequests::Int, vehicleBalance::Array{Int,3},period::Int,predictedDemand::Array{Float64,3})
     # Determine cell with most deficit of vehicles
     vehicleBalanceInPeriod = vehicleBalance[period, :, :]
 
@@ -28,6 +29,29 @@ function determineWaitingLocation(depotLocations::Dict{Tuple{Int,Int},Location},
     minRowIdx = chosenIdx[1]
     minColIdx = chosenIdx[2]
     depotId = findDepotIdFromGridCell(grid, nRequests, (minRowIdx, minColIdx))
+
+
+    # # Find predicted vehicle demand for each hour 
+    # planningHorizon = 4
+    # nPeriods = size(predictedDemand,1)
+    # endPeriod = min(period + planningHorizon, nPeriods)
+
+    # maxDemandInHorizon = maximum(predictedDemand[period:endPeriod,:,:], dims=1)
+    # maxDemandInHorizon = dropdims(maxDemandInHorizon, dims=1)
+ 
+    # # Flatten the demand matrix and get corresponding grid indices
+    # rows, cols = size(maxDemandInHorizon)
+    # flatDemands = vec(maxDemandInHorizon)
+    # gridIndices = [(i, j) for i in 1:rows, j in 1:cols]
+    # flatIndices = vec(gridIndices)
+
+    # # Normalize weights and sample a single index
+    # weights = flatDemands ./ sum(flatDemands)
+    # chosenIdx = sample(flatIndices, Weights(weights))
+
+    # minRowIdx = chosenIdx[1]
+    # minColIdx = chosenIdx[2]
+    # depotId = findDepotIdFromGridCell(grid, nRequests, (minRowIdx, minColIdx))
 
     return depotId,depotLocations[(minRowIdx,minColIdx)],(minRowIdx,minColIdx)
 end
@@ -46,7 +70,7 @@ function determineVehicleBalancePrCell(grid::Grid,gamma::Float64,predictedDemand
     vehicleBalance = zeros(Int,nTimePeriods,nRows,nCols)
     vehicleDemand = zeros(Int,nTimePeriods,nRows,nCols)
     realisedDemand = zeros(Int,nTimePeriods,nRows,nCols)
-    maxDemandInHorizon = zeros(Int,nTimePeriods,nRows,nCols)
+    maxDemandInHorizon = zeros(Float64,nTimePeriods,nRows,nCols)
     activeVehiclesPerCell = zeros(Int,nTimePeriods,nRows,nCols) # TODO: remove returning this (only for test)
 
     # TODO: set correctly 
