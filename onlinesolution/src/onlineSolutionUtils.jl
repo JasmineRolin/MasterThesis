@@ -65,7 +65,7 @@ end
 #==
  Run online algorithm
 ==#
-function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario::Scenario, destroyMethods::Vector{GenericMethod}, repairMethods::Vector{GenericMethod})
+function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario::Scenario, destroyMethods::Vector{GenericMethod}, repairMethods::Vector{GenericMethod};ALNS::Bool=true)
     insertedByALNS = false 
 
     # Retrieve info 
@@ -76,7 +76,12 @@ function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario
 
     # Run ALNS
     # TODO: set correct parameters for alns 
-    finalSolution,finalOnlineRequestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters_online.json",initialSolution =  currentSolution, requestBank = newRequestBankOnline, event = event, alreadyRejected =  totalNTaxi, visitedRoute = currentState.visitedRoute,stage = "Online")
+    if ALNS
+        finalSolution,finalOnlineRequestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters_online.json",initialSolution =  currentSolution, requestBank = newRequestBankOnline, event = event, alreadyRejected =  totalNTaxi, visitedRoute = currentState.visitedRoute,stage = "Online")
+    else
+        return currentSolution, newRequestBankOnline, 0
+    end
+    
     if length(newRequestBankOnline) == 1 && length(finalOnlineRequestBank) == 0
         insertedByALNS = true
     end

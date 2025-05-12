@@ -12,10 +12,10 @@ using CSV
 
 function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, resultType::String, i::Int)
 
-    n = 20
-    gamma = 0.5
-    date = "2023-10-01"
-    resultType = "BaseCase"
+    #n = 20
+    #gamma = 0.5
+    #date = "2023-10-01"
+    #resultType = "BaseCase"
 
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"
@@ -24,7 +24,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
     outputFiles = Vector{String}()
     gridFile = string("Data/Konsentra/grid.json")
 
-    for i in 1:10
+    #for i in 1:10
         requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
         distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
         timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
@@ -41,7 +41,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
         feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
         @test feasible == true
         @test msg == ""
-    end
+    #end
     dfResults = processResults(outputFiles)
     CSV.write(outPutFolder*"/results.csv", dfResults)
 

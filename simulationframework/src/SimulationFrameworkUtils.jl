@@ -632,7 +632,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
    
 end
 
-function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixFile::String,timeMatrixFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json")
+function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixFile::String,timeMatrixFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json", ALNS::Bool=true)
 
     # Retrieve info 
     grid = scenario.grid
@@ -748,7 +748,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         # Get solution for online problem
         if event.id != 0
             nOnline += 1
-            solution, requestBank,insertedByALNS = onlineAlgorithm(currentState, requestBank, scenario, destroyMethods, repairMethods) 
+            solution, requestBank,insertedByALNS = onlineAlgorithm(currentState, requestBank, scenario, destroyMethods, repairMethods, ALNS = ALNS) 
             eventsInsertedByALNS += insertedByALNS 
         else
             solution = copySolution(currentState.solution)

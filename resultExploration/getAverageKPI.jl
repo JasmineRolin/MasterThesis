@@ -4,8 +4,8 @@ using CSV, DataFrames, Statistics
 function average_kpis_by_data_size(base_path::String)
     all_data = DataFrame()
 
-    for dataSize in [20, 100, 300, 500]
-        full_path = joinpath(base_path, string(dataSize), "results_0.5.csv")
+    for dataSize in [20, 100, 300]
+        full_path = joinpath(base_path, string(dataSize), "results.csv")
         df = CSV.read(full_path, DataFrame)
         df[!, :DataSize] = fill(dataSize, nrow(df))
         append!(all_data, df)
@@ -22,6 +22,8 @@ function average_kpis_by_data_size(base_path::String)
     return grouped
 end
 
-folder = "25042025"
-results_df = average_kpis_by_data_size("runfiles/output/OnlineSimulation/"*folder)
-CSV.write("runfiles/output/OnlineSimulation/"*folder*"/average_results_by_size_0.5.csv", results_df)
+date = "12-05-2025"
+folder = "BaseCase"
+
+results_df = average_kpis_by_data_size("resultExploration/results/"*date*"/"*folder)
+CSV.write("resultExploration/results/"*date*"/"*folder*"/average_results_by_size.csv", results_df)
