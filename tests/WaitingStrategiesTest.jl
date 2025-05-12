@@ -10,11 +10,11 @@ print("\033c")
 
 gamma = 0.7
 nData = 20
-n = 100
+n = 50
 i = 2
 gridFile = "Data/Konsentra/grid.json"
 historicIndexes = setdiff(1:nData,i)
-nPeriods =  96 # equiv. 15 minute intervals 
+nPeriods =  48 # equiv. 15 minute intervals 
 maximumTime = 24*60 
 periodLength = Int(maximumTime / nPeriods)
 
@@ -51,7 +51,7 @@ end
 
 print("end")
 
-# Dummy example assuming scenario.onlineRequests is available
+# # Dummy example assuming scenario.onlineRequests is available
 requests = scenario.onlineRequests
 
 # Prepare data
@@ -95,15 +95,15 @@ end
 
 
 
-predictedDemand = generatePredictedDemand(scenario.grid, historicRequestFiles,nPeriods,periodLength)
-vehicleDemand = zeros(Int,nPeriods,scenario.grid.nRows,scenario.grid.nCols)
-planningHorizon = 4 
+# predictedDemand = generatePredictedDemand(scenario.grid, historicRequestFiles,nPeriods,periodLength)
+# vehicleDemand = zeros(Int,nPeriods,scenario.grid.nRows,scenario.grid.nCols)
+# planningHorizon = 4 
 
-avg_min = 0
-avg_max = 10
+# avg_min = 0
+# avg_max = 10
 
-demand_min = minimum(predictedDemand)
-demand_max = maximum(predictedDemand)
+# demand_min = minimum(predictedDemand)
+# demand_max = maximum(predictedDemand)
 
 # for period in 1:nPeriods
 #     endPeriod = min(period + planningHorizon, nPeriods)
@@ -138,6 +138,10 @@ demand_max = maximum(predictedDemand)
 #     p = plot(super_title, plot(p4,p5, layout=(1,2)), layout = @layout([a{0.01h}; b{0.99h}]), size=(1500,1100))
 #     display(p)
 # end
+
+
+
+
 
 
 

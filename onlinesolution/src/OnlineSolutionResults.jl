@@ -315,7 +315,7 @@ function plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,veh
 
     demand_min = min(minimum(predictedDemand),minimum(realisedDemand))
     demand_max = max(maximum(predictedDemand),maximum(realisedDemand))
-
+    
     # Plot for chosen period 
     p0 = heatmap(realisedDemand[period,:,:], 
     c=:viridis,         # color map

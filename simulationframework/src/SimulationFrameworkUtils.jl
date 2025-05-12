@@ -295,7 +295,7 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
     if all(vehicleBalance[period,:,:] .>= 0)
         previousGridCell = determineGridCell(previousWaitingLocation,grid)
 
-        println("==> No relocation needed for vehicle ",vehicle.id," in period ",period, " minimum: ",minimum(vehicleBalance[period,:,:]))
+        println("==> No relocation needed for vehicle ",vehicle.id," in period ",period, " minimum: ",minimum(vehicleBalance[period,:,:]), " maximum predicted demand: ", maximum(predictedDemand[period,:,:]))
         display(plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,vehicleBalance,previousGridCell,previousGridCell,period,periodLength,vehicle.id,vehicleDemand))
         return
     end
@@ -656,7 +656,6 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
     # Generate predicted demand
     if relocateVehicles
         predictedDemand = generatePredictedDemand(grid, historicRequestFiles,nTimePeriods,periodLength)
-       # vehicleDemand = generatePredictedVehiclesDemand(grid, gamma, predictedDemand,nTimePeriods)
     else 
         predictedDemand = zeros(Float64,0,0,0)
     end

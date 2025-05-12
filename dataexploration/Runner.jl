@@ -24,7 +24,7 @@ global DoD = 1.0 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 15 #2*60 # 2 hours buffer
 global nData = 20
-global nRequestList = [100]#[20,100,300,500]
+global nRequestList = [50]#[20,100,300,500]
 global MAX_DELAY = 15 # TODO Astrid I just put something
 
 #==
@@ -72,7 +72,7 @@ grid = Dict(
 )
 
 # Write to a JSON file
-open("Data/Konsentra/grid.json", "w") do f
+open("Data/Konsentra/grid_$(NUM_ROWS).json", "w") do f
     JSON.print(f, grid) 
 end
 
