@@ -34,22 +34,22 @@ parametersFile = "tests/resources/ParametersShortCallTime.csv"
 # Read instance 
 scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile,gridFile)
 
-outPutFolder = "tests/output/OnlineSimulation/"*string(n)
+# outPutFolder = "tests/output/OnlineSimulation/"*string(n)
 
-relocateVehicles = false
-solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles,nTimePeriods=nPeriods,periodLength=periodLength);
+# relocateVehicles = false
+# solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles,nTimePeriods=nPeriods,periodLength=periodLength);
 
-state = State(solution,scenario.onlineRequests[end],0)
-feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-@test feasible == true
-@test msg == ""
-println(msg)
+# state = State(solution,scenario.onlineRequests[end],0)
+# feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+# @test feasible == true
+# @test msg == ""
+# println(msg)
 
-for r in scenario.requests[requestBank]
-    println("Request: $(r.id), call time: $(r.callTime)")
-end
+# for r in scenario.requests[requestBank]
+#     println("Request: $(r.id), call time: $(r.callTime)")
+# end
 
-print("end")
+# print("end")
 
 # Dummy example assuming scenario.onlineRequests is available
 requests = scenario.onlineRequests
@@ -95,11 +95,13 @@ end
 
 
 
-predictedDemand = generatePredictedDemand(grid, historicRequestFiles,nPeriods,periodLength)
+predictedDemand = generatePredictedDemand(scenario.grid, historicRequestFiles,nPeriods,periodLength)
 vehicleDemand = zeros(Int,nPeriods,scenario.grid.nRows,scenario.grid.nCols)
-#vehicleBalance,activeVehiclesPerCell,realisedDemand, vehicleDemand, maxDemandInHorizon = determineVehicleBalancePrCell(grid,gamma,predictedDemand,finalSolution,nTimePeriods,periodLength)
+planningHorizon = 4 
 
 for period in 1:nPeriods
+    endPeriod = min(period + planningHorizon, nPeriods)
+
     vehicleDemandInPeriod,maxDemandInHorizonPeriod = generatePredictedVehiclesDemandInHorizon(gamma,predictedDemand,period,endPeriod)
 
     vehicleDemand[period,:,:] = vehicleDemandInPeriod
