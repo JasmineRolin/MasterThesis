@@ -37,7 +37,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
         # Read scenario 
         #TODO use pre calculated distance and time matrix file. 
         scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,"","",gridFile)
-        solution, requestBank = simulateScenario(scenario,requestFile,distanceMatrixFile,timeMatrixFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,anticipation = true, nExpected=nExpected,printResults = false, saveResults = true,gridFile = gridFile, outPutFileFolder = outPutFolder)
+        solution, requestBank = simulateScenario(scenario,requestFile,distanceMatrixFile,timeMatrixFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,anticipation = true, nExpected=nExpected,printResults = false, saveResults = false,gridFile = gridFile, outPutFileFolder = outPutFolder)
 
         # TODO remove when stable
         state = State(solution,scenario.onlineRequests[end],0)
@@ -50,8 +50,9 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
 
 end
 
+main(100,0.1,0.5,"2023-10-01","BasicAnticipation",1)
 
-
+#==
 if abspath(PROGRAM_FILE) == @__FILE__
     n = parse(Int, ARGS[1])
     nExpectedPercentage = parse(Float64, ARGS[2])
@@ -61,3 +62,4 @@ if abspath(PROGRAM_FILE) == @__FILE__
     iteration = parse(Int, ARGS[6])
     main(n, nExpectedPercentage, gamma, date, resultType, iteration)
 end
+==#

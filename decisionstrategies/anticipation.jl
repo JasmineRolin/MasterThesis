@@ -196,7 +196,7 @@ function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicle
     taxiParameterExpected = Float64(parametersDf[1,"taxi_parameter_expected"])
     
     # Get vehicles 
-    vehicles,depots, depotLocations = readVehicles(vehiclesDf,nRequests,grid,useGrid)
+    vehicles,depots, depotLocations = readVehicles(vehiclesDf,nRequests+nNewExpected,grid,useGrid)
     if !useGrid 
         depotCoordinates = collect(keys(depotLocations))
         nDepots = length(depotCoordinates)
@@ -438,6 +438,8 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
 
         # Make scenario
         scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile)
+        println("----Original vehicles----")
+        println(scenario.vehicles)
 
         time = scenario.time
         distance = scenario.distance
@@ -490,6 +492,24 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
             state = State(solution,Request(),nNotServicedFixedRequests)
             feasible, msg = checkSolutionFeasibilityOnline(scenario2,state)
             if !feasible
+                route = solution.vehicleSchedules[1].route
+                for i in 1:length(route)-1
+                    println("Activity: ", route[i].activity.id)
+                    println("Start of service time: $(route[i].startOfServiceTime)")
+                    println("End of service time: $(route[i].endOfServiceTime)")
+                    println(scenario.time[route[i].activity.id,route[i+1].activity.id])
+                    println(scenario2.time[route[i].activity.id,route[i+1].activity.id])
+                    println("Activity: ", route[i+1].activity.id)
+                    println("Start of service time: $(route[i].startOfServiceTime)")
+                    println("End of service time: $(route[i].endOfServiceTime)")
+                end
+                printRouteHorizontal(solution.vehicleSchedules[1])
+                println(msg)
+                println(size(scenario2.time))
+                println(scenario2.nExpected)
+                println(scenario2.nFixed)
+                println(length(scenario2.vehicles))
+                println(scenario2.vehicles)
                 throw("Error in offline solution with anticipation")
                 return solution, requestBank, results, scenario, scenario2, feasible, msg
             end
