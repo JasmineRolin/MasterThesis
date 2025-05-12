@@ -365,7 +365,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
     slackTime = 0
 
     # Empty route 
-    if firstActivity.activity.activityType == DEPOT && route[end].activity.activityType == DEPOT
+    if length(route) == 2 && firstActivity.activity.activityType == DEPOT && route[end].activity.activityType == DEPOT
         slackTime = vehicleSchedule.vehicle.availableTimeWindow.endTime - firstActivity.activity.timeWindow.startTime
     # Depots have to swallow detour 
     else
@@ -374,7 +374,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
             slackTime += firstActivity.startOfServiceTime - firstActivity.activity.timeWindow.startTime
         end
     end
-    if detour > idleTime && detour > slackTime    
+    if detour > idleTime + slackTime    
         return false, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
     end
 
