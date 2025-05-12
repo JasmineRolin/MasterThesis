@@ -10,7 +10,7 @@ using CSV
 
 
 
-#function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, resultType::String)
+function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, resultType::String, i::Int)
 
     n = 20
     gamma = 0.5
@@ -45,16 +45,16 @@ using CSV
     dfResults = processResults(outputFiles)
     CSV.write(outPutFolder*"/results.csv", dfResults)
 
-#end
+end
 
 
-#==
+
 if abspath(PROGRAM_FILE) == @__FILE__  # Only run if executed directly
     n = parse(Int, ARGS[1])
     nExpectedPercentage = parse(Float64, ARGS[2])
     gamma = parse(Float64, ARGS[3])
     date = ARGS[4]
     resultType = ARGS[5]
-    main(n, nExpectedPercentage, gamma, date, resultType)
+    iteration = parse(Int,ARGS[6])
+    main(n, nExpectedPercentage, gamma, date, resultType, iteration)
 end
-==#

@@ -10,13 +10,13 @@ using CSV
 
 
 
-#function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, resultType::String)
+function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, resultType::String, i::Int)
 
-    n = 20
-    nExpectedPercentage = 0.1
-    gamma = 0.5
-    date = "2023-10-01"
-    resultType = "BasicAnticipation"
+    #n = 20
+    #nExpectedPercentage = 0.1
+    #gamma = 0.5
+    #date = "2023-10-01"
+    #resultType = "BasicAnticipation"
 
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"
@@ -27,7 +27,7 @@ using CSV
 
     nExpected = Int(floor(n*nExpectedPercentage))
 
-    for i in 1:10
+    #for i in 1:10
         requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
         distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
         timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
@@ -44,20 +44,20 @@ using CSV
         feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
         @test feasible == true
         @test msg == ""
-    end
+    #end
     dfResults = processResults(outputFiles)
     CSV.write(outPutFolder*"/results.csv", dfResults)
 
-#end
+end
 
 
-#==
-if abspath(PROGRAM_FILE) == @__FILE__  # Only run if executed directly
+
+if abspath(PROGRAM_FILE) == @__FILE__
     n = parse(Int, ARGS[1])
     nExpectedPercentage = parse(Float64, ARGS[2])
     gamma = parse(Float64, ARGS[3])
     date = ARGS[4]
     resultType = ARGS[5]
-    main(n, nExpectedPercentage, gamma, date, resultType)
+    iteration = parse(Int, ARGS[6])
+    main(n, nExpectedPercentage, gamma, date, resultType, iteration)
 end
-==#
