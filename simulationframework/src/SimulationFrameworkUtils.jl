@@ -558,7 +558,6 @@ function determineCurrentState(solution::Solution,event::Event,finalSolution::So
 
     # Update vehicle schedule
     for (vehicle,schedule) in enumerate(solution.vehicleSchedules)
-        print("UPDATING SCHEDULE: ",vehicle)
 
         # TODO: extract route 
 
@@ -634,7 +633,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
 end
 
 function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixFile::String,timeMatrixFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json")
-    
+
     # Retrieve info 
     grid = scenario.grid
     depotLocations = scenario.depotLocations
@@ -667,7 +666,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     if anticipation == false
         solution, requestBank = offlineSolution(scenario,repairMethods,destroyMethods,parametersFile)
     else
-        solution, requestBank = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected)
+        solution, requestBank = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile)
         updateIds!(solution,length(scenario.requests),nExpected)
     end
 
@@ -682,6 +681,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         println("Intitial after ALNS")
         println("----------------")
         printSolution(solution,printRouteHorizontal)
+        println("TIME: ", scenario.time[41,4])
     end
     if displayPlots
         display(createGantChartOfSolutionOnline(solution,"Initial Solution after ALNS"))
@@ -712,6 +712,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     eventsInsertedByALNS = 0
     totalEvents = length(events)
     nOnline = 0
+
     for (itr,event) in enumerate(events)
         startTimeEvent = time()
         println("------------------------------------------------------------------------------------------------------------------------------------------------")
@@ -821,7 +822,6 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     
     state = State(finalSolution,scenario.onlineRequests[end],0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-    printSolution(solution,printRouteHorizontal)
     @test msg == ""
     @test feasible == true
 

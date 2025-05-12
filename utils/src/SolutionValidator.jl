@@ -168,6 +168,18 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
         return false, msg, Set{Int}(), Set{Int}()
     end
     if !isapprox(totalCost, getTotalCostRouteOnline(scenario.time,route,visitedRoute,scenario.serviceTimes),atol=0.0001) 
+        dropoffTime = route[3].startOfServiceTime
+        directTime = Float64(scenario.time[route[2].activity.id,route[3].activity.id])
+        actualTime = Float64(dropoffTime - route[2].endOfServiceTime)
+        ratio = actualTime/directTime
+        println(scenario.requests[8])
+        println(route[2].activity.id)
+        println(route[3].activity.id)
+        println("Ratio: $(ratio)")
+        println("Direct time: $(directTime)")
+        println("Actual time: $(actualTime)")
+        println("Drop off time: $(dropoffTime)")
+        println("route: ", route)
         msg = "ROUTE INFEASIBLE: Total cost is incorrect for vehicle $(vehicle.id). Calculated cost $(getTotalCostRouteOnline(scenario.time,route,visitedRoute,scenario.serviceTimes)), actual cost $(totalCost), diff $(abs(totalCost-getTotalCostRouteOnline(scenario.time,route,visitedRoute,scenario.serviceTimes))))"
         return false, msg, Set{Int}(), Set{Int}()
     end

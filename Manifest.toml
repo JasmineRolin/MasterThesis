@@ -2289,7 +2289,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 version = "17.4.0+2"
 
 [[deps.simulationframework]]
-deps = ["CSV", "DataFrames", "KernelDensity", "Plots", "Random", "Statistics", "StatsBase", "Test", "TimerOutputs", "alns", "domain", "offlinesolution", "onlinesolution", "utils", "waitingstrategies"]
+deps = ["CSV", "DataFrames", "JSON", "KernelDensity", "Plots", "Random", "Statistics", "StatsBase", "Test", "TimerOutputs", "alns", "domain", "offlinesolution", "onlinesolution", "utils", "waitingstrategies"]
 path = "simulationframework"
 uuid = "785ec8ed-74e0-4c93-8684-fe0a18162ad4"
 version = "0.1.0"

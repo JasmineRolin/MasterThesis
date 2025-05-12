@@ -6,6 +6,8 @@ using CSV
 using alns
 using Test
 using TimerOutputs
+using JSON
+
 
 global GENERATE_SIMULATION_DATA = false
 global GENERATE_DATA_AND_VEHICLES = true
@@ -135,7 +137,7 @@ function getDistanceAndTimeMatrixFromDataFrame(requestsDf::DataFrame,expectedReq
 end
 
 
-function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicleFile::String, parametersFile::String,scenarioName=""::String)
+function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicleFile::String, parametersFile::String,scenarioName=""::String,gridFile::String = "")
 
     # Check that files exist 
     if !isfile(requestFile)
@@ -147,6 +149,14 @@ function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicle
     if !isfile(parametersFile)
         error("Error: Parameters file $parametersFile does not exist.")
     end
+    if gridFile == ""
+        useGrid = false
+    else
+        useGrid = true
+        if !isfile(gridFile)
+            error("Error: Grid file $gridFile does not exist.")
+        end
+    end
    
 
     # Read request, vehicle and parameters dataframes from input
@@ -154,6 +164,25 @@ function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicle
     vehiclesDf = CSV.read(vehicleFile, DataFrame)
     parametersDf = CSV.read(parametersFile, DataFrame)
     nRequests = nrow(requestsDf)
+
+    # Read grid and depot locations 
+    grid = nothing
+    if useGrid
+        gridJSON = JSON.parsefile(gridFile) 
+        maxLat = gridJSON["max_latitude"]
+        minLat = gridJSON["min_latitude"]
+        maxLong = gridJSON["max_longitude"]
+        minLong = gridJSON["min_longitude"]
+        nRows = gridJSON["num_rows"]
+        nCols = gridJSON["num_columns"]
+        latStep = (maxLat - minLat) / nRows
+        longStep = (maxLong - minLong) / nCols
+ 
+        grid = Grid(maxLat,minLat,maxLong,minLong,nRows,nCols,latStep,longStep)
+        depotLocationsGrid = findDepotLocations(grid,nRequests)
+        depotCoordinates = [(l.lat,l.long) for l in values(depotLocationsGrid)]
+        nDepots = length(depotLocationsGrid)
+    end
     
     # Get parameters 
     planningPeriod = TimeWindow(parametersDf[1,"start_of_planning_period"],parametersDf[1,"end_of_planning_period"])
@@ -166,16 +195,20 @@ function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicle
     taxiParameter = Float64(parametersDf[1,"taxi_parameter"])
     taxiParameterExpected = Float64(parametersDf[1,"taxi_parameter_expected"])
     
-
-    # Get vehicles # TODO change output
-    vehicles,depots, depotLocations = readVehicles(vehiclesDf,nRequests+nNewExpected)
-    nDepots = length(depots)
+    # Get vehicles 
+    vehicles,depots, depotLocations = readVehicles(vehiclesDf,nRequests,grid,useGrid)
+    if !useGrid 
+        depotCoordinates = collect(keys(depotLocations))
+        nDepots = length(depotCoordinates)
+    end
 
     # Generate expected requests
     newExpectedRequestsDf = createExpectedRequests(nNewExpected,nRequests)
 
     # Read time and distance matrices from input or initialize empty matrices
-    distance, time = getDistanceAndTimeMatrixFromDataFrame(requestsDf,newExpectedRequestsDf,collect(keys(depotLocations)))
+    # TODO: collect depot locations correctly 
+    
+    distance, time = getDistanceAndTimeMatrixFromDataFrame(requestsDf,newExpectedRequestsDf,depotCoordinates)
 
     # Get requests 
     requests = readRequests(requestsDf,nRequests+nNewExpected,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time)
@@ -185,10 +218,11 @@ function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicle
     # Split into offline and online requests
     onlineRequests, offlineRequests = splitRequests(allRequests)
 
-    # Get distance and time matrix # TODO add grid?
-    scenario = Scenario(scenarioName,allRequests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots,depots,taxiParameter,nNewExpected,taxiParameterExpected,nRequests)
-
-    return scenario
+    if useGrid 
+        return Scenario(scenarioName,allRequests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots,depots,taxiParameter,nNewExpected,taxiParameterExpected,nRequests,grid,depotLocationsGrid)
+    else 
+        return Scenario(scenarioName,allRequests,onlineRequests,offlineRequests,serviceTimes,vehicles,vehicleCostPrHour,vehicleStartUpCost,planningPeriod,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,distance,time,nDepots,depots,taxiParameter,nNewExpected,taxiParameterExpected,nRequests)
+    end
 
 end
 
@@ -386,7 +420,7 @@ end
 #-------
 # Determine offline solution with anticipation
 #-------
-function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},destroyMethods::Vector{GenericMethod},requestFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String,nExpected::Int)
+function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},destroyMethods::Vector{GenericMethod},requestFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String,nExpected::Int,gridFile::String)
 
     # Variables to determine best solution
     bestAverageObj = typemax(Float64)
@@ -403,7 +437,8 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
     for i in 1:2
 
         # Make scenario
-        scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName)
+        scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile)
+
         time = scenario.time
         distance = scenario.distance
         serviceTimes = scenario.serviceTimes
@@ -441,7 +476,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
             solution = copySolution(originalSolution)
             
             # Generate new scenario
-            scenario2 = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName)
+            scenario2 = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile)
 
             # Insert expected requests randomly into solution using regret insertion
             expectedRequestsIds = collect(nFixed+1:nFixed+nExpected)
@@ -455,6 +490,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
             state = State(solution,Request(),nNotServicedFixedRequests)
             feasible, msg = checkSolutionFeasibilityOnline(scenario2,state)
             if !feasible
+                throw("Error in offline solution with anticipation")
                 return solution, requestBank, results, scenario, scenario2, feasible, msg
             end
 
@@ -472,13 +508,12 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
             bestSolution = copySolution(originalSolution)
             bestRequestBank = copy(originalRequestBank)
         end
-        
 
         # Save results
         push!(results, (runId = "Run $i", averageObj = averageObj, averageNotServicedExpectedRequests = averageNotServicedExpectedRequests, 
                         nInitialNotServicedFixedRequests = nNotServicedFixedRequests, nInitialNotServicedExpectedRequests = nNotServicedExpectedRequests))
     end
-
+    
     return bestSolution, bestRequestBank, results, Scenario(), Scenario(), true, ""
 
 end
