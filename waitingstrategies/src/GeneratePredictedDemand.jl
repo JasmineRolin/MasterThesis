@@ -69,7 +69,7 @@ function generatePredictedVehiclesDemandInHorizon(gamma::Float64, predictedDeman
     maxDemandInHorizon = maximum(predictedDemand[period:endPeriod,:,:], dims=1)
     maxDemandInHorizon = dropdims(maxDemandInHorizon, dims=1)
 
-    return Int.(ceil.(maxDemandInHorizon.*gamma))
+    return Int.(ceil.(maxDemandInHorizon.*gamma)), maxDemandInHorizon
 end
 
 

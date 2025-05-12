@@ -59,6 +59,10 @@ end
 # Function to determine call times
 # ------
 function callTime(df, serviceWindow, callBuffer, preKnown)
+
+    # TODO: remove  
+    latestCallTimeBuffer = 20 # Minutes 
+
     for i in 1:nrow(df)
         if preKnown[i]
             df[i, "call_time"] = 0
@@ -69,17 +73,21 @@ function callTime(df, serviceWindow, callBuffer, preKnown)
             # Determine latest call time 
             if df[i,:request_type] == 0 # Pick up
                 # TODO: REMOVE!!!  
-                latestCallTime = df[i, :request_time] - callBuffer
-                earliestCallTime = max(latestCallTime - 90, serviceWindow[1])
+                latestCallTime = df[i, :request_time] + 15 - callBuffer
+                earliestCallTime = max(latestCallTime - latestCallTimeBuffer, serviceWindow[1])
+
                 call_window = [earliestCallTime, latestCallTime]
+
+
                # call_window = [serviceWindow[1], df[i, :request_time] - callBuffer]
             else # Drop off 
                 # TODO: REMOVE!!!  
-                direct_pick_up_time = df[i, :request_time] - df[i,"direct_drive_time"]
+                direct_pick_up_time = df[i, :request_time] + 5 - df[i,"direct_drive_time"]
 
                 latestCallTime = direct_pick_up_time - callBuffer
+
                 # TODO: jas - der skal inkluderes max ride time 
-                earliestCallTime = max(latestCallTime - 90, serviceWindow[1])
+                earliestCallTime = max(latestCallTime - latestCallTimeBuffer, serviceWindow[1])
                 call_window = [earliestCallTime, latestCallTime]
 
                 # direct_pick_up_time = df[i, :request_time] - df[i,"direct_drive_time"]

@@ -45,15 +45,91 @@ feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
 @test msg == ""
 println(msg)
 
+for r in scenario.requests[requestBank]
+    println("Request: $(r.id), call time: $(r.callTime)")
+end
+
 print("end")
 
-# Event 20 veh 2
+# Dummy example assuming scenario.onlineRequests is available
+requests = scenario.onlineRequests
 
-# for r in scenario.requests
-#     if r.callTime != 0
-#         println("Request $(r.id) - Call time: $(r.callTime) - Pick up time: $(r.pickUpActivity.timeWindow.startTime) - Duration: $(r.pickUpActivity.timeWindow.startTime - r.callTime), pick up time window: $(r.pickUpActivity.timeWindow.startTime) - $(r.pickUpActivity.timeWindow.endTime), drop off time window: $(r.dropOffActivity.timeWindow.startTime) - $(r.dropOffActivity.timeWindow.endTime)")
-#     end
-# end
+# Prepare data
+n = length(requests)
+labels = [string(r.id) for r in requests]
+start_times = [r.pickUpActivity.timeWindow.startTime for r in requests]
+end_times = [r.pickUpActivity.timeWindow.endTime for r in requests]
+call_times = [r.callTime for r in requests]
+durationsCallTime = end_times .- call_times
+durationsCallTimeStart = start_times .- call_times
+
+# Plotting
+p = plot(size = (1500,1500),legend=false, xlabel="Time", yticks=(1:n, labels), title="Pickup Time Windows with Call Times")
+
+# Add bars for time windows
+for i in 1:n
+    y = i # reverse order to show first request at the top
+    plot!([start_times[i], end_times[i]], [y, y], lw=5, color=:blue)
+    annotate!([end_times[i]], [y], text("$(durationsCallTime[i])", :black, 8, :bottom))
+    annotate!([start_times[i]], [y], text("$(durationsCallTimeStart[i])", :green, 8, :bottom))
+end
+
+# Add vertical red lines for call times
+for i in 1:n
+    y = i
+    plot!([call_times[i], call_times[i]], [y-0.3, y+0.3], color=:red, lw=2, linestyle=:dash)
+end
+
+display(p)
+
+
+for r in scenario.onlineRequests
+    println("Request $(r.id), request type $(r.requestType)") 
+    println("\t Call time: $(r.callTime)")
+    println("\t Duration from call time to start TW: $(r.pickUpActivity.timeWindow.startTime - r.callTime)")
+    println("\t Duration from call time to end TW: $(r.pickUpActivity.timeWindow.endTime - r.callTime)")
+    println("\t direct drive time: $(r.directDriveTime)")
+    println("\t pick up time window: ($(r.pickUpActivity.timeWindow.startTime) , $(r.pickUpActivity.timeWindow.endTime))")
+    println("\t drop off time window: ($(r.dropOffActivity.timeWindow.startTime) , $(r.dropOffActivity.timeWindow.endTime))")
+end
+
+
+
+predictedDemand = generatePredictedDemand(grid, historicRequestFiles,nPeriods,periodLength)
+vehicleDemand = zeros(Int,nPeriods,scenario.grid.nRows,scenario.grid.nCols)
+#vehicleBalance,activeVehiclesPerCell,realisedDemand, vehicleDemand, maxDemandInHorizon = determineVehicleBalancePrCell(grid,gamma,predictedDemand,finalSolution,nTimePeriods,periodLength)
+
+for period in 1:nPeriods
+    vehicleDemandInPeriod,maxDemandInHorizonPeriod = generatePredictedVehiclesDemandInHorizon(gamma,predictedDemand,period,endPeriod)
+
+    vehicleDemand[period,:,:] = vehicleDemandInPeriod
+    p4 = heatmap(vehicleDemand[period,:,:], 
+    c=:viridis,         # color map
+    clim=(avg_min, avg_max),
+    xlabel="Longitude (grid cols)", 
+    ylabel="Latitude (grid rows)", 
+    title="Vehicle demand",
+    colorbar_title="Vehicle Demand")
+    scatter!(p4,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:green)
+    scatter!(p4,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
+   
+    p5 = heatmap(maxDemandInHorizon[:,:], 
+    c=:viridis,         # color map
+    clim=(demand_min, demand_max),
+    xlabel="Longitude (grid cols)", 
+    ylabel="Latitude (grid rows)", 
+    title="Demand over horizon",
+    colorbar_title="Requests")
+    scatter!(p5,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:green)
+    scatter!(p5,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
+
+    super_title = plot(title = "Vehicle Demand Overview - period start $((period-1)*periodLength), vehicle $(vehicle)", grid=false, framestyle=:none)
+
+    # Combine all into a vertical layout: super title + 3 plots
+    p = plot(super_title, plot(p4,p5, layout=(1,2)), layout = @layout([a{0.01h}; b{0.99h}]), size=(1500,1100))
+    display(p)
+end
+
 
 
 # initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
@@ -117,10 +193,10 @@ print("end")
 # grid = Grid(maxLat,minLat,maxLong,minLong,nRows,nCols,latStep,longStep)
 
 
-averageDemand = generatePredictedDemand(scenario.grid, historicRequestFiles,nPeriods,periodLength)
-#vehicleDemand = generatePredictedVehiclesDemand(scenario.grid, gamma, averageDemand,nPeriods)
-period = Int(ceil(1140/periodLength))
-vehicleDemand = generatePredictedVehiclesDemandInHorizon(gamma,averageDemand,period,period+3)
+# averageDemand = generatePredictedDemand(scenario.grid, historicRequestFiles,nPeriods,periodLength)
+# #vehicleDemand = generatePredictedVehiclesDemand(scenario.grid, gamma, averageDemand,nPeriods)
+# period = Int(ceil(1140/periodLength))
+# vehicleDemand = generatePredictedVehiclesDemandInHorizon(gamma,averageDemand,period,period+3)
 
 # #======================================#
 # #

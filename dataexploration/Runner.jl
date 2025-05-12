@@ -31,7 +31,7 @@ global MAX_DELAY = 15 # TODO Astrid I just put something
 # Constant for vehicle generation  
 ==#
 global vehicleCapacity = 4
-global GammaList = [0.5,0.7,0.9]
+global GammaList = [0.9] #[0.5,0.7,0.9]
 
 # TODO: burde vi bare have flad cost ? vi er jo ligeglade med cost faktisk 
 global shifts = Dict(
@@ -156,10 +156,10 @@ if GENERATE_DATA_AND_VEHICLES
         #================================================#
         # Plot new data
         #================================================#
-        createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,density_grid,location_matrix,requestTimePickUp,requestTimeDropOff,probabilities_pickUpTime,probabilities_dropOffTime,serviceWindow,distanceDriven)
-        for gamma in GammaList
-            plotAndSaveGantChart(nRequest,nData,gamma)
-        end
+        # createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,density_grid,location_matrix,requestTimePickUp,requestTimeDropOff,probabilities_pickUpTime,probabilities_dropOffTime,serviceWindow,distanceDriven)
+        # for gamma in GammaList
+        #     plotAndSaveGantChart(nRequest,nData,gamma)
+        # end
     end
 
    

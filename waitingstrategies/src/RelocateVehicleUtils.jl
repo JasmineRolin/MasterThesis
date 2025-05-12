@@ -46,6 +46,7 @@ function determineVehicleBalancePrCell(grid::Grid,gamma::Float64,predictedDemand
     vehicleBalance = zeros(Int,nTimePeriods,nRows,nCols)
     vehicleDemand = zeros(Int,nTimePeriods,nRows,nCols)
     realisedDemand = zeros(Int,nTimePeriods,nRows,nCols)
+    maxDemandInHorizon = zeros(Int,nTimePeriods,nRows,nCols)
     activeVehiclesPerCell = zeros(Int,nTimePeriods,nRows,nCols) # TODO: remove returning this (only for test)
 
     # TODO: set correctly 
@@ -63,15 +64,16 @@ function determineVehicleBalancePrCell(grid::Grid,gamma::Float64,predictedDemand
 
         # Determine vehicle demand in period
         endPeriod = min(period + planningHorizon, nTimePeriods)
-        vehicleDemandInPeriod = generatePredictedVehiclesDemandInHorizon(gamma,predictedDemand,period,endPeriod)
+        vehicleDemandInPeriod,maxDemandInHorizonPeriod = generatePredictedVehiclesDemandInHorizon(gamma,predictedDemand,period,endPeriod)
         vehicleDemand[period,:,:] = vehicleDemandInPeriod
+        maxDemandInHorizon[period,:,:] = maxDemandInHorizonPeriod
 
         # Determine surplus/deficit of vehicles in grid cells
         # Use maximum of predicted demand and realised demand (worst case scenario ?)
         vehicleBalance[period,:,:] = activeVehiclesPerCell[period,:,:] .- vehicleDemandInPeriod
     end
    
-    return vehicleBalance, activeVehiclesPerCell, realisedDemand, vehicleDemand
+    return vehicleBalance, activeVehiclesPerCell, realisedDemand, vehicleDemand, maxDemandInHorizon
 end
 
 function determineActiveVehiclesAndDemandPrCell(solution::Solution,endOfPeriodInMinutes::Int,startOfPeriodInMinutes::Int,minLat::Float64,minLong::Float64, nRows::Int,nCols::Int,latStep::Float64,longStep::Float64)
