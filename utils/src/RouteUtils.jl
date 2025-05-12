@@ -288,11 +288,20 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
         dropOffStartTime = dropOffActivity.timeWindow.startTime
         dropOffEndTime = dropOffActivity.timeWindow.endTime
 
-        if route[pickUpIdx+1].activity.timeWindow.endTime < pickUpStartTime || route[pickUpIdx].activity.timeWindow.startTime > pickUpEndTime 
+        # TODO: lav lige et dobbelt check med astrid 
+        if route[pickUpIdx+1].activity.timeWindow.endTime < pickUpStartTime 
+            return INFEASIBLE_ROUTE_DROPOFF
+        end
+
+        if route[pickUpIdx].activity.timeWindow.startTime > pickUpEndTime 
             return INFEASIBLE_ROUTE_PICKUP
         end
 
-        if route[dropOffIdx+1].activity.timeWindow.endTime < dropOffStartTime || route[dropOffIdx].activity.timeWindow.startTime > dropOffEndTime 
+        if route[dropOffIdx+1].activity.timeWindow.endTime < dropOffStartTime
+            return INFEASIBLE_RESULT
+        end
+
+        if route[dropOffIdx].activity.timeWindow.startTime > dropOffEndTime
             return INFEASIBLE_ROUTE__DROPOFF_FOREVER
         end
 
@@ -358,48 +367,51 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
         totalCost = 0
     #end
 
-    #@timeit TO "BEFORELOOP2" begin
-        # Check first activity in route
-        if firstActivity.activity.activityType == PICKUP
-            pickUpIndexes[firstActivity.activity.requestId] = 1
-        elseif firstActivity.activity.activityType == DROPOFF
-            requestId = firstActivity.activity.requestId
-            totalCost += getCostOfRequest(time,visitedRoute[requestId]["PickUpServiceStart"] + serviceTimes,firstActivity.startOfServiceTime,requestId,firstActivity.activity.id)
-        elseif firstActivity.activity.activityType == WAITING
-            totalIdleTime = firstActivity.endOfServiceTime - firstActivity.startOfServiceTime
-        end
-        
-        # Find maximum shift backward and forward
-        if firstActivity.activity.activityType == WAITING || firstActivity.activity.activityType == DEPOT
-            maximumShiftBackward = firstActivity.startOfServiceTime - firstActivity.activity.timeWindow.startTime
-        else
-            maximumShiftBackward = 0
-        end
+    # Check first activity in route
+    if firstActivity.activity.activityType == PICKUP
+        pickUpIndexes[firstActivity.activity.requestId] = 1
+    elseif firstActivity.activity.activityType == DROPOFF
+        requestId = firstActivity.activity.requestId
+        totalCost += getCostOfRequest(time,visitedRoute[requestId]["PickUpServiceStart"] + serviceTimes,firstActivity.startOfServiceTime,requestId,firstActivity.activity.id)
+    elseif firstActivity.activity.activityType == WAITING
+        totalIdleTime = firstActivity.endOfServiceTime - firstActivity.startOfServiceTime
+    end
+    
+    # Find maximum shift backward and forward
+    if firstActivity.activity.activityType == WAITING 
+        maximumShiftBackward = firstActivity.endOfServiceTime - firstActivity.startOfServiceTime
+        maximumShiftForward = vehicleSchedule.vehicle.availableTimeWindow.endTime - firstActivity.endOfServiceTime
 
-        if firstActivity.activity.activityType == DROPOFF || firstActivity.activity.activityType == PICKUP 
-            maximumShiftForward = 0
-            
-        elseif route[end-1].activity.activityType == WAITING && length(route) != 2 # Waiting activity but not in route with only [waiting,depot] # Astrid Here
-            maximumShiftForward =  route[end-1].activity.timeWindow.endTime - route[end-1].startOfServiceTime
-
-        elseif length(route) == 2 && firstActivity.activity.activityType == DEPOT && route[2].activity.activityType == DEPOT # EMmty route 
-            maximumShiftForward = firstActivity.activity.timeWindow.endTime - firstActivity.activity.timeWindow.startTime
-
-        else # Depot but non-empty route or [waiting,depot]
-            maximumShiftForward = firstActivity.startOfServiceTime - firstActivity.activity.timeWindow.startTime
-        end
+    elseif firstActivity.activity.activityType == DEPOT
+        maximumShiftBackward = firstActivity.startOfServiceTime - firstActivity.activity.timeWindow.startTime
+        maximumShiftForward = firstActivity.activity.timeWindow.endTime - firstActivity.startOfServiceTime
+    else
+        maximumShiftBackward = 0
+        maximumShiftForward = 0
+    end
 
     # Check if there is room for detour 
     detour = 0 
-    #@timeit TO "detourCalc" begin
-        if pickUpIdxInBlock == dropOffIdxInBlock - 1
-            detour = findDetour(time,serviceTimes,route[pickUpIdxInBlock-1].activity.id,route[pickUpIdxInBlock].activity.id,pickUpActivity.id,dropOffActivity.id)
-        elseif pickUpIdxInBlock != -1 
-            detour = findDetour(time,serviceTimes,route[pickUpIdxInBlock-1].activity.id,route[pickUpIdxInBlock].activity.id,pickUpActivity.id) + findDetour(time,serviceTimes,route[dropOffIdxInBlock-2].activity.id,route[dropOffIdxInBlock-2].activity.id,dropOffActivity.id) 
-        end
-    #end
+    if pickUpIdxInBlock == dropOffIdxInBlock - 1
+        detour = findDetour(time,serviceTimes,route[pickUpIdxInBlock-1].activity.id,route[pickUpIdxInBlock].activity.id,pickUpActivity.id,dropOffActivity.id)
+    elseif pickUpIdxInBlock != -1 
+        detour = findDetour(time,serviceTimes,route[pickUpIdxInBlock-1].activity.id,route[pickUpIdxInBlock].activity.id,pickUpActivity.id) + findDetour(time,serviceTimes,route[dropOffIdxInBlock-2].activity.id,route[dropOffIdxInBlock-2].activity.id,dropOffActivity.id) 
+    end
 
-    if detour > idleTime && detour > maximumShiftBackward + maximumShiftForward
+    # Detour just has to be "swallowed" by time in start and end 
+    slackTime = 0
+
+    # Empty route 
+    if length(route) == 2 && firstActivity.activity.activityType == DEPOT && route[end].activity.activityType == DEPOT
+        slackTime = vehicleSchedule.vehicle.availableTimeWindow.endTime - firstActivity.activity.timeWindow.startTime
+    # Depots have to swallow detour 
+    else
+        slackTime = route[end].activity.timeWindow.endTime - route[end].startOfServiceTime
+        if firstActivity.activity.activityType == DEPOT
+            slackTime += firstActivity.startOfServiceTime - firstActivity.activity.timeWindow.startTime
+        end
+    end
+    if detour > idleTime + slackTime    
         return false, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
     end
 
@@ -447,7 +459,6 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
         
             # Check if we can remove a waiting activity 
             if activityType == WAITING
-                isActivityInSchedule = false
                 if idx+1 == pickUpIdxInBlock
                     nextActivity = pickUpActivity
                     arrivalAtNextActivity = newEndOfServiceTimes[idx-1] + time[previousActivityId,nextActivity.id] 
@@ -455,7 +466,6 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                     nextActivity = dropOffActivity
                     arrivalAtNextActivity = newEndOfServiceTimes[idx-1] + time[previousActivityId,nextActivity.id] 
                 else
-                    isActivityInSchedule = true 
                     nextActivity = route[idxActivityInSchedule+1].activity
                     arrivalAtNextActivity = newEndOfServiceTimes[idx-1] + time[previousActivityId,nextActivity.id] 
                 end  
@@ -501,7 +511,6 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                         # Keep waiting activity but try to shift route
                         feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(firstActivity.activity,currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
 
-                        
                         if !feasible
                             return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
                         end
@@ -570,26 +579,26 @@ end
 Method to check if it is feasible to insert a waiting activity
 ==#
 function feasibleWhenInsertWaiting!(time::Array{Int,2},requests::Vector{Request},serviceTimes::Int,currentActivity::Activity,currentActivityType::ActivityType,previousActivity::Activity,vehicleSchedule::VehicleSchedule,idx::Int,newStartOfServiceTimes::Vector{Int},newEndOfServiceTimes::Vector{Int},waitingActivitiesToAdd::Vector{Int},maximumShiftBackward::Int,maximumShiftForward::Int)
-    if !(vehicleSchedule.numberOfWalking[idx-1] == 0 && currentActivityType == PICKUP)
-        return false, 0, 0
-    end
-
     previousId = previousActivity.id
     currentId = currentActivity.id
-    currentRequest = requests[currentId]
+    requestId = currentActivity.requestId
+    currentRequest = requests[requestId]
     currentActivityStartTime = currentActivity.timeWindow.startTime
 
-    if requests[currentActivity.requestId].requestType == PICKUP_REQUEST
+   
+    # If it is a pick-up activity and pickup request or drop off activity we insert at start of time window
+    if  (currentActivityType == PICKUP && requests[currentActivity.requestId].requestType == PICKUP_REQUEST)  ||  currentActivityType == DROPOFF
         newStartOfServiceTimesPickUp = currentActivityStartTime
         newEndOfServiceTimesPickUp = newStartOfServiceTimesPickUp + serviceTimes
-        newStartOfServiceTimeWaiting = newEndOfServiceTimes[idx-1]
-        newEndOfServiceTimeWaiting = newStartOfServiceTimesPickUp - time[previousId,currentId]
-    else
+    # If it is a pick-up activity and drop off request we ensure that we can drive directly to drop off activity 
+    else currentActivityType == PICKUP && requests[currentActivity.requestId].requestType == DROPOFF_REQUEST
         newStartOfServiceTimesPickUp = currentRequest.dropOffActivity.timeWindow.startTime - time[currentRequest.pickUpActivity.id,currentRequest.dropOffActivity.id] 
         newEndOfServiceTimesPickUp = newStartOfServiceTimesPickUp + serviceTimes
-        newStartOfServiceTimeWaiting = newEndOfServiceTimes[idx-1]
-        newEndOfServiceTimeWaiting = newStartOfServiceTimesPickUp - time[previousId,currentId]
     end
+
+    # Waiting service times 
+    newStartOfServiceTimeWaiting = newEndOfServiceTimes[idx-1]
+    newEndOfServiceTimeWaiting = newStartOfServiceTimesPickUp - time[previousId,currentId]
 
     # Update service times
     newEndOfServiceTimes[idx] = newEndOfServiceTimesPickUp
@@ -599,6 +608,7 @@ function feasibleWhenInsertWaiting!(time::Array{Int,2},requests::Vector{Request}
     maximumShiftBackward = min(maximumShiftBackward,newStartOfServiceTimesPickUp - currentActivityStartTime)
     maximumShiftForward = min(maximumShiftForward,currentActivity.timeWindow.endTime - newStartOfServiceTimesPickUp)
 
+    # Check that insertion times are feasible 
     if newEndOfServiceTimes[idx] + time[currentId,vehicleSchedule.vehicle.id] < vehicleSchedule.vehicle.availableTimeWindow.endTime && newStartOfServiceTimeWaiting < newEndOfServiceTimeWaiting
         push!(waitingActivitiesToAdd,idx)
         return true, maximumShiftBackward, maximumShiftForward
@@ -688,7 +698,13 @@ function canActivityBeInserted(firstActivity::Activity,currentActivity::Activity
         maximumShiftForward = 0
 
         # Update service times for previous activities 
-        for i in 1:(idx-1)
+        if firstActivity.activityType != WAITING
+            newStartOfServiceTimes[1] -= shift
+            newEndOfServiceTimes[1] -= shift
+        else
+            newEndOfServiceTimes[1] -= shift
+        end
+        for i in 2:(idx-1)
             newStartOfServiceTimes[i] -= shift
             newEndOfServiceTimes[i] -= shift
         end

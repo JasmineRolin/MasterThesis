@@ -1,8 +1,10 @@
 module waitingstrategies
 
+global N_TIME_PERIODS = 24
+
 include("GeneratePredictedDemand.jl")
 using .GeneratePredictedDemand
-export generatePredictedDemand,generatePredictedVehiclesDemand
+export generatePredictedDemand,generatePredictedVehiclesDemand,generatePredictedVehiclesDemandInPeriod,generatePredictedVehiclesDemandInHorizon
 
 include("RelocateVehicleUtils.jl")
 using .RelocateVehicleUtils

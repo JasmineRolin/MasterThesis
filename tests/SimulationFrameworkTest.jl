@@ -65,7 +65,6 @@ parametersFile = "tests/resources/Parameters.csv"
 alnsParameters = "tests/resources/ALNSParameters2.json"
 outPutFolder = "tests/output/OnlineSimulation/"*string(n)
 outputFiles = Vector{String}()
-gridFile = string("Data/Konsentra/grid.json")
 
 #for i in 1:10
     requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
@@ -77,7 +76,7 @@ gridFile = string("Data/Konsentra/grid.json")
     println("====> SCENARIO: ",scenarioName)
 
     # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile,gridFile)
+    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Simulate scenario 
     solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder)

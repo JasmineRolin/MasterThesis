@@ -107,7 +107,7 @@ end
     state = State(currentState.currentSolution,Request(),0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == true
-    @test length(currentState.assignedRequests) == 12
+    @test length(currentState.assignedRequests) == 13
 
     # Destroy 
     randomDestroy!(scenario,currentState,parameters)
@@ -197,7 +197,7 @@ end
     state = State(solution,Request(),0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == true
-    @test length(currentState.assignedRequests) == 12
+    @test length(currentState.assignedRequests) == 13
 
     printSolution(currentState.currentSolution,printRouteHorizontal)
 

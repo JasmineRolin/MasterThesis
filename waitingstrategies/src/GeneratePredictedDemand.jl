@@ -1,18 +1,18 @@
 module GeneratePredictedDemand
 
 using CSV, DataFrames, JSON, domain, UnPack
+using Statistics
 
-export generatePredictedDemand,generatePredictedVehiclesDemand
+export generatePredictedDemand,generatePredictedVehiclesDemand,generatePredictedVehiclesDemandInPeriod,generatePredictedVehiclesDemandInHorizon
 
 #==
  Method to generate predicted demand  
 ==#
 # TODO: jas - do something else than plain average
-function generatePredictedDemand(grid::Grid, historicRequestFiles::Vector{String})
+function generatePredictedDemand(grid::Grid, historicRequestFiles::Vector{String}, nTimePeriods::Int,periodLength::Int)
     @unpack minLat,maxLat,minLong,maxLong, nRows,nCols,latStep,longStep = grid 
 
-    nHours = 24
-    demandGrid = zeros(Int, nHours, nRows, nCols)
+    demandGrid = zeros(Float64, nTimePeriods, nRows, nCols)
     nFiles = length(historicRequestFiles)
 
     for requestFile in historicRequestFiles
@@ -22,16 +22,21 @@ function generatePredictedDemand(grid::Grid, historicRequestFiles::Vector{String
             lat = row.pickup_latitude
             lon = row.pickup_longitude
 
+            # Count demand as +1 for pickup and -1 for dropoff
             if row.request_type == 0
-                # TODO: jas - only true for pick-up requests - need to use calc. time window for drop off requests 
-                hour = Int(ceil(row.request_time / 60))
+                timeVal = row.request_time
             else 
-                hour = Int(ceil((row.request_time- row.direct_drive_time) / 60)) 
+                timeVal = row.request_time- row.direct_drive_time
             end
 
+            # Determine time period 
+            period = min(Int(ceil(timeVal / periodLength)), nTimePeriods)
+
+            # Determine grid cell
             rowIdx, colIdx = determineGridCell(lat, lon, minLat, minLong, nRows, nCols, latStep, longStep)
 
-            demandGrid[hour, rowIdx, colIdx] += 1
+            # Update demand grid 
+            demandGrid[period, rowIdx, colIdx] += 1
         end
     end
 
@@ -40,22 +45,31 @@ function generatePredictedDemand(grid::Grid, historicRequestFiles::Vector{String
     return averageDemand  
 end
 
-
 #==
- Generate predicted demand of vehicles 
+ Generate predicted capacity of vehicles 
 ==#
-function generatePredictedVehiclesDemand(grid::Grid,gamma::Float64, averageDemand::Array{Float64,3})
-    @unpack minLat,maxLat,minLong,maxLong, nRows,nCols,latStep,longStep = grid 
-
-    nHours = 24 
-    vehicleDemand = zeros(Int,nHours,nRows,nCols)
+# Assuming homogenous vehicles
+function generatePredictedVehiclesDemand(grid::Grid,gamma::Float64, averageDemand::Array{Float64,3},nTimePeriods::Int)
+    vehicleDemand = zeros(Int,nTimePeriods,nRows,nCols)
 
     # Find predicted vehicle demand for each hour 
-    for h in 1:nHours 
-        vehicleDemand[h,:,:] = Int.(ceil.(averageDemand[h,:,:].*gamma))
+    for p in 1:nTimePeriods 
+        vehicleDemand[p,:,:] = Int.(ceil.(averageDemand[p,:,:].*gamma))
     end 
 
     return vehicleDemand
+end
+
+function generatePredictedVehiclesDemandInPeriod(gamma::Float64, predictedDemand::Array{Float64,2},realisedDemand::Array{Int,2})
+   return Int.(ceil.(predictedDemand.*gamma))
+end
+
+function generatePredictedVehiclesDemandInHorizon(gamma::Float64, predictedDemand::Array{Float64,3},period::Int,endPeriod::Int)
+    # Find predicted vehicle demand for each hour 
+    maxDemandInHorizon = maximum(predictedDemand[period:endPeriod,:,:], dims=1)
+    maxDemandInHorizon = dropdims(maxDemandInHorizon, dims=1)
+
+    return Int.(ceil.(maxDemandInHorizon.*gamma))
 end
 
 
