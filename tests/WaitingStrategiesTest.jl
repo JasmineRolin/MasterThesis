@@ -1,97 +1,159 @@
 
-using waitingstrategies, domain, offlinesolution, utils, simulationframework
+using waitingstrategies, domain, offlinesolution, utils, simulationframework, onlinesolution
 using Plots, JSON, Test
 using Plots.PlotMeasures
 
 print("\033c")
 
-# Er der for mange ved hvert depot ???? 
-# Gør så der bliver valgt ud fra en vægt af demand ? 
 
+# Receive command line arguments 
+n = 20
 gamma = 0.7
-nData = 20
-n = 50
-i = 2
-gridFile = "Data/Konsentra/grid.json"
-historicIndexes = setdiff(1:nData,i)
-nPeriods =  48 # equiv. 15 minute intervals 
+i = 13
+relocateVehicles = false
+gridSize = 5
+startFileIndex = 11
+endFileIndex = 20
+nPeriods = 48
+
+# Find period length 
 maximumTime = 24*60 
 periodLength = Int(maximumTime / nPeriods)
 
-# List of historic requests 
+# Retrieve historic request files 
+historicIndexes = setdiff(collect(startFileIndex:endFileIndex),i)
 historicRequestFiles = Vector{String}()
 for j in historicIndexes
-    push!(historicRequestFiles,"Data/Konsentra/$(n)/GeneratedRequests_$(n)_$(j).csv")
+    push!(historicRequestFiles,"Data/DataWaitingStrategies/$(n)/GeneratedRequests_$(n)_$(j).csv")
 end
 
-requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
-distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
-timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
-scenarioName = string("Generated_Data_",n,"_",i)
-vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
+
+# File names 
+vehiclesFile = string("Data/DataWaitingStrategies/",n,"/Vehicles_",n,"_",gamma,".csv")
 parametersFile = "tests/resources/ParametersShortCallTime.csv"
+outPutFolder = "runfiles/output/Waiting/"*string(n)
+gridFile = "Data/Konsentra/grid_$(gridSize).json"
+
+outputFiles = Vector{String}()
+
+requestFile = string("Data/DataWaitingStrategies/",n,"/GeneratedRequests_",n,"_",i,".csv")
+distanceMatrixFile = string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+timeMatrixFile =  string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
+scenarioName = string("Gen_Data_",n,"_",gamma,"_",i)
+push!(outputFiles, outPutFolder*"/Simulation_KPI_"*string(scenarioName)*".json")
+
 
 # Read instance 
 scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile,gridFile)
 
-outPutFolder = "tests/output/OnlineSimulation/"*string(n)
+println("====> SCENARIO: ",scenarioName)
+println("\t With historic requests files: ",historicIndexes)
+println("\t gamma: ",gamma)
+println("\t Relocate vehicles: ",relocateVehicles)
+println("\t Grid size: ",gridSize)
+println("\t Period length: ",periodLength)
+println("\t nOfflineRequests: ",length(scenario.offlineRequests))
 
-relocateVehicles = true
-solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles,nTimePeriods=nPeriods,periodLength=periodLength);
+# Simulate scenario 
+solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = false,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles,nTimePeriods=nPeriods,periodLength=periodLength);
 
 state = State(solution,scenario.onlineRequests[end],0)
 feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-@test feasible == true
+printSolution(solution,printRouteHorizontal)
 @test msg == ""
-println(msg)
+@test feasible == true
+#end
 
-for r in scenario.requests[requestBank]
-    println("Request: $(r.id), call time: $(r.callTime)")
-end
-
-print("end")
-
-# # Dummy example assuming scenario.onlineRequests is available
-requests = scenario.onlineRequests
-
-# Prepare data
-n = length(requests)
-labels = [string(r.id) for r in requests]
-start_times = [r.pickUpActivity.timeWindow.startTime for r in requests]
-end_times = [r.pickUpActivity.timeWindow.endTime for r in requests]
-call_times = [r.callTime for r in requests]
-durationsCallTime = end_times .- call_times
-durationsCallTimeStart = start_times .- call_times
-
-# Plotting
-p = plot(size = (1500,1500),legend=false, xlabel="Time", yticks=(1:n, labels), title="Pickup Time Windows with Call Times")
-
-# Add bars for time windows
-for i in 1:n
-    y = i # reverse order to show first request at the top
-    plot!([start_times[i], end_times[i]], [y, y], lw=5, color=:blue)
-    annotate!([end_times[i]], [y], text("$(durationsCallTime[i])", :black, 8, :bottom))
-    annotate!([start_times[i]], [y], text("$(durationsCallTimeStart[i])", :green, 8, :bottom))
-end
-
-# Add vertical red lines for call times
-for i in 1:n
-    y = i
-    plot!([call_times[i], call_times[i]], [y-0.3, y+0.3], color=:red, lw=2, linestyle=:dash)
-end
-
-display(p)
+dfResults = processResults(outputFiles)
+result_file = string(outPutFolder, "/results_", gamma, ".csv")
+append_mode = isfile(result_file)
+CSV.write(result_file, dfResults; append=append_mode)
 
 
-for r in scenario.onlineRequests
-    println("Request $(r.id), request type $(r.requestType)") 
-    println("\t Call time: $(r.callTime)")
-    println("\t Duration from call time to start TW: $(r.pickUpActivity.timeWindow.startTime - r.callTime)")
-    println("\t Duration from call time to end TW: $(r.pickUpActivity.timeWindow.endTime - r.callTime)")
-    println("\t direct drive time: $(r.directDriveTime)")
-    println("\t pick up time window: ($(r.pickUpActivity.timeWindow.startTime) , $(r.pickUpActivity.timeWindow.endTime))")
-    println("\t drop off time window: ($(r.dropOffActivity.timeWindow.startTime) , $(r.dropOffActivity.timeWindow.endTime))")
-end
+# gamma = 0.7
+# nData = 20
+# n = 50
+# i = 2
+# gridFile = "Data/Konsentra/grid.json"
+# historicIndexes = setdiff(1:nData,i)
+# nPeriods =  48 # equiv. 30 minute intervals 
+# maximumTime = 24*60 
+# periodLength = Int(maximumTime / nPeriods)
+
+# # List of historic requests 
+# historicRequestFiles = Vector{String}()
+# for j in historicIndexes
+#     push!(historicRequestFiles,"Data/Konsentra/$(n)/GeneratedRequests_$(n)_$(j).csv")
+# end
+
+# requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
+# distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+# timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
+# scenarioName = string("Generated_Data_",n,"_",i)
+# vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
+# parametersFile = "tests/resources/ParametersShortCallTime.csv"
+
+# # Read instance 
+# scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile,gridFile)
+
+# outPutFolder = "tests/output/OnlineSimulation/"*string(n)
+
+# relocateVehicles = true
+# solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles,nTimePeriods=nPeriods,periodLength=periodLength);
+
+# state = State(solution,scenario.onlineRequests[end],0)
+# feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+# @test feasible == true
+# @test msg == ""
+# println(msg)
+
+# for r in scenario.requests[requestBank]
+#     println("Request: $(r.id), call time: $(r.callTime)")
+# end
+
+# print("end")
+
+# # # Dummy example assuming scenario.onlineRequests is available
+# requests = scenario.onlineRequests
+
+# # Prepare data
+# n = length(requests)
+# labels = [string(r.id) for r in requests]
+# start_times = [r.pickUpActivity.timeWindow.startTime for r in requests]
+# end_times = [r.pickUpActivity.timeWindow.endTime for r in requests]
+# call_times = [r.callTime for r in requests]
+# durationsCallTime = end_times .- call_times
+# durationsCallTimeStart = start_times .- call_times
+
+# # Plotting
+# p = plot(size = (1500,1500),legend=false, xlabel="Time", yticks=(1:n, labels), title="Pickup Time Windows with Call Times")
+
+# # Add bars for time windows
+# for i in 1:n
+#     y = i # reverse order to show first request at the top
+#     plot!([start_times[i], end_times[i]], [y, y], lw=5, color=:blue)
+#     annotate!([end_times[i]], [y], text("$(durationsCallTime[i])", :black, 8, :bottom))
+#     annotate!([start_times[i]], [y], text("$(durationsCallTimeStart[i])", :green, 8, :bottom))
+# end
+
+# # Add vertical red lines for call times
+# for i in 1:n
+#     y = i
+#     plot!([call_times[i], call_times[i]], [y-0.3, y+0.3], color=:red, lw=2, linestyle=:dash)
+# end
+
+# display(p)
+
+
+# for r in scenario.onlineRequests
+#     println("Request $(r.id), request type $(r.requestType)") 
+#     println("\t Call time: $(r.callTime)")
+#     println("\t Duration from call time to start TW: $(r.pickUpActivity.timeWindow.startTime - r.callTime)")
+#     println("\t Duration from call time to end TW: $(r.pickUpActivity.timeWindow.endTime - r.callTime)")
+#     println("\t direct drive time: $(r.directDriveTime)")
+#     println("\t pick up time window: ($(r.pickUpActivity.timeWindow.startTime) , $(r.pickUpActivity.timeWindow.endTime))")
+#     println("\t drop off time window: ($(r.dropOffActivity.timeWindow.startTime) , $(r.dropOffActivity.timeWindow.endTime))")
+# end
 
 
 

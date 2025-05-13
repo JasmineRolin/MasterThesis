@@ -37,19 +37,20 @@ function preKnownRequests(df, DoD, serviceWindow, callBuffer)
         end
     end
 
+    # TODO: remove comment 
     # Known due to probabilty and degree of dynamism
-    findNumberKnown = totalNumberKnown - numberKnownDueToTime
-    if findNumberKnown < 0
-        throw(ArgumentError("Degree of dynamism too low. Could be: " * string(numberKnownDueToTime / nrow(df))))
-    end
+    # findNumberKnown = totalNumberKnown - numberKnownDueToTime
+    # if findNumberKnown < 0
+    #     throw(ArgumentError("Degree of dynamism too low. Could be: " * string(numberKnownDueToTime / nrow(df))))
+    # end
 
-    # Select indices based on weighted probability
-    probabilityRequest = probabiltyRequest ./ sum(probabiltyRequest)
-    selectedIndices = sample(requestWithLaterTime, Weights(probabilityRequest), findNumberKnown; replace=false)
+    # # Select indices based on weighted probability
+    # probabilityRequest = probabiltyRequest ./ sum(probabiltyRequest)
+    # selectedIndices = sample(requestWithLaterTime, Weights(probabilityRequest), findNumberKnown; replace=false)
     
-    for idx in selectedIndices
-        known_requests[idx] = true
-    end
+    # for idx in selectedIndices
+    #     known_requests[idx] = true
+    # end
 
     return known_requests
 end

@@ -23,8 +23,8 @@ global GENERATE_VEHICLES = false
 global DoD = 1.0 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 15 #2*60 # 2 hours buffer
-global nData = 20
-global nRequestList = [50]#[20,100,300,500]
+global nData = 100
+global nRequestList = [100,300,500]#[20,100,300,500]
 global MAX_DELAY = 15 # TODO Astrid I just put something
 
 #==
