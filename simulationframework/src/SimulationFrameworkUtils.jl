@@ -837,7 +837,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
         if !isdir(outPutFileFolder)
             mkpath(outPutFileFolder)
         end
-        fileName = outPutFileFolder*"/Simulation_KPI_"*string(scenario.name)*".json"
+        fileName = outPutFileFolder*"/Simulation_KPI_"*string(scenario.name)*"_"*relocateVehicles*".json"
         KPIDict = writeOnlineKPIsToFile(fileName,scenario,finalSolution,requestBank,requestBankOffline,totalElapsedTime,averageResponseTime,eventsInsertedByALNS)
         println("=== KPI Summary ===")
         for (key, value) in KPIDict

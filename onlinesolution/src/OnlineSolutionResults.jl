@@ -401,7 +401,7 @@ end
 ==#
 function writeOnlineKPIsToFile(fileName::String, scenario::Scenario,solution::Solution,requestBank::Vector{Int},requestBankOffline::Vector{Int},totalElapsedTime::Float64,averageResponseTime::Float64,eventsInsertedByALNS::Int)
     # Find drive times for customers
-    totalDirectRideTime = sum(r.directDriveTime for r in scenario.requests if !(r.id in requestBank))
+    totalDirectRideTime = length(requestBank) == length(scenario.requests) ? 0 : sum(r.directDriveTime for r in scenario.requests if !(r.id in requestBank)) 
     totalActualRideTime = 0
     pickUpTimes = Dict{Int,Int}()
     for schedule in solution.vehicleSchedules
