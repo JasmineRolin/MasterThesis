@@ -284,9 +284,7 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
     previousWaitingLocation = currentSchedule.route[waitingIdx].activity.location
     previousWaitingLocationId = currentSchedule.route[waitingIdx].activity.id
 
-
     # Determine relocation time 
-    # TODO: hvilken tid skal det være ? 
     relocationTime = currentSchedule.route[waitingIdx].startOfServiceTime
 
     # Determine period 
@@ -339,7 +337,6 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
         end
 
         # Update vehicle balance
-        # TODO: skal det opdateres sådan?
         waitingActivityStartTime = currentSchedule.route[waitingIdx].startOfServiceTime
         waitingActivityEndTime = currentSchedule.route[waitingIdx].endOfServiceTime
         waitingStartPeriod = min(Int(ceil(waitingActivityStartTime / periodLength)), nTimePeriods)
@@ -583,8 +580,6 @@ function determineCurrentState(solution::Solution,event::Event,finalSolution::So
     for (vehicle,schedule) in enumerate(solution.vehicleSchedules)
         print("UPDATING SCHEDULE: ",vehicle)
 
-        # TODO: extract route 
-
         # Check if vehicle is not available yet or has not started service yet
         if schedule.vehicle.availableTimeWindow.startTime > currentTime || schedule.route[1].startOfServiceTime > currentTime
             idx, splitTime = updateCurrentScheduleNotAvailableYet(schedule,currentState,vehicle)
@@ -601,7 +596,6 @@ function determineCurrentState(solution::Solution,event::Event,finalSolution::So
         # We have completed the last activity and the vehicle is on-route to the depot but still available 
         elseif length(schedule.route) > 1 && schedule.route[end-1].endOfServiceTime < currentTime 
             idx,splitTime = updateCurrentScheduleRouteCompleted!(currentState,schedule,vehicle)
-        # TODO: add case to split waiting activitiy if we are relocation vehicles 
            print("- completed route but still available \n")
         else
             # Determine index to split
@@ -695,7 +689,6 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
     end
 
     # Run ALNS for offline solution 
-    # TODO: set correct parameters for alns
     solution,requestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters_offline.json",initialSolution =  initialSolution, requestBank = initialRequestBank, displayPlots = displayALNSPlots, saveResults = saveALNSResults)
     requestBankOffline = deepcopy(requestBank)
 
@@ -717,7 +710,6 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
     # Initialize visited routes 
     visitedRoute = Dict{Int,Dict{String,Int}}()
 
-    # TODO: do in better way 
     # Create events 
     onlineEvents = [Event(r.id,r.callTime,r) for r in scenario.onlineRequests]
     onlineCallTimes = [r.callTime for r in scenario.onlineRequests]

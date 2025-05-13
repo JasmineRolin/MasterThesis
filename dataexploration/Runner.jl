@@ -20,12 +20,12 @@ global GENERATE_VEHICLES = false
 #==
 # Constants for data generation 
 ==#
-global DoD = 1.0 # Degree of dynamism
+global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
-global callBuffer = 15 #2*60 # 2 hours buffer
-global nData = 100
-global nRequestList = [100,300,500]#[20,100,300,500]
-global MAX_DELAY = 15 # TODO Astrid I just put something
+global callBuffer = 2*60 # 2 hours buffer
+global nData = 10
+global nRequestList = [20]#[100,300,500]#[20,100,300,500]
+global MAX_DELAY = 45 # TODO Astrid I just put something
 
 #==
 # Constant for vehicle generation  
@@ -51,7 +51,6 @@ global MAX_LONG = 12.458
 global MIN_LONG = 9.948
 global NUM_ROWS = 10
 global NUM_COLS = 10
-
 
 #==
 # Common 
@@ -156,10 +155,10 @@ if GENERATE_DATA_AND_VEHICLES
         #================================================#
         # Plot new data
         #================================================#
-        # createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,density_grid,location_matrix,requestTimePickUp,requestTimeDropOff,probabilities_pickUpTime,probabilities_dropOffTime,serviceWindow,distanceDriven)
-        # for gamma in GammaList
-        #     plotAndSaveGantChart(nRequest,nData,gamma)
-        # end
+        createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,density_grid,location_matrix,requestTimePickUp,requestTimeDropOff,probabilities_pickUpTime,probabilities_dropOffTime,serviceWindow,distanceDriven)
+        for gamma in GammaList
+            plotAndSaveGantChart(nRequest,nData,gamma)
+        end
     end
 
    

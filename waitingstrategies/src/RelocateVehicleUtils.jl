@@ -30,29 +30,6 @@ function determineWaitingLocation(depotLocations::Dict{Tuple{Int,Int},Location},
     minColIdx = chosenIdx[2]
     depotId = findDepotIdFromGridCell(grid, nRequests, (minRowIdx, minColIdx))
 
-
-    # # Find predicted vehicle demand for each hour 
-    # planningHorizon = 4
-    # nPeriods = size(predictedDemand,1)
-    # endPeriod = min(period + planningHorizon, nPeriods)
-
-    # maxDemandInHorizon = maximum(predictedDemand[period:endPeriod,:,:], dims=1)
-    # maxDemandInHorizon = dropdims(maxDemandInHorizon, dims=1)
- 
-    # # Flatten the demand matrix and get corresponding grid indices
-    # rows, cols = size(maxDemandInHorizon)
-    # flatDemands = vec(maxDemandInHorizon)
-    # gridIndices = [(i, j) for i in 1:rows, j in 1:cols]
-    # flatIndices = vec(gridIndices)
-
-    # # Normalize weights and sample a single index
-    # weights = flatDemands ./ sum(flatDemands)
-    # chosenIdx = sample(flatIndices, Weights(weights))
-
-    # minRowIdx = chosenIdx[1]
-    # minColIdx = chosenIdx[2]
-    # depotId = findDepotIdFromGridCell(grid, nRequests, (minRowIdx, minColIdx))
-
     return depotId,depotLocations[(minRowIdx,minColIdx)],(minRowIdx,minColIdx)
 end
 
@@ -62,10 +39,7 @@ end
 function determineVehicleBalancePrCell(grid::Grid,gamma::Float64,predictedDemand::Array{Float64,3},solution::Solution,nTimePeriods::Int,periodLength::Int)
     # unpack grid 
     @unpack minLat,maxLat,minLong,maxLong, nRows,nCols,latStep,longStep = grid 
-
-    # TODO: do not include current schedule ? 
-    # TODO: account for current planned demand 
-
+    
     # Initialize vehicle balance
     vehicleBalance = zeros(Int,nTimePeriods,nRows,nCols)
     vehicleDemand = zeros(Int,nTimePeriods,nRows,nCols)

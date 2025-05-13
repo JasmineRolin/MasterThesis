@@ -114,60 +114,48 @@ printSolution(solution,printRouteHorizontal)
 # print("end")
 
 # Dummy example assuming scenario.onlineRequests is available
-# TODO: 
-n = 20 
-i = 1
-requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
-distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
-timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
-scenarioName = string("Generated_Data_",n,"_",i)
+# requests = sort(requests, by = r -> r.pickUpActivity.timeWindow.startTime)
+# n = length(requests)
+# labels = [string("Request ",r.id) for r in requests]
+# start_times = [r.pickUpActivity.timeWindow.startTime for r in requests]
+# end_times = [r.pickUpActivity.timeWindow.endTime for r in requests]
+# call_times = [r.callTime for r in requests]
+# durationsCallTime = end_times .- call_times
+# durationsCallTimeStart = start_times .- call_times
 
-# Read instance 
-scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
+# # Plotting
+# p = plot(size = (1800,1200),legend=true, xlabel="Minutes after midnight", yticks=(1:n, labels), title="Pickup Time Windows with Call Times for Base Scenario",leftmargin=5mm,topmargin=5mm,rightmargin=5mm,bottommargin=5mm)
 
+# # Add bars for time windows
+# firstPlot = true
+# for i in 1:n
+#     y = i # reverse order to show first request at the top
+#     if firstPlot
+#         label = "Pickup Time Window"
+#         firstPlot = false
+#     else
+#         label = ""
+#     end
+#     plot!([start_times[i], end_times[i]], [y, y], lw=10, color=:blue,label=label)
+#     annotate!([end_times[i]], [y+0.1], text("$(durationsCallTime[i])", :black, 10, :bottom))
+#     annotate!([start_times[i]], [y+0.1], text("$(durationsCallTimeStart[i])", :black, 10, :bottom))
+# end
 
-requests = scenario.requests
-n = length(requests)
-labels = [string("Request ",r.id) for r in requests]
-start_times = [r.pickUpActivity.timeWindow.startTime for r in requests]
-end_times = [r.pickUpActivity.timeWindow.endTime for r in requests]
-call_times = [r.callTime for r in requests]
-durationsCallTime = end_times .- call_times
-durationsCallTimeStart = start_times .- call_times
+# # Add vertical red lines for call times
+# firstPlot = true
+# for i in 1:n
+#     y = i
+#     if firstPlot
+#         label = "Call Time"
+#         firstPlot = false
+#     else
+#         label = ""
+#     end
+#     plot!([call_times[i], call_times[i]], [y-0.3, y+0.3], color=:red, lw=2, linestyle=:solid,label=label)
+# end
 
-# Plotting
-p = plot(size = (1800,1200),legend=true, xlabel="Minutes after midnight", yticks=(1:n, labels), title="Pickup Time Windows with Call Times for Base Scenario",leftmargin=5mm,topmargin=5mm,rightmargin=5mm,bottommargin=5mm)
-
-# Add bars for time windows
-firstPlot = true
-for i in 1:n
-    y = i # reverse order to show first request at the top
-    if firstPlot
-        label = "Pickup Time Window"
-        firstPlot = false
-    else
-        label = ""
-    end
-    plot!([start_times[i], end_times[i]], [y, y], lw=10, color=:blue,label=label)
-    annotate!([end_times[i]], [y+0.1], text("$(durationsCallTime[i])", :black, 10, :bottom))
-    annotate!([start_times[i]], [y+0.1], text("$(durationsCallTimeStart[i])", :black, 10, :bottom))
-end
-
-# Add vertical red lines for call times
-firstPlot = true
-for i in 1:n
-    y = i
-    if firstPlot
-        label = "Call Time"
-        firstPlot = false
-    else
-        label = ""
-    end
-    plot!([call_times[i], call_times[i]], [y-0.3, y+0.3], color=:red, lw=2, linestyle=:solid,label=label)
-end
-
-display(p)
-savefig(p,"plots/Waiting/PickUpTimeWindowsExampleBase.png")
+# display(p)
+# savefig(p,"plots/Waiting/PickUpTimeWindowsExampleBase.png")
 
 
 # for r in scenario.onlineRequests
@@ -250,7 +238,6 @@ savefig(p,"plots/Waiting/PickUpTimeWindowsExampleBase.png")
 
 #  const EMPTY_RESULT = (false, -1, -1, Vector{Int}(), Vector{Int}(), Vector{Int}(), typemax(Float64), typemax(Float64), typemax(Int), typemax(Int), Vector{Int}())
 
-# # TODO: delete 
 # global countTotal = Ref(0)
 # global countFeasible = Ref(0)
 
@@ -280,7 +267,7 @@ savefig(p,"plots/Waiting/PickUpTimeWindowsExampleBase.png")
 
 
 # # Read grid definition
-# gridJSON = JSON.parsefile(gridFile) # TODO: jas - i scenario ? 
+# gridJSON = JSON.parsefile(gridFile)
 # maxLat = gridJSON["max_latitude"]
 # minLat = gridJSON["min_latitude"]
 # maxLong = gridJSON["max_longitude"]

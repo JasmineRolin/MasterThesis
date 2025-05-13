@@ -159,30 +159,27 @@ function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, p
 
 
         # Determine type of request
-        # TODO: remove comment
-        #if rand() < 0.5
+        if rand() < 0.5
             requestType = 0  # pick-up request
 
             sampled_indices = sample(1:length(probabilities_pickUpTime), Weights(probabilities_pickUpTime), 1)
             sampledTimePick = time_range[sampled_indices]
             requestTime = ceil(sampledTimePick[1])
-        # else
-        #     requestType = 1  # drop-off request
+        else
+            requestType = 1  # drop-off request
 
-        #     # Direct drive time 
-        #     directDriveTime = ceil(haversine_distance(pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude)[2])
+            # Direct drive time 
+            directDriveTime = ceil(haversine_distance(pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude)[2])
 
-        #     # Earliest request time 
-        #     earliestRequestTime = serviceWindow[1] + directDriveTime + MAX_DELAY
-        #     indices = time_range .>= earliestRequestTime
-        #     nTimes = sum(indices)
+            # Earliest request time 
+            earliestRequestTime = serviceWindow[1] + directDriveTime + MAX_DELAY
+            indices = time_range .>= earliestRequestTime
+            nTimes = sum(indices)
 
-        #     sampled_indices = sample(1:nTimes, Weights(probabilities_dropOffTime[indices]), 1)
-        #     sampledTimeDrop = time_range[indices][sampled_indices]
-        #     requestTime = ceil(sampledTimeDrop[1])
-        # end
-
-        
+            sampled_indices = sample(1:nTimes, Weights(probabilities_dropOffTime[indices]), 1)
+            sampledTimeDrop = time_range[indices][sampled_indices]
+            requestTime = ceil(sampledTimeDrop[1])
+        end
 
         # Append results for the request
         push!(results, (i, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, requestType, requestTime,"WALKING",0,0))
