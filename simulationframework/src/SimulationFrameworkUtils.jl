@@ -668,6 +668,8 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     else
         solution, requestBank = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,displayPlots=displayPlots)
         updateIds!(solution,length(scenario.requests),nExpected)
+        newIndices = collect((length(scenario.requests)+1):(length(scenario.requests)+nExpected))
+        setdiff!(requestBank, newIndices)
     end
 
     requestBankOffline = deepcopy(requestBank)
@@ -714,6 +716,11 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     nOnline = 0
 
     for (itr,event) in enumerate(events)
+
+        #TODO Astrid delete
+        #if itr == 3
+        #    throw("DEBUG")
+        #end
 
         startTimeEvent = time()
         println("------------------------------------------------------------------------------------------------------------------------------------------------")

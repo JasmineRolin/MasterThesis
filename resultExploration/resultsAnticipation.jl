@@ -12,12 +12,6 @@ using CSV
 
 function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, resultType::String, i::Int)
 
-    #n = 20
-    #nExpectedPercentage = 0.1
-    #gamma = 0.5
-    #date = "2023-10-01"
-    #resultType = "BasicAnticipation"
-
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters_offlineAnticipation.json"
@@ -51,7 +45,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
 end
 
 
-#main(100,0.5,0.5,"2023-10-01","BasicAnticipation",1)
+main(20,0.9,0.7,"2025-05-13","BasicAnticipation",1)
 
 if abspath(PROGRAM_FILE) == @__FILE__
     n = parse(Int, ARGS[1])

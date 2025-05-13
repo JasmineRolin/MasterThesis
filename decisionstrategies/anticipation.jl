@@ -433,7 +433,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
                         nInitialNotServicedFixedRequests = Int[],
                         nInitialNotServicedExpectedRequests = Int[])
 
-    # TODO remember to chage to 10
+    # TODO Astrid remember to chage to 10
     for i in 1:10
 
         # Make scenario
@@ -458,11 +458,15 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         # Determine number of serviced requests
         nNotServicedFixedRequests = sum(originalRequestBank .<= nFixed)
         nNotServicedExpectedRequests = sum(originalRequestBank .> nFixed)
+        println("nNotServicedExpectedRequests: ", nNotServicedExpectedRequests)
+        println("nNotServicedFixedRequests: ", nNotServicedFixedRequests)
         nServicedFixedRequests = nFixed - nNotServicedFixedRequests
         nServicedExpectedRequests = nExpected - nNotServicedExpectedRequests
 
         # Remove expected requests from solution
         removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,originalSolution,nExpected,nFixed,nNotServicedExpectedRequests,originalRequestBank,taxiParameter,taxiParameterExpected)
+
+        println("nTaxi: ", originalSolution.nTaxi)
 
         if displayPlots
             display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and after removing expected requests"))
