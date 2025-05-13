@@ -434,7 +434,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
                         nInitialNotServicedExpectedRequests = Int[])
 
     # TODO remember to chage to 10
-    for i in 1:1
+    for i in 1:10
 
         # Make scenario
         scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile)
@@ -474,7 +474,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         state = State(originalSolution,Request(),0)
         feasible, msg = checkSolutionFeasibilityOnline(scenario,state;nExpected=nExpected)
         if !feasible
-            return originalSolution, requestBank, results, scenario, Scenario(), false, msg
+            throw(msg)
         end
 
         # Determine Obj
@@ -500,8 +500,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
             state = State(solution,Request(),nNotServicedFixedRequests)
             feasible, msg = checkSolutionFeasibilityOnline(scenario2,state)
             if !feasible
-                throw("Error in offline solution with anticipation")
-                return solution, requestBank, results, scenario, scenario2, feasible, msg
+                throw(msg)
             end
 
             # Calculate Obj
@@ -529,3 +528,98 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
 end
 
 
+#==
+ Inital insertion of event
+==#
+function onlineInsertionAnticipation(solution::Solution, event::Request, expectedRequests::Vector{Int}, scenario::Scenario; visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}())
+
+    # Insert event
+    state = ALNSState(Vector{Float64}(),Vector{Float64}(),Vector{Float64}(),Vector{Float64}(),Vector{Int}(),Vector{Int}(),solution,[event.id],solution,[event.id],Vector{Int}(),0)
+    regretInsertion(state,scenario,visitedRoute=visitedRoute)
+
+    # Insert expected requests
+    newRequestBank = vcat(state.requestBank, expectedRequests)
+    state = ALNSState(Vector{Float64}(),Vector{Float64}(),Vector{Float64}(),Vector{Float64}(),Vector{Int}(),Vector{Int}(),solution,newRequestBank,solution,newRequestBank,Vector{Int}(),0)
+    regretInsertion(state,scenario,visitedRoute=visitedRoute)
+
+    return state.requestBank
+
+end
+
+
+#==
+ Run online algorithm
+==#
+function onlineAlgorithmAnticipation(currentState::State, requestBank::Vector{Int}, scenario::Scenario, destroyMethods::Vector{GenericMethod}, repairMethods::Vector{GenericMethod})
+    insertedByALNS = false 
+
+    # Retrieve info 
+    event, currentSolution, totalNTaxi = currentState.event, copySolution(currentState.solution), currentState.totalNTaxi
+
+    # Make scenario
+    scenario2 = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile) # TODO change so only new requests in next time
+    time = scenario2.time
+    distance = scenario2.distance
+    serviceTimes = scenario2.serviceTimes
+    requests = scenario2.requests
+    taxiParameter = scenario2.taxiParameter
+    nFixed = scenario2.nFixed
+    taxiParameterExpected = scenario2.taxiParameterExpected
+
+    # Do intitial insertion
+    expectedRequests = collect!(nFixed:(nFixed+nExpected))
+    newRequestBankOnline = onlineInsertionAnticipation(currentSolution,event,expectedRequests,scenario2,visitedRoute = currentState.visitedRoute)
+
+    # Run ALNS
+    # TODO: set correct parameters for alns 
+    # TODO ensure that solution is correctly only accepted if no fixed customers is in requestbank except event
+    finalSolution,finalOnlineRequestBank = runALNS(scenario2, scenario2.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters_online.json",initialSolution =  currentSolution, requestBank = newRequestBankOnline, event = event, alreadyRejected =  totalNTaxi, visitedRoute = currentState.visitedRoute,stage = "Online")
+    
+    # TODO fix
+    if length(newRequestBankOnline) == 1 && length(finalOnlineRequestBank) == 0
+        insertedByALNS = true
+    end
+    
+    # Determine number of serviced requests
+    nNotServicedFixedRequests = sum(originalRequestBank .<= nFixed)
+    nNotServicedExpectedRequests = sum(originalRequestBank .> nFixed)
+    nServicedFixedRequests = nFixed - nNotServicedFixedRequests
+    nServicedExpectedRequests = nExpected - nNotServicedExpectedRequests
+
+    # Remove expected requests from solution
+    removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,finalSolution,nExpected,nFixed,nNotServicedExpectedRequests,finalOnlineRequestBank,taxiParameter,taxiParameterExpected)
+
+    # Update Ids
+    updateIds!(finalSolution,length(scenario.requests),nExpected)
+
+
+    # TODO: remove when alns is stable
+    if length(finalOnlineRequestBank) > 1 || (length(finalOnlineRequestBank) == 1 && finalOnlineRequestBank[1] != event.id)
+        println("ALNS: FINAL REQUEST BANK IS NOT EMPTY")
+        println(finalOnlineRequestBank)
+        println("Event: ",event.id)
+        printSolution(finalSolution,printRouteHorizontal)
+        throw("error")
+    end
+
+    append!(requestBank,finalOnlineRequestBank)
+
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,finalSolution, event, currentState.visitedRoute,totalNTaxi)
+
+    # TODO: remove when alns is stable 
+    if !feasible
+        println("WRONG AFTER ALNS")
+        printSolution(finalSolution,printRouteHorizontal)
+
+        println("======================================")
+        printSolution(currentSolution,printRouteHorizontal)
+
+        throw(msg)
+    end
+
+    # Update time window for event
+    updateTimeWindowsOnline!(finalSolution,scenario,searchForEvent=true,eventId = event.id)
+
+    return finalSolution, requestBank, insertedByALNS
+
+end

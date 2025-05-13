@@ -389,7 +389,7 @@ function writeOnlineKPIsToFile(fileName::String, scenario::Scenario,solution::So
     # Find percent of ride sharing 
     averagePercentRideSharing = 0.0 
     for schedule in solution.vehicleSchedules
-        if length(schedule.route) == 2 && schedule.route[1].activity.activityType == DEPOT && schedule.route[2].activity.activityType == DEPOT
+        if (length(schedule.route) == 2 && schedule.route[1].activity.activityType == DEPOT && schedule.route[2].activity.activityType == DEPOT) || (sum(schedule.numberOfWalking .> 0) == 0)
             continue
         end
         averagePercentRideSharing += sum(schedule.numberOfWalking .> 1)/sum(schedule.numberOfWalking .> 0)

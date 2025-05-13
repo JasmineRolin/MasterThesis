@@ -118,4 +118,5 @@ function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario
 
 end
 
+
 end

@@ -1,0 +1,18 @@
+{
+    "timeLimit": 6.0,
+    "printSegmentSize":1000,
+    "segmentSize": 10,
+    "w": 0.15, 
+    "coolingRate": 0.99975,
+    "reactionFactor": 0.01,
+    "scoreAccepted": 13.0,
+    "scoreImproved": 9.0,
+    "scoreNewBest": 33.0,
+    "minPercentToDestroy": 0.1,
+    "maxPercentToDestroy": 0.7,
+    "p": 6,
+    "shawRemovalPhi": 9.0,
+    "shawRemovalXi": 3.0,
+    "maxNumberOfIterationsWithoutImprovement": 5000,
+    "maxNumberOfIterationsWithoutNewBest": 10000  
+}

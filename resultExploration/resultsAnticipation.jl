@@ -20,7 +20,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
 
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"
-    alnsParameters = "tests/resources/ALNSParameters_offline.json"
+    alnsParameters = "tests/resources/ALNSParameters_offlineAnticipation.json"
     outPutFolder = string("resultExploration/results/",date,"/",resultType,"/",n)
     outputFiles = Vector{String}()
     gridFile = string("Data/Konsentra/grid.json")
@@ -37,7 +37,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
         # Read scenario 
         #TODO use pre calculated distance and time matrix file. 
         scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,"","",gridFile)
-        solution, requestBank = simulateScenario(scenario,requestFile,distanceMatrixFile,timeMatrixFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,anticipation = true, nExpected=nExpected,printResults = false, saveResults = false,gridFile = gridFile, outPutFileFolder = outPutFolder, displayPlots = true)
+        solution, requestBank = simulateScenario(scenario,requestFile,distanceMatrixFile,timeMatrixFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,anticipation = true, nExpected=nExpected,printResults = false, saveResults = true,gridFile = gridFile, outPutFileFolder = outPutFolder, displayPlots = false)
 
         # TODO remove when stable
         state = State(solution,scenario.onlineRequests[end],0)
