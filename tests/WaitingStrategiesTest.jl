@@ -9,10 +9,10 @@ print("\033c")
 # Receive command line arguments 
 n = 20
 gamma = 0.7
-i = 13
+i = 1
 relocateVehicles = false
-gridSize = 5
-startFileIndex = 11
+gridSize = 10
+startFileIndex = 1
 endFileIndex = 20
 nPeriods = 48
 
@@ -40,7 +40,7 @@ requestFile = string("Data/DataWaitingStrategies/",n,"/GeneratedRequests_",n,"_"
 distanceMatrixFile = string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
 timeMatrixFile =  string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
 scenarioName = string("Gen_Data_",n,"_",gamma,"_",i)
-push!(outputFiles, outPutFolder*"/Simulation_KPI_"*string(scenarioName)*".json")
+push!(outputFiles, outPutFolder*"/Simulation_KPI_"*string(scenarioName)*"_"*string(relocateVehicles)*".json")
 
 
 # Read instance 
@@ -64,10 +64,10 @@ printSolution(solution,printRouteHorizontal)
 @test feasible == true
 #end
 
-dfResults = processResults(outputFiles)
-result_file = string(outPutFolder, "/results_", gamma, ".csv")
-append_mode = isfile(result_file)
-CSV.write(result_file, dfResults; append=append_mode)
+# dfResults = processResults(outputFiles)
+# result_file = string(outPutFolder, "/results_", gamma, ".csv")
+# append_mode = isfile(result_file)
+# CSV.write(result_file, dfResults; append=append_mode)
 
 
 # gamma = 0.7
@@ -113,36 +113,61 @@ CSV.write(result_file, dfResults; append=append_mode)
 
 # print("end")
 
-# # # Dummy example assuming scenario.onlineRequests is available
-# requests = scenario.onlineRequests
+# Dummy example assuming scenario.onlineRequests is available
+# TODO: 
+n = 20 
+i = 1
+requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
+distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
+timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
+scenarioName = string("Generated_Data_",n,"_",i)
 
-# # Prepare data
-# n = length(requests)
-# labels = [string(r.id) for r in requests]
-# start_times = [r.pickUpActivity.timeWindow.startTime for r in requests]
-# end_times = [r.pickUpActivity.timeWindow.endTime for r in requests]
-# call_times = [r.callTime for r in requests]
-# durationsCallTime = end_times .- call_times
-# durationsCallTimeStart = start_times .- call_times
+# Read instance 
+scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
-# # Plotting
-# p = plot(size = (1500,1500),legend=false, xlabel="Time", yticks=(1:n, labels), title="Pickup Time Windows with Call Times")
 
-# # Add bars for time windows
-# for i in 1:n
-#     y = i # reverse order to show first request at the top
-#     plot!([start_times[i], end_times[i]], [y, y], lw=5, color=:blue)
-#     annotate!([end_times[i]], [y], text("$(durationsCallTime[i])", :black, 8, :bottom))
-#     annotate!([start_times[i]], [y], text("$(durationsCallTimeStart[i])", :green, 8, :bottom))
-# end
+requests = scenario.requests
+n = length(requests)
+labels = [string("Request ",r.id) for r in requests]
+start_times = [r.pickUpActivity.timeWindow.startTime for r in requests]
+end_times = [r.pickUpActivity.timeWindow.endTime for r in requests]
+call_times = [r.callTime for r in requests]
+durationsCallTime = end_times .- call_times
+durationsCallTimeStart = start_times .- call_times
 
-# # Add vertical red lines for call times
-# for i in 1:n
-#     y = i
-#     plot!([call_times[i], call_times[i]], [y-0.3, y+0.3], color=:red, lw=2, linestyle=:dash)
-# end
+# Plotting
+p = plot(size = (1800,1200),legend=true, xlabel="Minutes after midnight", yticks=(1:n, labels), title="Pickup Time Windows with Call Times for Base Scenario",leftmargin=5mm,topmargin=5mm,rightmargin=5mm,bottommargin=5mm)
 
-# display(p)
+# Add bars for time windows
+firstPlot = true
+for i in 1:n
+    y = i # reverse order to show first request at the top
+    if firstPlot
+        label = "Pickup Time Window"
+        firstPlot = false
+    else
+        label = ""
+    end
+    plot!([start_times[i], end_times[i]], [y, y], lw=10, color=:blue,label=label)
+    annotate!([end_times[i]], [y+0.1], text("$(durationsCallTime[i])", :black, 10, :bottom))
+    annotate!([start_times[i]], [y+0.1], text("$(durationsCallTimeStart[i])", :black, 10, :bottom))
+end
+
+# Add vertical red lines for call times
+firstPlot = true
+for i in 1:n
+    y = i
+    if firstPlot
+        label = "Call Time"
+        firstPlot = false
+    else
+        label = ""
+    end
+    plot!([call_times[i], call_times[i]], [y-0.3, y+0.3], color=:red, lw=2, linestyle=:solid,label=label)
+end
+
+display(p)
+savefig(p,"plots/Waiting/PickUpTimeWindowsExampleBase.png")
 
 
 # for r in scenario.onlineRequests
