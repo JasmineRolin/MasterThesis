@@ -3,15 +3,20 @@ using waitingstrategies, domain, offlinesolution, utils, simulationframework
 using Plots, JSON, Test
 using Plots.PlotMeasures
 
-# print("\033c")
+print("\033c")
+
+# Er der for mange ved hvert depot ???? 
+# Gør så der bliver valgt ud fra en vægt af demand ? 
 
 gamma = 0.9
 nData = 10
 n = 20 
-i = 3
+i = 7
 gridFile = "Data/Konsentra/grid.json"
 historicIndexes = setdiff(1:nData,i)
-hours = 1:24
+nPeriods = 24
+maximumTime = 24*60 
+periodLength = Int(maximumTime / nPeriods)
 
 # List of historic requests 
 historicRequestFiles = Vector{String}()
@@ -31,8 +36,8 @@ scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,dis
 
 outPutFolder = "tests/output/OnlineSimulation/"*string(n)
 
-relocateVehicles = true
-solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles);
+relocateVehicles = false
+solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles,nTimePeriods=nPeriods,periodLength=periodLength);
 
 state = State(solution,scenario.onlineRequests[end],0)
 feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
@@ -42,11 +47,30 @@ println(msg)
 
 print("end")
 
+# Event 20 veh 2
+
+
 
 # initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
 # display(createGantChartOfSolutionOnline(initialSolution,"Final Solution after merge"))
 
-# schedule = deepcopy(initialSolution.vehicleSchedules[66])
+schedule = deepcopy(solution.vehicleSchedules[2])
+request = scenario.requests[20]
+posPU = 4
+posDO = 4
+feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd =
+ checkFeasibilityOfInsertionAtPosition(request,schedule,posPU,posDO,scenario)
+
+ const EMPTY_RESULT = (false, -1, -1, Vector{Int}(), Vector{Int}(), Vector{Int}(), typemax(Float64), typemax(Float64), typemax(Int), typemax(Int), Vector{Int}())
+
+# TODO: delete 
+global countTotal = Ref(0)
+global countFeasible = Ref(0)
+
+# ewa = findBestFeasibleInsertionRoute(request,schedule,scenario)
+
+
+
 # arrivalAtDepot = schedule.route[end].startOfServiceTime
 # endOfAvailableTimeWindow = schedule.vehicle.availableTimeWindow.endTime
 # waitingActivityCompletedRoute = ActivityAssignment(Activity(schedule.vehicle.depotId,-1,WAITING, schedule.vehicle.depotLocation,TimeWindow(arrivalAtDepot,endOfAvailableTimeWindow)), schedule.vehicle,arrivalAtDepot,endOfAvailableTimeWindow)
@@ -60,9 +84,10 @@ print("end")
 
 
 # feasible, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd =
-#  checkFeasibilityOfInsertionAtPosition(scenario.requests[299],schedule,4,4,scenario)
+#  checkFeasibilityOfInsertionAtPosition(scenario.requests[20],schedule,6,6,scenario)
 
-# insertRequest!(scenario.requests[299],schedule,4,4,scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete,waitingActivitiesToAdd=waitingActivitiesToAdd)
+# insertRequest!(scenario.requests[20],schedule,6,6,scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete,waitingActivitiesToAdd=waitingActivitiesToAdd)
+
 
 #   printSolution(solution,printRouteHorizontal)
 
@@ -81,7 +106,7 @@ print("end")
 # grid = Grid(maxLat,minLat,maxLong,minLong,nRows,nCols,latStep,longStep)
 
 
-# averageDemand = generatePredictedDemand(grid, historicRequestFiles)
+# averageDemand = generatePredictedDemand(grid, historicRequestFiles,nPeriods,periodLength)
 # vehicleDemand = generatePredictedVehiclesDemand(grid, gamma, averageDemand)
 
 # #======================================#
@@ -119,13 +144,16 @@ print("end")
 # vehicle_max = maximum(vehicleDemand)
 
 # for h in hours
+# for h in 1:nPeriods
 #     p1 = heatmap(averageDemand[h,:,:], 
 #             c=:viridis,         # color map
-#             clim=(avg_min, avg_max),
+#            # clim=(avg_min, avg_max),
 #             xlabel="Longitude (grid cols)", 
 #             ylabel="Latitude (grid rows)", 
 #             title="Average Demand per Grid Cell, hour = $(h)",
 #             colorbar_title="Avg Requests")
+#             display(p1)
+# end
 
 #     p2 = heatmap(vehicleDemand[h,:,:], 
 #             c=:viridis,         # color map

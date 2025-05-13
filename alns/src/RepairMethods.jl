@@ -260,7 +260,7 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
     state.requestBank = newRequestBank
 
     # TODO: delete 
-    # println("GREEDY: TOTAL: ", countTotal[], " FEASIBLE: ", countFeasible[])
+   # println("GREEDY: TOTAL: ", countTotal[], " FEASIBLE: ", countFeasible[])
 
 end
 
@@ -358,6 +358,7 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
                                                                                             newStartOfServiceTimes=newStartOfServiceTimes,newEndOfServiceTimes=newEndOfServiceTimes,waitingActivitiesToDelete=waitingActivitiesToDelete,
                                                                                             waitingActivitiesToAdd=waitingActivitiesToAdd,visitedRouteIds=visitedRouteIds,TO=TO)
 
+    
             # Update best position if feasible                                                                           
             if feasible && (totalCost < bestCost)
                 bestPickUp = i
@@ -383,7 +384,7 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
 
     # Return if feasible position is found 
     feasible = (bestPickUp != -1 && bestDropOff != -1 && bestCost < typemax(Float64))
-
+    
     # TODO: is this actually better than copying newStartOfServiceTimes etc in loop ? 
     if feasible
        feasible, bestNewStartOfServiceTimes, bestNewEndOfServiceTimes,bestWaitingActivitiesToDelete, bestCost, bestDistance, bestIdleTime, bestTime, bestWaitingActivitiesToAdd =    checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,bestPickUp,bestDropOff,scenario,visitedRoute=visitedRoute,TO=TO,

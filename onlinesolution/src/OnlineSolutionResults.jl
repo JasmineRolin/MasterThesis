@@ -309,23 +309,36 @@ end
 #==
  Plot relocation event
 ==#
-function plotRelocation(vehicleDemand,activeVehiclesPerCell,vehicleBalance,gridCell,depotGridCell,hour,vehicle)
-    avg_min = min(minimum(vehicleBalance),minimum(vehicleDemand))
-    avg_max = max(maximum(vehicleDemand),maximum(vehicleBalance))
+function plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,vehicleBalance,gridCell,depotGridCell,period,periodLength,vehicle)
+    avg_min = min(minimum(vehicleBalance),minimum(activeVehiclesPerCell))
+    avg_max = max(maximum(activeVehiclesPerCell),maximum(vehicleBalance))
 
-    # Plot for chosen hour 
-    p1 = heatmap(vehicleDemand[hour,:,:], 
+    demand_min = min(minimum(predictedDemand),minimum(realisedDemand))
+    demand_max = max(maximum(predictedDemand),maximum(realisedDemand))
+
+    # Plot for chosen period 
+    p0 = heatmap(realisedDemand[period,:,:], 
     c=:viridis,         # color map
-    clim=(avg_min, avg_max),
+    clim=(demand_min, demand_max),
     xlabel="Longitude (grid cols)", 
     ylabel="Latitude (grid rows)", 
-    title="Predicted Vehicle Demand",
+    title="Realised Demand",
+    colorbar_title="Requests")
+    scatter!(p0,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:green)
+    scatter!(p0,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
+
+    p1 = heatmap(predictedDemand[period,:,:], 
+    c=:viridis,         # color map
+    clim=(demand_min, demand_max),
+    xlabel="Longitude (grid cols)", 
+    ylabel="Latitude (grid rows)", 
+    title="Predicted Demand",
     colorbar_title="Avg Requests")
     scatter!(p1,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:green)
     scatter!(p1,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
 
 
-    p2 = heatmap(activeVehiclesPerCell[hour,:,:], 
+    p2 = heatmap(activeVehiclesPerCell[period,:,:], 
     clim=(avg_min, avg_max),
     c=:viridis,         # color map
     xlabel="Longitude (grid cols)", 
@@ -336,7 +349,7 @@ function plotRelocation(vehicleDemand,activeVehiclesPerCell,vehicleBalance,gridC
     scatter!(p2,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
 
 
-    p3 = heatmap(vehicleBalance[hour,:,:], 
+    p3 = heatmap(vehicleBalance[period,:,:], 
     c=:viridis,         # color map
     clim=(avg_min, avg_max),
     xlabel="Longitude (grid cols)", 
@@ -346,10 +359,10 @@ function plotRelocation(vehicleDemand,activeVehiclesPerCell,vehicleBalance,gridC
     scatter!(p3,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:green)
     scatter!(p3,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
 
-    super_title = plot(title = "Vehicle Demand Overview - Hour $(hour), vehicle $(vehicle)", grid=false, framestyle=:none)
+    super_title = plot(title = "Vehicle Demand Overview - period start $((period-1)*periodLength), vehicle $(vehicle)", grid=false, framestyle=:none)
 
     # Combine all into a vertical layout: super title + 3 plots
-    p = plot(super_title, plot(p1, p2, p3, layout=(1,3)), layout = @layout([a{0.01h}; b{0.99h}]), size=(1500,1100))
+    p = plot(super_title, plot(p0,p1, p2, p3, layout=(2,2)), layout = @layout([a{0.01h}; b{0.99h}]), size=(1500,1100))
 
     return p
 end
@@ -392,7 +405,12 @@ function writeOnlineKPIsToFile(fileName::String, scenario::Scenario,solution::So
         if (length(schedule.route) == 2 && schedule.route[1].activity.activityType == DEPOT && schedule.route[2].activity.activityType == DEPOT) || (sum(schedule.numberOfWalking .> 0) == 0)
             continue
         end
-        averagePercentRideSharing += sum(schedule.numberOfWalking .> 1)/sum(schedule.numberOfWalking .> 0)
+        noPassengers = sum(schedule.numberOfWalking .> 0)
+        noRideSharing = sum(schedule.numberOfWalking .> 1)
+
+        if noPassengers != 0
+            averagePercentRideSharing += noRideSharing/noPassengers
+        end
     end
     averagePercentRideSharing = (averagePercentRideSharing/length(solution.vehicleSchedules))*100.0
 
