@@ -44,7 +44,7 @@ function main()
     distanceMatrixFile = string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
     timeMatrixFile =  string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
     scenarioName = string("Gen_Data_",n,"_",gamma,"_",i)
-    push!(outputFiles, outPutFolder*"/Simulation_KPI_"*string(scenarioName)*".json")
+    push!(outputFiles, outPutFolder*"/Simulation_KPI_"*string(scenarioName)*"_"*string(relocateVehicles)*".json")
 
 
     # Read instance 

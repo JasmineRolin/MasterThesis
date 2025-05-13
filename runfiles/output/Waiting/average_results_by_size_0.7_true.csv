@@ -1,0 +1,3 @@
+DataSize,TotalElapsedTime,AverageResponseTime,EventsInsertedByALNS,nTaxi,TotalCost,TotalDistance,TotalIdleTime,TotalIdleTimeWithCustomer,TotalRideTime,TotalDirectRideTime,TotalActualRideTime,nOfflineRequests,UnservicedOfflineRequest,nOnlineRequests,UnservicedOnlineRequests,AveragePercentRideSharing
+20,6.178,0.308,0.0,11.0,11090.782608695652,1380.5666338356875,727.2,0.0,2160.0,207.0,212.4,0.0,0.0,20.0,11.0,1.1112
+100,91.038,0.9199999999999999,2.6,38.6,39282.14327824878,5187.741116104224,1313.8,1.4,6840.0,1309.8,1492.0,1.2,0.4,98.8,38.2,5.1934
