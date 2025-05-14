@@ -1,5 +1,19 @@
+#!/bin/bash
+
+n_requests_list=("20" "100" "300" "500")
+anticipation_levels=("0.5" "0.9")
+run_tags=("2025-05-14_run1" "2025-05-14_run2" "2025-05-14_run3" "2025-05-14_run4" "2025-05-14_run5")
+
+mkdir -p submitfiles/generated_jobs
+
+for n_requests in "${n_requests_list[@]}"; do
+    for run_tag in "${run_tags[@]}"; do
+      job_name="Sim_${n_requests}_${anticipation}_${run_tag}"
+      job_file="submitfiles/generated_jobs/${job_name}.sh"
+
+      cat > "$job_file" <<EOF
 #!/bin/sh
-#BSUB -J "Simulate_scenario"
+#BSUB -J "${job_name}"
 #BSUB -o submitfiles/output/output_%J.out
 #BSUB -q hpc
 #BSUB -n 8
@@ -8,12 +22,9 @@
 #BSUB -W 10:00
 #BSUB -u s194351@student.dtu.dk
 #BSUB -N 
-# end of BSUB options
 
-# Load Julia module
 module load julia/1.10.2
 
-# Activate project and install dependencies
 julia --project=. -e '
 using Pkg;
 Pkg.activate(".");
@@ -29,9 +40,17 @@ Pkg.develop(path="simulationframework");
 Pkg.resolve();
 '
 
-# Loop to run simulations with third argument from 1 to 10
-for i in {1..10}; do
-    julia --project=. resultExploration/resultsBase.jl "500" "0.1" "0.5" "12-05-2025_run3" "BaseCase" "$i" &
+for seed in {1..10}; do
+  julia --project=. resultExploration/resultsBase.jl "$n_requests" "0.1" "0.7" "$run_tag" "BaseCase" "\$seed" &
 done
 
-wait  # Wait for all background Julia jobs to finish
+wait
+EOF
+
+      # Make it executable
+      chmod +x "$job_file"
+
+      # Optionally submit the job right away
+      bsub < "$job_file"
+    done
+done

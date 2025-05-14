@@ -2,7 +2,7 @@
 
 n_requests_list=("20" "100" "300" "500")
 anticipation_levels=("0.5" "0.9")
-run_tags=("2025-05-12_run1" "2025-05-12_run2" "2025-05-12_run3")
+run_tags=("2025-05-14_run1" "2025-05-14_run2" "2025-05-14_run3" "2025-05-14_run4" "2025-05-14_run5")
 
 mkdir -p submitfiles/generated_jobs
 
