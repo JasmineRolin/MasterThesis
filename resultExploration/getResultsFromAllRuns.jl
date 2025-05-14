@@ -1,73 +1,187 @@
-using CSV
-using DataFrames
-using Printf
-using Statistics
-using ExcelFiles
+using XLSX, CSV, DataFrames
 
 # Parameters
-methods = ["Anticipation_0.5", "Anticipation_0.9"]
+methods = ["Anticipation", "AnticipationNoALNS"]
 run_tags = ["2025-05-12_run1", "2025-05-12_run2", "2025-05-12_run3"]
+anticipation_Degrees = [0.5, 0.9]
 n_requests_list = [20, 100, 300, 500]
+date = "2025-05-12"
 base_dir = joinpath(@__DIR__, "results")
+nRuns = 3
 
-# Output DataFrames
-all_run_results = DataFrame()
-averaged_results = DataFrame()
 
-# Excel File for output
-excel_file = "hierarchical_results_table.xlsx"
+# Function to convert a column index to an Excel-style column letter (e.g., 1 -> "A", 2 -> "B")
+function col2name(col_index::Int)
+    col_name = ""
+    while col_index > 0
+        col_index -= 1
+        col_name = string(Char('A' + col_index % 26), col_name)
+        col_index ÷= 26
+    end
+    return col_name
+end
 
-# Write to Excel
-@xlsx begin
-    for method in methods
-        anticipation = parse(Float64, split(method, "_")[end])  # Extract 0.5 or 0.9
-        
-        for n_requests in n_requests_list
-            run_dfs = DataFrame[]
 
-            for run_tag in run_tags
-                filepath = string(base_dir)*"/"*string(run_tag)*"/"*string(method)*"/"*string(n_requests)*"/results.csv"
-                if isfile(filepath)
-                    df = CSV.read(filepath, DataFrame)
-                    df[!, :method] = fill(method, nrow(df))
-                    df[!, :anticipation] = fill(anticipation, nrow(df))
-                    df[!, :n_requests] = fill(n_requests, nrow(df))
-                    df[!, :run_tag] = fill(run_tag, nrow(df))
-                    push!(run_dfs, df)
-                    append!(all_run_results, df)
-                else
-                    println("Run: $run_tag — Missing")
+
+XLSX.openxlsx("example.xlsx", mode="w") do xf
+    # Store base case averages for comparison
+    basecase_averages = Dict{Int, Vector{Float64}}()
+
+    # -------- BASE CASE ----------
+    method = "BaseCase"
+    sheet = XLSX.addsheet!(xf, method)
+    current_row = 1  # Track where we are writing on the sheet
+
+    for n_requests in n_requests_list
+        # Write metadata
+        sheet["A$current_row"] = "Method: $method"
+        current_row += 1
+        sheet["A$current_row"] = "Number of requests: $n_requests"
+        current_row += 1
+
+        method_file = method  # ✅ Fix: set correct folder name for base case
+
+        values = zeros(17)
+
+        for i in 1:nRuns
+            file = date * "_run" * string(i)
+            filepath = joinpath(base_dir, file, method_file, string(n_requests), "results.csv")
+
+            if isfile(filepath)
+                df = CSV.read(filepath, DataFrame)
+
+                if i == 1
+                    # Write headers
+                    for (j, col_name) in enumerate(names(df))
+                        if j == 1
+                            continue  # Skip the first column (index)
+                        end
+                        col_letter = col2name(j)
+                        sheet["$col_letter$current_row"] = col_name
+                    end
+                    current_row += 1
                 end
-            end
 
-            if !isempty(run_dfs)
-                combined = vcat(run_dfs...)
-                numeric_cols = names(combined, Number)
+                # Write run tag
+                sheet["A$current_row"] = "Run: $i"
 
-                # Add AVERAGE row
-                avg_row = combine(combined, numeric_cols .=> mean)
-                avg_row[!, :run_tag] .= "AVERAGE"
-                avg_row[!, :method] .= method
-                avg_row[!, :anticipation] .= anticipation
-                avg_row[!, :n_requests] .= n_requests
-
-                # Combine for Excel formatting
-                display_df = vcat(combined[:, [:run_tag; numeric_cols]], avg_row[:, [:run_tag; numeric_cols]])
-
-                # Add method and anticipation info as headers
-                sheet_name = "Method_$method Requests_$n_requests"
-                @sheet sheet_name begin
-                    # First row with headers
-                    headers = ["Method", "Anticipation", "Number of Requests", string.(numeric_cols)]
-                    append!(display_df, [method, anticipation, n_requests], 1)
-
-                    # Write the DataFrame to the Excel sheet
-                    DataFrame(headers)  # Add header row
-                    append!(display_df)
+                for row in eachrow(df)
+                    for (j, col_name) in enumerate(names(df))
+                        if j == 1
+                            continue
+                        end
+                        value = row[col_name]
+                        col_letter = col2name(j)
+                        sheet["$col_letter$current_row"] = string(value)
+                        values[j] += value
+                    end
+                    current_row += 1
                 end
             else
-                println("No valid data to average for $method with $n_requests requests")
+                println("File not found: $filepath")
             end
+        end
+
+        # Write average values
+        sheet["A$current_row"] = "Average: "
+        averages = zeros(17)
+        for j in 2:17
+            averages[j] = values[j] / nRuns
+            col_letter = col2name(j)
+            sheet["$col_letter$current_row"] = string(averages[j])
+        end
+
+        # ✅ Save averages to dictionary for later comparison
+        basecase_averages[n_requests] = averages
+
+        current_row += 2
+    end
+
+    newSheetName = "Comparison"
+    comparison_sheet = XLSX.addsheet!(xf, newSheetName)  # this is the actual sheet
+    current_row_comparison = 1  # Track where we are writing on the comparison sheet
+
+    # --------- ANTICIPATION ---------
+    for method in methods
+        sheet = XLSX.addsheet!(xf, method)
+        current_row = 1  # Track where we are writing on the sheet
+
+        for n_requests in n_requests_list
+            for degree in anticipation_Degrees
+                # Write metadata
+                sheet["A$current_row"] = "Method: $method"
+                current_row += 1
+                sheet["A$current_row"] = "Anticipation Degree: $degree"
+                current_row += 1
+                sheet["A$current_row"] = "Number of requests: $n_requests"
+                current_row += 1
+
+                # Save value to average 
+                values = zeros(17)
+
+                for i in 1:nRuns
+                    file = date * "_run" * string(i)
+                    method_file = string(method, "_", degree)
+                    filepath = joinpath(base_dir, file, method_file, string(n_requests), "results.csv")
+
+                    if isfile(filepath)
+                        df = CSV.read(filepath, DataFrame)
+
+                        if i == 1
+                            # Write headers
+                            for (j, col_name) in enumerate(names(df))
+                                if j == 1
+                                    continue  # Skip the first column (index)
+                                end
+                                col_letter = col2name(j)  # Use your own col2name function
+                                sheet["$col_letter$current_row"] = col_name
+                            end
+                            current_row += 1
+                        end
+
+                        # Write run tag
+                        sheet["A$current_row"] = "Run: $i"
+
+                        # Write each row of data manually
+                        for row in eachrow(df)
+                            for (j, col_name) in enumerate(names(df))
+                                if j == 1
+                                    continue  # Skip the first column (index)
+                                end
+                                value = row[col_name]
+                                col_letter = col2name(j)  # Use your own col2name function here as well
+                                sheet["$col_letter$current_row"] = string(value)
+                                values[j] += value  # Accumulate values for averaging
+                            end
+                            current_row += 1
+                        end
+                    else
+                        println("File not found: $filepath")
+                    end
+                end
+
+                # Write average values
+                sheet["A$current_row"] = "Average: "
+                for j in 2:17
+                    col_letter = col2name(j)  # Use your own col2name function here as well
+                    sheet["$col_letter$current_row"] = string(values[j]/nRuns)  # Write average value
+                end
+
+                # Add comparison to base case 
+                comparison_sheet["A$current_row_comparison"] = string(method) * "_" * string(degree) * "_" * string(n_requests) * "_vs_" * "BaseCase"
+                for j in 2:17
+                    col_letter = col2name(j)  # Use your own col2name function here as well
+                    basecase_value = basecase_averages[n_requests][j]
+                    anticipation_value = values[j] / nRuns
+                    difference = anticipation_value - basecase_value
+                    comparison_sheet["$col_letter$current_row_comparison"] = string(difference)
+                end
+                current_row_comparison += 1
+
+
+                current_row += 2  # space between degree blocks
+            end
+
         end
     end
 end

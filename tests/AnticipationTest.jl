@@ -102,7 +102,7 @@ include("../decisionstrategies/anticipation.jl")
 # #@testset "Run all generated data sets " begin
 
     # Number of requests in scenario - 20, 100, 300 or 500 
-    n = 500
+    n = 100
 
     # Scenario number - 1:10
     i = 1
@@ -111,6 +111,7 @@ include("../decisionstrategies/anticipation.jl")
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
     parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters3.json"
+    gridFile = "Data/Konsentra/grid.json"
 
     # Set both true to see plots 
     displayPlots = false
@@ -135,7 +136,7 @@ include("../decisionstrategies/anticipation.jl")
         scenarioName = string("Generated_Data_",n,"_",i)
     
         nExpected = Int(floor(n/10))
-        bestSolution, bestRequestBank, results, scenario, scenario2,feasible, msg = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected)
+        bestSolution, bestRequestBank, results, scenario, scenario2,feasible, msg = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile)
 
         println(results)
 
