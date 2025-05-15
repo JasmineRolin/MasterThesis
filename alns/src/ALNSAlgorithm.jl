@@ -60,6 +60,7 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
             destroyIdx = destroy!(scenario, trialState, parameters, configuration, visitedRoute=visitedRoute,TO=TO)
         end
 
+
         @timeit TO "Repair!" begin
             repairIdx = repair!(scenario, trialState, configuration, visitedRoute=visitedRoute,TO=TO)
         end

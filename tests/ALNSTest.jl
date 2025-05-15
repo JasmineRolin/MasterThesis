@@ -184,16 +184,16 @@ end
 
 
 
-# # #@testset "Run all generated data sets " begin
-
+# #@testset "Run all generated data sets " begin
+#     print("\033c")
 #     # Number of requests in scenario - 20, 100, 300 or 500 
 #     n = 500
 
 # #     # Scenario number - 1:10
-#     i = 1
+#     i = 3
 
 #     # Files 
-#     gamma = 0.5
+#     gamma = 0.9
 #     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
 #     parametersFile = "tests/resources/Parameters.csv"
 #     alnsParameters = "tests/resources/ALNSParameters3.json"
@@ -202,11 +202,11 @@ end
 #     displayPlots = false
 #     saveResults = false
 
-#     #for i in 1:10
-#         requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
-#         distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
-#         timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
-#         scenarioName = string("Generated_Data_",n,"_",i)
+    # for i in 1:10
+    #     requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
+    #     distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
+    #     timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
+    #     scenarioName = string("Generated_Data_",n,"_",i)
         
 #         # Read instance 
 #         scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
@@ -232,14 +232,26 @@ end
 #         @test msg == ""
 #         println(msg)
 
-#         println(rpad("Metric", 40), "Value")
-#         println("-"^45)
-#         println(rpad("Final nTaxi", 40), finalSolution.nTaxi)
-#         println(rpad("Final cost", 40), finalSolution.totalCost)
-#         println(rpad("Final distance", 40), finalSolution.totalDistance)
-#         println(rpad("Final ride time (veh)", 40), finalSolution.totalRideTime)
-#         println(rpad("Final idle time", 40), finalSolution.totalIdleTime)
-#    # end
+    #     for schedule in finalSolution.vehicleSchedules
+    #         for (i,activity) in enumerate(schedule.route)
+    #             if activity.activity.activityType == WAITING
+    #                 if activity.activity.id != schedule.route[i-1].activity.id
+    #                     println("NOT WAIT FIRST!!!")
+    #                     printRouteHorizontal(schedule)
+    #                     throw("NOT WAIT FIRST!!!")
+    #                 end
+    #             end
+    #         end
+    #     end
+
+    #     println(rpad("Metric", 40), "Value")
+    #     println("-"^45)
+    #     println(rpad("Final nTaxi", 40), finalSolution.nTaxi)
+    #     println(rpad("Final cost", 40), finalSolution.totalCost)
+    #     println(rpad("Final distance", 40), finalSolution.totalDistance)
+    #     println(rpad("Final ride time (veh)", 40), finalSolution.totalRideTime)
+    #     println(rpad("Final idle time", 40), finalSolution.totalIdleTime)
+    # end
     
 # # #end
 

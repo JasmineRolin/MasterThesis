@@ -10,8 +10,8 @@ print("\033c")
 
 gamma = 0.9
 nData = 10
-n = 20 
-i = 7
+n = 300 
+i = 3
 gridFile = "Data/Konsentra/grid.json"
 historicIndexes = setdiff(1:nData,i)
 nPeriods = 24
@@ -52,6 +52,12 @@ print("end")
 
 
 # initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
+# state = State(initialSolution,scenario.onlineRequests[end],0)
+# feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+# @test feasible == true
+# @test msg == ""
+# println(msg)
+
 # display(createGantChartOfSolutionOnline(initialSolution,"Final Solution after merge"))
 
 schedule = deepcopy(solution.vehicleSchedules[2])

@@ -27,7 +27,6 @@ function simpleConstruction(scenario::Scenario,requests::Vector{Request};visited
         else
             append!(requestBank,request.id)
         end
-
     end
 
     # Update solution
