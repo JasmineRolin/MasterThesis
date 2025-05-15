@@ -687,7 +687,6 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         println("Intitial after ALNS")
         println("----------------")
         printSolution(solution,printRouteHorizontal)
-        println("TIME: ", scenario.time[41,4])
     end
     if displayPlots
         display(createGantChartOfSolutionOnline(solution,"Initial Solution after ALNS"))
@@ -720,11 +719,6 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     nOnline = 0
 
     for (itr,event) in enumerate(events)
-
-        #TODO Astrid delete
-        #if itr == 3
-        #    throw("DEBUG")
-        #end
 
         startTimeEvent = time()
         println("------------------------------------------------------------------------------------------------------------------------------------------------")

@@ -6,7 +6,7 @@ using domain
 
 export offlineSolution
 #-------
-# Determine offline solution with anticipation
+# Determine offline solution without anticipation
 #-------
 function offlineSolution(scenario::Scenario,repairMethods::Vector{GenericMethod},destroyMethods::Vector{GenericMethod},parametersFile::String,alnsParameters::String,scenarioName::String;displayALNSPlots::Bool = false, saveALNSResults::Bool = false, outputFileFolder::String = "runfiles/output/OfflineSimulation", printResults::Bool = false)
 

@@ -21,7 +21,7 @@ global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:
 global callBuffer = 2*60 # 2 hours buffer
 global nData = 10
 global nRequestList = [20] #[20,100,300,500]
-global MAX_DELAY = 15 
+global MAX_DELAY = 45 
 
 #==
 # Constant for vehicle generation  
@@ -431,7 +431,6 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
                         nInitialNotServicedFixedRequests = Int[],
                         nInitialNotServicedExpectedRequests = Int[])
 
-    # TODO Astrid remember to chage to 10
     for i in 1:10
 
         # Make scenario
@@ -461,8 +460,6 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
 
         # Remove expected requests from solution
         removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,originalSolution,nExpected,nFixed,nNotServicedExpectedRequests,originalRequestBank,taxiParameter,taxiParameterExpected)
-
-        println("nTaxi: ", originalSolution.nTaxi)
 
         if displayPlots
             display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and after removing expected requests"))
