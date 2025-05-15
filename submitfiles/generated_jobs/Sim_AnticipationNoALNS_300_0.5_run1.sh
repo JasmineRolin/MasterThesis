@@ -26,7 +26,7 @@ Pkg.resolve();
 '
 
 for seed in {1..10}; do
-  julia --project=. resultExploration/resultsAnticipationNoALNS.jl "300" "0.5" "0.7" "2025-05-15" "run1" "AnticipationNoALNS_0.5" "$seed" &
+  julia --project=. resultExploration/resultsAnticipationNoALNS.jl "300" "0.5" "0.5" "2025-05-15_v2" "run1" "AnticipationNoALNS_0.5" "$seed" &
 done
 
 wait
