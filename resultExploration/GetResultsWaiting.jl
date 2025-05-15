@@ -1,7 +1,7 @@
 using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures
 
-nRequestList = [20,100,300]
+nRequestList = [20,100,300]#,100,300]
 relocateVehiclesList = [true,false]
 gamma = 0.7 
 
@@ -82,11 +82,11 @@ for n in nRequestList
         plot!(df.nTaxi; linestyle = :dash, marker = :circle, color = color, label = label,markerstrokewidth=0,linewidth=2,markersize=5)
     end
 
-    ylimMin = minnTaxi - 2
-    ylimMax = maxnTaxi + 2 
+    ylimMin = 5 * floor((minnTaxi - 2) / 5)
+    ylimMax = 5 * ceil((maxnTaxi + 2) / 5)
     xtickLabel = ["Scenario $(i)" for i in 1:nRows]
     xticks!((1:nRows,xtickLabel),rotation=90)
-    yticks!((ylimMin:5:ylimMax,string.(1:5:maxnTaxi)))
+    yticks!((ylimMin:5:ylimMax,string.(Int.(ylimMin:5:ylimMax))))
     ylims!(ylimMin, ylimMax)
 
     savefig(p, "plots/Waiting/results_$(n).png")

@@ -30,11 +30,28 @@ Pkg.develop(path="waitingstrategies");
 Pkg.resolve();
 '
 
-# Loop to run simulations with third argument from 1 to 10
+#
+#        !!!# OBS OBS OBS OBS OBS #!!!!!
+#
+#        To run the scenarios with short call time (in Data/WaitingStrategies)
+#        - change MAX_DELAY = 15 and MAX_EARLY_ARRIVAL = 5 in instance reader 
+#        - outcomment check for buffer in instance reader in readRequests
+#                if callTime > requestTime - bufferTime
+#                    throw(ArgumentError(string("Call time is not before required buffer period for request: ",id)))
+#                end
+#
+
+
 # OBS: update grid size!!
+gridSize=10
+nRequests=500
+relocateVehicles=false
+
+# Loop to run simulation
 for i in {1..81..20}; do
     endFile=$((i + 19))
-    julia --project=. runfiles/RunSimulationWaiting.jl "300" "0.7" "$i" "false" "10" "$i" "$endFile" "48" &
+    julia --project=. runfiles/RunSimulationWaiting.jl "$nRequests" "0.7" "$i" "$relocateVehicles" "$gridSize" "$i" "$endFile" "48" &
 done
+
 
 wait  # Wait for all background Julia jobs to finish

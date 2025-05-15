@@ -6,28 +6,30 @@ using onlinesolution
 using domain
 using CSV
 
-#== 
- Generated data 
-==# 
-# function main()
-#     # Receive command line arguments 
-#     n = parse(Int,ARGS[1])
-#     gamma = parse(Float64,ARGS[2])
-#     i = parse(Int,ARGS[3])
-#     relocateVehicles = parse(Bool,ARGS[4])
-#     gridSize = parse(Int,ARGS[5])
-#     startFileIndex = parse(Int,ARGS[6])
-#     endFileIndex = parse(Int,ARGS[7])
-#     nPeriods = parse(Int,ARGS[8])
 
-    n = 300 
-    gamma = 0.7 
-    i = 1 
-    startFileIndex = 1 
-    endFileIndex = 20 
-    relocateVehicles = false 
-    gridSize = 10 
-    nPeriods = 48 
+#==
+        !!!# OBS OBS OBS OBS OBS #!!!!!
+
+        To run the scenarios with short call time (in Data/WaitingStrategies)
+        - change MAX_DELAY = 15 and MAX_EARLY_ARRIVAL = 5 in instance reader 
+        - outcomment check for buffer in instance reader in readRequests
+                if callTime > requestTime - bufferTime
+                    throw(ArgumentError(string("Call time is not before required buffer period for request: ",id)))
+                end
+
+==##
+
+
+function main()
+    # Receive command line arguments 
+    n = parse(Int,ARGS[1])
+    gamma = parse(Float64,ARGS[2])
+    i = parse(Int,ARGS[3])
+    relocateVehicles = parse(Bool,ARGS[4])
+    gridSize = parse(Int,ARGS[5])
+    startFileIndex = parse(Int,ARGS[6])
+    endFileIndex = parse(Int,ARGS[7])
+    nPeriods = parse(Int,ARGS[8])
 
     # Find period length 
     maximumTime = 24*60 
@@ -81,6 +83,6 @@ using CSV
     result_file = string(outPutFolder, "/results_", gamma,"_",relocateVehicles, ".csv")
     append_mode = isfile(result_file)
     CSV.write(result_file, dfResults; append=append_mode)
-# end
+end
 
-# main()
+main()
