@@ -10,12 +10,12 @@ using CSV
 
 
 
-function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, resultType::String, i::Int)
+function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, run::String, resultType::String, i::Int)
 
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters_offlineAnticipation.json"
-    outPutFolder = string("resultExploration/results/",date,"/",resultType,"/",n)
+    outPutFolder = string("resultExploration/results/",date,"/",run,"/",resultType,"/",n)
     outputFiles = Vector{String}()
     gridFile = string("Data/Konsentra/grid.json")
 
@@ -45,14 +45,15 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
 end
 
 
-#main(20,0.9,0.7,"2025-05-13","BasicAnticipation",1)
+#main(300,0.5,0.7,"2025-05-13","BasicAnticipation",1)
 
 if abspath(PROGRAM_FILE) == @__FILE__
     n = parse(Int, ARGS[1])
     nExpectedPercentage = parse(Float64, ARGS[2])
     gamma = parse(Float64, ARGS[3])
     date = ARGS[4]
-    resultType = ARGS[5]
-    iteration = parse(Int, ARGS[6])
-    main(n, nExpectedPercentage, gamma, date, resultType, iteration)
+    run = ARGS[5]
+    resultType = ARGS[6]
+    dataset = parse(Int, ARGS[7])
+    main(n, nExpectedPercentage, gamma, date, run, resultType, dataset)
 end

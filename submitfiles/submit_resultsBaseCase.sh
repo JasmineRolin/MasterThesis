@@ -1,14 +1,14 @@
 #!/bin/bash
 
 n_requests_list=("20" "100" "300" "500")
-anticipation_levels=("0.5" "0.9")
-run_tags=("2025-05-14_run1" "2025-05-14_run2" "2025-05-14_run3" "2025-05-14_run4" "2025-05-14_run5")
-
+run_tags=("run1" "run2" "run3" "run4" "run5")
+gamma="0.7"
+date="2025-05-15"
 mkdir -p submitfiles/generated_jobs
 
 for n_requests in "${n_requests_list[@]}"; do
     for run_tag in "${run_tags[@]}"; do
-      job_name="Sim_${n_requests}_${anticipation}_${run_tag}"
+      job_name="Sim_BaseCase_${n_requests}_${run_tag}"
       job_file="submitfiles/generated_jobs/${job_name}.sh"
 
       cat > "$job_file" <<EOF
@@ -41,7 +41,7 @@ Pkg.resolve();
 '
 
 for seed in {1..10}; do
-  julia --project=. resultExploration/resultsBase.jl "$n_requests" "0.1" "0.7" "$run_tag" "BaseCase" "\$seed" &
+  julia --project=. resultExploration/resultsBase.jl "$n_requests" "0" "$gamma" "$date" "$run_tag" "BaseCase" "\$seed" &
 done
 
 wait

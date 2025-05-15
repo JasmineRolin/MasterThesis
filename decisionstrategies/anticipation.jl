@@ -458,9 +458,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         # Determine number of serviced requests
         nNotServicedFixedRequests = sum(originalRequestBank .<= nFixed)
         nNotServicedExpectedRequests = sum(originalRequestBank .> nFixed)
-        println("nNotServicedExpectedRequests: ", nNotServicedExpectedRequests)
-        println("nNotServicedFixedRequests: ", nNotServicedFixedRequests)
-        nServicedFixedRequests = nFixed - nNotServicedFixedRequests
+        nServicedFixedRequests = length(scenario.offlineRequests) - nExpected - nNotServicedFixedRequests
         nServicedExpectedRequests = nExpected - nNotServicedExpectedRequests
 
         # Remove expected requests from solution

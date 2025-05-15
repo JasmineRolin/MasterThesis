@@ -2,12 +2,13 @@ using XLSX, CSV, DataFrames
 
 # Parameters
 methods = ["Anticipation", "AnticipationNoALNS"]
-run_tags = ["2025-05-12_run1", "2025-05-12_run2", "2025-05-12_run3"]
+run_tags = ["2025-05-14_run1", "2025-05-14_run2", "2025-05-14_run3", "2025-05-14_run4", "2025-05-14_run5"]
 anticipation_Degrees = [0.5, 0.9]
 n_requests_list = [20, 100, 300, 500]
-date = "2025-05-12"
+date = "2025-05-14"
 base_dir = joinpath(@__DIR__, "results")
-nRuns = 3
+nRuns = 5
+nameOfExcel = "Example3.xlsx"
 
 
 # Function to convert a column index to an Excel-style column letter (e.g., 1 -> "A", 2 -> "B")
@@ -23,7 +24,7 @@ end
 
 
 
-XLSX.openxlsx("example.xlsx", mode="w") do xf
+XLSX.openxlsx(nameOfExcel, mode="w") do xf
     # Store base case averages for comparison
     basecase_averages = Dict{Int, Vector{Float64}}()
 
@@ -99,7 +100,27 @@ XLSX.openxlsx("example.xlsx", mode="w") do xf
 
     newSheetName = "Comparison"
     comparison_sheet = XLSX.addsheet!(xf, newSheetName)  # this is the actual sheet
-    current_row_comparison = 1  # Track where we are writing on the comparison sheet
+    comparison_sheet["A1"] = string("Method")
+    comparison_sheet["B1"] = string("Anticipation Degree")
+    comparison_sheet["C1"] = string("Number of requests")
+    comparison_sheet["D1"] = string("TotalElapsedTime")
+    comparison_sheet["E1"] = string("AverageResponseTime")
+    comparison_sheet["F1"] = string("EventsInsertedByALNS")
+    comparison_sheet["G1"] = string("nTaxi")
+    comparison_sheet["H1"] = string("TotalCost")
+    comparison_sheet["I1"] = string("TotalDistance")
+    comparison_sheet["J1"] = string("TotalIdleTime")
+    comparison_sheet["K1"] = string("TotalIdleTimeWithCustomer")
+    comparison_sheet["L1"] = string("TotalRideTime")
+    comparison_sheet["M1"] = string("TotalDirectRideTime")
+    comparison_sheet["N1"] = string("TotalActualRideTime")
+    comparison_sheet["O1"] = string("nOfflineRequests")
+    comparison_sheet["P1"] = string("UnservicedOfflineRequest")
+    comparison_sheet["Q1"] = string("nOnlineRequests")
+    comparison_sheet["R1"] = string("UnservicedOnlineRequests")
+    comparison_sheet["S1"] = string("AveragePercentRideSharing")  # Add this line to set the header for the new column
+
+    current_row_comparison = 2  # Track where we are writing on the comparison sheet
 
     # --------- ANTICIPATION ---------
     for method in methods
@@ -168,13 +189,15 @@ XLSX.openxlsx("example.xlsx", mode="w") do xf
                 end
 
                 # Add comparison to base case 
-                comparison_sheet["A$current_row_comparison"] = string(method) * "_" * string(degree) * "_" * string(n_requests) * "_vs_" * "BaseCase"
-                for j in 2:17
+                comparison_sheet["A$current_row_comparison"] = string(method) 
+                comparison_sheet["B$current_row_comparison"] = string(degree) 
+                comparison_sheet["C$current_row_comparison"] = string(n_requests) 
+                for j in 4:17
                     col_letter = col2name(j)  # Use your own col2name function here as well
                     basecase_value = basecase_averages[n_requests][j]
                     anticipation_value = values[j] / nRuns
                     difference = anticipation_value - basecase_value
-                    comparison_sheet["$col_letter$current_row_comparison"] = string(difference)
+                    comparison_sheet["$col_letter$current_row_comparison"] = difference
                 end
                 current_row_comparison += 1
 
