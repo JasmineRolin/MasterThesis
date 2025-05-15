@@ -189,7 +189,7 @@ end
     # Number of requests in scenario - 20, 100, 300 or 500 
     n = 500
 
-#     # Scenario number - 1:10
+    # Scenario number - 1:10
     i = 3
 
     # Files 
@@ -198,9 +198,9 @@ end
     parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters3.json"
 
-#     # Set both true to see plots 
-#     displayPlots = false
-#     saveResults = false
+    # Set both true to see plots 
+    displayPlots = false
+    saveResults = false
 
     for i in 1:10
         requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
@@ -208,29 +208,29 @@ end
         timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
         scenarioName = string("Generated_Data_",n,"_",i)
         
-#         # Read instance 
-#         scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
+        # Read instance 
+        scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
         
-#         # Choose destroy methods
-#         destroyMethods = Vector{GenericMethod}()
-#         addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
-#         addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
-#         addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
+        # Choose destroy methods
+        destroyMethods = Vector{GenericMethod}()
+        addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
+        addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
+        addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
 
-#         # Choose repair methods
-#         repairMethods = Vector{GenericMethod}()
-#         addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
-#         addMethod!(repairMethods,"regretInsertion",regretInsertion)
+        # Choose repair methods
+        repairMethods = Vector{GenericMethod}()
+        addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
+        addMethod!(repairMethods,"regretInsertion",regretInsertion)
         
-#         TO = TimerOutput()
-#         initialSolution, requestBank = simpleConstruction(scenario,scenario.requests,TO=TO)
-#         finalSolution,requestBank,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=saveResults,stage="Offline")
+        TO = TimerOutput()
+        initialSolution, requestBank = simpleConstruction(scenario,scenario.requests,TO=TO)
+        finalSolution,requestBank,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=saveResults,stage="Offline")
 
-#         state = State(finalSolution,scenario.onlineRequests[end],0)
-#         feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-#         @test feasible == true
-#         @test msg == ""
-#         println(msg)
+        state = State(finalSolution,scenario.onlineRequests[end],0)
+        feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+        @test feasible == true
+        @test msg == ""
+        println(msg)
 
         for schedule in finalSolution.vehicleSchedules
             for (i,activity) in enumerate(schedule.route)

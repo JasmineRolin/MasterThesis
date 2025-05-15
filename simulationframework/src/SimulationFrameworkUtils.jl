@@ -194,11 +194,6 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
     currentState.solution.totalCost += currentSchedule.totalCost
     currentState.solution.totalIdleTime += currentSchedule.totalIdleTime
 
-    if vehicle == 7 || vehicle == 9 
-        println("Total cost: ", currentSchedule.totalCost)
-        printRouteHorizontal(currentSchedule)
-    end
-
     return idx, currentSchedule.activeTimeWindow.startTime
 end
 

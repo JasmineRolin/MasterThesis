@@ -9,16 +9,25 @@ using CSV
 #== 
  Generated data 
 ==# 
-function main()
-    # Receive command line arguments 
-    n = parse(Int,ARGS[1])
-    gamma = parse(Float64,ARGS[2])
-    i = parse(Int,ARGS[3])
-    relocateVehicles = parse(Bool,ARGS[4])
-    gridSize = parse(Int,ARGS[5])
-    startFileIndex = parse(Int,ARGS[6])
-    endFileIndex = parse(Int,ARGS[7])
-    nPeriods = parse(Int,ARGS[8])
+# function main()
+#     # Receive command line arguments 
+#     n = parse(Int,ARGS[1])
+#     gamma = parse(Float64,ARGS[2])
+#     i = parse(Int,ARGS[3])
+#     relocateVehicles = parse(Bool,ARGS[4])
+#     gridSize = parse(Int,ARGS[5])
+#     startFileIndex = parse(Int,ARGS[6])
+#     endFileIndex = parse(Int,ARGS[7])
+#     nPeriods = parse(Int,ARGS[8])
+
+    n = 300 
+    gamma = 0.7 
+    i = 1 
+    startFileIndex = 1 
+    endFileIndex = 20 
+    relocateVehicles = false 
+    gridSize = 10 
+    nPeriods = 48 
 
     # Find period length 
     maximumTime = 24*60 
@@ -72,6 +81,6 @@ function main()
     result_file = string(outPutFolder, "/results_", gamma,"_",relocateVehicles, ".csv")
     append_mode = isfile(result_file)
     CSV.write(result_file, dfResults; append=append_mode)
-end
+# end
 
-main()
+# main()

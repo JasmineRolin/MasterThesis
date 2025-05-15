@@ -55,17 +55,64 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
         isAccepted, isImproved, isNewBest = false, false, false
 
         trialState = copyALNSState(currentState)
+        vehicleSchedule20 = deepcopy(currentState.currentSolution.vehicleSchedules[11])
 
         @timeit TO "Destroy!" begin
             destroyIdx = destroy!(scenario, trialState, parameters, configuration, visitedRoute=visitedRoute,TO=TO)
         end
+        vehicleSchedule20AfterDestroy = deepcopy(trialState.currentSolution.vehicleSchedules[11])
+
+
         @timeit TO "Feasibility Check" begin
             state = State(trialState.currentSolution, event, visitedRoute, alreadyRejected)
             feasible, msg = checkSolutionFeasibilityOnline(scenario, state)
             if !feasible
-                println("ALNS: INFEASIBLE SOLUTION IN ITERATION destroy:", iteration)
-                printSolution(trialState.currentSolution, printRouteHorizontal)
-                show(TO)
+                println("ALNS: INFEASIBLE SOLUTION IN ITERATION destroy: ", configuration.destroyMethods[destroyIdx].name," iteration:", iteration)
+               # printSolution(trialState.currentSolution, printRouteHorizontal)
+                println("=====> AFTER REPAIR")
+                printRouteHorizontal(trialState.currentSolution.vehicleSchedules[11])
+
+                println("======> AFTER DESTORU")
+                printRouteHorizontal(vehicleSchedule20AfterDestroy)
+
+                println("=====> CURRENT")
+                printRouteHorizontal(vehicleSchedule20)
+
+                route = trialState.currentSolution.vehicleSchedules[11].route 
+                pickupTimes = Dict{Int, Int}()
+
+                println("length route = ", length(route))
+                for assignment in route
+                    println("---> id: ",assignment.activity.id)
+                    activity = assignment.activity
+
+                    if activity.activityType == PICKUP
+                        pickupTimes[activity.requestId] = assignment.endOfServiceTime
+                        println("Pick up time request $(activity.requestId): $(assignment.endOfServiceTime), direct drive time: $(scenario.requests[activity.requestId])")
+
+                    elseif activity.activityType == DROPOFF && haskey(pickupTimes, activity.requestId)
+                        println("request id: ",activity.requestId)
+                        println(pickupTimes)
+                        
+                        pickupTime = pickupTimes[activity.requestId]
+
+                        println("Pick up time request $(activity.requestId): $(pickupTime), direct drive time: $(scenario.requests[activity.requestId])")
+
+                    elseif activity.activityType == DROPOFF
+
+                        if !haskey(visitedRoute, activity.requestId)
+                            println("ENTERED 5")
+                            println("RequestId not found in visitedRoute")
+                            continue;
+                        end
+                        println("request id: ",activity.requestId)
+                        pickupTime = visitedRoute[activity.requestId]["PickUpServiceStart"] + scenario.serviceTimes
+                        println("Pick up time request $(activity.requestId): $(pickupTime), direct drive time: $(scenario.requests[activity.requestId])")
+                    end
+                end
+
+                println("-----------------------------")
+
                 throw(msg)
             end
         end
@@ -73,16 +120,58 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
         @timeit TO "Repair!" begin
             repairIdx = repair!(scenario, trialState, configuration, visitedRoute=visitedRoute,TO=TO)
         end
-        @timeit TO "Feasibility Check" begin
-            state = State(trialState.currentSolution, event, visitedRoute, alreadyRejected)
-            feasible, msg = checkSolutionFeasibilityOnline(scenario, state)
-            if !feasible
-                println("ALNS: INFEASIBLE SOLUTION IN ITERATION REPAIR:", iteration)
-                printSolution(trialState.currentSolution, printRouteHorizontal)
-                show(TO)
-                throw(msg)
+       # @timeit TO "Feasibility Check" begin
+        state = State(trialState.currentSolution, event, visitedRoute, alreadyRejected)
+        feasible, msg = checkSolutionFeasibilityOnline(scenario, state)
+        if !feasible
+            println("ALNS: INFEASIBLE SOLUTION IN REPAIR: ",configuration.repairMethods[repairIdx].name," iteration:", iteration)
+            #printSolution(trialState.currentSolution, printRouteHorizontal)
+            println("=====> AFTER REPAIR")
+            printRouteHorizontal(trialState.currentSolution.vehicleSchedules[20])
+
+            println("======> AFTER DESTORU")
+            printRouteHorizontal(vehicleSchedule20AfterDestroy)
+
+            println("=====> CURRENT")
+            printRouteHorizontal(vehicleSchedule20)
+
+            route = trialState.currentSolution.vehicleSchedules[20].route 
+            pickupTimes = Dict{Int, Int}()
+
+            println("length route = ", length(route))
+            for assignment in route
+                println("---> id: ",assignment.activity.id)
+                activity = assignment.activity
+
+                if activity.activityType == PICKUP
+                    pickupTimes[activity.requestId] = assignment.endOfServiceTime
+                    println("Pick up time request $(activity.requestId): $(assignment.endOfServiceTime), direct drive time: $(scenario.requests[activity.requestId])")
+
+                elseif activity.activityType == DROPOFF && haskey(pickupTimes, activity.requestId)
+                    println("request id: ",activity.requestId)
+                    println(pickupTimes)
+                    
+                    pickupTime = pickupTimes[activity.requestId]
+
+                    println("Pick up time request $(activity.requestId): $(pickupTime), direct drive time: $(scenario.requests[activity.requestId])")
+
+                elseif activity.activityType == DROPOFF
+
+                    if !haskey(visitedRoute, activity.requestId)
+                        println("ENTERED 5")
+                        println("RequestId not found in visitedRoute")
+                        continue;
+                    end
+                    println("request id: ",activity.requestId)
+                    pickupTime = visitedRoute[activity.requestId]["PickUpServiceStart"] + scenario.serviceTimes
+                    println("Pick up time request $(activity.requestId): $(pickupTime), direct drive time: $(scenario.requests[activity.requestId])")
+                end
             end
+
+            println("-----------------------------")
+            throw(msg)
         end
+        #end
 
         @timeit TO "Hash solution" begin 
             hashKeySolution =  hashSolution(trialState.currentSolution)

@@ -32,10 +32,9 @@ Pkg.resolve();
 
 # Loop to run simulations with third argument from 1 to 10
 # OBS: update grid size!!
-#r i in {1..81..20}; do
-    i=$((1))
+for i in {1..81..20}; do
     endFile=$((i + 19))
     julia --project=. runfiles/RunSimulationWaiting.jl "300" "0.7" "$i" "false" "10" "$i" "$endFile" "48" &
-#done
+done
 
 wait  # Wait for all background Julia jobs to finish
