@@ -21,7 +21,7 @@ global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:
 global callBuffer = 2*60 # 2 hours buffer
 global nData = 10
 global nRequestList = [20] #[20,100,300,500]
-global MAX_DELAY = 15 # TODO Astrid I just put something
+global MAX_DELAY = 15 
 
 #==
 # Constant for vehicle generation  
@@ -206,8 +206,6 @@ function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicle
     newExpectedRequestsDf = createExpectedRequests(nNewExpected,nRequests)
 
     # Read time and distance matrices from input or initialize empty matrices
-    # TODO: collect depot locations correctly 
-    
     distance, time = getDistanceAndTimeMatrixFromDataFrame(requestsDf,newExpectedRequestsDf,depotCoordinates)
 
     # Get requests 

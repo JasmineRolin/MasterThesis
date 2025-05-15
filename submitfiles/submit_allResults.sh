@@ -12,20 +12,41 @@ date="2025-05-15"
 
 mkdir -p submitfiles/generated_jobs
 
-# BaseCase jobs
-for n_requests in "${n_requests_list[@]}"; do
-  for run_tag in "${run_tags[@]}"; do
-    job_name="Sim_BaseCase_${n_requests}_${run_tag}"
-    job_file="submitfiles/generated_jobs/${job_name}.sh"
+# Define case types
+case_types=("BaseCase" "Anticipation" "AnticipationNoALNS")
 
-    cat > "$job_file" <<EOF
+for case_type in "${case_types[@]}"; do
+  for n_requests in "${n_requests_list[@]}"; do
+    anticipation_loop=("0")  # default for BaseCase
+
+    if [[ "$case_type" != "BaseCase" ]]; then
+      anticipation_loop=("${anticipation_levels[@]}")
+    fi
+
+    for anticipation in "${anticipation_loop[@]}"; do
+      for run_tag in "${run_tags[@]}"; do
+        job_name="Sim_${case_type}_${n_requests}_${anticipation}_${run_tag}"
+        job_file="submitfiles/generated_jobs/${job_name}.sh"
+
+        if [[ "$case_type" == "BaseCase" ]]; then
+          jl_file="resultExploration/resultsBase.jl"
+          label="$case_type"
+          anticipation="0"
+        elif [[ "$case_type" == "Anticipation" ]]; then
+          jl_file="resultExploration/resultsAnticipation.jl"
+          label="${case_type}_${anticipation}"
+        else
+          jl_file="resultExploration/resultsAnticipationNoALNS.jl"
+          label="${case_type}_${anticipation}"
+        fi
+
+        cat > "$job_file" <<EOF
 #!/bin/sh
 #BSUB -J "${job_name}"
 #BSUB -o submitfiles/output/output_%J.out
 #BSUB -q hpc
 #BSUB -n 8
-#BSUB -R "rusage[mem=2GB]"
-#BSUB -R "span[hosts=1]"
+#BSUB -R "rusage[mem=2GB] span[hosts=1]"
 #BSUB -W 10:00
 #BSUB -u s194351@student.dtu.dk
 #BSUB -N 
@@ -48,111 +69,15 @@ Pkg.resolve();
 '
 
 for seed in {1..10}; do
-  julia --project=. resultExploration/resultsBase.jl "$n_requests" "0" "$gamma" "$date" "$run_tag" "BaseCase" "\$seed" &
+  julia --project=. $jl_file "$n_requests" "$anticipation" "$gamma" "$date" "$run_tag" "$label" "\$seed" &
 done
 
 wait
 EOF
 
-    chmod +x "$job_file"
-    bsub < "$job_file"
-  done
-done
-
-# Anticipation jobs (with ALNS)
-for n_requests in "${n_requests_list[@]}"; do
-  for anticipation in "${anticipation_levels[@]}"; do
-    for run_tag in "${run_tags[@]}"; do
-      job_name="Sim_Anticipation_${n_requests}_${anticipation}_${run_tag}"
-      job_file="submitfiles/generated_jobs/${job_name}.sh"
-
-      cat > "$job_file" <<EOF
-#!/bin/sh
-#BSUB -J "${job_name}"
-#BSUB -o submitfiles/output/output_%J.out
-#BSUB -q hpc
-#BSUB -n 8
-#BSUB -R "rusage[mem=2GB]"
-#BSUB -R "span[hosts=1]"
-#BSUB -W 10:00
-#BSUB -u s194351@student.dtu.dk
-#BSUB -N 
-
-module load julia/1.10.2
-
-julia --project=. -e '
-using Pkg;
-Pkg.activate(".");
-Pkg.add("Plots");
-Pkg.add("DataFrames");
-Pkg.add("CSV");
-Pkg.develop(path="domain");
-Pkg.develop(path="utils");
-Pkg.develop(path="offlinesolution");
-Pkg.develop(path="onlinesolution");
-Pkg.develop(path="alns");
-Pkg.develop(path="simulationframework");
-Pkg.resolve();
-'
-
-for seed in {1..10}; do
-  julia --project=. resultExploration/resultsAnticipation.jl "$n_requests" "$anticipation" "$gamma" "$date" "$run_tag" "Anticipation_${anticipation}" "\$seed" &
-done
-
-wait
-EOF
-
-      chmod +x "$job_file"
-      bsub < "$job_file"
-    done
-  done
-done
-
-# Anticipation jobs (no ALNS)
-for n_requests in "${n_requests_list[@]}"; do
-  for anticipation in "${anticipation_levels[@]}"; do
-    for run_tag in "${run_tags[@]}"; do
-      job_name="Sim_AnticipationNoALNS_${n_requests}_${anticipation}_${run_tag}"
-      job_file="submitfiles/generated_jobs/${job_name}.sh"
-
-      cat > "$job_file" <<EOF
-#!/bin/sh
-#BSUB -J "${job_name}"
-#BSUB -o submitfiles/output/output_%J.out
-#BSUB -q hpc
-#BSUB -n 8
-#BSUB -R "rusage[mem=2GB]"
-#BSUB -R "span[hosts=1]"
-#BSUB -W 10:00
-#BSUB -u s194351@student.dtu.dk
-#BSUB -N 
-
-module load julia/1.10.2
-
-julia --project=. -e '
-using Pkg;
-Pkg.activate(".");
-Pkg.add("Plots");
-Pkg.add("DataFrames");
-Pkg.add("CSV");
-Pkg.develop(path="domain");
-Pkg.develop(path="utils");
-Pkg.develop(path="offlinesolution");
-Pkg.develop(path="onlinesolution");
-Pkg.develop(path="alns");
-Pkg.develop(path="simulationframework");
-Pkg.resolve();
-'
-
-for seed in {1..10}; do
-  julia --project=. resultExploration/resultsAnticipationNoALNS.jl "$n_requests" "$anticipation" "$gamma" "$date" "$run_tag" "AnticipationNoALNS_${anticipation}" "\$seed" &
-done
-
-wait
-EOF
-
-      chmod +x "$job_file"
-      bsub < "$job_file"
+        chmod +x "$job_file"
+        bsub < "$job_file"
+      done
     done
   done
 done

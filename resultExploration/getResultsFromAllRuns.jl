@@ -2,7 +2,7 @@ using XLSX, CSV, DataFrames
 
 # Parameters
 methods = ["Anticipation", "AnticipationNoALNS"]
-run_tags = ["2025-05-14_run1", "2025-05-14_run2", "2025-05-14_run3", "2025-05-14_run4", "2025-05-14_run5"]
+run_tags = ["run1", "run2", "run3", "run4", "run5"]
 anticipation_Degrees = [0.5, 0.9]
 n_requests_list = [20, 100, 300, 500]
 date = "2025-05-14"
@@ -45,8 +45,7 @@ XLSX.openxlsx(nameOfExcel, mode="w") do xf
         values = zeros(17)
 
         for i in 1:nRuns
-            file = date * "_run" * string(i)
-            filepath = joinpath(base_dir, file, method_file, string(n_requests), "results.csv")
+            filepath = joinpath(base_dir date, run_tags[i],"BaseCase", string(n_requests), "results.csv")
 
             if isfile(filepath)
                 df = CSV.read(filepath, DataFrame)
@@ -143,7 +142,7 @@ XLSX.openxlsx(nameOfExcel, mode="w") do xf
                 for i in 1:nRuns
                     file = date * "_run" * string(i)
                     method_file = string(method, "_", degree)
-                    filepath = joinpath(base_dir, file, method_file, string(n_requests), "results.csv")
+                    filepath = joinpath(base_dir date, run_tags[i],method_file, string(n_requests), "results.csv")
 
                     if isfile(filepath)
                         df = CSV.read(filepath, DataFrame)
