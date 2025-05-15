@@ -102,7 +102,7 @@ include("../decisionstrategies/anticipation.jl")
 # #@testset "Run all generated data sets " begin
 
     # Number of requests in scenario - 20, 100, 300 or 500 
-    n = 100
+    n = 20
 
     # Scenario number - 1:10
     i = 1

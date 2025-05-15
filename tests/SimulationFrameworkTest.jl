@@ -58,7 +58,7 @@ Test SimulationFrameworkUtils
 # CSV.write(outPutFolder*"/results.csv", dfResults)
 
 
-n = 100
+n = 20
 i = 10
 vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
 parametersFile = "tests/resources/Parameters.csv"

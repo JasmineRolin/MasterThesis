@@ -5,10 +5,10 @@ methods = ["Anticipation", "AnticipationNoALNS"]
 run_tags = ["run1", "run2", "run3", "run4", "run5"]
 anticipation_Degrees = [0.5, 0.9]
 n_requests_list = [20, 100, 300, 500]
-date = "2025-05-14"
+date = "2025-05-15"
 base_dir = joinpath(@__DIR__, "results")
 nRuns = 5
-nameOfExcel = "Example3.xlsx"
+nameOfExcel = "Result_15052025.xlsx"
 
 
 # Function to convert a column index to an Excel-style column letter (e.g., 1 -> "A", 2 -> "B")
@@ -45,7 +45,7 @@ XLSX.openxlsx(nameOfExcel, mode="w") do xf
         values = zeros(17)
 
         for i in 1:nRuns
-            filepath = joinpath(base_dir date, run_tags[i],"BaseCase", string(n_requests), "results.csv")
+            filepath = joinpath(base_dir, date, run_tags[i],"BaseCase", string(n_requests), "results.csv")
 
             if isfile(filepath)
                 df = CSV.read(filepath, DataFrame)
@@ -142,7 +142,7 @@ XLSX.openxlsx(nameOfExcel, mode="w") do xf
                 for i in 1:nRuns
                     file = date * "_run" * string(i)
                     method_file = string(method, "_", degree)
-                    filepath = joinpath(base_dir date, run_tags[i],method_file, string(n_requests), "results.csv")
+                    filepath = joinpath(base_dir, date, run_tags[i],method_file, string(n_requests), "results.csv")
 
                     if isfile(filepath)
                         df = CSV.read(filepath, DataFrame)
@@ -191,8 +191,8 @@ XLSX.openxlsx(nameOfExcel, mode="w") do xf
                 comparison_sheet["A$current_row_comparison"] = string(method) 
                 comparison_sheet["B$current_row_comparison"] = string(degree) 
                 comparison_sheet["C$current_row_comparison"] = string(n_requests) 
-                for j in 4:17
-                    col_letter = col2name(j)  # Use your own col2name function here as well
+                for j in 1:17
+                    col_letter = col2name(j+2)  # Use your own col2name function here as well
                     basecase_value = basecase_averages[n_requests][j]
                     anticipation_value = values[j] / nRuns
                     difference = anticipation_value - basecase_value
