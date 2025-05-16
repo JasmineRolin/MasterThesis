@@ -18,11 +18,11 @@ using Plots.PlotMeasures
 print("\033c")
 
 # Receive command line arguments 
-n = 20
+n = 100
 gamma = 0.7
 i = 1
 relocateVehicles = true
-gridSize = 5
+gridSize = 10
 startFileIndex = 1
 endFileIndex = 20
 nPeriods = 48
@@ -60,7 +60,7 @@ scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,dis
 println("\t nOfflineRequests: ",length(scenario.offlineRequests))
 
 # Simulate scenario 
-solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = false,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles,nTimePeriods=nPeriods,periodLength=periodLength);
+solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles,nTimePeriods=nPeriods,periodLength=periodLength);
 
 state = State(solution,scenario.onlineRequests[end],0)
 feasible, msg = checkSolutionFeasibilityOnline(scenario,state)

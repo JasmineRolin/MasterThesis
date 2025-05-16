@@ -12,8 +12,8 @@ export splitRequests
 #==
  Allowed delay/early arrival
 ==#
-global MAX_DELAY = 45
-global MAX_EARLY_ARRIVAL = 15
+global MAX_DELAY = 15
+global MAX_EARLY_ARRIVAL = 5
 
 
 #==
@@ -200,9 +200,9 @@ function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maxim
         requestTime = row.request_time 
 
         # Check that call time is before buffer
-        if callTime > requestTime - bufferTime
-            throw(ArgumentError(string("Call time is not before required buffer period for request: ",id)))
-        end
+        # if callTime > requestTime - bufferTime
+        #     throw(ArgumentError(string("Call time is not before required buffer period for request: ",id)))
+        # end
 
         # Read maximum drive time 
         directDriveTime = time[id,dropOffId]
