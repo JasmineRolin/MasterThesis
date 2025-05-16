@@ -331,41 +331,39 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
      newStartOfServiceTimes::Vector{Int},newEndOfServiceTimes::Vector{Int},waitingActivitiesToDelete::Vector{Int},waitingActivitiesToAdd::Vector{Int};
      pickUpIdxInBlock::Int=-1, dropOffIdxInBlock::Int=-1,request::Union{Request,Nothing}=nothing,visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(), state::String = "Repair",TO::TimerOutput=TimerOutput(),visitedRouteIds::Set{Int}=Set{Int}()) 
    
-     #@timeit TO "BEFORELOOP" begin 
-        # Initialize 
-        route = vehicleSchedule.route
-        insertRequest = !isnothing(request)
-        routeLength = length(route)
-        nActivities = routeLength + 2*insertRequest
-        if isempty(visitedRouteIds)
-            visitedRouteIds = Set(keys(visitedRoute))
-        end
-        pickUpActivity = insertRequest ? request.pickUpActivity : nothing 
-        dropOffActivity = insertRequest ? request.dropOffActivity : nothing 
-        firstActivity = route[1]
+    # Initialize 
+    route = vehicleSchedule.route
+    insertRequest = !isnothing(request)
+    routeLength = length(route)
+    nActivities = routeLength + 2*insertRequest
+    if isempty(visitedRouteIds)
+        visitedRouteIds = Set(keys(visitedRoute))
+    end
+    pickUpActivity = insertRequest ? request.pickUpActivity : nothing 
+    dropOffActivity = insertRequest ? request.dropOffActivity : nothing 
+    firstActivity = route[1]
 
-        # New service times - assuming that the size is correct
-        fill!(newStartOfServiceTimes, 0)
-        fill!(newEndOfServiceTimes, 0)
+    # New service times - assuming that the size is correct
+    fill!(newStartOfServiceTimes, 0)
+    fill!(newEndOfServiceTimes, 0)
 
-        # Keep track of waiting activities to delete 
-        resize!(waitingActivitiesToDelete, 0)
-        resize!(waitingActivitiesToAdd, 0)
+    # Keep track of waiting activities to delete 
+    resize!(waitingActivitiesToDelete, 0)
+    resize!(waitingActivitiesToAdd, 0)
 
-        # Keep track of ride times 
-        pickUpIndexes = Dict{Int,Int}() # (RequestId, index)
+    # Keep track of ride times 
+    pickUpIndexes = Dict{Int,Int}() # (RequestId, index)
 
-        # Initialize
-        currentActivity = firstActivity.activity
-        previousActivity = firstActivity.activity
-        newStartOfServiceTimes[1] = firstActivity.startOfServiceTime
-        newEndOfServiceTimes[1] = firstActivity.endOfServiceTime ### Spørg Jasmine: Hvorfor kan den ikke ændres fx hvis det er en witing node?
+    # Initialize
+    currentActivity = firstActivity.activity
+    previousActivity = firstActivity.activity
+    newStartOfServiceTimes[1] = firstActivity.startOfServiceTime
+    newEndOfServiceTimes[1] = firstActivity.endOfServiceTime ### Spørg Jasmine: Hvorfor kan den ikke ændres fx hvis det er en witing node?
 
-        # Keep track of KPIs 
-        totalDistance = 0.0 
-        totalIdleTime = 0 
-        totalCost = 0
-    #end
+    # Keep track of KPIs 
+    totalDistance = 0.0 
+    totalIdleTime = 0 
+    totalCost = 0.0
 
     # Check first activity in route
     if firstActivity.activity.activityType == PICKUP
@@ -415,162 +413,155 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
         return false, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
     end
 
+    # Keep track of requests that are partially in route, i.e. pick-up is in visited route 
+    requestsWithVisitedPickUp = Vector{Tuple{Int,Int}}() # Save (requestId,dropOffIdx)
+
     # Find new service times 
     idxActivityInSchedule = 1
-    #@timeit TO "loopOverActivities" begin
-        for idx in 2:nActivities
-            # Find current activity
-            if idx == pickUpIdxInBlock
-                currentActivity = pickUpActivity
-            elseif idx == dropOffIdxInBlock
-                currentActivity = dropOffActivity
-            else
-                idxActivityInSchedule += 1
-                currentActivity = route[idxActivityInSchedule].activity
-            end 
-            activityType = currentActivity.activityType
-            currentActivityId = currentActivity.id
-            previousActivityId = previousActivity.id
+    for idx in 2:nActivities
+        # Find current activity
+        if idx == pickUpIdxInBlock
+            currentActivity = pickUpActivity
+        elseif idx == dropOffIdxInBlock
+            currentActivity = dropOffActivity
+        else
+            idxActivityInSchedule += 1
+            currentActivity = route[idxActivityInSchedule].activity
+        end 
+        activityType = currentActivity.activityType
+        currentActivityId = currentActivity.id
+        previousActivityId = previousActivity.id
 
-            # Check if we skipped an activity because we removed a waiting activity
-            if newStartOfServiceTimes[idx] != 0 
-                requestId = currentActivity.requestId
-                if activityType  == PICKUP
-                    pickUpIndexes[requestId] = idx
-                elseif activityType == DROPOFF
-                    r = requests[requestId]
-                    newEndOfServiceTimePickUp = requestId in visitedRouteIds ? visitedRoute[requestId]["PickUpServiceStart"] + serviceTimes : newEndOfServiceTimes[pickUpIndexes[requestId]]
+        # Check if we skipped an activity because we removed a waiting activity
+        if newStartOfServiceTimes[idx] != 0 
+            # Check maximum ride time and calculate cost 
+            feasible, totalCost, maximumShiftForward = checkMaximumRideTimeAndUpdateCost(time,serviceTimes,requests,currentActivity,activityType,idx,newStartOfServiceTimes,newEndOfServiceTimes,maximumShiftForward,totalCost,pickUpIndexes,visitedRouteIds,visitedRoute,requestsWithVisitedPickUp)
 
-                    if newStartOfServiceTimes[idx] - newEndOfServiceTimePickUp > r.maximumRideTime
-                        return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
-                    end
-
-                    # Update total cost
-                    totalCost += getCostOfRequest(time,newEndOfServiceTimePickUp,newStartOfServiceTimes[idx], r.pickUpActivity.id, r.dropOffActivity.id)
-                end
-
-                # Set previous as current activity
-                previousActivity = currentActivity
-                continue
+            if !feasible
+                return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
             end
 
-            # Find arrival at current activity
-            arrivalAtCurrentActivity = newEndOfServiceTimes[idx-1] + time[previousActivityId,currentActivityId] 
-        
-            # Check if we can remove a waiting activity 
-            if activityType == WAITING
-                if idx+1 == pickUpIdxInBlock
-                    nextActivity = pickUpActivity
-                    arrivalAtNextActivity = newEndOfServiceTimes[idx-1] + time[previousActivityId,nextActivity.id] 
-                elseif idx+1 == dropOffIdxInBlock
-                    nextActivity = dropOffActivity
-                    arrivalAtNextActivity = newEndOfServiceTimes[idx-1] + time[previousActivityId,nextActivity.id] 
-                else
-                    nextActivity = route[idxActivityInSchedule+1].activity
-                    arrivalAtNextActivity = newEndOfServiceTimes[idx-1] + time[previousActivityId,nextActivity.id] 
-                end  
+            # Set previous as current activity
+            previousActivity = currentActivity
+            continue
+        end
 
-                # Check if we can drive from previous activity to activity after waiting 
-                if idx == nActivities-1 
-                    # TODO: jas - we dont want to remove the waiting activity before depot 
-                    feasible = false
-                else
-                    feasible, maximumShiftBackwardTrial, maximumShiftForwardTrial = canActivityBeInserted(firstActivity.activity,nextActivity,arrivalAtNextActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
-                end
+        # Find arrival at current activity
+        arrivalAtCurrentActivity = newEndOfServiceTimes[idx-1] + time[previousActivityId,currentActivityId] 
+    
+        # Check if we can remove a waiting activity 
+        if activityType == WAITING
+            if idx+1 == pickUpIdxInBlock
+                nextActivity = pickUpActivity
+                arrivalAtNextActivity = newEndOfServiceTimes[idx-1] + time[previousActivityId,nextActivity.id] 
+            elseif idx+1 == dropOffIdxInBlock
+                nextActivity = dropOffActivity
+                arrivalAtNextActivity = newEndOfServiceTimes[idx-1] + time[previousActivityId,nextActivity.id] 
+            else
+                nextActivity = route[idxActivityInSchedule+1].activity
+                arrivalAtNextActivity = newEndOfServiceTimes[idx-1] + time[previousActivityId,nextActivity.id] 
+            end  
 
-                # Remove waiting activity 
-                if feasible
-                    maximumShiftBackward = maximumShiftBackwardTrial
-                    maximumShiftForward = maximumShiftForwardTrial
+            # Check if we can drive from previous activity to activity after waiting 
+            if idx == nActivities-1 
+                # TODO: jas - we dont want to remove the waiting activity before depot 
+                feasible = false
+            else
+                feasible, maximumShiftBackwardTrial, maximumShiftForwardTrial = canActivityBeInserted(firstActivity.activity,nextActivity,arrivalAtNextActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
+            end
 
-                    # Keep track of waiting activities to delete 
-                    push!(waitingActivitiesToDelete,idx)
+            # Remove waiting activity 
+            if feasible
+                maximumShiftBackward = maximumShiftBackwardTrial
+                maximumShiftForward = maximumShiftForwardTrial
 
-                    # Give the next activity the service times of the waiting activity Astrid Here
-                    if idx != nActivities
-                        newStartOfServiceTimes[idx+1] = newStartOfServiceTimes[idx]
-                        newEndOfServiceTimes[idx+1] = newEndOfServiceTimes[idx]
-                    end
+                # Keep track of waiting activities to delete 
+                push!(waitingActivitiesToDelete,idx)
 
-                    # Update total distance 
-                    totalDistance += distance[previousActivityId,nextActivity.id]
-
-                # Keep waiting activity     
-                else
-                    # Check if we can minimize waiting node
-                    earliestArrivalFromCurrent = newEndOfServiceTimes[idx-1] + time[previousActivityId,currentActivityId] + time[currentActivityId,nextActivity.id]
-                    latestArrival = currentActivity.timeWindow.endTime + time[currentActivityId,nextActivity.id]
-                    earliestArrival= max(earliestArrivalFromCurrent,nextActivity.timeWindow.startTime)
-                    
-                    if earliestArrival < latestArrival && earliestArrival <= nextActivity.timeWindow.endTime 
-                        newEndOfServiceTimes[idx] = earliestArrival - time[currentActivityId,nextActivity.id]
-                        newStartOfServiceTimes[idx] = newEndOfServiceTimes[idx-1] + time[previousActivityId,currentActivityId]
-                        totalIdleTime += newEndOfServiceTimes[idx] - newStartOfServiceTimes[idx]
-                        totalDistance += distance[previousActivityId,currentActivityId]
-                    else
-                        # Keep waiting activity but try to shift route
-                        feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(firstActivity.activity,currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
-
-                        if !feasible
-                            return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
-                        end
-
-                        # Update total idle time 
-                        totalIdleTime += newEndOfServiceTimes[idx] - newStartOfServiceTimes[idx]
-                        totalDistance += distance[previousActivityId,currentActivityId]
-                    end
-                
-                end
-            # Check if activity can be inserted
-            else 
-                feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(firstActivity.activity,currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
-
-                # Check if can insert by inserting waiting activity 
-                if state == "Repair" && !feasible && idx <= routeLength
-
-                    # Extend waiting 
-                    if previousActivity.activityType == WAITING 
-                        endOfWaitingActivity = currentActivity.timeWindow.startTime - time[previousActivity.id,currentActivityId]
-                        newEndOfServiceTimes[idx-1] = endOfWaitingActivity
-
-                        feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(firstActivity.activity,currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
-                    # Attempt to insert waiting activity
-                    else
-                      feasible, maximumShiftBackward, maximumShiftForward = feasibleWhenInsertWaiting!(time,requests,serviceTimes,currentActivity,activityType,previousActivity,vehicleSchedule,idx,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToAdd,maximumShiftBackward, maximumShiftForward)                        
-                    end
-                end
-                
-                if !feasible
-                    # No possible way to insert it
-                    return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
+                # Give the next activity the service times of the waiting activity Astrid Here
+                if idx != nActivities
+                    newStartOfServiceTimes[idx+1] = newStartOfServiceTimes[idx]
+                    newEndOfServiceTimes[idx+1] = newEndOfServiceTimes[idx]
                 end
 
                 # Update total distance 
-                totalDistance += distance[previousActivityId,currentActivityId]
-            end
+                totalDistance += distance[previousActivityId,nextActivity.id]
 
-            # Check maximum ride time 
-            requestId = currentActivity.requestId
-            if activityType == PICKUP
-                pickUpIndexes[requestId] = idx
-            elseif activityType == DROPOFF
-                r = requests[requestId]
-                newEndOfServiceTimePickUp = requestId in visitedRouteIds ? visitedRoute[requestId]["PickUpServiceStart"] + serviceTimes : newEndOfServiceTimes[pickUpIndexes[requestId]]
-                if newStartOfServiceTimes[idx] - newEndOfServiceTimePickUp > r.maximumRideTime
-                    return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
+            # Keep waiting activity     
+            else
+                # Check if we can minimize waiting node
+                earliestArrivalFromCurrent = newEndOfServiceTimes[idx-1] + time[previousActivityId,currentActivityId] + time[currentActivityId,nextActivity.id]
+                latestArrival = currentActivity.timeWindow.endTime + time[currentActivityId,nextActivity.id]
+                earliestArrival= max(earliestArrivalFromCurrent,nextActivity.timeWindow.startTime)
+                
+                if earliestArrival < latestArrival && earliestArrival <= nextActivity.timeWindow.endTime 
+                    newEndOfServiceTimes[idx] = earliestArrival - time[currentActivityId,nextActivity.id]
+                    newStartOfServiceTimes[idx] = newEndOfServiceTimes[idx-1] + time[previousActivityId,currentActivityId]
+                    totalIdleTime += newEndOfServiceTimes[idx] - newStartOfServiceTimes[idx]
+                    totalDistance += distance[previousActivityId,currentActivityId]
+                else
+                    # Keep waiting activity but try to shift route
+                    feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(firstActivity.activity,currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
+
+                    if !feasible
+                        return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
+                    end
+
+                    # Update total idle time 
+                    totalIdleTime += newEndOfServiceTimes[idx] - newStartOfServiceTimes[idx]
+                    totalDistance += distance[previousActivityId,currentActivityId]
                 end
+            
+            end
+        # Check if activity can be inserted
+        else 
+            feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(firstActivity.activity,currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
 
-                # Update total cost
-                totalCost += getCostOfRequest(time,newEndOfServiceTimePickUp,newStartOfServiceTimes[idx],r.pickUpActivity.id,r.dropOffActivity.id)
+            # Check if can insert by inserting waiting activity 
+            if state == "Repair" && !feasible && idx <= routeLength
+
+                # Extend waiting 
+                if previousActivity.activityType == WAITING 
+                    endOfWaitingActivity = currentActivity.timeWindow.startTime - time[previousActivity.id,currentActivityId]
+                    newEndOfServiceTimes[idx-1] = endOfWaitingActivity
+
+                    feasible, maximumShiftBackward, maximumShiftForward = canActivityBeInserted(firstActivity.activity,currentActivity,arrivalAtCurrentActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
+                # Attempt to insert waiting activity
+                else
+                    feasible, maximumShiftBackward, maximumShiftForward = feasibleWhenInsertWaiting!(time,requests,serviceTimes,currentActivity,activityType,previousActivity,vehicleSchedule,idx,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToAdd,maximumShiftBackward, maximumShiftForward)                        
+                end
+            end
+            
+            if !feasible
+                # No possible way to insert it
+                return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
             end
 
-            # Set current as previous activity
-            previousActivity = currentActivity
+            # Update total distance 
+            totalDistance += distance[previousActivityId,currentActivityId]
         end
-    #end
+
+        # Check maximum ride time and calculate cost  
+        feasible, totalCost, maximumShiftForward = checkMaximumRideTimeAndUpdateCost(time,serviceTimes,requests,currentActivity,activityType,idx,newStartOfServiceTimes,newEndOfServiceTimes,maximumShiftForward,totalCost,pickUpIndexes,visitedRouteIds,visitedRoute,requestsWithVisitedPickUp)
+
+        if !feasible
+            return false, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
+        end
+
+        # Set current as previous activity
+        previousActivity = currentActivity
+    end
 
     # Update total time 
     totalTime = newEndOfServiceTimes[end] - newStartOfServiceTimes[1]
+
+    # Calculate cost of requests that are only partially contained in route 
+    for (requestId,dropoffIdx) in requestsWithVisitedPickUp
+        r = requests[requestId]
+        newEndOfServiceTimePickUp = visitedRoute[requestId]["PickUpServiceStart"] + serviceTimes
+
+        totalCost += getCostOfRequest(time,newEndOfServiceTimePickUp,newStartOfServiceTimes[dropoffIdx], r.pickUpActivity.id, r.dropOffActivity.id)
+    end
 
     return true, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd, false, false, false
 end
@@ -713,6 +704,52 @@ function canActivityBeInserted(firstActivity::Activity,currentActivity::Activity
     else
         return false, -1, -1
     end
+end
+
+
+#==
+ Method to check maximum ride time and update cost 
+==#
+function checkMaximumRideTimeAndUpdateCost(time::Array{Int,2},serviceTimes::Int,requests::Vector{Request},currentActivity::Activity,activityType::ActivityType,idx::Int,newStartOfServiceTimes::Vector{Int},newEndOfServiceTimes::Vector{Int},maximumShiftForward::Int,totalCost::Float64,pickUpIndexes::Dict{Int,Int},visitedRouteIds::Set{Int},visitedRoute::Dict{Int, Dict{String, Int}},requestsWithVisitedPickUp::Vector{Tuple{Int,Int}})
+
+    requestId = currentActivity.requestId
+
+    # Save pick up idx 
+    if activityType  == PICKUP
+        pickUpIndexes[requestId] = idx
+        return true, totalCost, maximumShiftForward
+
+    # Check maximum ride time and find new cost 
+    elseif activityType == DROPOFF
+        r = requests[requestId]
+        isPickUpVisited = requestId in visitedRouteIds
+        newEndOfServiceTimePickUp =  isPickUpVisited ? visitedRoute[requestId]["PickUpServiceStart"] + serviceTimes : newEndOfServiceTimes[pickUpIndexes[requestId]]
+
+        # Check maximum ride time 
+        if newStartOfServiceTimes[idx] - newEndOfServiceTimePickUp > r.maximumRideTime
+            return false, 0,0
+        end
+
+        # If pick-up is visited update maximum shift forward 
+        if isPickUpVisited
+            push!(requestsWithVisitedPickUp,(requestId,idx))
+
+            # Ensure that we do not shift more that maximim ride time 
+            maximumShiftForwardTemp = r.maximumRideTime - (newStartOfServiceTimes[idx] - newEndOfServiceTimePickUp)
+            maximumShiftForward = min(maximumShiftForward,maximumShiftForwardTemp)
+
+            return true, totalCost, maximumShiftForward
+        # Add cost of request
+        else
+            # Update total cost
+            totalCost += getCostOfRequest(time,newEndOfServiceTimePickUp,newStartOfServiceTimes[idx], r.pickUpActivity.id, r.dropOffActivity.id)
+
+            return true, totalCost, maximumShiftForward
+        end
+        
+    end
+
+    return true, totalCost, maximumShiftForward
 end
 
 #==

@@ -85,7 +85,6 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     end
 
     # Read time and distance matrices from input or initialize empty matrices
-    # TODO: collect depot locations correctly 
     distance, time = getDistanceAndTimeMatrix(distanceMatrixFile,timeMatrixFile,requestFile,depotCoordinates)
 
     # Get requests 
@@ -200,6 +199,7 @@ function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maxim
         # Read request time 
         requestTime = row.request_time 
 
+        # Check that call time is before buffer
         if callTime > requestTime - bufferTime
             throw(ArgumentError(string("Call time is not before required buffer period for request: ",id)))
         end

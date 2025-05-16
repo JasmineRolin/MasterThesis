@@ -181,8 +181,6 @@ function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, p
             requestTime = ceil(sampledTimeDrop[1])
         end
 
-        
-
         # Append results for the request
         push!(results, (i, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, requestType, requestTime,"WALKING",0,0))
     end

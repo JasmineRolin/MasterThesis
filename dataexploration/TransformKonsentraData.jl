@@ -67,8 +67,8 @@ function callTime(df, serviceWindow, callBuffer, preKnown)
             df[i, "call_time"] = serviceWindow[1]
         else
             # Determine latest call time 
-            if df[i,:request_type] == 0 # Pick up 
-                call_window = [serviceWindow[1], df[i, :request_time] - callBuffer]
+            if df[i,:request_type] == 0 # Pick up
+               call_window = [serviceWindow[1], df[i, :request_time] - callBuffer]
             else # Drop off 
                 direct_pick_up_time = df[i, :request_time] - df[i,"direct_drive_time"]
                 call_window = [serviceWindow[1],direct_pick_up_time - callBuffer]
