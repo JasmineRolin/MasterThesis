@@ -1,7 +1,7 @@
 using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures
 
-nRequestList = [20,100,300]#,100,300]
+nRequestList = [20,100,300,500]
 relocateVehiclesList = [true,false]
 gamma = 0.7 
 
@@ -86,7 +86,11 @@ for n in nRequestList
     ylimMax = 5 * ceil((maxnTaxi + 2) / 5)
     xtickLabel = ["Scenario $(i)" for i in 1:nRows]
     xticks!((1:nRows,xtickLabel),rotation=90)
-    yticks!((ylimMin:5:ylimMax,string.(Int.(ylimMin:5:ylimMax))))
+    if n == 500 
+        yticks!((ylimMin:10:ylimMax,string.(Int.(ylimMin:10:ylimMax))))
+    else 
+        yticks!((ylimMin:5:ylimMax,string.(Int.(ylimMin:5:ylimMax))))
+    end
     ylims!(ylimMin, ylimMax)
 
     savefig(p, "plots/Waiting/results_$(n).png")
