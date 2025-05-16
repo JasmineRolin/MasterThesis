@@ -430,8 +430,10 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
                         averageNotServicedExpectedRequests = Float64[],
                         nInitialNotServicedFixedRequests = Int[],
                         nInitialNotServicedExpectedRequests = Int[])
+    nRequests = 0
 
-    for i in 1:10
+    # TODO change to 10
+    for i in 1:1
 
         # Make scenario
         scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile)
@@ -442,6 +444,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         taxiParameter = scenario.taxiParameter
         nFixed = scenario.nFixed
         taxiParameterExpected = scenario.taxiParameterExpected
+        nRequests = length(requests)
 
         # Get solution
         initialSolution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
@@ -520,6 +523,10 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
                         nInitialNotServicedFixedRequests = nNotServicedFixedRequests, nInitialNotServicedExpectedRequests = nNotServicedExpectedRequests))
     end
     
+    updateIds!(bestSolution,nRequests,nExpected)
+    newIndices = collect((nRequests+1):(nRequests+nExpected))
+    setdiff!(bestRequestBank, newIndices)
+
     return bestSolution, bestRequestBank, results, Scenario(), Scenario(), true, ""
 
 end
