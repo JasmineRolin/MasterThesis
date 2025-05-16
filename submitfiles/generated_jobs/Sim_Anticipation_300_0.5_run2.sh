@@ -4,7 +4,7 @@
 #BSUB -q hpc
 #BSUB -n 8
 #BSUB -R "rusage[mem=2GB] span[hosts=1]"
-#BSUB -W 10:00
+#BSUB -W 11:00
 #BSUB -u s194351@student.dtu.dk
 #BSUB -N 
 
@@ -26,7 +26,7 @@ Pkg.resolve();
 '
 
 for seed in {1..10}; do
-  julia --project=. resultExploration/resultsAnticipation.jl "300" "0.5" "0.5" "2025-05-15_v2" "run2" "Anticipation_0.5" "$seed" &
+  julia --project=. resultExploration/resultsAnticipation.jl "300" "0.5" "0.5" "2025-05-15_long" "run2" "Anticipation_0.5" "$seed" &
 done
 
 wait

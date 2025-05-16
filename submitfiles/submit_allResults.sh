@@ -3,17 +3,17 @@
 ################
 #    change inputs here
 ################
-n_requests_list=("20" "100" "300" "500")
+n_requests_list=("300" "500")
 anticipation_levels=("0.3" "0.5")
 run_tags=("run1" "run2" "run3" "run4" "run5")
 gamma="0.5"
-date="2025-05-15_v2"
+date="2025-05-15_long"
 ####################
 
 mkdir -p submitfiles/generated_jobs
 
 # Define case types
-case_types=("BaseCase" "Anticipation" "AnticipationNoALNS")
+case_types=("Anticipation")
 
 for case_type in "${case_types[@]}"; do
   for n_requests in "${n_requests_list[@]}"; do
@@ -47,7 +47,7 @@ for case_type in "${case_types[@]}"; do
 #BSUB -q hpc
 #BSUB -n 8
 #BSUB -R "rusage[mem=2GB] span[hosts=1]"
-#BSUB -W 10:00
+#BSUB -W 11:00
 #BSUB -u s194351@student.dtu.dk
 #BSUB -N 
 

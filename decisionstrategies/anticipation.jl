@@ -477,7 +477,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         # Determine Obj
         averageObj = 0.0
         averageNotServicedExpectedRequests = 0.0
-        for j in 1:10
+        for j in 1:1
 
             # Get solution
             solution = copySolution(originalSolution)
