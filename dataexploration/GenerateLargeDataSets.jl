@@ -446,7 +446,7 @@ function plotAndSaveGantChart(nRequest::Int,nData::Int,gamma::Float64)
         # Plot gant chart 
         requestFile = string("Data/Konsentra/",nRequest,"/GeneratedRequests_",nRequest,"_",idx,".csv")
         vehiclesFile = string("Data/Konsentra/",nRequest,"/Vehicles_",nRequest,"_",gamma,".csv")
-        parametersFile = "tests/resources/ParametersShortCallTime.csv"
+        parametersFile = "tests/resources/Parameters.csv"
         distanceMatrixFile = string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",gamma,"_",idx,"_distance.txt")
         timeMatrixFile =  string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",gamma,"_",idx,"_time.txt")
         scenarioName = "No. requests = " * string(nRequest)
