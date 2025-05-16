@@ -560,10 +560,6 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
         r = requests[requestId]
         newEndOfServiceTimePickUp = visitedRoute[requestId]["PickUpServiceStart"] + serviceTimes
 
-        if vehicleSchedule.vehicle.id == 11 && isnothing(request)
-            tempCost = getCostOfRequest(time,newEndOfServiceTimePickUp,newStartOfServiceTimes[dropoffIdx], r.pickUpActivity.id, r.dropOffActivity.id)
-        end
-
         totalCost += getCostOfRequest(time,newEndOfServiceTimePickUp,newStartOfServiceTimes[dropoffIdx], r.pickUpActivity.id, r.dropOffActivity.id)
     end
 

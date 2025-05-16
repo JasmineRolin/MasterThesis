@@ -58,9 +58,10 @@ Test SimulationFrameworkUtils
 # CSV.write(outPutFolder*"/results.csv", dfResults)
 
 
-n = 100
-i = 10
-vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
+n = 20
+i = 3
+gamma = 0.9
+vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
 parametersFile = "tests/resources/Parameters.csv"
 alnsParameters = "tests/resources/ALNSParameters2.json"
 outPutFolder = "tests/output/OnlineSimulation/"*string(n)
@@ -79,7 +80,7 @@ outputFiles = Vector{String}()
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
 
     # Simulate scenario 
-    solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = true,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder)
+    solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = false,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder)
 
     state = State(solution,scenario.onlineRequests[end],0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)

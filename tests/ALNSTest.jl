@@ -187,7 +187,7 @@ end
 # #@testset "Run all generated data sets " begin
     print("\033c")
     # Number of requests in scenario - 20, 100, 300 or 500 
-    n = 500
+    n = 20
 
     # Scenario number - 1:10
     i = 3
