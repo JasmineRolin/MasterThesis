@@ -1,10 +1,10 @@
 #!/bin/bash
 
 n_requests_list=("20" "100" "300" "500")
-anticipation_levels=("0.5" "0.9")
-run_tags=("run1" "run2" "run3" "run4" "run5")
+anticipation_levels=("0.3")
+run_tags=("run1" "run2")
 gamma="0.7"
-date="2025-05-15"
+date="2025-05-16"
 
 mkdir -p submitfiles/generated_jobs
 
@@ -22,7 +22,7 @@ for n_requests in "${n_requests_list[@]}"; do
 #BSUB -n 8
 #BSUB -R "rusage[mem=2GB]"
 #BSUB -R "span[hosts=1]"
-#BSUB -W 10:00
+#BSUB -W 5:00
 #BSUB -u s194351@student.dtu.dk
 #BSUB -N 
 
