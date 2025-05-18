@@ -433,7 +433,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
     nRequests = 0
 
     # TODO change to 10
-    for i in 1:1
+    for i in 1:10
 
         # Make scenario
         scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile)
@@ -452,7 +452,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
 
         if displayPlots
             display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and before removing expected requests"))
-            display(plotRoutes(originalSolution,scenario,requestBank,"Initial Solution "*string(i)*" before ALNS and before removing expected requests"))
+            #display(plotRoutes(originalSolution,scenario,requestBank,"Initial Solution "*string(i)*" before ALNS and before removing expected requests"))
         end
 
         # Determine number of serviced requests
@@ -480,7 +480,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         # Determine Obj
         averageObj = 0.0
         averageNotServicedExpectedRequests = 0.0
-        for j in 1:1
+        for j in 1:10
 
             # Get solution
             solution = copySolution(originalSolution)
@@ -522,12 +522,56 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         push!(results, (runId = "Run $i", averageObj = averageObj, averageNotServicedExpectedRequests = averageNotServicedExpectedRequests, 
                         nInitialNotServicedFixedRequests = nNotServicedFixedRequests, nInitialNotServicedExpectedRequests = nNotServicedExpectedRequests))
     end
-    
-    updateIds!(bestSolution,nRequests,nExpected)
-    newIndices = collect((nRequests+1):(nRequests+nExpected))
-    setdiff!(bestRequestBank, newIndices)
 
     return bestSolution, bestRequestBank, results, Scenario(), Scenario(), true, ""
+
+end
+
+#== 
+ Test solution
+==#
+function testSolutionAnticipation(event::Request,originalSolution::Solution,requestFile::String,vehiclesFile::String,parametersFile::String,scenarioName::String,nExpected::Int,gridFile::String;displayPlots::Bool=false)
+    # Determine Obj
+    averageObj = 0.0
+    averageNotServicedExpectedRequests = 0.0
+    averageNotServicedExpectedRequestsRelevant = 0.0
+
+    for j in 1:10
+
+        # Get solution
+        solution = copySolution(originalSolution)
+        
+        # Generate new scenario
+        scenario2 = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile)
+
+        # Number of expected requests in time window
+        nExpectedRelevant = count(r -> r.pickUpActivity.startTime > event.callTime && r.id > scenario2.nFixed, scenario2.requests)
+
+        # Insert expected requests randomly into solution using regret insertion
+        expectedRequestsIds = collect(nFixed+1:nFixed+nExpected)
+        solution.nTaxiExpected = nExpected
+        solution.totalCost += nExpected * taxiParameterExpected
+        solution.nTaxi = 0
+        stateALNS = ALNSState(solution,1,1,expectedRequestsIds)
+        regretInsertion(stateALNS,scenario2)
+
+        # TODO remove when stable
+        state = State(solution,Request(),nNotServicedFixedRequests)
+        feasible, msg = checkSolutionFeasibilityOnline(scenario2,state)
+        if !feasible
+            throw(msg)
+        end
+
+        # Calculate Obj
+        averageObj += solution.totalCost + originalSolution.nTaxi * taxiParameter 
+        averageNotServicedExpectedRequests += length(stateALNS.requestBank)/nExpectedRelevant
+        averageNotServicedExpectedRequestsRelevant += length(stateALNS.requestBank)/nExpectedRelevant
+    end
+    averageObj /= 10
+    averageNotServicedExpectedRequests /= 10
+    averageNotServicedExpectedRequestsRelevant /= 10
+
+    return averageObj, averageNotServicedExpectedRequests, averageNotServicedExpectedRequestsRelevant
 
 end
 

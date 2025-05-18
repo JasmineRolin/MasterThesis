@@ -192,12 +192,13 @@ XLSX.openxlsx(nameOfExcel, mode="w") do xf
                 comparison_sheet["B$current_row_comparison"] = string(degree) 
                 comparison_sheet["C$current_row_comparison"] = string(n_requests) 
                 for j in 1:17
-                    col_letter = col2name(j+2)  # Use your own col2name function here as well
+                    col_letter = col2name(j+2)  
                     basecase_value = basecase_averages[n_requests][j]
                     anticipation_value = values[j] / nRuns
                     difference = anticipation_value - basecase_value
                     comparison_sheet["$col_letter$current_row_comparison"] = difference
                 end
+                comparison_sheet["T$current_row_comparison"] = ((values[14] / nRuns) -basecase_averages[n_requests][14]) + ((values[16] / nRuns) -basecase_averages[n_requests][16])
                 current_row_comparison += 1
 
 

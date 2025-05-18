@@ -4,7 +4,7 @@ using Plots, JSON, DataFrames
 using Plots.PlotMeasures
 using domain, utils 
 
-export createGantChartOfSolutionOnline,writeOnlineKPIsToFile,processResults,createGantChartOfSolutionAndEventOnline, plotRoutesOnline
+export createGantChartOfSolutionOnline, createGantChartOfSolutionOnlineComparison,writeOnlineKPIsToFile,processResults,createGantChartOfSolutionAndEventOnline, createGantChartOfSolutionAndEventOnlineComparison, plotRoutesOnline
 export plotRelocation
 
 # Plot vehicle schedules 
@@ -73,6 +73,90 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String;eventI
     
     return p
 end
+
+#==
+ Plot gantt chart and display changes between two solutions
+==#
+function createGantChartOfSolutionOnlineComparison(newSolution::Solution, oldSolution::Solution, title::String; eventId::Int = -10, eventTime::Int = -10)
+    yPositions = []
+    yLabels = []
+    yPos = 1
+
+    xPositions = []
+    xLabels = []
+
+    p = plot(size = (1500, 1500))
+
+    # Helper to extract a comparable representation of all assignments
+    function extractActivityKeys(sol::Solution)
+        keys = Set{Tuple}()
+        for schedule in sol.vehicleSchedules
+            for a in schedule.route
+                key = (schedule.vehicle.id, a.activity.activityType, a.activity.requestId, round(a.startOfServiceTime; digits=2))
+                push!(keys, key)
+            end
+        end
+        return keys
+    end
+
+    oldKeys = extractActivityKeys(oldSolution)
+    newKeys = extractActivityKeys(newSolution)
+
+    changedKeys = setdiff(union(oldKeys, newKeys), intersect(oldKeys, newKeys))
+
+    for schedule in newSolution.vehicleSchedules
+        for assignment in schedule.route
+            offset = 0
+            key = (schedule.vehicle.id, assignment.activity.activityType, assignment.activity.requestId, round(assignment.startOfServiceTime; digits=2))
+            isChanged = key in changedKeys
+
+            if assignment.activity.activityType == PICKUP
+                color = assignment.activity.requestId == eventId ? :lightblue1 : (isChanged ? :yellow : :lightgreen)
+                markersize = 15
+                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square, markerstrokewidth=0, markersize=markersize)
+                annotate!(p, assignment.startOfServiceTime, yPos, text("PU" * string(assignment.activity.requestId), :black, 8))
+
+            elseif assignment.activity.activityType == DROPOFF
+                color = assignment.activity.requestId == eventId ? :blue : (isChanged ? :yellow : :tomato)
+                markersize = 15
+                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square, markerstrokewidth=0, markersize=markersize)
+                annotate!(p, assignment.startOfServiceTime, yPos, text("DO" * string(assignment.activity.requestId), :black, 8))
+
+            elseif assignment.activity.activityType == DEPOT
+                color = isChanged ? :yellow : :black
+                markersize = 15
+                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square, markerstrokewidth=0, markersize=markersize)
+                annotate!(p, assignment.startOfServiceTime, yPos, text("D" * string(schedule.vehicle.depotId), :white, 8))
+
+            else
+                offset = 0
+                color = isChanged ? :yellow : :gray67
+                markersize = 15
+                plot!(p, [assignment.startOfServiceTime, assignment.endOfServiceTime], [yPos, yPos], linewidth=29.5, label="", color=color, marker=:square, markerstrokewidth=0, markersize=markersize)
+                annotate!(p, assignment.startOfServiceTime, yPos, text("W" * string(assignment.activity.location.name), :black, 8))
+            end
+
+            push!(xPositions, assignment.startOfServiceTime)
+            push!(xLabels, string(round(assignment.startOfServiceTime / 60.0, digits = 1)))
+        end
+        hline!([yPos - 1], linewidth = 1, color = :gray, label = "")
+        push!(yPositions, yPos)
+        push!(yLabels, "Vehicle $(schedule.vehicle.id)")
+        yPos += 2
+    end
+
+    if eventTime != -10
+        vline!([eventTime], lineWidth = 1, color = :red, label = "")
+    end
+
+    plot!(p, yticks = (yPositions, yLabels))
+    plot!(p, xticks = (xPositions, xLabels), xrotation = 90)
+    xlabel!("Time (Hour)")
+    title!(string(title, " - Activity Assignments for Vehicles"))
+
+    return p
+end
+
 
 #==
  Plot routes 
@@ -306,6 +390,111 @@ function createGantChartOfSolutionAndEventOnline(solution::Solution,title::Strin
     return p
 end
 
+function createGantChartOfSolutionAndEventOnline(newSolution::Solution, oldSolution::Solution, title::String;
+    eventId::Int = -10, eventTime::Int = -10, event::Request = Request())
+    yPositions = []
+    yLabels = []
+    yPos = 1
+
+    xPositions = []
+    xLabels = []
+
+    p = plot(size = (1500, 1500))
+
+    # Helper to get comparable activity keys
+    function extractActivityKeys(sol::Solution)
+    keys = Set{Tuple}()
+    for schedule in sol.vehicleSchedules
+        for a in schedule.route
+            key = (schedule.vehicle.id, a.activity.activityType, a.activity.requestId, round(a.startOfServiceTime; digits=2))
+            push!(keys, key)
+        end
+    end
+    return keys
+    end
+
+    oldKeys = extractActivityKeys(oldSolution)
+    newKeys = extractActivityKeys(newSolution)
+    changedKeys = setdiff(union(oldKeys, newKeys), intersect(oldKeys, newKeys))
+
+    for schedule in newSolution.vehicleSchedules
+        for assignment in schedule.route
+            key = (schedule.vehicle.id, assignment.activity.activityType, assignment.activity.requestId, round(assignment.startOfServiceTime; digits=2))
+            isChanged = key in changedKeys
+
+            color = :gray
+            markersize = 15
+            labelText = ""
+
+            if assignment.activity.activityType == PICKUP
+                color = assignment.activity.requestId == eventId ? :lightblue1 : (isChanged ? :yellow : :lightgreen)
+                labelText = "PU" * string(assignment.activity.requestId)
+                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color,
+                marker=:square, markerstrokewidth=0, markersize=markersize)
+                annotate!(p, assignment.startOfServiceTime, yPos, text(labelText, :black, 8))
+
+            elseif assignment.activity.activityType == DROPOFF
+                color = assignment.activity.requestId == eventId ? :blue : (isChanged ? :yellow : :tomato)
+                labelText = "DO" * string(assignment.activity.requestId)
+                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color,
+                marker=:square, markerstrokewidth=0, markersize=markersize)
+                annotate!(p, assignment.startOfServiceTime, yPos, text(labelText, :black, 8))
+
+            elseif assignment.activity.activityType == DEPOT
+                color = isChanged ? :yellow : :black
+                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color,
+                marker=:square, markerstrokewidth=0, markersize=markersize)
+                annotate!(p, assignment.startOfServiceTime, yPos, text("D" * string(schedule.vehicle.depotId), :white, 8))
+                scatter!(p, [assignment.activity.timeWindow.startTime], [yPos], linewidth=11.5, label="",
+                color=:darkgray, marker=:circle, markerstrokewidth=0, markersize=7)
+                scatter!(p, [assignment.activity.timeWindow.endTime], [yPos], linewidth=11.5, label="",
+                color=:darkgray, marker=:circle, markerstrokewidth=0, markersize=7)
+
+            else
+                color = isChanged ? :yellow : :gray67
+                plot!(p, [assignment.startOfServiceTime, assignment.endOfServiceTime], [yPos, yPos],
+                linewidth=29.5, label="", color=color, marker=:square, markerstrokewidth=0, markersize=markersize)
+                annotate!(p, assignment.startOfServiceTime, yPos, text("W" * string(assignment.activity.location.name), :black, 8))
+            end
+
+            push!(xPositions, assignment.startOfServiceTime)
+            push!(xLabels, string(round(assignment.startOfServiceTime / 60.0, digits = 1)))
+        end
+
+        hline!([yPos - 1], linewidth = 1, color = :gray, label = "")
+        push!(yPositions, yPos)
+        push!(yLabels, "Vehicle $(schedule.vehicle.id)")
+        yPos += 2
+    end
+
+    if eventTime != -10
+    vline!([eventTime], lineWidth = 1, color = :red, label = "")
+    end
+
+    # Plot the incoming event
+    offset = 0
+    markersize = 10
+    plot!(p, [event.pickUpActivity.timeWindow.startTime, event.pickUpActivity.timeWindow.endTime],
+    [yPos, yPos], linewidth=19.5, label="Pick up", color=:green, marker=:square,
+    markerstrokewidth=0, markersize=markersize)
+    plot!(p, [event.dropOffActivity.timeWindow.startTime, event.dropOffActivity.timeWindow.endTime],
+    [yPos, yPos], linewidth=19.5, label="Drop off", color=:red, marker=:square,
+    markerstrokewidth=0, markersize=markersize)
+    scatter!(p, [event.callTime], [yPos], linewidth=11.5, label="Call time", color=:blue,
+    marker=:circle, markerstrokewidth=0, markersize=markersize)
+
+    push!(yPositions, yPos)
+    push!(yLabels, "Event $(event.id)")
+
+    plot!(p, yticks = (yPositions, yLabels))
+    plot!(p, xticks = (xPositions, xLabels), xrotation = 90)
+    xlabel!("Time (Hour)")
+    title!(string(title, " - Activity Assignments for Vehicles"))
+
+    return p
+end
+
+
 #==
  Plot relocation event
 ==#
@@ -371,7 +560,7 @@ end
 #==
  Write KPIs to file  
 ==#
-function writeOnlineKPIsToFile(fileName::String, scenario::Scenario,solution::Solution,requestBank::Vector{Int},requestBankOffline::Vector{Int},totalElapsedTime::Float64,averageResponseTime::Float64,eventsInsertedByALNS::Int)
+function writeOnlineKPIsToFile(fileName::String, scenario::Scenario,solution::Solution,requestBank::Vector{Int}, requestBankOffline::Vector{Int},totalElapsedTime::Float64,averageResponseTime::Float64,eventsInsertedByALNS::Int)
     # Find drive times for customers
     totalDirectRideTime = sum(r.directDriveTime for r in scenario.requests if !(r.id in requestBank))
     totalActualRideTime = 0
