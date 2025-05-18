@@ -63,7 +63,7 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
         @timeit TO "Repair!" begin
             repairIdx = repair!(scenario, trialState, configuration, visitedRoute=visitedRoute,TO=TO)
         end
-
+      
         @timeit TO "Hash solution" begin 
             hashKeySolution =  hashSolution(trialState.currentSolution)
             seenBefore = hashKeySolution in currentState.seenSolutions

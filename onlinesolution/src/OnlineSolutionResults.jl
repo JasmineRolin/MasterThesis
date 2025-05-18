@@ -498,13 +498,13 @@ end
 #==
  Plot relocation event
 ==#
-function plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,vehicleBalance,gridCell,depotGridCell,period,periodLength,vehicle)
+function plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,vehicleBalance,gridCell,depotGridCell,period,periodLength,vehicle,vehicleDemand)
     avg_min = min(minimum(vehicleBalance),minimum(activeVehiclesPerCell))
     avg_max = max(maximum(activeVehiclesPerCell),maximum(vehicleBalance))
 
     demand_min = min(minimum(predictedDemand),minimum(realisedDemand))
     demand_max = max(maximum(predictedDemand),maximum(realisedDemand))
-
+    
     # Plot for chosen period 
     p0 = heatmap(realisedDemand[period,:,:], 
     c=:viridis,         # color map
@@ -548,10 +548,38 @@ function plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,veh
     scatter!(p3,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:green)
     scatter!(p3,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
 
+    p4 = heatmap(vehicleDemand[period,:,:], 
+    c=:viridis,         # color map
+    clim=(avg_min, avg_max),
+    xlabel="Longitude (grid cols)", 
+    ylabel="Latitude (grid rows)", 
+    title="Vehicle demand",
+    colorbar_title="Vehicle Demand")
+    scatter!(p4,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:green)
+    scatter!(p4,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
+
+    # Find predicted vehicle demand for each hour 
+    planningHorizon = 4
+    nTimePeriods = size(predictedDemand,1)
+    endPeriod = min(period + planningHorizon, nTimePeriods)
+    maxDemandInHorizon = maximum(predictedDemand[period:endPeriod,:,:], dims=1)
+    maxDemandInHorizon = dropdims(maxDemandInHorizon, dims=1)
+
+    p5 = heatmap(maxDemandInHorizon[:,:], 
+    c=:viridis,         # color map
+    clim=(demand_min, demand_max),
+    xlabel="Longitude (grid cols)", 
+    ylabel="Latitude (grid rows)", 
+    title="Demand over horizon",
+    colorbar_title="Requests")
+    scatter!(p5,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:green)
+    scatter!(p5,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
+
+
     super_title = plot(title = "Vehicle Demand Overview - period start $((period-1)*periodLength), vehicle $(vehicle)", grid=false, framestyle=:none)
 
     # Combine all into a vertical layout: super title + 3 plots
-    p = plot(super_title, plot(p0,p1, p2, p3, layout=(2,2)), layout = @layout([a{0.01h}; b{0.99h}]), size=(1500,1100))
+    p = plot(super_title, plot(p0,p1, p2, p3,p4,p5, layout=(3,2)), layout = @layout([a{0.01h}; b{0.99h}]), size=(1500,1100))
 
     return p
 end
@@ -562,7 +590,7 @@ end
 ==#
 function writeOnlineKPIsToFile(fileName::String, scenario::Scenario,solution::Solution,requestBank::Vector{Int}, requestBankOffline::Vector{Int},totalElapsedTime::Float64,averageResponseTime::Float64,eventsInsertedByALNS::Int)
     # Find drive times for customers
-    totalDirectRideTime = sum(r.directDriveTime for r in scenario.requests if !(r.id in requestBank))
+    totalDirectRideTime = length(requestBank) == length(scenario.requests) ? 0 : sum(r.directDriveTime for r in scenario.requests if !(r.id in requestBank)) 
     totalActualRideTime = 0
     pickUpTimes = Dict{Int,Int}()
     for schedule in solution.vehicleSchedules

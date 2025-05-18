@@ -13,9 +13,6 @@ function main()
     n = parse(Int,ARGS[1])
     Gamma = parse(Float64,ARGS[2])
     i = parse(Int,ARGS[3])
-    n = 100
-    Gamma = 0.7
-    i = 1
     
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",Gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"

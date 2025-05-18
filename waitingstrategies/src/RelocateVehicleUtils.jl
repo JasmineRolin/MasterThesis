@@ -1,8 +1,9 @@
 module RelocateVehicleUtils
 
 using domain 
-using UnPack 
+using UnPack, Random 
 using ..GeneratePredictedDemand
+using StatsBase 
 
 export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBalancePrCell
 
@@ -10,14 +11,23 @@ export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBa
  Method to determine waiting location of a vehicle
 ==#
 # Assuming hour is in the future (?)
-# TODO: 
-    # Vehicles are being relocated to the depot of the previously relocated vehicle 
-function determineWaitingLocation(depotLocations::Dict{Tuple{Int,Int},Location},grid::Grid,nRequests::Int, vehicleBalance::Array{Int,3},period::Int)
+# Vehicles are being relocated to the depot of the previously relocated vehicle 
+function determineWaitingLocation(depotLocations::Dict{Tuple{Int,Int},Location},grid::Grid,nRequests::Int, vehicleBalance::Array{Int,3},period::Int,predictedDemand::Array{Float64,3})
     # Determine cell with most deficit of vehicles
-    minIndexes = argmin(vehicleBalance[period,:,:])
-    minRowIdx = minIndexes[1]
-    minColIdx = minIndexes[2]
-    depotId = findDepotIdFromGridCell(grid,nRequests,(minRowIdx,minColIdx))
+    vehicleBalanceInPeriod = vehicleBalance[period, :, :]
+
+    # Find the minimum value
+    minValue = minimum(vehicleBalanceInPeriod)
+
+    # Get all indices where the value equals the minimum
+    minIndices = findall(x -> x == minValue, vehicleBalanceInPeriod)
+
+    # Randomly select one of the indices
+    chosenIdx = rand(minIndices)
+
+    minRowIdx = chosenIdx[1]
+    minColIdx = chosenIdx[2]
+    depotId = findDepotIdFromGridCell(grid, nRequests, (minRowIdx, minColIdx))
 
     return depotId,depotLocations[(minRowIdx,minColIdx)],(minRowIdx,minColIdx)
 end
@@ -28,14 +38,12 @@ end
 function determineVehicleBalancePrCell(grid::Grid,gamma::Float64,predictedDemand::Array{Float64,3},solution::Solution,nTimePeriods::Int,periodLength::Int)
     # unpack grid 
     @unpack minLat,maxLat,minLong,maxLong, nRows,nCols,latStep,longStep = grid 
-
-    # TODO: do not include current schedule ? 
-    # TODO: account for current planned demand 
-
+    
     # Initialize vehicle balance
     vehicleBalance = zeros(Int,nTimePeriods,nRows,nCols)
     vehicleDemand = zeros(Int,nTimePeriods,nRows,nCols)
     realisedDemand = zeros(Int,nTimePeriods,nRows,nCols)
+    maxDemandInHorizon = zeros(Float64,nTimePeriods,nRows,nCols)
     activeVehiclesPerCell = zeros(Int,nTimePeriods,nRows,nCols) # TODO: remove returning this (only for test)
 
     # TODO: set correctly 
@@ -53,15 +61,16 @@ function determineVehicleBalancePrCell(grid::Grid,gamma::Float64,predictedDemand
 
         # Determine vehicle demand in period
         endPeriod = min(period + planningHorizon, nTimePeriods)
-        vehicleDemandInPeriod = generatePredictedVehiclesDemandInHorizon(gamma,predictedDemand,period,endPeriod)
+        vehicleDemandInPeriod,maxDemandInHorizonPeriod = generatePredictedVehiclesDemandInHorizon(gamma,predictedDemand,period,endPeriod)
         vehicleDemand[period,:,:] = vehicleDemandInPeriod
+        maxDemandInHorizon[period,:,:] = maxDemandInHorizonPeriod
 
         # Determine surplus/deficit of vehicles in grid cells
         # Use maximum of predicted demand and realised demand (worst case scenario ?)
         vehicleBalance[period,:,:] = activeVehiclesPerCell[period,:,:] .- vehicleDemandInPeriod
     end
    
-    return vehicleBalance, activeVehiclesPerCell, realisedDemand, vehicleDemand
+    return vehicleBalance, activeVehiclesPerCell, realisedDemand, vehicleDemand, maxDemandInHorizon
 end
 
 function determineActiveVehiclesAndDemandPrCell(solution::Solution,endOfPeriodInMinutes::Int,startOfPeriodInMinutes::Int,minLat::Float64,minLong::Float64, nRows::Int,nCols::Int,latStep::Float64,longStep::Float64)

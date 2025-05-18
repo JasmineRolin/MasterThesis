@@ -44,7 +44,7 @@ end
     state = State(solution,Request(),0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == false
-    @test msg == "SOLUTION INFEASIBLE: Total cost of solution is incorrect. Calculated: 47.77777777777778, actual: 90.0, diff: 42.22222222222222"
+    @test msg == "SOLUTION INFEASIBLE: Total cost of solution is incorrect. Calculated: 30.0, actual: 90.0, diff: 60.0"
 end
 
 
@@ -67,7 +67,7 @@ end
     state = State(solution,Request(),0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == false
-    @test msg == "SOLUTION INFEASIBLE: Not all requests are serviced. Serviced: 0, not serviced: 3, nTaxi: 0, totalNTaxi: 0"
+    @test msg == "SOLUTION INFEASIBLE: Not all requests are serviced. Serviced: 1, not serviced: 2, nTaxi: 0, totalNTaxi: 0"
 end
 
 @testset "checkSolutionFeasibility test - activity already rejected" begin
@@ -88,10 +88,10 @@ end
     solution.totalDistance -= solution.vehicleSchedules[1].totalDistance
     solution.totalIdleTime -= solution.vehicleSchedules[1].totalIdleTime
     solution.vehicleSchedules[1] = VehicleSchedule(solution.vehicleSchedules[1].vehicle,true)
-    solution.totalCost += 3*scenario.taxiParameter
+    solution.totalCost += 2*scenario.taxiParameter
 
     # Check solution
-    state = State(solution,Request(),3)
+    state = State(solution,Request(),2)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test feasible == true
     @test msg == ""

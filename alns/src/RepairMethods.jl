@@ -103,6 +103,7 @@ function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{
                                                                                                                                                                                                                 newStartOfServiceTimes=newStartOfServiceTimes,newEndOfServiceTimes=newEndOfServiceTimes,waitingActivitiesToDelete=waitingActivitiesToDelete,
                                                                                                                                                                                                                 waitingActivitiesToAdd=waitingActivitiesToAdd,visitedRouteIds=visitedRouteIds)
             
+                                                                                                                                                                                                                
             # Update solution pre
             state.currentSolution.totalCost -= bestSchedule.totalCost
             state.currentSolution.totalDistance -= bestSchedule.totalDistance
@@ -112,8 +113,7 @@ function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{
             # Insert request
             insertRequest!(requests[bestRequest], bestSchedule, pickUp, dropOff, scenario,newStartOfServiceTimes,newEndOfServiceTimes,waitingActivitiesToDelete,totalCost = totalCost, totalDistance = totalDistance, totalIdleTime = totalIdleTime, totalTime = totalTime,visitedRoute=visitedRoute, waitingActivitiesToAdd=waitingActivitiesToAdd)
             append!(state.assignedRequests, bestRequest)
-            
-            
+
             if requests[bestRequest].id <= scenario.nFixed
                 cost = scenario.taxiParameter
                 state.currentSolution.nTaxi -= 1

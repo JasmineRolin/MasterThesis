@@ -59,8 +59,9 @@ Test SimulationFrameworkUtils
 
 
 n = 20
-i = 10
-vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
+i = 3
+gamma = 0.9
+vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
 parametersFile = "tests/resources/Parameters.csv"
 alnsParameters = "tests/resources/ALNSParameters2.json"
 outPutFolder = "tests/output/OnlineSimulation/"*string(n)
@@ -80,7 +81,11 @@ gridFile = "Data/Konsentra/grid.json"
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,"","",gridFile)
 
     # Simulate scenario 
+<<<<<<< HEAD
     solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = false,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder)
+=======
+    solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = false,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder)
+>>>>>>> main
 
     state = State(solution,scenario.onlineRequests[end],0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
