@@ -530,48 +530,42 @@ end
 #== 
  Test solution
 ==#
-function testSolutionAnticipation(event::Request,originalSolution::Solution,requestFile::String,vehiclesFile::String,parametersFile::String,scenarioName::String,nExpected::Int,gridFile::String;displayPlots::Bool=false)
+function testSolutionAnticipation(event::Request,originalSolution::Solution,requestFile::String,vehiclesFile::String,parametersFile::String,scenarioName::String,nExpected::Int,gridFile::String;visitedRoute::Dict{Int, Dict{String, Int}} = Dict{Int, Dict{String, Int}}())
     # Determine Obj
-    averageObj = 0.0
     averageNotServicedExpectedRequests = 0.0
     averageNotServicedExpectedRequestsRelevant = 0.0
 
     for j in 1:10
 
         # Get solution
-        solution = copySolution(originalSolution)
+        newSolution = copySolution(originalSolution)
         
         # Generate new scenario
         scenario2 = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile)
 
         # Number of expected requests in time window
-        nExpectedRelevant = count(r -> r.pickUpActivity.startTime > event.callTime && r.id > scenario2.nFixed, scenario2.requests)
+        nExpectedRelevant = count(r -> r.pickUpActivity.timeWindow.startTime > event.callTime && r.id > scenario2.nFixed, scenario2.requests)
+        nFixed = scenario2.nFixed
+        taxiParameterExpected = scenario2.taxiParameterExpected
 
         # Insert expected requests randomly into solution using regret insertion
         expectedRequestsIds = collect(nFixed+1:nFixed+nExpected)
-        solution.nTaxiExpected = nExpected
-        solution.totalCost += nExpected * taxiParameterExpected
-        solution.nTaxi = 0
-        stateALNS = ALNSState(solution,1,1,expectedRequestsIds)
-        regretInsertion(stateALNS,scenario2)
+        newSolution.nTaxiExpected = nExpected
+        newSolution.totalCost += nExpected * taxiParameterExpected
+        newSolution.nTaxi = 0
+        stateALNS = ALNSState(newSolution,1,1,expectedRequestsIds)
+        regretInsertion(stateALNS,scenario2,visitedRoute=visitedRoute)
 
-        # TODO remove when stable
-        state = State(solution,Request(),nNotServicedFixedRequests)
-        feasible, msg = checkSolutionFeasibilityOnline(scenario2,state)
-        if !feasible
-            throw(msg)
-        end
+        #TODO test solution
 
         # Calculate Obj
-        averageObj += solution.totalCost + originalSolution.nTaxi * taxiParameter 
         averageNotServicedExpectedRequests += length(stateALNS.requestBank)/nExpectedRelevant
         averageNotServicedExpectedRequestsRelevant += length(stateALNS.requestBank)/nExpectedRelevant
     end
-    averageObj /= 10
     averageNotServicedExpectedRequests /= 10
     averageNotServicedExpectedRequestsRelevant /= 10
 
-    return averageObj, averageNotServicedExpectedRequests, averageNotServicedExpectedRequestsRelevant
+    return averageNotServicedExpectedRequests, averageNotServicedExpectedRequestsRelevant
 
 end
 

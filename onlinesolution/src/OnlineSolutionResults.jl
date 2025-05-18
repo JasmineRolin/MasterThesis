@@ -390,7 +390,7 @@ function createGantChartOfSolutionAndEventOnline(solution::Solution,title::Strin
     return p
 end
 
-function createGantChartOfSolutionAndEventOnline(newSolution::Solution, oldSolution::Solution, title::String;
+function createGantChartOfSolutionAndEventOnlineComparison(newSolution::Solution, oldSolution::Solution, title::String;
     eventId::Int = -10, eventTime::Int = -10, event::Request = Request())
     yPositions = []
     yLabels = []

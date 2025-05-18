@@ -729,7 +729,6 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     eventsInsertedByALNS = 0
     totalEvents = length(events)
     nOnline = 0
-    averageObj = zeros(Float64,totalEvents)
     averageNotServicedExpectedRequests = zeros(Float64,totalEvents)
     averageNotServicedExpectedRequestsRelevant = zeros(Float64,totalEvents)
 
@@ -780,7 +779,16 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         averageResponseTime += endTimeEvent - startTimeEvent
 
         # Test solution using anticipation
-        averageObj[itr], averageNotServicedExpectedRequests[itr], averageNotServicedExpectedRequestsRelevant[itr] = testSolutionAnticipation(event,solution,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile)
+        averageNotServicedExpectedRequests[itr], averageNotServicedExpectedRequestsRelevant[itr] = testSolutionAnticipation(event.request,solution,requestFile,vehiclesFile,parametersFile,scenarioName,nExpected,gridFile,visitedRoute=visitedRoute)
+
+        # Save test solution results anticipation
+        fileName = outPutFileFolder*"/testSolutionAnticipation_KPI_"*string(scenario.name)*".csv"
+        testSolutionResults = DataFrame(
+            callTimes = events[1:length(events)].callTime,
+            averageNotServicedExpectedRequests = averageNotServicedExpectedRequests,
+            averageNotServicedExpectedRequestsRelevant = averageNotServicedExpectedRequestsRelevant
+        )
+        CSV.write(fileName, testSolutionResults)
 
         if printResults
             println("------------------------------------------------------------------------------------------------------------------------------------------------")
@@ -846,14 +854,13 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         end
 
         # Save test solution results anticipation
-        fileName = outPutFileFolder*"/testSolutionAnticipation_KPI_"*string(scenario.name)*".csv"
-        testSolutionResults = DataFrame(
-            callTimes = events[1:length(events)].callTime,
-            averageObj = averageObj,
-            averageNotServicedExpectedRequests = averageNotServicedExpectedRequests,
-            averageNotServicedExpectedRequestsRelevant = averageNotServicedExpectedRequestsRelevant
-        )
-        CSV.write(fileName, testSolutionResults)
+        #fileName = outPutFileFolder*"/testSolutionAnticipation_KPI_"*string(scenario.name)*".csv"
+        #testSolutionResults = DataFrame(
+        #    callTimes = events[1:length(events)].callTime,
+        #    averageNotServicedExpectedRequests = averageNotServicedExpectedRequests,
+        #    averageNotServicedExpectedRequestsRelevant = averageNotServicedExpectedRequestsRelevant
+        #)
+        #CSV.write(fileName, testSolutionResults)
 
     end
     
