@@ -433,7 +433,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
     nRequests = 0
 
     # TODO change to 10
-    for i in 1:10
+    for i in 1:1
 
         # Make scenario
         scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile)
@@ -480,7 +480,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         # Determine Obj
         averageObj = 0.0
         averageNotServicedExpectedRequests = 0.0
-        for j in 1:10
+        for j in 1:1
 
             # Get solution
             solution = copySolution(originalSolution)

@@ -706,6 +706,11 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
 
     end
 
+    println("Number of requests in request bank: ", length(requestBank))
+    println("Solution objective value: ", solution.totalCost)
+
+    throw("Offline is done!")
+
     requestBankOffline = deepcopy(requestBank)
     initialSolution = copySolution(solution)
 
