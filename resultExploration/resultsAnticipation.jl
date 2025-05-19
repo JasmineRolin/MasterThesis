@@ -26,7 +26,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
         distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
         timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
         scenarioName = string("Gen_Data_",n,"_",i)
-        push!(outputFiles, outPutFolder*"/Simulation_KPI_"*string(scenarioName)*".json")
+        push!(outputFiles, outPutFolder*"/Simulation_KPI_"*string(scenarioName)*"_false.json")
 
         # Read scenario 
         #TODO use pre calculated distance and time matrix file. 

@@ -1,1 +1,62 @@
-{"runId":["Run 1"],"averageObj":[54640.110008028554],"averageNotServicedExpectedRequests":[13.4],"nInitialNotServicedFixedRequests":[26],"nInitialNotServicedExpectedRequests":[6]}
+{
+    "runId": [
+        "Run 1",
+        "Run 2",
+        "Run 3",
+        "Run 4",
+        "Run 5",
+        "Run 6",
+        "Run 7",
+        "Run 8",
+        "Run 9",
+        "Run 10"
+    ],
+    "averageObj": [
+        18992.935655452315,
+        30901.414093096984,
+        30935.708069806897,
+        38779.14765135229,
+        28843.54729103906,
+        22907.61367256321,
+        42721.68270262382,
+        32856.4509456764,
+        20935.442262488676,
+        38836.71875262856
+    ],
+    "averageNotServicedExpectedRequests": [
+        16.3,
+        14.7,
+        17.6,
+        15.3,
+        16.7,
+        16.5,
+        13.8,
+        16.6,
+        14.5,
+        15.1
+    ],
+    "nInitialNotServicedFixedRequests": [
+        8,
+        14,
+        14,
+        18,
+        13,
+        10,
+        20,
+        15,
+        9,
+        18
+    ],
+    "nInitialNotServicedExpectedRequests": [
+        4,
+        13,
+        9,
+        13,
+        10,
+        5,
+        10,
+        17,
+        8,
+        11
+    ]
+}

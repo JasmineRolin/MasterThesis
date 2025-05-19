@@ -651,7 +651,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
    
 end
 
-function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixFile::String,timeMatrixFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json", ALNS::Bool=true, nTimePeriods::Int=24,periodLength::Int=60)
+function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixFile::String,timeMatrixFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json", ALNS::Bool=true, nTimePeriods::Int=24,periodLength::Int=60,testALNS::Bool=false)
 
     # Retrieve info 
     if relocateVehicles
@@ -706,11 +706,6 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
 
     end
 
-<<<<<<< HEAD
-=======
-    # Run ALNS for offline solution 
-    solution,requestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters_offline.json",initialSolution =  initialSolution, requestBank = initialRequestBank, displayPlots = displayALNSPlots, saveResults = saveALNSResults)
->>>>>>> main
     requestBankOffline = deepcopy(requestBank)
     initialSolution = copySolution(solution)
 
@@ -800,17 +795,12 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         endTimeEvent = time()
         averageResponseTime += endTimeEvent - startTimeEvent
 
+    
         # Test solution using anticipation
-        averageNotServicedExpectedRequests[itr], averageNotServicedExpectedRequestsRelevant[itr] = testSolutionAnticipation(event.request,solution,requestFile,vehiclesFile,parametersFile,scenarioName,nExpected,gridFile,visitedRoute=visitedRoute)
+        if testALNS
+            averageNotServicedExpectedRequests[itr], averageNotServicedExpectedRequestsRelevant[itr] = testSolutionAnticipation(event.request,solution,requestFile,vehiclesFile,parametersFile,scenarioName,nExpected,gridFile,visitedRoute=visitedRoute)
+        end
 
-        # Save test solution results anticipation
-        fileName = outPutFileFolder*"/testSolutionAnticipation_KPI_"*string(scenario.name)*".csv"
-        testSolutionResults = DataFrame(
-            callTimes = events[1:length(events)].callTime,
-            averageNotServicedExpectedRequests = averageNotServicedExpectedRequests,
-            averageNotServicedExpectedRequestsRelevant = averageNotServicedExpectedRequestsRelevant
-        )
-        CSV.write(fileName, testSolutionResults)
 
         if printResults
             println("------------------------------------------------------------------------------------------------------------------------------------------------")
@@ -876,13 +866,15 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         end
 
         # Save test solution results anticipation
-        #fileName = outPutFileFolder*"/testSolutionAnticipation_KPI_"*string(scenario.name)*".csv"
-        #testSolutionResults = DataFrame(
-        #    callTimes = events[1:length(events)].callTime,
-        #    averageNotServicedExpectedRequests = averageNotServicedExpectedRequests,
-        #    averageNotServicedExpectedRequestsRelevant = averageNotServicedExpectedRequestsRelevant
-        #)
-        #CSV.write(fileName, testSolutionResults)
+        if testALNS
+            fileName = outPutFileFolder*"/testSolutionAnticipation_KPI_"*string(scenario.name)*".csv"
+            testSolutionResults = DataFrame(
+                callTimes = [event.callTime for event in events],
+                averageNotServicedExpectedRequests = averageNotServicedExpectedRequests,
+                averageNotServicedExpectedRequestsRelevant = averageNotServicedExpectedRequestsRelevant
+            )
+            CSV.write(fileName, testSolutionResults)
+        end
 
     end
     
