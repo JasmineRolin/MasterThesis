@@ -2,7 +2,7 @@ module Activities
 
 using ..TimeWindows, ..Locations, ..Enums
 
-export Activity,findCorrespondingId,findLoadOfActivity
+export Activity,findCorrespondingId,findLoadOfActivity, copyActivity
 
 mutable struct Activity 
     id::Int 
@@ -44,5 +44,14 @@ function findLoadOfActivity(activity::Activity)::Int
     return 0
 end
 
+function copyActivity(a::Activity)
+    return Activity(
+        a.id,
+        a.requestId,
+        a.activityType,  # Assuming this is immutable (e.g. enum-like)
+        copyLocation(a.location),
+        copyTimewindow(a.timeWindow)
+    )
+end
 
 end

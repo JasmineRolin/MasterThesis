@@ -6,7 +6,7 @@ using ..Activities
 
 export Request
 export findTimeWindowOfRequestedPickUpTime, findTimeWindowOfDropOff, findTimeWindowOfRequestedDropOffTime, findTimeWindowOfPickUp
-export findMaximumRideTime
+export findMaximumRideTime, copyRequest
 export MAX_DELAY, MAX_EARLY_ARRIVAL
 
 #== 
@@ -72,6 +72,18 @@ function findMaximumRideTime(directDriveTime::Int,maximumDriveTimePercent::Int,m
     percent = maximumDriveTimePercent/100.0
 
     return Int(max(directDriveTime + directDriveTime*percent,minimumMaximumDriveTime))
+end
+
+function copyRequest(r::Request)
+    return Request(
+        r.id,
+        r.requestType,  # Also assumed immutable — if not, add a copy function
+        r.callTime,
+        copyActivity(r.pickUpActivity),
+        copyActivity(r.dropOffActivity),
+        r.directDriveTime,
+        r.maximumRideTime
+    )
 end
 
 end 

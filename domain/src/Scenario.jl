@@ -2,7 +2,7 @@ module Scenarios
 
 using ..Requests, ..Vehicles, ..TimeWindows, ..Grids, ..Locations
 
-export Scenario 
+export Scenario, copyScenario
 
 struct Scenario 
     name::String 
@@ -82,6 +82,37 @@ struct Scenario
     end
 
 end 
+
+function copyDictOfLocations(d::Dict{Tuple{Int, Int}, Location})
+    return Dict(k => copyLocation(v) for (k, v) in d)
+end
+
+function copyScenario(s::Scenario)
+    return Scenario(
+        s.name,
+        [copyRequest(r) for r in s.requests],
+        [copyRequest(r) for r in s.onlineRequests],
+        [copyRequest(r) for r in s.offlineRequests],
+        s.serviceTimes,
+        [copyVehicle(v) for v in s.vehicles],
+        s.vehicleCostPrHour,
+        s.vehicleStartUpCost,
+        copyTimewindow(s.planningPeriod),
+        s.bufferTime,
+        s.maximumDriveTimePercent,
+        s.minimumMaximumDriveTime,
+        copy(s.distance),  # shallow copy is OK since Float64 is immutable
+        copy(s.time),      # shallow copy of Int matrix is safe
+        s.nDepots,
+        deepcopy(s.depots),  # Assuming simple Dict
+        s.taxiParameter,
+        s.nExpected,
+        s.taxiParameterExpected,
+        s.nFixed,
+        copyGrid(s.grid),
+        copyDictOfLocations(s.depotLocations)
+    )
+end
 
 
 end

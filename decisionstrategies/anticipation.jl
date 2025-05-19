@@ -418,12 +418,13 @@ end
 #-------
 # Determine offline solution with anticipation
 #-------
-function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},destroyMethods::Vector{GenericMethod},requestFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String,nExpected::Int,gridFile::String;displayPlots::Bool=false)
+function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},destroyMethods::Vector{GenericMethod},requestFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String,nExpected::Int,gridFile::String;displayPlots::Bool=false,keepExpectedRequests::Bool=false)
 
     # Variables to determine best solution
     bestAverageObj = typemax(Float64)
     bestSolution::Union{Nothing, Solution} = nothing
     bestRequestBank::Union{Nothing, Vector{Int}} = nothing
+    bestScenario::Union{Nothing, Scenario} = nothing
     bestNotServicedExpectedRequests = typemax(Int)
     results = DataFrame(runId = String[],
                         averageObj = Float64[],
@@ -433,7 +434,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
     nRequests = 0
 
     # TODO change to 10
-    for i in 1:10
+    for i in 1:1
 
         # Make scenario
         scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile)
@@ -449,6 +450,10 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         # Get solution
         initialSolution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
         originalSolution, originalRequestBank,_,_, _,_,_ = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
+        if keepExpectedRequests
+            originalSolutionWithAllRequests = copySolution(originalSolution)
+            originalRequestBankWithAllRequests = copy(originalRequestBank)
+        end
 
         if displayPlots
             display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and before removing expected requests"))
@@ -514,8 +519,14 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         if averageObj < bestAverageObj 
             bestAverageObj = averageObj
             bestNotServicedExpectedRequests = averageNotServicedExpectedRequests
-            bestSolution = copySolution(originalSolution)
-            bestRequestBank = copy(originalRequestBank)
+            if keepExpectedRequests
+                bestSolution = originalSolutionWithAllRequests
+                bestRequestBank = originalRequestBankWithAllRequests
+                bestScenario = copyScenario(scenario)
+            else
+                bestSolution = copySolution(originalSolution)
+                bestRequestBank = copy(originalRequestBank)
+            end
         end
 
         # Save results
@@ -523,7 +534,12 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
                         nInitialNotServicedFixedRequests = nNotServicedFixedRequests, nInitialNotServicedExpectedRequests = nNotServicedExpectedRequests))
     end
 
-    return bestSolution, bestRequestBank, results, Scenario(), Scenario(), true, ""
+    if keepExpectedRequests
+        return bestSolution, bestRequestBank, results, bestScenario, Scenario(), true, ""
+    else
+        return bestSolution, bestRequestBank, results, Scenario(), Scenario(), true, ""
+    end
+    
 
 end
 

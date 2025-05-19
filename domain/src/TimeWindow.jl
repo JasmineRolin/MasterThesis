@@ -1,6 +1,6 @@
 module TimeWindows
 
-export TimeWindow,duration
+export TimeWindow,duration, copyTimewindow
 
 mutable struct TimeWindow
     startTime::Int
@@ -23,5 +23,9 @@ function duration(tw::TimeWindow)::Int
     return tw.endTime - tw.startTime
 end
 
+
+function copyTimewindow(tw::TimeWindow)
+    return TimeWindow(tw.startTime, tw.endTime)
+end
 
 end

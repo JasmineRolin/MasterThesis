@@ -2,7 +2,7 @@ module Vehicles
 
 using ..TimeWindows, ..Locations
 
-export Vehicle 
+export Vehicle, copyVehicle 
 
 mutable struct Vehicle 
     id::Int 
@@ -22,5 +22,15 @@ mutable struct Vehicle
     end
 end
 
+function copyVehicle(v::Vehicle)
+    return Vehicle(
+        v.id,
+        copyTimewindow(v.availableTimeWindow),
+        v.depotId,
+        copyLocation(v.depotLocation),
+        v.maximumRideTime,
+        v.totalCapacity
+    )
+end
 
 end
