@@ -689,21 +689,38 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     if anticipation == false
         solution, requestBank = offlineSolution(scenario,repairMethods,destroyMethods,parametersFile,alnsParameters,scenarioName)
     else
-        solution, requestBank, resultsAnticipation = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,displayPlots=displayPlots)
+        solution, requestBank, resultsAnticipation = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,length(scenario.offlineRequests),displayPlots=displayPlots)
         updateIds!(solution,length(scenario.requests),nExpected)
         newIndices = collect((length(scenario.requests)+1):(length(scenario.requests)+nExpected))
         setdiff!(requestBank, newIndices)
+
+       
+        # Save slack before and after ALNS on solution  
+        testSol = copySolution(solution)
+        testSol.nTaxi = 0
+        testSol.nTaxiExpected = 0
+        testSolALNS, _,_,_, _,_,_ = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=testSol,alreadyRejected=solution.nTaxi)
+
+        slackBeforeALNS = measureSlackInSolution(solution,finalSolution,scenario,scenario.nFixed)
+        slackAfterALNS = measureSlackInSolution(testSolALNS,finalSolution,scenario,scenario.nFixed)
 
         if saveResults == true
             if !isdir(outPutFileFolder)
                 mkpath(outPutFileFolder)
             end
+       
+            # Create a Dict with all columns from the DataFrame
+            dict_data = Dict{String, Any}(col => resultsAnticipation[!, col] for col in names(resultsAnticipation))
+            
+            # Add your scalar slack values
+            dict_data["slackBeforeALNS"] = slackBeforeALNS
+            dict_data["slackAfterALNS"] = slackAfterALNS
+            
             fileName = outPutFileFolder*"/Anticipation_KPI_"*string(scenario.name)*".json"
             file = open(fileName, "w") 
-            write(file, JSON.json(resultsAnticipation))
+            write(file, JSON.json(dict_data))
             close(file)
         end
-
     end
 
     requestBankOffline = deepcopy(requestBank)
@@ -750,6 +767,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     averageNotServicedExpectedRequests = zeros(Float64,totalEvents)
     averageNotServicedExpectedRequestsRelevant = zeros(Float64,totalEvents)
 
+
     for (itr,event) in enumerate(events)
 
         startTimeEvent = time()
@@ -760,6 +778,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         # Determine current state
         currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario,visitedRoute,grid,depotLocations,predictedDemand,relocateVehicles=relocateVehicles,gamma=gamma,displayPlots=displayPlots,nTimePeriods=nTimePeriods,periodLength=periodLength)
         oldSolution = copySolution(currentState.solution)
+
         if printResults
             println("------------------------------------------------------------------------------------------------------------------------------------------------")
             println("Current solution: ")
@@ -801,7 +820,6 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
             averageNotServicedExpectedRequests[itr], averageNotServicedExpectedRequestsRelevant[itr] = testSolutionAnticipation(event.request,solution,requestFile,vehiclesFile,parametersFile,scenarioName,nExpected,gridFile,visitedRoute=visitedRoute)
         end
 
-
         if printResults
             println("------------------------------------------------------------------------------------------------------------------------------------------------")
             println("Solution after online: ")
@@ -810,13 +828,13 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         end
 
         if displayPlots && event.id in requestBank
-            display(createGantChartOfSolutionAndEventOnlineComparison(solution, oldSolution, "Comparison Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event.request))
             display(createGantChartOfSolutionAndEventOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event.request))
-            #display(plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime)))       
+            display(plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime)))       
+            display(createGantChartOfSolutionAndEventOnlineComparison(solution, oldSolution, "Comparison Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event.request))
         elseif displayPlots
-           display(createGantChartOfSolutionOnlineComparison(solution, oldSolution,"Comparison Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime))
            display(createGantChartOfSolutionOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime))
-           #display(plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime)))       
+           display(plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime)))       
+           display(createGantChartOfSolutionOnlineComparison(solution, oldSolution,"Comparison Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime))
         end
 
     end
@@ -836,10 +854,9 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     end
     if displayPlots
         display(createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge"))
+        display(plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge"))
         display(createGantChartOfSolutionOnlineComparison(finalSolution, initialSolution,"Comparison between initial and final solution"))
-        #display(plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge"))
     end
-
 
     # Print summary 
     println(rpad("Metric", 40), "Value")

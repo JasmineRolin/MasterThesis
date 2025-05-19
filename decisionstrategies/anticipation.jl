@@ -9,33 +9,11 @@ using TimerOutputs
 using JSON
 
 
-global GENERATE_SIMULATION_DATA = false
-global GENERATE_DATA_AND_VEHICLES = true
-global GENERATE_VEHICLES = false
-
 #==
 # Constants for data generation 
 ==#
-global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
-global callBuffer = 2*60 # 2 hours buffer
-global nData = 10
-global nRequestList = [20] #[20,100,300,500]
 global MAX_DELAY = 45 
-
-#==
-# Constant for vehicle generation  
-==#
-global vehicleCapacity = 4
-global GammaList = [0.5,0.7,0.9]
-
-global shifts = Dict(
-    "Morning"    => Dict("TimeWindow" => [6*60, 12*60], "cost" => 2.0, "nVehicles" => 0, "y" => []),
-    "Noon"       => Dict("TimeWindow" => [10*60, 16*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
-    "Afternoon"  => Dict("TimeWindow" => [14*60, 20*60], "cost" => 3.0, "nVehicles" => 0, "y" => []),
-    "Evening"    => Dict("TimeWindow" => [18*60, 24*60], "cost" => 4.0, "nVehicles" => 0, "y" => [])
-)
-
 
 #==
 # Grid constants 
@@ -44,8 +22,6 @@ global MAX_LAT = 60.721
 global MIN_LAT = 59.165
 global MAX_LONG = 12.458
 global MIN_LONG = 9.948
-global NUM_ROWS = 5
-global NUM_COLS = 5
 
 
 #==
@@ -418,7 +394,7 @@ end
 #-------
 # Determine offline solution with anticipation
 #-------
-function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},destroyMethods::Vector{GenericMethod},requestFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String,nExpected::Int,gridFile::String;displayPlots::Bool=false)
+function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},destroyMethods::Vector{GenericMethod},requestFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String,nExpected::Int,gridFile::String,nOfflineOriginal::Int;displayPlots::Bool=false)
 
     # Variables to determine best solution
     bestAverageObj = typemax(Float64)
@@ -432,8 +408,10 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
                         nInitialNotServicedExpectedRequests = Int[])
     nRequests = 0
 
-    # TODO change to 10
-    for i in 1:10
+    # TODO: change to 10
+    for i in 1:10 
+        println("==========================================")
+        println("Run: ", i)
 
         # Make scenario
         scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile)
@@ -460,6 +438,11 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         nNotServicedExpectedRequests = sum(originalRequestBank .> nFixed)
         nServicedFixedRequests = length(scenario.offlineRequests) - nExpected - nNotServicedFixedRequests
         nServicedExpectedRequests = nExpected - nNotServicedExpectedRequests
+
+        #println("\t Number of not serviced fixed requests: ", nNotServicedFixedRequests,"/",nOfflineOriginal)
+        #println("\t Number of not serviced expected requests: ", nNotServicedExpectedRequests,"/",nExpected)
+        #println("\t Total number offline requests: ",length(scenario.offlineRequests))
+        #println("\t Length of requestBank: ",length(originalRequestBank))
 
         # Remove expected requests from solution
         removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,originalSolution,nExpected,nFixed,nNotServicedExpectedRequests,originalRequestBank,taxiParameter,taxiParameterExpected)
@@ -506,6 +489,9 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
             # Calculate Obj
             averageObj += solution.totalCost + originalSolution.nTaxi * taxiParameter 
             averageNotServicedExpectedRequests += length(stateALNS.requestBank)
+
+            #println("\t Sub run: ", j)
+            #println("\t\t Number of not serviced fixed requests: ",  length(stateALNS.requestBank),"/",nExpected)
         end
         averageObj /= 10
         averageNotServicedExpectedRequests /= 10
@@ -521,6 +507,12 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         # Save results
         push!(results, (runId = "Run $i", averageObj = averageObj, averageNotServicedExpectedRequests = averageNotServicedExpectedRequests, 
                         nInitialNotServicedFixedRequests = nNotServicedFixedRequests, nInitialNotServicedExpectedRequests = nNotServicedExpectedRequests))
+        
+                        
+    end
+
+    if displayPlots
+        display(createGantChartOfSolutionOnline(bestSolution,"Best Solution"))
     end
 
     return bestSolution, bestRequestBank, results, Scenario(), Scenario(), true, ""
@@ -663,5 +655,53 @@ function onlineAlgorithmAnticipation(currentState::State, requestBank::Vector{In
     updateTimeWindowsOnline!(finalSolution,scenario,searchForEvent=true,eventId = event.id)
 
     return finalSolution, requestBank, insertedByALNS
+
+end
+
+
+
+#==
+ Method to measure slack in the solution 
+==#
+function measureSlackInSolution(solution::Solution,finalSolution::Solution, scenario::Scenario, nFixed::Int)
+    time = scenario.time
+    finalVehicleSchedules = finalSolution.vehicleSchedules
+
+    # Get slack in solution
+    slack = 0.0
+    for schedule in solution.vehicleSchedules
+        route = schedule.route
+
+        # No slack in empty route?
+        if length(route) == 2 && route[1].activity.activityType == DEPOT && route[2].activity.activityType == DEPOT
+            continue
+        end
+
+        for (idx,activityAssignment) in enumerate(route)
+            activity = activityAssignment.activity
+
+            # If dummy requests 
+            if activity.requestId > nFixed
+                if idx == 1
+                    activityBeforeDummy = finalVehicleSchedules[schedule.vehicle.id].route[end]
+                else
+                    activityBeforeDummy = route[idx-1]
+                end
+                activityAfterDummy = route[idx+1]
+
+                totalTime = activityBeforeDummy.endOfServiceTime - activityAfterDummy.startOfServiceTime
+
+                # Slack is the idle time we would have if we remove the dummy request
+                slack += totalTime -  time[activityBeforeDummy.activity.id, activityAfterDummy.activity.id]
+
+            # If idle time waiting (so not necesarry waiting)
+            elseif activity.activityType == WAITING 
+                slack += activityAssignment.endOfServiceTime - activityAssignment.startOfServiceTime
+            end
+
+        end
+    end
+
+    return slack
 
 end
