@@ -456,7 +456,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         end
 
         if displayPlots
-            display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and before removing expected requests"))
+            display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and before removing expected requests",nFixed = scenario.nFixed))
             #display(plotRoutes(originalSolution,scenario,requestBank,"Initial Solution "*string(i)*" before ALNS and before removing expected requests"))
         end
 

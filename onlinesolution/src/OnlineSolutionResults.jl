@@ -9,7 +9,7 @@ export plotRelocation
 
 # Plot vehicle schedules 
 # Define a function to plot activity assignments for each vehicle
-function createGantChartOfSolutionOnline(solution::Solution,title::String;eventId::Int=-10,eventTime::Int=-10)
+function createGantChartOfSolutionOnline(solution::Solution,title::String;eventId::Int=-10,eventTime::Int=-10,nFixed::Int=0)
     yPositions = []
     yLabels = []
     yPos = 1
@@ -22,14 +22,24 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String;eventI
     for schedule in solution.vehicleSchedules
         for assignment in schedule.route
             offset = 0 # TO offset waiting activities visually 
+            isExpected = nFixed < assignment.activity.requestId 
             if assignment.activity.activityType == PICKUP
-                color = assignment.activity.requestId == eventId ? :lightblue1 : :lightgreen 
+                if isExpected
+                    color = :gold
+                else
+                    color = assignment.activity.requestId == eventId ? :lightblue1 : :lightgreen 
+                end 
                 markersize = 15
                 scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
                 annotate!(p, assignment.startOfServiceTime, yPos, text("PU"*string(assignment.activity.requestId), :black, 8))
 
             elseif assignment.activity.activityType == DROPOFF
-                color = assignment.activity.requestId == eventId ? :blue : :tomato
+                if isExpected
+                    color = :gold
+                else
+                    color = assignment.activity.requestId == eventId ? :blue : :tomato 
+                end 
+                
                 markersize = 15
 
                 scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
@@ -314,7 +324,7 @@ function plotRoutesOnline(solution::Solution,scenario::Scenario,requestBank::Vec
     return p 
 end
 
-function createGantChartOfSolutionAndEventOnline(solution::Solution,title::String;eventId::Int=-10,eventTime::Int=-10,event::Request= Request())
+function createGantChartOfSolutionAndEventOnline(solution::Solution,title::String;eventId::Int=-10,eventTime::Int=-10,event::Request= Request(),nFixed::Int = 0)
     yPositions = []
     yLabels = []
     yPos = 1
@@ -327,19 +337,25 @@ function createGantChartOfSolutionAndEventOnline(solution::Solution,title::Strin
     for schedule in solution.vehicleSchedules
         for assignment in schedule.route
             offset = 0 # TO offset waiting activities visually 
+            isExpected = nFixed < assignment.activity.requestId 
             if assignment.activity.activityType == PICKUP
-                color = assignment.activity.requestId == eventId ? :lightblue1 : :lightgreen 
+                if isExpected
+                    color = :gold
+                else
+                    color = assignment.activity.requestId == eventId ? :lightblue1 : :lightgreen 
+                end 
                 markersize = 15
                 scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
                 annotate!(p, assignment.startOfServiceTime, yPos, text("PU"*string(assignment.activity.requestId), :black, 8))
-
             elseif assignment.activity.activityType == DROPOFF
-                color = assignment.activity.requestId == eventId ? :blue : :tomato
+                if isExpected
+                    color = :gold
+                else
+                    color = assignment.activity.requestId == eventId ? :blue : :tomato
+                end
                 markersize = 15
-
                 scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
                 annotate!(p, assignment.startOfServiceTime, yPos, text("DO"*string(assignment.activity.requestId), :black, 8))
-
             elseif assignment.activity.activityType == DEPOT
                 color = :black
                 markersize = 15
