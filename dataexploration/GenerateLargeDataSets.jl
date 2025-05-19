@@ -41,7 +41,7 @@ function load_simulation_data(input_dir::String)
     # TODO: why are there missing values ? 
     probabilities_location = coalesce.(Float64.(CSV.read(joinpath(input_dir, "probabilities_location.csv"), DataFrame).probability), 0.0)
 
-    println("✅ All simulation data loaded from $input_dir")
+    #println("✅ All simulation data loaded from $input_dir")
 
     return (
         probabilities_pickUpTime,

@@ -86,7 +86,9 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,solution::Solution,ev
     notServicedRequests = setdiff(considered, servicedPickUpActivities)
 
     if totalNTaxi + nTaxi + nTaxiExpected + nExpected != length(notServicedRequests) 
-        msg = "SOLUTION INFEASIBLE: Not all requests are serviced. Serviced: $(length(servicedPickUpActivities)), not serviced: $(length(notServicedRequests)), nTaxi: $(nTaxi), totalNTaxi: $(totalNTaxi)"
+        println("nTaxiExpected: ", nTaxiExpected)
+        println("nExpected: ", nExpected)
+        msg = "SOLUTION INFEASIBLE: Not all requests are serviced. Serviced: $(length(servicedPickUpActivities)), not serviced: $(length(notServicedRequests)), nTaxi: $(nTaxi), totalNTaxi: $(totalNTaxi), nTaxiExpected: $(nTaxiExpected), expected: $(nExpected)"
         return false, msg
     end
 

@@ -204,6 +204,6 @@ function run_and_save_simulation(data_files::Vector{String}, output_dir::String,
     CSV.write(joinpath(output_dir, "density_grid.csv"), DataFrame(density=vec(density_grid)))
     CSV.write(joinpath(output_dir, "probabilities_location.csv"), DataFrame(probability=probabilities_location))
 
-    println("✅ All simulation outputs saved to $output_dir")
+   # println("✅ All simulation outputs saved to $output_dir")
 end
 

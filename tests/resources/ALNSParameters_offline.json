@@ -1,6 +1,6 @@
 {
-    "timeLimit": 30.0,
-    "printSegmentSize":10,
+    "timeLimit": 1.0,
+    "printSegmentSize":5000,
     "segmentSize": 10,
     "w": 0.15, 
     "coolingRate": 0.99975,
