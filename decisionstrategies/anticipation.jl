@@ -67,8 +67,9 @@ function createExpectedRequests(N::Int,nFixedRequests::Int)
         # Determine type of request
         if rand() < 0.5
             requestType = 0  # pick-up request
-
-            sampled_indices = sample(1:length(probabilities_pickUpTime), Weights(probabilities_pickUpTime), 1)
+            
+            valid_indices = findall(t-> t > 480, time_range) # No expected requests in the first 2 hours
+            sampled_indices = sample(valid_indices, Weights(probabilities_pickUpTime[valid_indices]), 1)
             sampledTimePick = time_range[sampled_indices]
             requestTime = ceil(sampledTimePick[1])
         else
@@ -78,13 +79,12 @@ function createExpectedRequests(N::Int,nFixedRequests::Int)
             directDriveTime = ceil(haversine_distance(pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude)[2])
 
             # Earliest request time 
-            earliestRequestTime = serviceWindow[1] + directDriveTime + MAX_DELAY
-            indices = time_range .>= earliestRequestTime
-            nTimes = sum(indices)
+            earliestRequestTime = max(serviceWindow[1] + directDriveTime + MAX_DELAY,480) 
+            valid_indices = findall(t -> t >= earliestRequestTime && t > 480, time_range) # No expected requests in the first 2 hours
 
-            sampled_indices = sample(1:nTimes, Weights(probabilities_dropOffTime[indices]), 1)
-            sampledTimeDrop = time_range[indices][sampled_indices]
-            requestTime = ceil(sampledTimeDrop[1])
+            sampled_index = sample(valid_indices, Weights(probabilities_dropOffTime[valid_indices]), 1)
+            sampledTimeDrop = time_range[sampled_index[1]]
+            requestTime = ceil(sampledTimeDrop)
         end
 
         push!(requestDF, (i, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, requestType, requestTime,"WALKING",0,0))
