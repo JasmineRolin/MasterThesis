@@ -682,6 +682,11 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
     addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
+    # Initialize current state 
+    initialVehicleSchedules = [VehicleSchedule(vehicle,true) for vehicle in scenario.vehicles] 
+    finalSolution = Solution(initialVehicleSchedules, 0.0, 0, 0, 0.0, 0) 
+    currentState = State(scenario,Request(),0)
+
     if anticipation == false
         solution, requestBank = offlineSolution(scenario,repairMethods,destroyMethods,parametersFile,alnsParameters,scenarioName)
         nNotServicedExpectedRequests = 0 # Dummy
@@ -740,11 +745,6 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         display(createGantChartOfSolutionOnline(solution,"Initial Solution after ALNS",nFixed=scenario.nFixed))
         #display(plotRoutes(solution,scenario,requestBank,"Initial Solution after ALNS"))
     end
-
-    # Initialize current state 
-    initialVehicleSchedules = [VehicleSchedule(vehicle,true) for vehicle in scenario.vehicles] 
-    finalSolution = Solution(initialVehicleSchedules, 0.0, 0, 0, 0.0, 0) 
-    currentState = State(scenario,Request(),0)
 
     # Initialize visited routes 
     visitedRoute = Dict{Int,Dict{String,Int}}()
@@ -929,10 +929,17 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
 
     end
     
-    state = State(finalSolution,scenario.onlineRequests[end],0)
-    feasible, msg = checkSolutionFeasibilityOnline(scenario,state,nExpected = nExpected)
-    @test msg == ""
-    @test feasible == true
+    if keepExpectedRequests
+        state = State(finalSolution,scenario.onlineRequests[end],0)
+        feasible, msg = checkSolutionFeasibilityOnline(scenario,state,nExpected = nExpected)
+        @test msg == ""
+        @test feasible == true
+    else
+        state = State(finalSolution,scenario.onlineRequests[end],0)
+        feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+        @test msg == ""
+        @test feasible == true
+    end
 
     return finalSolution, requestBank
 
