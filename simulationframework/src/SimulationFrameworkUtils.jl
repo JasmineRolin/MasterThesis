@@ -652,7 +652,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
    
 end
 
-function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixFile::String,timeMatrixFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json", ALNS::Bool=true, nTimePeriods::Int=24,periodLength::Int=60,testALNS::Bool=false, keepExpectedRequests::Bool=false)
+function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixFile::String,timeMatrixFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json", ALNS::Bool=true, nTimePeriods::Int=24,periodLength::Int=60,testALNS::Bool=false, keepExpectedRequests::Bool=false,measureSlack::Bool=false)
 
     # Retrieve info 
     if relocateVehicles
@@ -691,7 +691,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         solution, requestBank = offlineSolution(scenario,repairMethods,destroyMethods,parametersFile,alnsParameters,scenarioName)
         nNotServicedExpectedRequests = 0 # Dummy
     elseif anticipation == true && keepExpectedRequests == false
-        solution, requestBank, resultsAnticipation = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,displayPlots=displayPlots)
+        solution, requestBank, resultsAnticipation = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,length(scenario.offlineRequests),displayPlots=displayPlots)
         updateIds!(solution,length(scenario.requests),nExpected)
         requestBank = requestBank[requestBank .<= scenario.nFixed]
 
@@ -713,16 +713,38 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         solution.nTaxiExpected = 0
         solution.totalCost -= nNotServicedExpectedRequests*scenario.taxiParameterExpected
 
+       
+        # Save slack before and after ALNS on solution  
+        if measureSlack
+            testSol = copySolution(solution)
+            testSol.nTaxi = 0
+            testSol.nTaxiExpected = 0
+            testSolALNS, _,_,_, _,_,_ = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=testSol,alreadyRejected=solution.nTaxi)
+
+            slackBeforeALNS = measureSlackInSolution(solution,finalSolution,scenario,scenario.nFixed)
+            slackAfterALNS = measureSlackInSolution(testSolALNS,finalSolution,scenario,scenario.nFixed)
+        else
+            slackBeforeALNS = 0
+            slackAfterALNS = 0
+        end
+
         if saveResults == true
             if !isdir(outPutFileFolder)
                 mkpath(outPutFileFolder)
             end
+       
+            # Create a Dict with all columns from the DataFrame
+            dict_data = Dict{String, Any}(col => resultsAnticipation[!, col] for col in names(resultsAnticipation))
+            
+            # Add your scalar slack values
+            dict_data["slackBeforeALNS"] = slackBeforeALNS
+            dict_data["slackAfterALNS"] = slackAfterALNS
+            
             fileName = outPutFileFolder*"/Anticipation_KPI_"*string(scenario.name)*".json"
             file = open(fileName, "w") 
-            write(file, JSON.json(resultsAnticipation))
+            write(file, JSON.json(dict_data))
             close(file)
         end
-
     end
 
     nNotServicedExpectedRequestsOffline = copy(nNotServicedExpectedRequests)
@@ -769,6 +791,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     nOnline = 0
     averageNotServicedExpectedRequests = zeros(Float64,totalEvents)
     averageNotServicedExpectedRequestsRelevant = zeros(Float64,totalEvents)
+
 
     for (itr,event) in enumerate(events)
 
@@ -832,7 +855,6 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
             averageNotServicedExpectedRequests[itr], averageNotServicedExpectedRequestsRelevant[itr] = testSolutionAnticipation(event.request,solution,requestFile,vehiclesFile,parametersFile,scenarioName,nExpected,gridFile,visitedRoute=visitedRoute)
         end
 
-
         if printResults
             println("------------------------------------------------------------------------------------------------------------------------------------------------")
             println("Solution after online: ")
@@ -876,8 +898,8 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     end
     if displayPlots
         display(createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge",nFixed=scenario.nFixed))
+        display(plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge"))
         display(createGantChartOfSolutionOnlineComparison(finalSolution, initialSolution,"Comparison between initial and final solution"))
-        #display(plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge"))
     end
 
     # Print summary 
