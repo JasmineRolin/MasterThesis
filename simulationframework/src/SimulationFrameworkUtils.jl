@@ -689,12 +689,11 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     if anticipation == false
         solution, requestBank = offlineSolution(scenario,repairMethods,destroyMethods,parametersFile,alnsParameters,scenarioName)
     else
-        solution, requestBank, resultsAnticipation = offlineSolutionWithAnticipation(scenario,repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,length(scenario.offlineRequests),displayPlots=displayPlots)
+        solution, requestBank, resultsAnticipation = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,length(scenario.offlineRequests),displayPlots=displayPlots)
         updateIds!(solution,length(scenario.requests),nExpected)
         newIndices = collect((length(scenario.requests)+1):(length(scenario.requests)+nExpected))
         setdiff!(requestBank, newIndices)
 
-       # TODO
         # Save slack before and after ALNS on solution  
         if measureSlack
             testSol = copySolution(solution)

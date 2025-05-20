@@ -394,7 +394,7 @@ end
 #-------
 # Determine offline solution with anticipation
 #-------
-function offlineSolutionWithAnticipation(originalScenario::Scenario,repairMethods::Vector{GenericMethod},destroyMethods::Vector{GenericMethod},requestFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String,nExpected::Int,gridFile::String,nOfflineOriginal::Int;displayPlots::Bool=false)
+function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},destroyMethods::Vector{GenericMethod},requestFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String,nExpected::Int,gridFile::String,nOfflineOriginal::Int;displayPlots::Bool=false)
 
     # Variables to determine best solution
     bestRunId = -1
@@ -409,8 +409,8 @@ function offlineSolutionWithAnticipation(originalScenario::Scenario,repairMethod
                         nInitialNotServicedExpectedRequests = Int[])
     nRequests = 0
 
-    # TODO: change to 10
-    for i in 1:10 # TODO: change to 10
+    # Do 10 runs of offline solution with anticipation
+    for i in 1:10 
         println("==========================================")
         println("Run: ", i)
 
@@ -427,14 +427,7 @@ function offlineSolutionWithAnticipation(originalScenario::Scenario,repairMethod
 
         # Get solution
         initialSolution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
-        # fixedOfflineRequests = [r for r in scenario.offlineRequests if r.id <= nFixed]
-        # initialSolution, requestBank = simpleConstruction(scenario,fixedOfflineRequests)
-        # println("Length of requestBank: ", length(requestBank))
-        # println("scenario.requests[1:nFixed]: ",length(fixedOfflineRequests))
-        # append!(requestBank,collect((nFixed+1):(nFixed+nExpected)))
-        # initialSolution.nTaxiExpected = nExpected
-        # initialSolution.totalCost += nExpected * taxiParameterExpected
-
+       
         state = State(initialSolution,Request(),0)
         feasible, msg = checkSolutionFeasibilityOnline(scenario,state;nExpected=0) 
         if !feasible
@@ -444,12 +437,12 @@ function offlineSolutionWithAnticipation(originalScenario::Scenario,repairMethod
 
         originalSolution, originalRequestBank,_,_, _,_,_ = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
 
-        #display(createGantChartOfSolutionAnticipation(scenario,originalSolution,"SOLUTION AFTER ALNS, run: "*string(i),nFixed,originalRequestBank))
 
-        # if displayPlots
-        #     display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and before removing expected requests"))
-        #     #display(plotRoutes(originalSolution,scenario,requestBank,"Initial Solution "*string(i)*" before ALNS and before removing expected requests"))
-        # end
+        if displayPlots
+            display(createGantChartOfSolutionAnticipation(scenario,originalSolution,"SOLUTION AFTER ALNS, run: "*string(i),nFixed,originalRequestBank))
+            display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and before removing expected requests"))
+            #display(plotRoutes(originalSolution,scenario,requestBank,"Initial Solution "*string(i)*" before ALNS and before removing expected requests"))
+        end
 
         # Determine number of serviced requests
         nNotServicedFixedRequests = sum(originalRequestBank .<= nFixed)
@@ -533,10 +526,6 @@ function offlineSolutionWithAnticipation(originalScenario::Scenario,repairMethod
         
     end
 
-    # if displayPlots
-    #     display(createGantChartOfSolutionOnline(bestSolution,"Best Solution"))
-    # end
-    
     println("BEST RUN: ", bestRunId)
 
     return bestSolution, bestRequestBank, results, Scenario(), Scenario(), true, ""

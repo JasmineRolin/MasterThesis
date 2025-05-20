@@ -62,9 +62,6 @@ function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::A
     currentState.currentSolution.totalCost += nRequestsToRemoveFixed*scenario.taxiParameter + nRequestsToRemoveExpected*scenario.taxiParameterExpected
 
     removeRequestsFromSolution!(time,distance,serviceTimes,requests,currentSolution,requestsToRemove,visitedRoute = visitedRoute,scenario = scenario,TO=TO)
-
-   # println("Removing expected request: ",sum(requestsToRemove .> scenario.nFixed))
-   # println("Removing fixed request: ",sum(requestsToRemove .<= scenario.nFixed))
 end
 
 #==
@@ -123,9 +120,6 @@ function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::
     currentState.currentSolution.nTaxi += nRequestsToRemoveFixed
     currentState.currentSolution.nTaxiExpected += nRequestsToRemoveExpected
     currentState.currentSolution.totalCost += nRequestsToRemoveFixed*scenario.taxiParameter + nRequestsToRemoveExpected*scenario.taxiParameterExpected
-        
-   # println("Removing expected request: ",sum(requestsToRemove .> scenario.nFixed))
-   # println("Removing fixed request: ",sum(requestsToRemove .<= scenario.nFixed))
     
     # Remove requests from solution
     removeRequestsFromSolution!(time, distance,serviceTimes,requests, currentSolution, requestsToRemove,visitedRoute=visitedRoute,scenario=scenario,TO=TO)
@@ -205,9 +199,6 @@ function shawRemoval!(scenario::Scenario, currentState::ALNSState, parameters::A
         
     # Remove requests 
     removeRequestsFromSolution!(time, distance, serviceTimes,requests,currentSolution, requestsToRemove,visitedRoute = visitedRoute,scenario = scenario,TO=TO)
-
-    #println("Removing expected request: ",sum(requestsToRemove .> scenario.nFixed))
-   # println("Removing fixed request: ",sum(requestsToRemove .<= scenario.nFixed))
 end
 
 #==

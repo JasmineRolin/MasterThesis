@@ -15,7 +15,7 @@ using CSV
 function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, run::String, resultType::String, i::Int)
 
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
-    parametersFile = "tests/resources/Parameters_Anticipation.csv"
+    parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters_offlineAnticipation.json"
     outPutFolder = string("resultExploration/results/",date,"/",run,"/",resultType,"/",n)
     outputFiles = Vector{String}()
@@ -62,13 +62,6 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
         # println("End")
 
         # display(createGantChartOfSolutionAnticipation(scenario,solutionOFF,"BASE offline solution",scenario.nFixed,requestBankOFF))
-
-
-        # # TODO remove when stable
-        # state = State(solutionOFF,Request(),0)
-        # feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-        # @test feasible == true
-        # @test msg == ""
     #end
    
 

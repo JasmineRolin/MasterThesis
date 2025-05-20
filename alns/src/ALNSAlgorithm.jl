@@ -52,8 +52,6 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
 
     reset_timer!(TO)  # Reset timer for this ALNS run
 
-   # println("TAXI EXPECTED: ", scenario.taxiParameterExpected)
-
     while !(termination(startTime, timeLimit) || numberOfIterationsSinceLastImprovement > maxNumberOfIterationsWithoutImprovement || numberOfIterationsSinceLastBest > maxNumberOfIterationsWithoutNewBest)
         isAccepted, isImproved, isNewBest = false, false, false
 
@@ -62,9 +60,7 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
         @timeit TO "Destroy!" begin
             destroyIdx = destroy!(scenario, trialState, parameters, configuration, visitedRoute=visitedRoute,TO=TO)
         end
-        # println("Destroy method: ", configuration.destroyMethods[destroyIdx].name)
-        # println("nTaxiExpected: ", trialState.currentSolution.nTaxiExpected)
-        # println("nTaxi: ", trialState.currentSolution.nTaxi)
+    
 
         @timeit TO "Repair!" begin
             repairIdx = repair!(scenario, trialState, configuration, visitedRoute=visitedRoute,TO=TO)
@@ -90,21 +86,17 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
         push!(pVals, p)
         push!(deltaVals, delta)
 
-        # && (trialState.currentSolution.nTaxi <= currentState.currentSolution.nTaxi)
         if acceptOnlinePhase && !seenBefore && (trialState.currentSolution.totalCost < currentState.currentSolution.totalCost - epsilon)
             isImproved, isAccepted = true, true
             currentState.currentSolution = copySolution(trialState.currentSolution)
             currentState.requestBank = deepcopy(trialState.requestBank)
             currentState.assignedRequests = deepcopy(trialState.assignedRequests)
             currentState.nAssignedRequests = trialState.nAssignedRequests
-           # println("Improved ")
 
-            # (trialState.currentSolution.nTaxi <= currentState.bestSolution.nTaxi) &&
             if  (trialState.currentSolution.totalCost < currentState.bestSolution.totalCost - epsilon)
                 isNewBest = true
                 currentState.bestSolution = copySolution(trialState.currentSolution)
                 currentState.bestRequestBank = deepcopy(trialState.requestBank)
-               # println("New best solution found")
             end
         elseif acceptOnlinePhase && !seenBefore && acceptBool
             countAccepted += 1
@@ -113,7 +105,6 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
             currentState.requestBank = deepcopy(trialState.requestBank)
             currentState.assignedRequests = deepcopy(trialState.assignedRequests)
             currentState.nAssignedRequests = trialState.nAssignedRequests
-            #println("Accepted ")
         end
 
         @timeit TO "Update Scores" begin
@@ -153,7 +144,6 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
 
         if iteration % printSegmentSize == 0
             println("==> ALNS: Iteration: ", iteration, ", Current cost: ", currentState.currentSolution.totalCost," current request bank: ",currentState.currentSolution.nTaxi, ", Best cost: ", currentState.bestSolution.totalCost," best request bank: ",currentState.bestSolution.nTaxi," best exp request bank: ",currentState.bestSolution.nTaxiExpected,", Improvement from initial: ", 100*(initialCost-currentState.bestSolution.totalCost)/initialCost, "%, Temperature: ", temperature, " New solutions: ",newSolutions, " /", iteration)
-           # println("")
         end
 
         iteration += 1
