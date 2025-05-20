@@ -75,7 +75,7 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
         end
 
         acceptOnlinePhase = if stage == "Online"
-            relevantRequestBank = trialState.requestBank[trialState.requestBank .<= nFixed]
+            relevantRequestBank = trialState.requestBank[trialState.requestBank .<= scenario.nFixed]
             (length(relevantRequestBank) == 0) || (eventId in relevantRequestBank && length(relevantRequestBank) == 1)
         else
             true

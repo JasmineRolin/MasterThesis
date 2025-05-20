@@ -706,7 +706,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         end
         nNotServicedExpectedRequests = 0 # Dummy
     else
-        solution, requestBank, resultsAnticipation, scenario = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,displayPlots=displayPlots,keepExpectedRequests=keepExpectedRequests)
+        solution, requestBank, resultsAnticipation, scenario = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,length(scenario.offlineRequests),displayPlots=displayPlots,keepExpectedRequests=keepExpectedRequests)
         nRequestBankTemp = length(requestBank)
         requestBank = requestBank[requestBank .<= scenario.nFixed]
         nNotServicedExpectedRequests = nRequestBankTemp - length(requestBank) 
@@ -801,7 +801,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         println("----------------")
 
         # Determine current state
-        currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario,visitedRoute,grid,depotLocations,predictedDemand,relocateVehicles=relocateVehicles,gamma=gamma,displayPlots=displayPlots,nTimePeriods=nTimePeriods,periodLength=periodLength,initialNotAcceptedExpectedRequests = nNotServicedExpectedRequests)
+        currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario,visitedRoute,grid,depotLocations,predictedDemand,relocateVehicles=relocateVehicles,gamma=gamma,displayPlots=displayPlots,nTimePeriods=nTimePeriods,periodLength=periodLength)
         oldSolution = copySolution(currentState.solution)
 
         if printResults
