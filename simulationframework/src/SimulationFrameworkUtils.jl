@@ -651,7 +651,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
    
 end
 
-function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixFile::String,timeMatrixFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json", ALNS::Bool=true, nTimePeriods::Int=24,periodLength::Int=60,testALNS::Bool=false)
+function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixFile::String,timeMatrixFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json", ALNS::Bool=true, nTimePeriods::Int=24,periodLength::Int=60,testALNS::Bool=false,measureSlack::Bool=false)
 
     # Retrieve info 
     if relocateVehicles
@@ -696,15 +696,19 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
 
        # TODO
         # Save slack before and after ALNS on solution  
-        testSol = copySolution(solution)
-        testSol.nTaxi = 0
-        testSol.nTaxiExpected = 0
-        testSolALNS, _,_,_, _,_,_ = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=testSol,alreadyRejected=solution.nTaxi)
+        if measureSlack
+            testSol = copySolution(solution)
+            testSol.nTaxi = 0
+            testSol.nTaxiExpected = 0
+            testSolALNS, _,_,_, _,_,_ = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=testSol,alreadyRejected=solution.nTaxi)
 
-        slackBeforeALNS = measureSlackInSolution(solution,finalSolution,scenario,scenario.nFixed)
-        slackAfterALNS = measureSlackInSolution(testSolALNS,finalSolution,scenario,scenario.nFixed)
-        println("Slack before ALNS: ",slackBeforeALNS, " slack after ALNS: ",slackAfterALNS)
-        
+            slackBeforeALNS = measureSlackInSolution(solution,finalSolution,scenario,scenario.nFixed)
+            slackAfterALNS = measureSlackInSolution(testSolALNS,finalSolution,scenario,scenario.nFixed)
+        else
+            slackBeforeALNS = 0
+            slackAfterALNS = 0
+        end
+
         if saveResults == true
             if !isdir(outPutFileFolder)
                 mkpath(outPutFileFolder)

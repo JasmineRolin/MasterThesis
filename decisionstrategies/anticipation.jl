@@ -512,6 +512,7 @@ function offlineSolutionWithAnticipation(originalScenario::Scenario,repairMethod
             println("\t Sub run: ", j)
             println("\t\t Number of not serviced fixed requests: ",  length(stateALNS.requestBank),"/",nExpected)
         end
+
         averageObj /= 10
         averageNotServicedExpectedRequests /= 10
 
