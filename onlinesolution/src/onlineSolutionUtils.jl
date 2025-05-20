@@ -88,7 +88,7 @@ function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario
 
 
     # TODO: remove when alns is stable
-    relevantRequestBank = setdiff(finalOnlineRequestBank, collect(scenario.nFixed+1:scenario.nFixed+scenario.nExpected))
+    relevantRequestBank = finalOnlineRequestBank[finalOnlineRequestBank .<= nFixed]
     if length(relevantRequestBank) > 1 || (length(relevantRequestBank) == 1 && relevantRequestBank[1] != event.id)
         println("ALNS: FINAL REQUEST BANK IS NOT EMPTY")
         println(finalOnlineRequestBank)

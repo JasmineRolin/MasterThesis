@@ -558,7 +558,7 @@ end
 # ------
 # Function to determine current state
 # ------
-function determineCurrentState(solution::Solution,event::Event,finalSolution::Solution,scenario::Scenario,visitedRoute::Dict{Int,Dict{String,Int}},grid::Grid,depotLocations::Dict{Tuple{Int,Int},Location},predictedDemand::Array{Float64,3};relocateVehicles::Bool=false,nTimePeriods::Int=24,periodLength::Int=60,gamma::Float64=0.5,displayPlots::Bool=false,initialNotAcceptedExpectedRequests::Int=0)
+function determineCurrentState(solution::Solution,event::Event,finalSolution::Solution,scenario::Scenario,visitedRoute::Dict{Int,Dict{String,Int}},grid::Grid,depotLocations::Dict{Tuple{Int,Int},Location},predictedDemand::Array{Float64,3};relocateVehicles::Bool=false,nTimePeriods::Int=24,periodLength::Int=60,gamma::Float64=0.5,displayPlots::Bool=false)
     nRequests = length(scenario.requests)
     time = scenario.time
     distance = scenario.distance
@@ -693,8 +693,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     elseif anticipation == true && keepExpectedRequests == false
         solution, requestBank, resultsAnticipation = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,displayPlots=displayPlots)
         updateIds!(solution,length(scenario.requests),nExpected)
-        newIndices = collect((length(scenario.requests)+1):(length(scenario.requests)+nExpected))
-        setdiff!(requestBank, newIndices)
+        requestBank = requestBank[requestBank .<= scenario.nFixed]
 
         if saveResults == true
             if !isdir(outPutFileFolder)
@@ -708,9 +707,8 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         nNotServicedExpectedRequests = 0 # Dummy
     else
         solution, requestBank, resultsAnticipation, scenario = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,displayPlots=displayPlots,keepExpectedRequests=keepExpectedRequests)
-        newIndices = collect((scenario.nFixed+1):(scenario.nFixed+nExpected))
         nRequestBankTemp = length(requestBank)
-        setdiff!(requestBank, newIndices)
+        requestBank = requestBank[requestBank .<= scenario.nFixed]
         nNotServicedExpectedRequests = nRequestBankTemp - length(requestBank) 
         solution.nTaxiExpected = 0
         solution.totalCost -= nNotServicedExpectedRequests*scenario.taxiParameterExpected
@@ -781,15 +779,8 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
 
         # Determine current state
         currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario,visitedRoute,grid,depotLocations,predictedDemand,relocateVehicles=relocateVehicles,gamma=gamma,displayPlots=displayPlots,nTimePeriods=nTimePeriods,periodLength=periodLength,initialNotAcceptedExpectedRequests = nNotServicedExpectedRequests)
-        println("currentState.totalNTaxi ", currentState.totalNTaxi)
-        println("Currentstate.solution.nTaxiExpected ", currentState.solution.nTaxiExpected)
-        println("Currentstate.solution.nTaxi ", currentState.solution.nTaxi)
-        println("scenario.nFixed ", scenario.nFixed)
-        println("scenario.nExpected ", scenario.nExpected)
-        println("Length of requests ", length(scenario.requests))
-        
-
         oldSolution = copySolution(currentState.solution)
+
         if printResults
             println("------------------------------------------------------------------------------------------------------------------------------------------------")
             println("Current solution: ")
@@ -823,8 +814,8 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
             nOnline += 1
             solution, requestBank,insertedByALNS = onlineAlgorithm(currentState, requestBank, scenario, destroyMethods, repairMethods, ALNS = ALNS, nNotServicedExpectedRequests=nNotServicedExpectedRequests) 
             eventsInsertedByALNS += insertedByALNS 
-            notServicedExpected = length(setdiff(requestBank,collect(1:scenario.nFixed)))
-            setdiff!(requestBank,collect(scenario.nFixed+1:scenario.nFixed+nExpected))
+            notServicedExpected = length(requestBank[requestBank .> scenario.nFixed])
+            requestBank = requestBank[requestBank .<= scenario.nFixed]
             nNotServicedExpectedRequests += notServicedExpected
             solution.totalCost -= notServicedExpected*scenario.taxiParameterExpected
         else
@@ -867,6 +858,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     # If we have kept the expected requests, we need to remove them from solution
     if keepExpectedRequests
         removeExpectedRequestsFromSolution!(scenario.time,scenario.distance,scenario.serviceTimes,scenario.requests,finalSolution,scenario.nExpected,scenario.nFixed,nNotServicedExpectedRequests,requestBank,scenario.taxiParameter,scenario.taxiParameterExpected)
+        # Add again because removed in removeExpectedRequestsFromSolution
         finalSolution.nTaxiExpected += nNotServicedExpectedRequests
         finalSolution.totalCost += nNotServicedExpectedRequests * scenario.taxiParameterExpected
     end
