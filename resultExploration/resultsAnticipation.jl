@@ -12,16 +12,7 @@ using CSV
 
 
 
-#function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, run::String, resultType::String, i::Int)
-
-    n = 100 
-    nExpectedPercentage = 0.4
-    gamma = 0.5
-    date = "2025-05-18"
-    run = ""
-    resultType = "BasicAnticipation"
-    i = 1
-
+function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, run::String, resultType::String, i::Int)
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters_offlineAnticipation.json"
@@ -43,7 +34,7 @@ using CSV
         scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,"","",gridFile)
        
         ALNS = true
-        displayPlot = true
+        displayPlot = false
         keepExpectedRequests = true
         solution, requestBank = simulateScenario(scenario,requestFile,distanceMatrixFile,timeMatrixFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,anticipation = true,nExpected=nExpected,printResults = false, saveResults = true,gridFile = gridFile, outPutFileFolder = outPutFolder, displayPlots = displayPlot,ALNS=ALNS,keepExpectedRequests= keepExpectedRequests)
         
@@ -69,18 +60,18 @@ using CSV
     #end
    
 
-#end
+end
 
 
 #main(20,0.4,0.5,"2025-05-18","","BasicAnticipation",1)
 
-# if abspath(PROGRAM_FILE) == @__FILE__
-#     n = parse(Int, ARGS[1])
-#     nExpectedPercentage = parse(Float64, ARGS[2])
-#     gamma = parse(Float64, ARGS[3])
-#     date = ARGS[4]
-#     run = ARGS[5]
-#     resultType = ARGS[6]
-#     dataset = parse(Int, ARGS[7])
-#     main(n, nExpectedPercentage, gamma, date, run, resultType, dataset)
-# end
+if abspath(PROGRAM_FILE) == @__FILE__
+    n = parse(Int, ARGS[1])
+    nExpectedPercentage = parse(Float64, ARGS[2])
+    gamma = parse(Float64, ARGS[3])
+    date = ARGS[4]
+    run = ARGS[5]
+    resultType = ARGS[6]
+    dataset = parse(Int, ARGS[7])
+    main(n, nExpectedPercentage, gamma, date, run, resultType, dataset)
+end
