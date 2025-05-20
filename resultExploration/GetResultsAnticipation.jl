@@ -6,7 +6,7 @@ nRequestList = [300,500]
 runList = [1]
 gamma = 0.5
 anticipationDegrees = [0.4]
-date = "2025-05-20"
+date = "2025-05-20_2"
 
 #==============================#
 # Create method list 
