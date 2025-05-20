@@ -12,18 +12,7 @@ using CSV
 
 
 
-#function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, run::String, resultType::String, i::Int)
-    print("\033c")
-
-
-    n = 300 
-    nExpectedPercentage = 0.4   
-    gamma = 0.5
-    date = "2025-05-19"
-    run = ""
-    resultType = "BasicAnticipation"
-    i = 2
-
+function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, run::String, resultType::String, i::Int)
 
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/Parameters_Anticipation.csv"
@@ -45,7 +34,7 @@ using CSV
         #TODO use pre calculated distance and time matrix file. 
         scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,"","",gridFile)
        
-        ALNS = true
+        ALNS = false
         displayPlot = false
         solution, requestBank = simulateScenario(scenario,requestFile,distanceMatrixFile,timeMatrixFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,anticipation = true,nExpected=nExpected,printResults = false, saveResults = true,gridFile = gridFile, outPutFileFolder = outPutFolder, displayPlots = displayPlot,ALNS=ALNS)
         # TODO remove when stable
@@ -82,18 +71,18 @@ using CSV
     #end
    
 
-#end
+end
 
 
 #main(300,0.3,0.5,"2025-05-18","","BasicAnticipation",1)
 
-# if abspath(PROGRAM_FILE) == @__FILE__
-#     n = parse(Int, ARGS[1])
-#     nExpectedPercentage = parse(Float64, ARGS[2])
-#     gamma = parse(Float64, ARGS[3])
-#     date = ARGS[4]
-#     run = ARGS[5]
-#     resultType = ARGS[6]
-#     dataset = parse(Int, ARGS[7])
-#     main(n, nExpectedPercentage, gamma, date, run, resultType, dataset)
-# end
+if abspath(PROGRAM_FILE) == @__FILE__
+    n = parse(Int, ARGS[1])
+    nExpectedPercentage = parse(Float64, ARGS[2])
+    gamma = parse(Float64, ARGS[3])
+    date = ARGS[4]
+    run = ARGS[5]
+    resultType = ARGS[6]
+    dataset = parse(Int, ARGS[7])
+    main(n, nExpectedPercentage, gamma, date, run, resultType, dataset)
+end

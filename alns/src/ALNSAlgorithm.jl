@@ -17,9 +17,6 @@ const TO = TimerOutput()
 ==#
 function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters, fileName::String;alreadyRejected=0, event=Request(), visitedRoute::Dict{Int,Dict{String,Int}}=Dict(),saveOutPut=false, stage="Offline")
     
-    # TODO 
-    saveOutPut = true 
-    
     eventId = event.id
     nDestroy = length(configuration.destroyMethods)
     nRepair = length(configuration.repairMethods)

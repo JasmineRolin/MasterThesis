@@ -444,7 +444,7 @@ function offlineSolutionWithAnticipation(originalScenario::Scenario,repairMethod
 
         originalSolution, originalRequestBank,_,_, _,_,_ = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
 
-        display(createGantChartOfSolutionAnticipation(scenario,originalSolution,"SOLUTION AFTER ALNS, run: "*string(i),nFixed,originalRequestBank))
+        #display(createGantChartOfSolutionAnticipation(scenario,originalSolution,"SOLUTION AFTER ALNS, run: "*string(i),nFixed,originalRequestBank))
 
         # if displayPlots
         #     display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and before removing expected requests"))

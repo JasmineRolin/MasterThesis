@@ -1,14 +1,14 @@
 using XLSX, CSV, DataFrames
 
 # Parameters
-methods = ["Anticipation", "AnticipationNoALNS"]
-run_tags = ["run1", "run2", "run3", "run4", "run5"]
-anticipation_Degrees = [0.3, 0.5]
+methods = ["Anticipation", "BaseCase"]
+run_tags = ["run1", "run2"]
+anticipation_Degrees = [0.4, 0.5]
 n_requests_list = [20, 100, 300, 500]
-date = "2025-05-15_long"
+date = "2025-05-20"
 base_dir = joinpath(@__DIR__, "results")
 nRuns = 5
-nameOfExcel = "Result_15052025_long.xlsx"
+nameOfExcel = "Result_20052025_long.xlsx"
 
 
 # Function to convert a column index to an Excel-style column letter (e.g., 1 -> "A", 2 -> "B")

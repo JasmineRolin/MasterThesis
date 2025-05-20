@@ -1,17 +1,21 @@
 #!/bin/bash
 
-n_requests_list=( "300" "500")
+n_requests_list=("300" "500")
+anticipation_levels=("0.4")
 run_tags=("run1" "run2")
 gamma="0.5"
 date="2025-05-20"
+
 mkdir -p submitfiles/generated_jobs
 
 for n_requests in "${n_requests_list[@]}"; do
+  for anticipation in "${anticipation_levels[@]}"; do
     for run_tag in "${run_tags[@]}"; do
-      job_name="Sim_BaseCase_${n_requests}_${run_tag}"
-      job_file="submitfiles/generated_jobs/${job_name}.sh"
+      for seed in {1..10}; do
+        job_name="Sim_Ant_${n_requests}_${anticipation}_${run_tag}_seed${seed}"
+        job_file="submitfiles/generated_jobs/${job_name}.sh"
 
-      cat > "$job_file" <<EOF
+        cat > "$job_file" <<EOF
 #!/bin/sh
 #BSUB -J "${job_name}"
 #BSUB -o submitfiles/output/output_%J.out
@@ -19,8 +23,8 @@ for n_requests in "${n_requests_list[@]}"; do
 #BSUB -n 8
 #BSUB -R "rusage[mem=2GB]"
 #BSUB -R "span[hosts=1]"
-#BSUB -W 10:00
-#BSUB -u s194351@student.dtu.dk
+#BSUB -W 5:00
+#BSUB -u s194321@student.dtu.dk
 #BSUB -N 
 
 module load julia/1.10.2
@@ -40,17 +44,12 @@ Pkg.develop(path="simulationframework");
 Pkg.resolve();
 '
 
-for seed in {1..10}; do
-  julia --project=. resultExploration/resultsBase.jl "$n_requests" "0" "$gamma" "$date" "$run_tag" "BaseCase" "\$seed" &
-done
-
-wait
+julia --project=. resultExploration/resultsAnticipation.jl "$n_requests" "$anticipation" "$gamma" "$date" "$run_tag" "Anticipation_${anticipation}" "$seed"
 EOF
 
-      # Make it executable
-      chmod +x "$job_file"
-
-      # Optionally submit the job right away
-      bsub < "$job_file"
+        chmod +x "$job_file"
+        bsub < "$job_file"
+      done
     done
+  done
 done
