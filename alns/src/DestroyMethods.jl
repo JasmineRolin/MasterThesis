@@ -62,7 +62,6 @@ function randomDestroy!(scenario::Scenario,currentState::ALNSState,parameters::A
     currentState.currentSolution.totalCost += nRequestsToRemoveFixed*scenario.taxiParameter + nRequestsToRemoveExpected*scenario.taxiParameterExpected
 
     removeRequestsFromSolution!(time,distance,serviceTimes,requests,currentSolution,requestsToRemove,visitedRoute = visitedRoute,scenario = scenario,TO=TO)
-
 end
 
 #==
@@ -121,7 +120,7 @@ function worstRemoval!(scenario::Scenario, currentState::ALNSState, parameters::
     currentState.currentSolution.nTaxi += nRequestsToRemoveFixed
     currentState.currentSolution.nTaxiExpected += nRequestsToRemoveExpected
     currentState.currentSolution.totalCost += nRequestsToRemoveFixed*scenario.taxiParameter + nRequestsToRemoveExpected*scenario.taxiParameterExpected
-        
+    
     # Remove requests from solution
     removeRequestsFromSolution!(time, distance,serviceTimes,requests, currentSolution, requestsToRemove,visitedRoute=visitedRoute,scenario=scenario,TO=TO)
 end

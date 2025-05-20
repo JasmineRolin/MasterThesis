@@ -1,0 +1,21 @@
+{
+    "TotalIdleTime": 2177,
+    "EventsInsertedByALNS": 0,
+    "Scenario": {
+        "name": "Gen_Data_500_5"
+    },
+    "TotalElapsedTime": 1.78,
+    "UnservicedOnlineRequests": 1,
+    "TotalRideTime": 26698,
+    "nTaxi": 85,
+    "UnservicedOfflineRequests": 5,
+    "AverageResponseTime": 0.01,
+    "AveragePercentRideSharing": 13.618,
+    "TotalIdleTimeWithCustomer": 6,
+    "TotalDirectRideTime": 11203,
+    "nOnlineRequests": 200,
+    "TotalCost": 89568.68710834152,
+    "TotalDistance": 22416.34001469432,
+    "nOfflineRequests": 300,
+    "TotalActualRideTime": 10634
+}

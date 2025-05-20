@@ -59,6 +59,7 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
         @timeit TO "Destroy!" begin
             destroyIdx = destroy!(scenario, trialState, parameters, configuration, visitedRoute=visitedRoute,TO=TO)
         end
+    
 
         @timeit TO "Repair!" begin
             repairIdx = repair!(scenario, trialState, configuration, visitedRoute=visitedRoute,TO=TO)
@@ -82,7 +83,6 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
         end
 
         acceptBool, p, delta = accept(parameters.timeLimit, startTime, trialState.currentSolution.totalCost, currentState.bestSolution.totalCost)
-
         push!(pVals, p)
         push!(deltaVals, delta)
 
@@ -93,7 +93,7 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
             currentState.assignedRequests = deepcopy(trialState.assignedRequests)
             currentState.nAssignedRequests = trialState.nAssignedRequests
 
-            if trialState.currentSolution.totalCost < currentState.bestSolution.totalCost - epsilon
+            if  (trialState.currentSolution.totalCost < currentState.bestSolution.totalCost - epsilon)
                 isNewBest = true
                 currentState.bestSolution = copySolution(trialState.currentSolution)
                 currentState.bestRequestBank = deepcopy(trialState.requestBank)

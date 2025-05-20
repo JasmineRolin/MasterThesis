@@ -1,10 +1,10 @@
 #!/bin/bash
 
-n_requests_list=("20" "100" "300" "500")
-anticipation_levels=("0.3")
+n_requests_list=("300" "500")
+anticipation_levels=("0.4")
 run_tags=("run1" "run2")
-gamma="0.7"
-date="2025-05-16"
+gamma="0.5"
+date="2025-05-20"
 
 mkdir -p submitfiles/generated_jobs
 
@@ -23,7 +23,7 @@ for n_requests in "${n_requests_list[@]}"; do
 #BSUB -R "rusage[mem=2GB]"
 #BSUB -R "span[hosts=1]"
 #BSUB -W 5:00
-#BSUB -u s194351@student.dtu.dk
+#BSUB -u s194321@student.dtu.dk
 #BSUB -N 
 
 module load julia/1.10.2

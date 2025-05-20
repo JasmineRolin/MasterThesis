@@ -5,7 +5,7 @@ using Plots.PlotMeasures
 using domain, utils 
 
 export createGantChartOfSolutionOnline, createGantChartOfSolutionOnlineComparison,writeOnlineKPIsToFile,processResults,createGantChartOfSolutionAndEventOnline, createGantChartOfSolutionAndEventOnlineComparison, plotRoutesOnline
-export plotRelocation
+export plotRelocation,createGantChartOfSolutionAnticipation
 
 # Plot vehicle schedules 
 # Define a function to plot activity assignments for each vehicle
@@ -511,6 +511,88 @@ function createGantChartOfSolutionAndEventOnlineComparison(newSolution::Solution
 end
 
 
+function createGantChartOfSolutionAnticipation(scenario::Scenario,solution::Solution,title::String,nFixed::Int,requestBank::Vector{Int})
+    yPositions = []
+    yLabels = []
+    yPos = 1
+
+    xPositions = []
+    xLabels = []
+    
+    p = plot(size=(1500,1500))
+
+    yInc = nFixed >= 300 ? 4 : 2
+    
+    for schedule in solution.vehicleSchedules
+        for assignment in schedule.route
+            offset = 0 # TO offset waiting activities visually 
+            if assignment.activity.activityType == PICKUP
+                color = assignment.activity.requestId > nFixed ? :purple : :lightgreen 
+                markersize = 15
+                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
+                annotate!(p, assignment.startOfServiceTime, yPos, text("PU"*string(assignment.activity.requestId), :black, 8))
+
+            elseif assignment.activity.activityType == DROPOFF
+                color = assignment.activity.requestId > nFixed ? :blue : :tomato
+                markersize = 15
+
+                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
+                annotate!(p, assignment.startOfServiceTime, yPos, text("DO"*string(assignment.activity.requestId), :black, 8))
+
+            elseif assignment.activity.activityType == DEPOT
+                color = :black
+                markersize = 15
+
+                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
+                annotate!(p, assignment.startOfServiceTime, yPos, text("D"*string(schedule.vehicle.depotId), :white, 8))
+                scatter!(p, [assignment.activity.timeWindow.startTime], [yPos], linewidth=11.5, label="", color=:darkgray, marker=:circle,markerstrokewidth=0,markersize=7)
+                scatter!(p, [assignment.activity.timeWindow.endTime], [yPos], linewidth=11.5, label="", color=:darkgray, marker=:circle,markerstrokewidth=0,markersize=7)
+            else
+                offset = 0
+                color = :gray67
+                markersize = 15
+
+                plot!(p, [assignment.startOfServiceTime, assignment.endOfServiceTime], [yPos, yPos], linewidth=29.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
+                annotate!(p, assignment.startOfServiceTime, yPos, text("W"*string(assignment.activity.location.name), :black, 8))
+
+            end
+
+            push!(xPositions, assignment.startOfServiceTime)
+            push!(xLabels, string(round(assignment.startOfServiceTime/60.0,digits = 1)))
+
+        end
+        hline!([yPos - 1], linewidth=1, color=:gray, label="")
+
+        push!(yPositions, yPos)
+        push!(yLabels, "Vehicle $(schedule.vehicle.id)")
+        yPos += yInc
+    end
+
+    # Plot the event
+    for r in requestBank
+        event = scenario.requests[r]
+        offset = 0
+        markersize = 10
+        colorPU = r > nFixed ? :purple : :lightgreen 
+        colorDO = r > nFixed ? :blue : :tomato
+
+        plot!(p, [event.pickUpActivity.timeWindow.startTime, event.pickUpActivity.timeWindow.endTime], [yPos, yPos], linewidth=19.5, label="", color = colorPU, marker=:square,markerstrokewidth=0,markersize=markersize)
+        plot!(p, [event.dropOffActivity.timeWindow.startTime, event.dropOffActivity.timeWindow.endTime], [yPos, yPos], linewidth=19.5, label="", color = colorDO, marker=:square,markerstrokewidth=0,markersize=markersize)
+        push!(yPositions, yPos)
+        push!(yLabels, "Event $(event.id)")
+        yPos += yInc
+
+    end
+
+    plot!(p, yticks=(yPositions, yLabels))
+    plot!(p, xticks=(xPositions, xLabels), xrotation=90)
+    xlabel!("Time (Hour)")
+    title!(string(title," - Activity Assignments for Vehicles"))
+    
+    return p
+end
+
+
 #==
  Plot relocation event
 ==#
@@ -711,6 +793,11 @@ end
 # Function to read and append multiple JSON files to the DataFrame
 function appendResults(files,results)
     for file_path in files
+        if !isfile(file_path)
+            println("File not found: ", file_path)
+            continue
+        end
+        
         row = parse_json(file_path)
         push!(results, row)
     end
@@ -761,12 +848,5 @@ function parse_json(file_path)
         averagePercentRideSharing
     ]
 end
-
-
-
-
-
-
-
 
 end

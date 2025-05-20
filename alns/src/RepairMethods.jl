@@ -17,24 +17,28 @@ global countFeasible = Ref(0)
     Method that performs regret insertion of requests
 ==#
 function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(),TO::TimerOutput=TimerOutput())
+    # Fixed 
+    requestBankFixed = state.requestBank[state.requestBank .<= scenario.nFixed]
+    regretInsertionWithRequestBank(state,scenario,requestBankFixed,visitedRoute=visitedRoute)
+
+    # Expected
+    requestBankExpected = state.requestBank[state.requestBank .> scenario.nFixed]
+    regretInsertionWithRequestBank(state,scenario,requestBankExpected,visitedRoute=visitedRoute)
+
+    state.requestBank = vcat(requestBankFixed, requestBankExpected)
+
+end
+
+function regretInsertionWithRequestBank(state::ALNSState,scenario::Scenario,requestBank::Vector{Int} = Vector{Int}();visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(),TO::TimerOutput=TimerOutput())
     countTotal[] = 0
     countFeasible[] = 0
 
     # TODO: should we implement noise?
-    @unpack currentSolution, requestBank = state
+    @unpack currentSolution = state
     requests = scenario.requests
     vehicleSchedules = currentSolution.vehicleSchedules
     nRequests = length(requests)
     nVehicles = length(vehicleSchedules)
-
-    # TODO: remove when stable also in other places
-    if length(requestBank) != state.currentSolution.nTaxi + state.currentSolution.nTaxiExpected
-        println(requestBank)
-        println(state.currentSolution.nTaxi)
-        println(state.currentSolution.nTaxiExpected)
-        throw("Error: requestBank length does not match currentSolution.nTaxi")
-        return
-    end
 
     # Define insertion matrix
     insertionCosts = zeros(Float64, nRequests, nVehicles)
@@ -51,6 +55,7 @@ function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{
         bestRegret = typemin(Float64)
         bestRequest = -1
         overallBestVehicle = -1
+        
         
         # Find best request and vehicle combination to insert
         @timeit TO "GreedyFindFeasibleInsertionAndInsert" begin
@@ -73,13 +78,16 @@ function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{
                 if bestVehicleForRequest == -1
                     continue
                 end
-                if (secondBestInsertion - bestInsertion) > bestRegret
+
+                regret = (secondBestInsertion - bestInsertion)
+                if regret  > bestRegret
                     bestRegret = secondBestInsertion - bestInsertion
                     bestRequest = r
                     overallBestVehicle = bestVehicleForRequest
                 end
             end
         
+
             # Break if no request can be inserted
             if bestRequest == -1
                 break
@@ -169,8 +177,12 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
     end
 
     # Shuffle request bank
-    shuffle!(requestBank) 
-
+    fixedRequestBank = requestBank[requestBank .<= scenario.nFixed]
+    expectedRequestBank = requestBank[requestBank .> scenario.nFixed]
+    shuffle!(fixedRequestBank)
+    shuffle!(expectedRequestBank)
+    requestBank = vcat(fixedRequestBank, expectedRequestBank)
+    
     
     # Define insertion matrix
     insertionCosts = zeros(Float64, nRequests, nVehicles)

@@ -4,18 +4,28 @@ using simulationframework
 using onlinesolution
 using domain
 using CSV
+#using alns
+#using offlinesolution
+#using Plots
 
 
 
 
 
+#function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, run::String, resultType::String, i::Int)
 
-function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, run::String, resultType::String, i::Int)
+    n = 100 
+    nExpectedPercentage = 0.4
+    gamma = 0.5
+    date = "2025-05-18"
+    run = ""
+    resultType = "BasicAnticipation"
+    i = 1
 
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters_offlineAnticipation.json"
-    outPutFolder = string("resultExploration/results/",date,"/",run,"/",resultType,"/",n)
+    outPutFolder = string("resultExploration/results/",date,"/",resultType,"/",n,"/",run)
     outputFiles = Vector{String}()
     gridFile = string("Data/Konsentra/grid.json")
 
@@ -31,29 +41,46 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
         # Read scenario 
         #TODO use pre calculated distance and time matrix file. 
         scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,"","",gridFile)
-        solution, requestBank = simulateScenario(scenario,requestFile,distanceMatrixFile,timeMatrixFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,anticipation = true,nExpected=nExpected,printResults = false, saveResults = true,gridFile = gridFile, outPutFileFolder = outPutFolder, displayPlots = false)
+       
+        ALNS = true
+        displayPlot = true
+        keepExpectedRequests = true
+        solution, requestBank = simulateScenario(scenario,requestFile,distanceMatrixFile,timeMatrixFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,anticipation = true,nExpected=nExpected,printResults = false, saveResults = true,gridFile = gridFile, outPutFileFolder = outPutFolder, displayPlots = displayPlot,ALNS=ALNS,keepExpectedRequests= keepExpectedRequests)
+        
 
-        # TODO remove when stable
-        state = State(solution,scenario.onlineRequests[end],0)
-        feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-        @test feasible == true
-        @test msg == ""
+        dfResults = processResults(outputFiles)
+        CSV.write(outPutFolder*"/results.csv", dfResults)
+
+        # # Choose destroy methods
+        # alnsParameters = "tests/resources/ALNSParameters_offline.json"
+        # destroyMethods = Vector{GenericMethod}()
+        # addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
+        # addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
+        # addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
+
+        # # Choose repair methods
+        # repairMethods = Vector{GenericMethod}()
+        # addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
+        # addMethod!(repairMethods,"regretInsertion",regretInsertion)
+        # solutionOFF, requestBankOFF = offlineSolution(scenario,repairMethods,destroyMethods,parametersFile,alnsParameters,scenarioName)
+        # println("End")
+
+        # display(createGantChartOfSolutionAnticipation(scenario,solutionOFF,"BASE offline solution",scenario.nFixed,requestBankOFF))
     #end
-    dfResults = processResults(outputFiles)
-    CSV.write(outPutFolder*"/results.csv", dfResults)
+   
 
-end
+#end
 
 
-main(20,0.3,0.5,"2025-05-18","","BasicAnticipation",1)
+#main(20,0.4,0.5,"2025-05-18","","BasicAnticipation",1)
 
-if abspath(PROGRAM_FILE) == @__FILE__
-    n = parse(Int, ARGS[1])
-    nExpectedPercentage = parse(Float64, ARGS[2])
-    gamma = parse(Float64, ARGS[3])
-    date = ARGS[4]
-    run = ARGS[5]
-    resultType = ARGS[6]
-    dataset = parse(Int, ARGS[7])
-    main(n, nExpectedPercentage, gamma, date, run, resultType, dataset)
-end
+# if abspath(PROGRAM_FILE) == @__FILE__
+#     n = parse(Int, ARGS[1])
+#     nExpectedPercentage = parse(Float64, ARGS[2])
+#     gamma = parse(Float64, ARGS[3])
+#     date = ARGS[4]
+#     run = ARGS[5]
+#     resultType = ARGS[6]
+#     dataset = parse(Int, ARGS[7])
+#     main(n, nExpectedPercentage, gamma, date, run, resultType, dataset)
+# end

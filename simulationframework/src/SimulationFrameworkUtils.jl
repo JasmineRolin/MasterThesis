@@ -713,7 +713,6 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         solution.nTaxiExpected = 0
         solution.totalCost -= nNotServicedExpectedRequests*scenario.taxiParameterExpected
 
-       
         # Save slack before and after ALNS on solution  
         if measureSlack
             testSol = copySolution(solution)

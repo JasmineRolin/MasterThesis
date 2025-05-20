@@ -34,7 +34,6 @@ function simpleConstruction(scenario::Scenario,requests::Vector{Request};visited
     solution.nTaxiExpected = sum(requestBank .> scenario.nFixed)
     solution.totalCost, solution.totalDistance, solution.totalRideTime, solution.totalIdleTime = getTotalCostDistanceTimeOfSolution(scenario,solution)
     
-    
     return solution, requestBank
     
 end

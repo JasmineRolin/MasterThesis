@@ -222,6 +222,7 @@ function removeExpectedRequestsFromSolution!(time::Array{Int,2},distance::Array{
     solution.nTaxiExpected -= nNotServicedExpectedRequests
     solution.totalCost -= nNotServicedExpectedRequests * taxiParameterExpected
 
+
 end
 
 
@@ -320,7 +321,7 @@ function updateExpectedWaiting!(time::Array{Int,2},distance::Array{Float64,2},se
     solution.totalCost = solution.nTaxi * taxiParameter + solution.nTaxiExpected * taxiParameterExpected
 
     for schedule in solution.vehicleSchedules
-
+        
         # Change location of lonely waiting nodes with expected request location (Comes from ALNS)
         for idx in 2:length(schedule.route)-1
             activity = schedule.route[idx].activity
@@ -390,12 +391,14 @@ function updateIds!(solution::Solution,nFixed::Int,nExpected::Int)
 
 end
 
-#-------
-# Determine offline solution with anticipation
-#-------
+
+#==
+ Create offline solution with anticipation
+==#
 function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},destroyMethods::Vector{GenericMethod},requestFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String,nExpected::Int,gridFile::String,nOfflineOriginal::Int;displayPlots::Bool=false,keepExpectedRequests::Bool=false)
 
     # Variables to determine best solution
+    bestRunId = -1
     bestAverageObj = typemax(Float64)
     bestSolution::Union{Nothing, Solution} = nothing
     bestRequestBank::Union{Nothing, Vector{Int}} = nothing
@@ -408,7 +411,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
                         nInitialNotServicedExpectedRequests = Int[])
     nRequests = 0
 
-    # TODO: change to 10
+    # Create different scenarios and solve problem with known offline requests and predicted online requests 
     for i in 1:10
         println("==========================================")
         println("Run: ", i)
@@ -426,13 +429,27 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
 
         # Get solution
         initialSolution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
+
+        # TODO: remove 
+        state = State(initialSolution,Request(),0)
+        feasible, msg = checkSolutionFeasibilityOnline(scenario,state;nExpected=0) 
+        if !feasible
+            #printSolution(initialSolution,printRouteHorizontal)
+            throw(msg)
+           end
+
         originalSolution, originalRequestBank,_,_, _,_,_ = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
+        
+        # Save solution with requests
         if keepExpectedRequests
             originalSolutionWithAllRequests = copySolution(originalSolution)
             originalRequestBankWithAllRequests = copy(originalRequestBank)
         end
 
+     
+
         if displayPlots
+            display(createGantChartOfSolutionAnticipation(scenario,originalSolution,"SOLUTION AFTER ALNS, run: "*string(i),nFixed,originalRequestBankWithAllRequests))
             display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and before removing expected requests",nFixed = scenario.nFixed))
             #display(plotRoutes(originalSolution,scenario,requestBank,"Initial Solution "*string(i)*" before ALNS and before removing expected requests"))
         end
@@ -442,6 +459,12 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         nNotServicedExpectedRequests = sum(originalRequestBank .> nFixed)
         nServicedFixedRequests = length(scenario.offlineRequests) - nExpected - nNotServicedFixedRequests
         nServicedExpectedRequests = nExpected - nNotServicedExpectedRequests
+
+
+        println("\t Number of not serviced fixed requests: ", nNotServicedFixedRequests,"/",nOfflineOriginal)
+        println("\t Number of not serviced expected requests: ", nNotServicedExpectedRequests,"/",nExpected)
+        println("\t Total number offline requests: ",length(scenario.offlineRequests))
+        println("\t Length of requestBank: ",length(originalRequestBank))
 
         # Remove expected requests from solution
         removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,originalSolution,nExpected,nFixed,nNotServicedExpectedRequests,originalRequestBank,taxiParameter,taxiParameterExpected)
@@ -459,7 +482,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
             throw(msg)
         end
 
-        # Determine Obj
+        # Insert new sampled predicted requests into solution
         averageObj = 0.0
         averageNotServicedExpectedRequests = 0.0
         for j in 1:10
@@ -488,6 +511,9 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
             # Calculate Obj
             averageObj += solution.totalCost + originalSolution.nTaxi * taxiParameter 
             averageNotServicedExpectedRequests += length(stateALNS.requestBank)
+
+            println("\t Sub run: ", j)
+            println("\t\t Number of not serviced fixed requests: ",  length(stateALNS.requestBank),"/",nExpected)
         end
 
         averageObj /= 10
@@ -511,11 +537,9 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         push!(results, (runId = "Run $i", averageObj = averageObj, averageNotServicedExpectedRequests = averageNotServicedExpectedRequests, 
                         nInitialNotServicedFixedRequests = nNotServicedFixedRequests, nInitialNotServicedExpectedRequests = nNotServicedExpectedRequests))
         
-                        
-    end
+        println("BEST RUN: ", bestRunId)
 
-    if displayPlots
-        display(createGantChartOfSolutionOnline(bestSolution,"Best Solution"))
+                        
     end
 
     if keepExpectedRequests
@@ -526,6 +550,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
     
 
 end
+
 
 #== 
  Test solution
@@ -568,6 +593,7 @@ function testSolutionAnticipation(event::Request,originalSolution::Solution,requ
     return averageNotServicedExpectedRequests, averageNotServicedExpectedRequestsRelevant
 
 end
+
 
 
 
