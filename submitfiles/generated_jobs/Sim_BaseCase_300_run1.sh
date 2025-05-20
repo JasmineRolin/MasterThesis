@@ -6,7 +6,7 @@
 #BSUB -R "rusage[mem=2GB]"
 #BSUB -R "span[hosts=1]"
 #BSUB -W 10:00
-#BSUB -u s194351@student.dtu.dk
+#BSUB -u s194321@student.dtu.dk
 #BSUB -N 
 
 module load julia/1.10.2
@@ -27,7 +27,7 @@ Pkg.resolve();
 '
 
 for seed in {1..10}; do
-  julia --project=. resultExploration/resultsBase.jl "300" "0" "0.5" "2025-05-20" "run1" "BaseCase" "$seed" &
+  julia --project=. resultExploration/resultsBase.jl "300" "0" "0.5" "2025-05-20_2" "run1" "BaseCase" "$seed" &
 done
 
 wait

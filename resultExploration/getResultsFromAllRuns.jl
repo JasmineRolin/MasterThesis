@@ -1,13 +1,13 @@
 using XLSX, CSV, DataFrames
 
 # Parameters
-methods = ["Anticipation", "BaseCase"]
-run_tags = ["run1", "run2"]
-anticipation_Degrees = [0.4, 0.5]
-n_requests_list = [20, 100, 300, 500]
+methods = ["Anticipation"]#, "BaseCase"]
+run_tags = ["run1"]
+anticipation_Degrees = [0.4]
+n_requests_list = [300]#[20, 100, 300, 500]
 date = "2025-05-20"
 base_dir = joinpath(@__DIR__, "results")
-nRuns = 5
+nRuns = length(run_tags)
 nameOfExcel = "Result_20052025_long.xlsx"
 
 

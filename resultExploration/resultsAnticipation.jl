@@ -25,7 +25,7 @@ using CSV
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters_offlineAnticipation.json"
-    outPutFolder = string("resultExploration/results/",date,"/",run,"/",resultType,"/",n)
+    outPutFolder = string("resultExploration/results/",date,"/",resultType,"/",n,"/",run)
     outputFiles = Vector{String}()
     gridFile = string("Data/Konsentra/grid.json")
 

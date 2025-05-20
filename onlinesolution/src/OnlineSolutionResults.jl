@@ -793,6 +793,11 @@ end
 # Function to read and append multiple JSON files to the DataFrame
 function appendResults(files,results)
     for file_path in files
+        if !isfile(file_path)
+            println("File not found: ", file_path)
+            continue
+        end
+        
         row = parse_json(file_path)
         push!(results, row)
     end
