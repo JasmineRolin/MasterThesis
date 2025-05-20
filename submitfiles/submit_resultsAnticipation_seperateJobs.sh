@@ -2,7 +2,7 @@
 
 n_requests_list=("300" "500")
 anticipation_levels=("0.4")
-run_tags=("run1" "run2")
+run_tags=("run1")
 gamma="0.5"
 date="2025-05-20"
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 n_requests_list=( "300" "500")
-run_tags=("run1" "run2")
+run_tags=("run1")
 gamma="0.5"
 date="2025-05-20"
 mkdir -p submitfiles/generated_jobs
