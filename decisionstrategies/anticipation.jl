@@ -439,11 +439,6 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         nServicedFixedRequests = length(scenario.offlineRequests) - nExpected - nNotServicedFixedRequests
         nServicedExpectedRequests = nExpected - nNotServicedExpectedRequests
 
-        #println("\t Number of not serviced fixed requests: ", nNotServicedFixedRequests,"/",nOfflineOriginal)
-        #println("\t Number of not serviced expected requests: ", nNotServicedExpectedRequests,"/",nExpected)
-        #println("\t Total number offline requests: ",length(scenario.offlineRequests))
-        #println("\t Length of requestBank: ",length(originalRequestBank))
-
         # Remove expected requests from solution
         removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,originalSolution,nExpected,nFixed,nNotServicedExpectedRequests,originalRequestBank,taxiParameter,taxiParameterExpected)
 
@@ -489,10 +484,8 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
             # Calculate Obj
             averageObj += solution.totalCost + originalSolution.nTaxi * taxiParameter 
             averageNotServicedExpectedRequests += length(stateALNS.requestBank)
-
-            #println("\t Sub run: ", j)
-            #println("\t\t Number of not serviced fixed requests: ",  length(stateALNS.requestBank),"/",nExpected)
         end
+
         averageObj /= 10
         averageNotServicedExpectedRequests /= 10
 
