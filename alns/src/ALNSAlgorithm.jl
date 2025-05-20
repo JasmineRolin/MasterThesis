@@ -15,8 +15,7 @@ const TO = TimerOutput()
 #==
  Method to run ALNS algorithm
 ==#
-function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters, fileName::String;alreadyRejected=0, event=Request(), visitedRoute::Dict{Int,Dict{String,Int}}=Dict(),saveOutPut=false, stage="Offline")
-    
+function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters, fileName::String;alreadyRejected=0, event=Request(), visitedRoute::Dict{Int,Dict{String,Int}}=Dict(),saveOutPut=false, stage="Offline", nNotServicedExpectedRequests::Int=0)
     eventId = event.id
     nDestroy = length(configuration.destroyMethods)
     nRepair = length(configuration.repairMethods)
@@ -77,7 +76,8 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
         end
 
         acceptOnlinePhase = if stage == "Online"
-            (length(trialState.requestBank) == 0) || (eventId in trialState.requestBank && length(trialState.requestBank) == 1)
+            relevantRequestBank = trialState.requestBank[trialState.requestBank .<= scenario.nFixed]
+            (length(relevantRequestBank) == 0) || (eventId in relevantRequestBank && length(relevantRequestBank) == 1)
         else
             true
         end
@@ -133,7 +133,7 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
         # TODO: remove when ALNS is robust 
         @timeit TO "Feasibility Check" begin
             state = State(currentState.currentSolution, event, visitedRoute, alreadyRejected)
-            feasible, msg = checkSolutionFeasibilityOnline(scenario, state)
+            feasible, msg = checkSolutionFeasibilityOnline(scenario, state, nExpected = nNotServicedExpectedRequests)
             if !feasible
                 println("ALNS: INFEASIBLE SOLUTION IN ITERATION:", iteration)
                 printSolution(currentState.currentSolution, printRouteHorizontal)
@@ -169,7 +169,7 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
     end
 
     state = State(currentState.bestSolution, event, visitedRoute, alreadyRejected)
-    feasible, msg = checkSolutionFeasibilityOnline(scenario, state)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario, state, nExpected = nNotServicedExpectedRequests)
     if !feasible
         println("ALNS: INFEASIBLE FINAL SOLUTION")
         throw(msg)

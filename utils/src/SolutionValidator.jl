@@ -86,9 +86,15 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,solution::Solution,ev
     notServicedRequests = setdiff(considered, servicedPickUpActivities)
 
     if totalNTaxi + nTaxi + nTaxiExpected + nExpected != length(notServicedRequests) 
-        println("nTaxiExpected: ", nTaxiExpected)
-        println("nExpected: ", nExpected)
-        msg = "SOLUTION INFEASIBLE: Not all requests are serviced. Serviced: $(length(servicedPickUpActivities)), not serviced: $(length(notServicedRequests)), nTaxi: $(nTaxi), totalNTaxi: $(totalNTaxi), nTaxiExpected: $(nTaxiExpected), expected: $(nExpected)"
+        println(considered)
+        println(notServicedRequests)
+        println(length(scenario.offlineRequests))
+        println(length(considered))
+        println(totalNTaxi)
+        println(nTaxi)
+        println(nTaxiExpected)
+        println(nExpected)
+        msg = "SOLUTION INFEASIBLE: Not all requests are serviced. Serviced: $(length(servicedPickUpActivities)), not serviced: $(length(notServicedRequests)), nTaxi: $(nTaxi), totalNTaxi: $(totalNTaxi)"
         return false, msg
     end
 
@@ -101,6 +107,7 @@ function checkSolutionFeasibilityOnline(scenario::Scenario,solution::Solution,ev
         println(nExpected)
         println(totalNTaxi)
         println(notServicedRequests)
+        println(size(scenario.distance))
         msg = "SOLUTION INFEASIBLE: Total cost of solution is incorrect. Calculated: $(totalCostCheck), actual: $(totalCost), diff: $(abs(totalCostCheck-totalCost))"
         return false, msg
     end

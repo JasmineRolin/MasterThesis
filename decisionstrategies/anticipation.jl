@@ -428,7 +428,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         # Get solution
         initialSolution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
        
-        # TODO: remove when stable
+        # TODO: remove 
         state = State(initialSolution,Request(),0)
         feasible, msg = checkSolutionFeasibilityOnline(scenario,state;nExpected=0) 
         if !feasible
@@ -437,7 +437,6 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         end
 
         originalSolution, originalRequestBank,_,_, _,_,_ = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
-
 
         if displayPlots
             display(createGantChartOfSolutionAnticipation(scenario,originalSolution,"SOLUTION AFTER ALNS, run: "*string(i),nFixed,originalRequestBank))

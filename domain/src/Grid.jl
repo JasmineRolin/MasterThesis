@@ -2,7 +2,7 @@ module Grids
 
 using ..Locations
 
-export Grid,determineGridCell,findDepotLocations,findDepotIdFromGridCell
+export Grid,determineGridCell,findDepotLocations,findDepotIdFromGridCell, copyGrid
 
 # Rows are latitude, columns are longitude
 struct Grid 
@@ -75,6 +75,14 @@ end
 ==#
 function findDepotIdFromGridCell(grid::Grid,nRequests::Int,gridCell::Tuple{Int,Int})
     return 2*nRequests + (gridCell[2]-1)*grid.nCols + gridCell[1] 
+end
+
+function copyGrid(g::Grid)
+    return Grid(
+        g.maxLat, g.minLat, g.maxLong, g.minLong,
+        g.nRows, g.nCols,
+        g.latStep, g.longStep
+    )
 end
 
 end 

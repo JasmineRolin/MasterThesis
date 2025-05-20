@@ -622,7 +622,8 @@ function determineCurrentState(solution::Solution,event::Event,finalSolution::So
     addTaxi = event.id == 0 ? 0 : 1
     currentState.solution.nTaxi = addTaxi # Because of new event
     currentState.solution.totalCost += scenario.taxiParameter*addTaxi
-    currentState.totalNTaxi = finalSolution.nTaxi 
+    currentState.totalNTaxi = finalSolution.nTaxi
+    currentState.solution.nTaxiExpected = 0
 
     # Relocate vehicles if relocation event 
     # Relocate vehicles when they have serviced all customers in route 
@@ -651,7 +652,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
    
 end
 
-function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixFile::String,timeMatrixFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json", ALNS::Bool=true, nTimePeriods::Int=24,periodLength::Int=60,testALNS::Bool=false,measureSlack::Bool=false)
+function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixFile::String,timeMatrixFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json", ALNS::Bool=true, nTimePeriods::Int=24,periodLength::Int=60,testALNS::Bool=false, keepExpectedRequests::Bool=false,measureSlack::Bool=false)
 
     # Retrieve info 
     if relocateVehicles
@@ -688,11 +689,29 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
 
     if anticipation == false
         solution, requestBank = offlineSolution(scenario,repairMethods,destroyMethods,parametersFile,alnsParameters,scenarioName)
-    else
+        nNotServicedExpectedRequests = 0 # Dummy
+    elseif anticipation == true && keepExpectedRequests == false
         solution, requestBank, resultsAnticipation = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,length(scenario.offlineRequests),displayPlots=displayPlots)
         updateIds!(solution,length(scenario.requests),nExpected)
-        newIndices = collect((length(scenario.requests)+1):(length(scenario.requests)+nExpected))
-        setdiff!(requestBank, newIndices)
+        requestBank = requestBank[requestBank .<= scenario.nFixed]
+
+        if saveResults == true
+            if !isdir(outPutFileFolder)
+                mkpath(outPutFileFolder)
+            end
+            fileName = outPutFileFolder*"/Anticipation_KPI_"*string(scenario.name)*".json"
+            file = open(fileName, "w") 
+            write(file, JSON.json(resultsAnticipation))
+            close(file)
+        end
+        nNotServicedExpectedRequests = 0 # Dummy
+    else
+        solution, requestBank, resultsAnticipation, scenario = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,length(scenario.offlineRequests),displayPlots=displayPlots,keepExpectedRequests=keepExpectedRequests)
+        nRequestBankTemp = length(requestBank)
+        requestBank = requestBank[requestBank .<= scenario.nFixed]
+        nNotServicedExpectedRequests = nRequestBankTemp - length(requestBank) 
+        solution.nTaxiExpected = 0
+        solution.totalCost -= nNotServicedExpectedRequests*scenario.taxiParameterExpected
 
         # Save slack before and after ALNS on solution  
         if measureSlack
@@ -727,6 +746,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         end
     end
 
+    nNotServicedExpectedRequestsOffline = copy(nNotServicedExpectedRequests)
     requestBankOffline = deepcopy(requestBank)
     initialSolution = copySolution(solution)
 
@@ -741,7 +761,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         printSolution(solution,printRouteHorizontal)
     end
     if displayPlots
-        display(createGantChartOfSolutionOnline(solution,"Initial Solution after ALNS"))
+        display(createGantChartOfSolutionOnline(solution,"Initial Solution after ALNS",nFixed=scenario.nFixed))
         #display(plotRoutes(solution,scenario,requestBank,"Initial Solution after ALNS"))
     end
 
@@ -797,11 +817,16 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
      
         
         # CHeck feasibility 
-        feasible, msg = checkSolutionFeasibilityOnline(scenario,currentState,checkOnline=true)
+        if !keepExpectedRequests
+            feasible, msg = checkSolutionFeasibilityOnline(scenario,currentState,checkOnline=true)
+        else
+            feasible, msg = checkSolutionFeasibilityOnline(scenario,currentState,checkOnline=true,nExpected=nNotServicedExpectedRequests)
+        end
+
         if !feasible
             println("INFEASIBLE SOLUTION IN ITERATION:", itr)
             println("nOnline: ", nOnline,"/",length(scenario.onlineRequests))
-            println(msg)
+            throw(msg)
             return currentState, requestBank
         end
 
@@ -809,11 +834,16 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         # Get solution for online problem
         if event.id != 0
             nOnline += 1
-            solution, requestBank,insertedByALNS = onlineAlgorithm(currentState, requestBank, scenario, destroyMethods, repairMethods, ALNS = ALNS) 
+            solution, requestBank,insertedByALNS = onlineAlgorithm(currentState, requestBank, scenario, destroyMethods, repairMethods, ALNS = ALNS, nNotServicedExpectedRequests=nNotServicedExpectedRequests) 
             eventsInsertedByALNS += insertedByALNS 
+            notServicedExpected = length(requestBank[requestBank .> scenario.nFixed])
+            requestBank = requestBank[requestBank .<= scenario.nFixed]
+            nNotServicedExpectedRequests += notServicedExpected
+            solution.totalCost -= notServicedExpected*scenario.taxiParameterExpected
         else
             solution = copySolution(currentState.solution)
         end
+
 
         endTimeEvent = time()
         averageResponseTime += endTimeEvent - startTimeEvent
@@ -832,19 +862,28 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         end
 
         if displayPlots && event.id in requestBank
-            display(createGantChartOfSolutionAndEventOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event.request))
-            display(plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime)))       
-            display(createGantChartOfSolutionAndEventOnlineComparison(solution, oldSolution, "Comparison Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event.request))
+            #display(createGantChartOfSolutionAndEventOnlineComparison(solution, oldSolution, "Comparison Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event.request))
+            display(createGantChartOfSolutionAndEventOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event.request,nFixed = scenario.nFixed))
+            #display(plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime)))       
         elseif displayPlots
-           display(createGantChartOfSolutionOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime))
-           display(plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime)))       
-           display(createGantChartOfSolutionOnlineComparison(solution, oldSolution,"Comparison Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime))
+           #display(createGantChartOfSolutionOnlineComparison(solution, oldSolution,"Comparison Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime))
+           display(createGantChartOfSolutionOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime,nFixed = scenario.nFixed))
+           #display(plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime)))       
         end
 
     end
 
     # Update final solution with last state 
     mergeCurrentStateIntoFinalSolution!(finalSolution,solution,scenario)
+
+    # If we have kept the expected requests, we need to remove them from solution
+    if keepExpectedRequests
+        removeExpectedRequestsFromSolution!(scenario.time,scenario.distance,scenario.serviceTimes,scenario.requests,finalSolution,scenario.nExpected,scenario.nFixed,nNotServicedExpectedRequests,requestBank,scenario.taxiParameter,scenario.taxiParameterExpected)
+        # Add again because removed in removeExpectedRequestsFromSolution
+        finalSolution.nTaxiExpected += nNotServicedExpectedRequests
+        finalSolution.totalCost += nNotServicedExpectedRequests * scenario.taxiParameterExpected
+    end
+
     endSimulation = time()
     totalElapsedTime = endSimulation - startSimulation
     averageResponseTime /= length(scenario.onlineRequests)
@@ -857,7 +896,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         println("Request bank: ", requestBank)
     end
     if displayPlots
-        display(createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge"))
+        display(createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge",nFixed=scenario.nFixed))
         display(plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge"))
         display(createGantChartOfSolutionOnlineComparison(finalSolution, initialSolution,"Comparison between initial and final solution"))
     end
@@ -865,7 +904,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     # Print summary 
     println(rpad("Metric", 40), "Value")
     println("-"^45)
-    println(rpad("Unserviced offline requests", 40), length(requestBankOffline),"/",length(scenario.offlineRequests))
+    println(rpad("Unserviced offline requests", 40), length(requestBankOffline),"/",(length(scenario.offlineRequests)-scenario.nExpected))
     println(rpad("Unserviced online requests", 40), length(setdiff(requestBank, requestBankOffline)),"/",length(scenario.onlineRequests))
     println(rpad("Final cost", 40), finalSolution.totalCost)
     println(rpad("Final distance", 40), finalSolution.totalDistance)
@@ -874,6 +913,10 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     println(rpad("Total elapsed time (sim)", 40),totalElapsedTime)
     println(rpad("Average response time (sim)", 40),averageResponseTime)
     println(rpad("Events inserted by ALNS", 40),eventsInsertedByALNS)
+    if keepExpectedRequests
+        println(rpad("Unserviced expected requests offline", 40), nNotServicedExpectedRequestsOffline,"/",scenario.nExpected)
+        println(rpad("Unserviced expected requests online", 40), nNotServicedExpectedRequests-nNotServicedExpectedRequestsOffline)
+    end
 
     if saveResults
         if !isdir(outPutFileFolder)
@@ -899,10 +942,17 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
 
     end
     
-    state = State(finalSolution,scenario.onlineRequests[end],0)
-    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-    @test msg == ""
-    @test feasible == true
+    if keepExpectedRequests
+        state = State(finalSolution,scenario.onlineRequests[end],0)
+        feasible, msg = checkSolutionFeasibilityOnline(scenario,state,nExpected = nExpected)
+        @test msg == ""
+        @test feasible == true
+    else
+        state = State(finalSolution,scenario.onlineRequests[end],0)
+        feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+        @test msg == ""
+        @test feasible == true
+    end
 
     return finalSolution, requestBank
 

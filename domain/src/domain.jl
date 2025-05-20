@@ -14,21 +14,21 @@ export ActivityType, PICKUP, DROPOFF, WAITING, DEPOT
 ==#
 include("Location.jl")
 using .Locations  # Using the relative module
-export Location
+export Location, copyLocation
 
 #==
  Export from TimeWindows module 
  ==#
 include("TimeWindow.jl")
 using .TimeWindows
-export TimeWindow, duration
+export TimeWindow, duration, copyTimewindow
 
 #==
  Export from Activitys module 
 ==#
 include("Activity.jl")
 using .Activities
-export Activity,findCorrespondingId,findLoadOfActivity
+export Activity,findCorrespondingId,findLoadOfActivity, copyActivity
 
 #==
  Export from Requests module 
@@ -37,7 +37,7 @@ include("Request.jl")
 using .Requests
 export Request,RequestType,PICKUP,DROPOFF,WALKING
 export findTimeWindowOfRequestedPickUpTime, findTimeWindowOfDropOff, findTimeWindowOfRequestedDropOffTime, findTimeWindowOfPickUp
-export findMaximumRideTime
+export findMaximumRideTime, copyRequest
 export MAX_DELAY, MAX_EARLY_ARRIVAL
 
 
@@ -47,7 +47,7 @@ export MAX_DELAY, MAX_EARLY_ARRIVAL
 ==#
 include("Vehicle.jl")
 using .Vehicles
-export Vehicle
+export Vehicle, copyVehicle
 
 #==
  Export from RequestAssignment module 
@@ -68,7 +68,7 @@ export VehicleSchedule, findPositionOfRequest, isVehicleScheduleEmpty, copyVehic
 ==#
 include("Grid.jl")
 using .Grids 
-export Grid,determineGridCell,findDepotLocations,findDepotIdFromGridCell
+export Grid,determineGridCell,findDepotLocations,findDepotIdFromGridCell, copyGrid
 
 
 #==
@@ -76,7 +76,7 @@ export Grid,determineGridCell,findDepotLocations,findDepotIdFromGridCell
 ==#
 include("Scenario.jl")
 using .Scenarios
-export Scenario
+export Scenario, copyScenario
 
 #==
  Export from Solution module 

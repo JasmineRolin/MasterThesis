@@ -65,7 +65,7 @@ end
 #==
  Run online algorithm
 ==#
-function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario::Scenario, destroyMethods::Vector{GenericMethod}, repairMethods::Vector{GenericMethod};ALNS::Bool=true)
+function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario::Scenario, destroyMethods::Vector{GenericMethod}, repairMethods::Vector{GenericMethod};ALNS::Bool=true, nNotServicedExpectedRequests::Int=0)
     insertedByALNS = false 
 
     # Retrieve info 
@@ -77,7 +77,7 @@ function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario
     # Run ALNS
     # TODO: set correct parameters for alns 
     if ALNS
-        finalSolution,finalOnlineRequestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters_online.json",initialSolution =  currentSolution, requestBank = newRequestBankOnline, event = event, alreadyRejected =  totalNTaxi, visitedRoute = currentState.visitedRoute,stage = "Online")
+        finalSolution,finalOnlineRequestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters_online.json",initialSolution =  currentSolution, requestBank = newRequestBankOnline, event = event, alreadyRejected =  totalNTaxi, visitedRoute = currentState.visitedRoute,stage = "Online", nNotServicedExpectedRequests=nNotServicedExpectedRequests)
     else
         return currentSolution, newRequestBankOnline, 0
     end
@@ -88,7 +88,8 @@ function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario
 
 
     # TODO: remove when alns is stable
-    if length(finalOnlineRequestBank) > 1 || (length(finalOnlineRequestBank) == 1 && finalOnlineRequestBank[1] != event.id)
+    relevantRequestBank = finalOnlineRequestBank[finalOnlineRequestBank .<= scenario.nFixed]
+    if length(relevantRequestBank) > 1 || (length(relevantRequestBank) == 1 && relevantRequestBank[1] != event.id)
         println("ALNS: FINAL REQUEST BANK IS NOT EMPTY")
         println(finalOnlineRequestBank)
         println("Event: ",event.id)
@@ -98,7 +99,7 @@ function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario
 
     append!(requestBank,finalOnlineRequestBank)
 
-    feasible, msg = checkSolutionFeasibilityOnline(scenario,finalSolution, event, currentState.visitedRoute,totalNTaxi)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,finalSolution, event, currentState.visitedRoute,totalNTaxi,nExpected = nNotServicedExpectedRequests)
 
     # TODO: remove when alns is stable 
     if !feasible
