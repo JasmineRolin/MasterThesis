@@ -34,9 +34,10 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
         #TODO use pre calculated distance and time matrix file. 
         scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,"","",gridFile)
        
-        ALNS = false
+        ALNS = true
         displayPlot = false
         solution, requestBank = simulateScenario(scenario,requestFile,distanceMatrixFile,timeMatrixFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,anticipation = true,nExpected=nExpected,printResults = false, saveResults = true,gridFile = gridFile, outPutFileFolder = outPutFolder, displayPlots = displayPlot,ALNS=ALNS)
+        
         # TODO remove when stable
         state = State(solution,scenario.onlineRequests[end],0)
         feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
