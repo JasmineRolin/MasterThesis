@@ -246,7 +246,6 @@ function removeExpectedRequestsFromSolution!(time::Array{Int,2},distance::Array{
     solution.nTaxiExpected -= nNotServicedExpectedRequests
     solution.totalCost -= nNotServicedExpectedRequests * taxiParameterExpected
 
-
 end
 
 
@@ -470,7 +469,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,originalSolution,nExpected,nFixed,nNotServicedExpectedRequests,originalRequestBank,taxiParameter,taxiParameterExpected)
 
         if displayPlots
-            display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and after removing expected requests"))
+            display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and after removing expected requests",nFixed = scenario.nFixed))
             #display(plotRoutes(originalSolution,scenario,originalRequestBank,"Initial Solution "*string(i)*" before ALNS and after removing expected requests"))
         end
 

@@ -8,7 +8,7 @@ export runALNS
  Module to run ALNS algorithm 
 ==#
 
-function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::Vector{GenericMethod},repairMethods::Vector{GenericMethod};outPutFileFolder="tests/output"::String,parametersFile=""::String,saveResults=false::Bool,displayPlots=false::Bool,initialSolution=Solution(scenario)::Solution, requestBank=Vector{Request}(),event = Request(), alreadyRejected = 0::Int, visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}(),stage="Offline", nNotServicedExpectedRequestsInitial::Int=0)
+function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::Vector{GenericMethod},repairMethods::Vector{GenericMethod};outPutFileFolder="tests/output"::String,parametersFile=""::String,saveResults=false::Bool,displayPlots=false::Bool,initialSolution=Solution(scenario)::Solution, requestBank=Vector{Request}(),event = Request(), alreadyRejected = 0::Int, visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}(),stage="Offline", nNotServicedExpectedRequests::Int=0)
     # Create time stamp and output file folder
     timeStamp = Dates.format(Dates.now(), "yyyy-mm-dd_HH_MM_SS")
     outputFileFolderWithDate = string(outPutFileFolder,"/",timeStamp,"/")
@@ -44,7 +44,7 @@ function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::
     ALNSOutputFileName = string(outputFileFolderWithDate,"ALNSOutput.csv")
 
     # Call ALNS 
-    solution, requestBank,pVals,deltaVals,isImprovedVec,isAcceptedVec,isNewBestVec = ALNS(scenario,initialSolution, requestBank,configuration,parameters, ALNSOutputFileName, alreadyRejected = alreadyRejected,event = event, visitedRoute=visitedRoute, saveOutPut = saveResults,stage=stage, nNotServicedExpectedRequestsInitial=nNotServicedExpectedRequestsInitial)
+    solution, requestBank,pVals,deltaVals,isImprovedVec,isAcceptedVec,isNewBestVec = ALNS(scenario,initialSolution, requestBank,configuration,parameters, ALNSOutputFileName, alreadyRejected = alreadyRejected,event = event, visitedRoute=visitedRoute, saveOutPut = saveResults,stage=stage, nNotServicedExpectedRequests=nNotServicedExpectedRequests)
 
     # Create results 
     specificationsFileName = string(outputFileFolderWithDate,"ALNSSpecifications.json")

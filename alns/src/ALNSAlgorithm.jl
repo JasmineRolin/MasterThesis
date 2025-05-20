@@ -15,7 +15,7 @@ const TO = TimerOutput()
 #==
  Method to run ALNS algorithm
 ==#
-function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters, fileName::String;alreadyRejected=0, event=Request(), visitedRoute::Dict{Int,Dict{String,Int}}=Dict(),saveOutPut=false, stage="Offline", nNotServicedExpectedRequestsInitial::Int=0)
+function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters, fileName::String;alreadyRejected=0, event=Request(), visitedRoute::Dict{Int,Dict{String,Int}}=Dict(),saveOutPut=false, stage="Offline", nNotServicedExpectedRequests::Int=0)
     eventId = event.id
     nDestroy = length(configuration.destroyMethods)
     nRepair = length(configuration.repairMethods)
@@ -133,7 +133,7 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
         # TODO: remove when ALNS is robust 
         @timeit TO "Feasibility Check" begin
             state = State(currentState.currentSolution, event, visitedRoute, alreadyRejected)
-            feasible, msg = checkSolutionFeasibilityOnline(scenario, state, nExpected = nNotServicedExpectedRequestsInitial)
+            feasible, msg = checkSolutionFeasibilityOnline(scenario, state, nExpected = nNotServicedExpectedRequests)
             if !feasible
                 println("ALNS: INFEASIBLE SOLUTION IN ITERATION:", iteration)
                 printSolution(currentState.currentSolution, printRouteHorizontal)
@@ -169,7 +169,7 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
     end
 
     state = State(currentState.bestSolution, event, visitedRoute, alreadyRejected)
-    feasible, msg = checkSolutionFeasibilityOnline(scenario, state, nExpected = nNotServicedExpectedRequestsInitial)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario, state, nExpected = nNotServicedExpectedRequests)
     if !feasible
         println("ALNS: INFEASIBLE FINAL SOLUTION")
         throw(msg)

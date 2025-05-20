@@ -35,6 +35,9 @@ for case_type in "${case_types[@]}"; do
         elif [[ "$case_type" == "Anticipation" ]]; then
           jl_file="resultExploration/resultsAnticipation.jl"
           label="${case_type}_${anticipation}"
+        elif [[ "$case_type" == "AnticipationKeepExpected" ]]; then
+          jl_file="resultExploration/resultsAnticipationKeepExpected.jl"
+          label="${case_type}_${anticipation}"
         else
           jl_file="resultExploration/resultsAnticipationNoALNS.jl"
           label="${case_type}_${anticipation}"
