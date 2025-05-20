@@ -428,6 +428,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         # Get solution
         initialSolution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
        
+        # TODO: remove when stable
         state = State(initialSolution,Request(),0)
         feasible, msg = checkSolutionFeasibilityOnline(scenario,state;nExpected=0) 
         if !feasible

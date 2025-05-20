@@ -899,11 +899,10 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
 
     end
     
-    # TODO: add back 
-    # state = State(finalSolution,scenario.onlineRequests[end],0)
-    # feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-    # @test msg == ""
-    # @test feasible == true
+    state = State(finalSolution,scenario.onlineRequests[end],0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+    @test msg == ""
+    @test feasible == true
 
     return finalSolution, requestBank
 

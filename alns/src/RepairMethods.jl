@@ -19,13 +19,10 @@ global countFeasible = Ref(0)
 function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(),TO::TimerOutput=TimerOutput())
     # Fixed 
     requestBankFixed = state.requestBank[state.requestBank .<= scenario.nFixed]
-   # println("length requestBankFixed: ", length(requestBankFixed))
-
-   regretInsertionWithRequestBank(state,scenario,requestBankFixed,visitedRoute=visitedRoute)
+    regretInsertionWithRequestBank(state,scenario,requestBankFixed,visitedRoute=visitedRoute)
 
     # Expected
     requestBankExpected = state.requestBank[state.requestBank .> scenario.nFixed]
-    #println("length requestBankExpected: ", length(requestBankExpected))
     regretInsertionWithRequestBank(state,scenario,requestBankExpected,visitedRoute=visitedRoute)
 
     state.requestBank = vcat(requestBankFixed, requestBankExpected)
