@@ -63,15 +63,14 @@ function createExpectedRequests(N::Int,nFixedRequests::Int)
         pickup_longitude, pickup_latitude = sampled_location[1]
         dropoff_longitude, dropoff_latitude = sampled_location[2]
 
-
         # Determine type of request
         if rand() < 0.5
             requestType = 0  # pick-up request
-            
-            valid_indices = findall(t-> t > 480, time_range) # No expected requests in the first 2 hours
-            sampled_indices = sample(valid_indices, Weights(probabilities_pickUpTime[valid_indices]), 1)
+
+            sampled_indices = sample(1:length(probabilities_online), Weights(probabilities_online), 1)
             sampledTimePick = time_range[sampled_indices]
             requestTime = ceil(sampledTimePick[1])
+
         else
             requestType = 1  # drop-off request
 
@@ -79,15 +78,17 @@ function createExpectedRequests(N::Int,nFixedRequests::Int)
             directDriveTime = ceil(haversine_distance(pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude)[2])
 
             # Earliest request time 
-            earliestRequestTime = max(serviceWindow[1] + directDriveTime + MAX_DELAY,480) 
-            valid_indices = findall(t -> t >= earliestRequestTime && t > 480, time_range) # No expected requests in the first 2 hours
+            earliestRequestTime = serviceWindow[1] + directDriveTime + MAX_DELAY
+            indices = time_range .>= earliestRequestTime
+            nTimes = sum(indices)
 
-            sampled_index = sample(valid_indices, Weights(probabilities_dropOffTime[valid_indices]), 1)
-            sampledTimeDrop = time_range[sampled_index[1]]
-            requestTime = ceil(sampledTimeDrop)
+            sampled_indices = sample(1:nTimes, Weights(probabilities_online[indices]), 1)
+            sampledTimeDrop = time_range[indices][sampled_indices]
+            requestTime = ceil(sampledTimeDrop[1])
         end
 
-        push!(requestDF, (i, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, requestType, requestTime,"WALKING",0,0))
+        # Append results for the request
+        push!(results, (i, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, requestType, requestTime,"WALKING",0,0))
         append!(expectedRequestIds, i+nFixedRequests)
         
     

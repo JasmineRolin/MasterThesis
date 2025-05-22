@@ -362,7 +362,7 @@ function plotDataSets(x_range,y_range,density_grid,location_matrix,requestTime_o
     xtick_values = range(min_x, max_x, step=1)  # Adjust length for more ticks
     plot!(xticks=xtick_values)
 
-    p5 = histogram(distanceDriven, normalize=:pdf, label="", color=:blue)
+    p5 = histogram(distanceDriven, normalize=:pdf, label="", color=:blue,bins=24)
     title!(prefix*" Distance Driven Distribution")
     xlabel!("Driven distance")
     ylabel!("Probability Density")
@@ -425,7 +425,7 @@ function plotDataSetsOriginal(x_range,y_range,density_grid,location_matrix,reque
     xtick_values = range(min_x, max_x, step=1)  # Adjust length for more ticks
     plot!(xticks=xtick_values)
 
-    p5 = histogram(distanceDriven, normalize=:pdf, label="", color=:blue)
+    p5 = histogram(distanceDriven, normalize=:pdf, label="", color=:blue,bins=24)
     title!(prefix*" Distance Driven Distribution")
     xlabel!("Driven distance")
     ylabel!("Probability Density")
