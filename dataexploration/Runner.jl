@@ -87,7 +87,7 @@ oldDataList = ["Data/Konsentra/TransformedData_30.01.csv",
 
 # Smooting factors for KDE 
 bandwidth_factor_time_offline = 1.0
-bandwidth_factor_time_online = 1.0 
+bandwidth_factor_time_online = 1.5 
 bandwidth_factor_location = 1.25
 bandwidth_factor_distance = 2.0
 
@@ -108,9 +108,6 @@ if GENERATE_DATA_AND_VEHICLES
     _,
     _,
     _,
-    _,
-    _,
-    _,
     base_probabilities_location,
     _,
     base_x_range,
@@ -121,12 +118,11 @@ if GENERATE_DATA_AND_VEHICLES
     _,
     _,
     _,
-    _,
     _= load_simulation_data("Data/Simulation data/")
 
     for nRequest in nRequestList
-        location_matrix, requestTimePickUp, requestTimeDropOff, newDataList, df_list,probabilities_pickUpTime,probabilities_dropOffTime, probabilities_location, density_grid, x_range, y_range,requests, distanceDriven = generateDataSets(nRequest,DoD,nData,time_range,MAX_LAT, MIN_LAT, MAX_LONG, MIN_LONG)
-        
+        location_matrix, requestTime, newDataList, df_list,probabilities_time, probabilities_location, density_grid, x_range, y_range,requests, distanceDriven = generateDataSets(nRequest,DoD,nData,time_range,MAX_LAT, MIN_LAT, MAX_LONG, MIN_LONG)
+
         # Generate vehicles 
         for gamma in GammaList
             println("Gamma = ",gamma)
@@ -158,7 +154,7 @@ if GENERATE_DATA_AND_VEHICLES
         #================================================#
         # Plot new data
         #================================================#
-        createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,density_grid,location_matrix,requestTimePickUp,requestTimeDropOff,probabilities_pickUpTime,probabilities_dropOffTime,serviceWindow,distanceDriven)
+        createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,density_grid,location_matrix,requestTime,probabilities_time,serviceWindow,distanceDriven)
         for gamma in GammaList
             plotAndSaveGantChart(nRequest,nData,gamma)
         end
