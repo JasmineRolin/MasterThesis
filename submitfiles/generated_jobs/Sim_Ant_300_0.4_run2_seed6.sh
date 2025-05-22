@@ -26,4 +26,4 @@ Pkg.develop(path="simulationframework");
 Pkg.resolve();
 '
 
-julia --project=. resultExploration/resultsAnticipation.jl "300" "0.4" "0.5" "2025-05-20" "run2" "Anticipation_0.4" "6"
+julia --project=. resultExploration/resultsAnticipation.jl "300" "0.4" "0.5" "2025-05-22" "run2" "Anticipation_0.4" "6"

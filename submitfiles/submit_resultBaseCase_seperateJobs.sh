@@ -1,9 +1,10 @@
 #!/bin/bash
 
-n_requests_list=("300" "500")
-run_tags=("run1")
+n_requests_list=("20" "100" "300" "500")
+run_tags=("run1" "run2" "run3")
 gamma="0.5"
-date="2025-05-20_2"
+date="2025-05-22"
+
 mkdir -p submitfiles/generated_jobs
 
 for n_requests in "${n_requests_list[@]}"; do
