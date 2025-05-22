@@ -52,7 +52,7 @@ function createExpectedRequests(N::Int,nFixedRequests::Int)
         direct_drive_time = Int[],
     )
 
-    probabilities_pickUpTime,probabilities_dropOffTime,_,_,probabilities_location,_,x_range,y_range,probabilities_distance,_,distance_range,_,_,_,_,_= load_simulation_data("Data/Simulation data/")
+    _,probabilities_offline,probabilities_online,probabilities_location,_,x_range,y_range,probabilities_distance,_,distance_range,_,_,_,_= load_simulation_data("Data/Simulation data/")
     time_range = collect(range(6*60,23*60))
     max_lat, min_lat, max_long, min_long = MAX_LAT, MIN_LAT, MAX_LONG, MIN_LONG
 
@@ -88,7 +88,7 @@ function createExpectedRequests(N::Int,nFixedRequests::Int)
         end
 
         # Append results for the request
-        push!(results, (i, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, requestType, requestTime,"WALKING",0,0))
+        push!(requestDF, (i, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, requestType, requestTime,"WALKING",0,0))
         append!(expectedRequestIds, i+nFixedRequests)
         
     

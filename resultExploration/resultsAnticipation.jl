@@ -31,7 +31,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
         # Read scenario 
         #TODO use pre calculated distance and time matrix file. 
         scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,"","",gridFile)
-        solution, requestBank = simulateScenario(scenario,requestFile,distanceMatrixFile,timeMatrixFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,anticipation = true,nExpected=nExpected,printResults = false, saveResults = true,gridFile = gridFile, outPutFileFolder = outPutFolder, displayPlots = false)
+        solution, requestBank = simulateScenario(scenario,requestFile,distanceMatrixFile,timeMatrixFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,anticipation = true,nExpected=nExpected,printResults = false, saveResults = false,gridFile = gridFile, outPutFileFolder = outPutFolder, displayPlots = false)
 
         # TODO remove when stable
         state = State(solution,scenario.onlineRequests[end],0)
