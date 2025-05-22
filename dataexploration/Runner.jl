@@ -13,7 +13,7 @@ include("MakeAndSaveDistanceAndTimeMatrix.jl")
 include("GenerateLargeDataSets.jl")
 
 
-global GENERATE_SIMULATION_DATA = false
+global GENERATE_SIMULATION_DATA = true
 global GENERATE_DATA_AND_VEHICLES = true
 global GENERATE_VEHICLES = false
 
@@ -24,7 +24,7 @@ global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 2*60 # 2 hours buffer
 global nData = 10
-global nRequestList = [20]#[100,300,500]#[20,100,300,500]
+global nRequestList = [100]#[100,300,500]#[20,100,300,500]
 global MAX_DELAY = 45 # TODO Astrid I just put something
 
 #==
@@ -86,13 +86,14 @@ oldDataList = ["Data/Konsentra/TransformedData_30.01.csv",
             "Data/Konsentra/TransformedData_Data.csv"]
 
 # Smooting factors for KDE 
-bandwidth_factor_time = 1.5 
+bandwidth_factor_time_offline = 1.0
+bandwidth_factor_time_online = 1.0 
 bandwidth_factor_location = 1.25
 bandwidth_factor_distance = 2.0
 
 
 if GENERATE_SIMULATION_DATA
-    run_and_save_simulation(oldDataList, "Data/Simulation data/", bandwidth_factor_location, bandwidth_factor_time, bandwidth_factor_distance,time_range)
+    run_and_save_simulation(oldDataList, "Data/Simulation data/", bandwidth_factor_location, bandwidth_factor_time_offline, bandwidth_factor_time_online, bandwidth_factor_distance,time_range)
 end
 
 
@@ -104,6 +105,8 @@ if GENERATE_DATA_AND_VEHICLES
     lat_step, long_step, grid_centers = findGridCenters(MAX_LAT,MIN_LAT,MAX_LONG,MIN_LONG,NUM_ROWS,NUM_COLS)
 
     # Load simulation data
+    _,
+    _,
     _,
     _,
     _,
@@ -122,7 +125,7 @@ if GENERATE_DATA_AND_VEHICLES
     _= load_simulation_data("Data/Simulation data/")
 
     for nRequest in nRequestList
-        location_matrix, requestTimePickUp, requestTimeDropOff, newDataList, df_list, probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff, probabilities_location, density_grid, x_range, y_range,requests, distanceDriven = generateDataSets(nRequest,nData,time_range,MAX_LAT, MIN_LAT, MAX_LONG, MIN_LONG)
+        location_matrix, requestTimePickUp, requestTimeDropOff, newDataList, df_list,probabilities_pickUpTime,probabilities_dropOffTime, probabilities_location, density_grid, x_range, y_range,requests, distanceDriven = generateDataSets(nRequest,DoD,nData,time_range,MAX_LAT, MIN_LAT, MAX_LONG, MIN_LONG)
         
         # Generate vehicles 
         for gamma in GammaList

@@ -26,10 +26,12 @@ function load_simulation_data(input_dir::String)
     density_distance = Float64.(CSV.read(joinpath(input_dir, "density_distance.csv"), DataFrame).density)
     distance_range = Float64.(CSV.read(joinpath(input_dir, "distance_range.csv"), DataFrame).distance)
 
-    probabilities_pickUpTime =Float64.(CSV.read(joinpath(input_dir, "pickup_time_distribution.csv"), DataFrame).probability)
-    density_pickUp = Float64.(CSV.read(joinpath(input_dir, "density_pickup_time.csv"), DataFrame).density)
+    probabilities_pickUpTime = Float64.(CSV.read(joinpath(input_dir, "pickup_time_distribution.csv"), DataFrame).probability)
     probabilities_dropOffTime = Float64.(CSV.read(joinpath(input_dir, "dropoff_time_distribution.csv"), DataFrame).probability)
-    density_dropOff = Float64.(CSV.read(joinpath(input_dir, "density_dropoff_time.csv"), DataFrame).density)
+    probabilities_pickUpTime_offline =Float64.(CSV.read(joinpath(input_dir, "offline_pickup_time_distribution.csv"), DataFrame).probability)
+    probabilities_pickUpTime_online = Float64.(CSV.read(joinpath(input_dir, "online_pickup_time_distribution.csv"), DataFrame).probability)
+    probabilities_dropOffTime_offline = Float64.(CSV.read(joinpath(input_dir, "offline_dropoff_time_distribution.csv"), DataFrame).probability)
+    probabilities_dropOffTime_online = Float64.(CSV.read(joinpath(input_dir, "online_dropoff_time_distribution.csv"), DataFrame).probability)
 
     x_range = Float64.(CSV.read(joinpath(input_dir, "x_range.csv"), DataFrame).x)
     y_range = Float64.(CSV.read(joinpath(input_dir, "y_range.csv"), DataFrame).y)
@@ -46,8 +48,10 @@ function load_simulation_data(input_dir::String)
     return (
         probabilities_pickUpTime,
         probabilities_dropOffTime,
-        density_pickUp,
-        density_dropOff,
+        probabilities_pickUpTime_offline,
+        probabilities_pickUpTime_online,
+        probabilities_dropOffTime_offline,
+        probabilities_dropOffTime_online,
         probabilities_location,
         density_grid,
         x_range,
@@ -66,12 +70,14 @@ end
 #==
 # Generate data sets and vehicles
 ==#
-function generateDataSets(nRequest,nData,time_range,max_lat, min_lat, max_long, min_long)
+function generateDataSets(nRequest,DoD,nData,time_range,max_lat, min_lat, max_long, min_long)
     # Load simulation data
     probabilities_pickUpTime,
-        probabilities_dropOffTime,
-        density_pickUp,
-        density_dropOff,
+    probabilities_dropOffTime,
+    probabilities_pickUpTime_offline,
+    probabilities_pickUpTime_online,
+    probabilities_dropOffTime_offline,
+    probabilities_dropOffTime_online,
         probabilities_location,
         density_grid,
         x_range,
@@ -86,16 +92,16 @@ function generateDataSets(nRequest,nData,time_range,max_lat, min_lat, max_long, 
         distanceDriven= load_simulation_data("Data/Simulation data/")
 
     # Generate request data 
-    newDataList, df_list = generateData(nRequest,nData,probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long)
+    newDataList, df_list = generateData(nRequest,DoD,nData, probabilities_pickUpTime_offline, probabilities_pickUpTime_online, probabilities_dropOffTime_offline, probabilities_dropOffTime_online, probabilities_location, time_range, x_range, y_range,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long)
 
-    return location_matrix, requestTimePickUp, requestTimeDropOff, newDataList, df_list, probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff, probabilities_location, density_grid, x_range, y_range, requests, distanceDriven
+    return location_matrix, requestTimePickUp, requestTimeDropOff, newDataList, df_list, probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, density_grid, x_range, y_range, requests, distanceDriven
 end
 
 
 #==
 # Generate data sets
 ==#
-function generateData(nRequest,nData,probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long)
+function generateData(nRequest,DoD,nData,probabilities_pickUpTime_offline, probabilities_pickUpTime_online, probabilities_dropOffTime_offline, probabilities_dropOffTime_online, probabilities_location, time_range, x_range, y_range,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long)
     df_list = []
     newDataList = Vector{String}()  
     for i in 1:nData
@@ -107,7 +113,7 @@ function generateData(nRequest,nData,probabilities_pickUpTime, probabilities_dro
         while retry_count < 5
             try
                 # Call the function that may throw the error
-                results = makeRequests(nRequest, probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range, output_file,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long)
+                results = makeRequests(nRequest,DoD, probabilities_pickUpTime_offline, probabilities_pickUpTime_online, probabilities_dropOffTime_offline, probabilities_dropOffTime_online, probabilities_location, time_range, x_range, y_range, output_file,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long)
                 
                 println("Request generation succeeded!")
                 push!(df_list,results)
@@ -136,7 +142,7 @@ end
 #==
 # Make request
 ==#
-function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, probabilities_dropOffTime::Vector{Float64}, probabilities_location::Vector{Float64}, time_range::Vector{Int}, x_range::Vector{Float64}, y_range::Vector{Float64}, output_file::String,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long)
+function makeRequests(nSample::Int, DoD::Float64, probabilities_pickUpTime_offline::Vector{Float64}, probabilities_pickUpTime_online::Vector{Float64}, probabilities_dropOffTime_offline::Vector{Float64}, probabilities_dropOffTime_online::Vector{Float64}, probabilities_location::Vector{Float64}, time_range::Vector{Int}, x_range::Vector{Float64}, y_range::Vector{Float64}, output_file::String,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long)
     results = DataFrame(
         id = Int[],
         pickup_latitude = Float64[],
@@ -150,19 +156,23 @@ function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, p
         direct_drive_time = Int[],
     )
 
-    # Loop to generate samples
-    for i in 1:nSample
+
+    nOffline = ceil(Int, nSample * (1-DoD))
+    nOnline = nSample - nOffline
+    preKnown = falses(nOffline + nOnline)
+
+    # Generate offline requests 
+    for i in 1:nOffline
         # Sample new location based on KDE probabilities
         sampled_location = getNewLocations(probabilities_location, x_range, y_range, distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long)
         pickup_longitude, pickup_latitude = sampled_location[1]
         dropoff_longitude, dropoff_latitude = sampled_location[2]
 
-
         # Determine type of request
-        if rand() < 0.5
+        if rand() < 0.8
             requestType = 0  # pick-up request
 
-            sampled_indices = sample(1:length(probabilities_pickUpTime), Weights(probabilities_pickUpTime), 1)
+            sampled_indices = sample(1:length(probabilities_pickUpTime_offline), Weights(probabilities_pickUpTime_offline), 1)
             sampledTimePick = time_range[sampled_indices]
             requestTime = ceil(sampledTimePick[1])
         else
@@ -176,17 +186,52 @@ function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, p
             indices = time_range .>= earliestRequestTime
             nTimes = sum(indices)
 
-            sampled_indices = sample(1:nTimes, Weights(probabilities_dropOffTime[indices]), 1)
+            sampled_indices = sample(1:nTimes, Weights(probabilities_dropOffTime_offline[indices]), 1)
             sampledTimeDrop = time_range[indices][sampled_indices]
             requestTime = ceil(sampledTimeDrop[1])
         end
 
         # Append results for the request
+        preKnown[i] = true
         push!(results, (i, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, requestType, requestTime,"WALKING",0,0))
+
     end
 
-    # Determine pre-known requests
-    preKnown = preKnownRequests(results, DoD, serviceWindow, callBuffer)
+    # Generate online requests 
+    for i in 1:nOnline
+        # Sample new location based on KDE probabilities
+        sampled_location = getNewLocations(probabilities_location, x_range, y_range, distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long)
+        pickup_longitude, pickup_latitude = sampled_location[1]
+        dropoff_longitude, dropoff_latitude = sampled_location[2]
+
+        # Determine type of request
+        if rand() < 0.2
+            requestType = 0  # pick-up request
+
+            sampled_indices = sample(1:length(probabilities_pickUpTime_online), Weights(probabilities_pickUpTime_online), 1)
+            sampledTimePick = time_range[sampled_indices]
+            requestTime = ceil(sampledTimePick[1])
+
+        else
+            requestType = 1  # drop-off request
+
+            # Direct drive time 
+            directDriveTime = ceil(haversine_distance(pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude)[2])
+
+            # Earliest request time 
+            earliestRequestTime = serviceWindow[1] + directDriveTime + MAX_DELAY
+            indices = time_range .>= earliestRequestTime
+            nTimes = sum(indices)
+
+            sampled_indices = sample(1:nTimes, Weights(probabilities_dropOffTime_online[indices]), 1)
+            sampledTimeDrop = time_range[indices][sampled_indices]
+            requestTime = ceil(sampledTimeDrop[1])
+        end
+
+        # Append results for the request
+        push!(results, (i+nOffline, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, requestType, requestTime,"WALKING",0,0))
+
+    end
 
     # Determine call time
     callTime(results, serviceWindow, callBuffer, preKnown)
@@ -194,6 +239,9 @@ function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, p
     # Write results to CSV
     mkpath(dirname(output_file))
     CSV.write(output_file, results)
+
+    # Get requestTime for pickup and dropoff for offline and online
+    
 
     return results
 end
@@ -278,7 +326,117 @@ end
 #==
 # Create plots 
 ==#
-function plotDataSets(x_range,y_range,density_grid,location_matrix,requestTimePickUp,requestTimeDropOff,probabilities_pickUpTime,probabilities_dropOffTime,serviceWindow,prefix::String,distanceDriven)
+function plotDataSets(x_range,y_range,density_grid,location_matrix,requestTimePickUp_offline,requestTimePickUp_online,requestTimeDropOff_offline,requestTimeDropOff_online,probabilities_pickUpTime_offline,probabilities_pickUpTime_online,probabilities_dropOffTime_offline,probabilities_dropOffTime_online,serviceWindow,prefix::String,distanceDriven)
+    min_x = 5
+    max_x = 24
+
+    # Visualize results 
+    p1 = heatmap(x_range, y_range, -density_grid, xlabel="Longitude", ylabel="Latitude", title=prefix*" Location Density Map",c = :RdYlBu_9,colorbar=false)
+    scatter!(location_matrix[:,1], location_matrix[:,2], marker=:circle, label="Locations", color=:blue,markersize=3)
+
+    # Plot request time distribution offline 
+    requestTimePickUp_hours_offline = requestTimePickUp_offline ./ 60
+    time_range_hours = time_range ./ 60
+    probabilities_pickUpTime_scaled_offline = probabilities_pickUpTime_offline .* 60
+
+    p2 = histogram(requestTimePickUp_hours_offline, normalize=:pdf, label="", color=:blue)
+    plot!(time_range_hours, probabilities_pickUpTime_scaled_offline, label="Probability Distribution", linewidth=4, linestyle=:solid, color=:red,bins=19)
+    vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+    vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+    title!(prefix*" Offline Pick-up Request Time Distribution")
+    xlabel!("Time (Hours)")
+    ylabel!("Probability Density")
+    xtick_values = range(min_x, max_x, step=1)  # Adjust length for more ticks
+    plot!(xticks=xtick_values)
+
+    # Plot request time distribution online 
+    requestTimePickUp_hours_online = requestTimePickUp_online ./ 60
+    time_range_hours = time_range ./ 60
+    probabilities_pickUpTime_scaled_online = probabilities_pickUpTime_online .* 60
+
+    p3 = histogram(requestTimePickUp_hours_online, normalize=:pdf, label="", color=:blue)
+    plot!(time_range_hours, probabilities_pickUpTime_scaled_online, label="Probability Distribution", linewidth=4, linestyle=:solid, color=:red,bins=19)
+    vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+    vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+    title!(prefix*" Online Pick-up Request Time Distribution")
+    xlabel!("Time (Hours)")
+    ylabel!("Probability Density")
+    xtick_values = range(min_x, max_x, step=1)  # Adjust length for more ticks
+    plot!(xticks=xtick_values)
+
+    # # Plot histogram and KDE for drop-off time offline
+    requestTimeDropOff_hours_offline = requestTimeDropOff_offline ./ 60
+    time_range_hours = time_range ./ 60
+    probabilities_dropOffTime_scaled_offline = probabilities_dropOffTime_offline .* 60
+
+    p4 = histogram(requestTimeDropOff_hours_offline, normalize=:pdf, label="", color=:blue)
+    plot!(time_range_hours, probabilities_dropOffTime_scaled_offline, label="Probability Distribution", linewidth=4, linestyle=:solid, color=:red,bins=19)
+    vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+    vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+    title!(prefix*" Offline Drop-off Request Time Distribution")
+    xlabel!("Time (Hours)")
+    ylabel!("Probability Density")
+    xtick_values = range(min_x, max_x, step=1)  # Adjust length for more ticks
+    plot!(xticks=xtick_values)
+
+    # # Plot histogram and KDE for drop-off time online
+    requestTimeDropOff_hours_online = requestTimeDropOff_online ./ 60
+    time_range_hours = time_range ./ 60
+    probabilities_dropOffTime_scaled_online = probabilities_dropOffTime_online .* 60
+
+    p5 = histogram(requestTimeDropOff_hours_online, normalize=:pdf, label="", color=:blue)
+    plot!(time_range_hours, probabilities_dropOffTime_scaled_online, label="Probability Distribution", linewidth=4, linestyle=:solid, color=:red,bins=19)
+    vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+    vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+    title!(prefix*" Online Drop-off Request Time Distribution")
+    xlabel!("Time (Hours)")
+    ylabel!("Probability Density")
+    xtick_values = range(min_x, max_x, step=1)  # Adjust length for more ticks
+    plot!(xticks=xtick_values)
+   
+    # Plot histogram and KDE for all offline requests
+    p6 = histogram(vcat(requestTimeDropOff_hours_offline,requestTimePickUp_hours_offline), normalize=:pdf, label="", color=:blue,bins=24, size = (900,500))
+    vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+    vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+    title!(prefix*" Offline Request Time Distribution")
+    xlabel!("Time (Hours)")
+    ylabel!("Probability Density")
+    xtick_values = range(min_x, max_x, step=1)  # Adjust length for more ticks
+    plot!(xticks=xtick_values)
+
+    # Plot histogram and KDE for all online requests
+    p7 = histogram(vcat(requestTimeDropOff_hours_online,requestTimePickUp_hours_online), normalize=:pdf, label="", color=:blue,bins=24, size = (900,500))
+    vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+    vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+    title!(prefix*" Online Request Time Distribution")
+    xlabel!("Time (Hours)")
+    ylabel!("Probability Density")
+    xtick_values = range(min_x, max_x, step=1)  # Adjust length for more ticks
+    plot!(xticks=xtick_values)
+
+    # Plot histogram and KDE for all requests
+    requestTimePickUp_hours = vcat(requestTimePickUp_offline,requestTimePickUp_online) ./ 60
+    requestTimeDropOff_hours = vcat(requestTimeDropOff_offline,requestTimeDropOff_online) ./ 60
+    p8 = histogram(vcat(requestTimeDropOff_hours,requestTimePickUp_hours), normalize=:pdf, label="", color=:blue,bins=24, size = (900,500))
+    vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+    vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+    title!(prefix*" All Request Time Distribution")
+    xlabel!("Time (Hours)")
+    ylabel!("Probability Density")
+    xtick_values = range(min_x, max_x, step=1)  # Adjust length for more ticks
+    plot!(xticks=xtick_values)
+
+    p9 = histogram(distanceDriven, normalize=:pdf, label="", color=:blue)
+    title!(prefix*" Distance Driven Distribution")
+    xlabel!("Driven distance")
+    ylabel!("Probability Density")
+
+
+    return p1,p2,p3,p4,p5,p6,p7,p8,p9
+end
+
+
+function plotDataSetsOriginal(x_range,y_range,density_grid,location_matrix,requestTimePickUp,requestTimeDropOff,probabilities_pickUpTime,probabilities_dropOffTime,serviceWindow,prefix::String,distanceDriven)
     min_x = 5
     max_x = 24
 
@@ -411,25 +569,28 @@ end
 function createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,density_grid,location_matrix,requestTimePickUp,requestTimeDropOff,probabilities_pickUpTime,probabilities_dropOffTime,serviceWindow,distanceDriven)
     # Create plots for base data 
     prefix = "Base Data"
-    heatMapBase, pickUpTimeHistBase, dropOffTimeHistBase, requestTimeBase, distanceDrivenBase = plotDataSets(x_range,y_range,density_grid,location_matrix,requestTimePickUp,requestTimeDropOff,probabilities_pickUpTime,probabilities_dropOffTime,serviceWindow,prefix,distanceDriven)
+    heatMapBase, pickUpTimeHistBase, dropOffTimeHistBase, requestTimeBase, distanceDrivenBase = plotDataSetsOriginal(x_range,y_range,density_grid,location_matrix,requestTimePickUp,requestTimeDropOff,probabilities_pickUpTime,probabilities_dropOffTime,serviceWindow,prefix,distanceDriven)
 
 
     prefix_new = "Gen. Data"
 
     # Generate plot for each new data set 
     for (idx,file) in enumerate(newDataList)
-        location_matrix_new, requestTimePickUp_new, requestTimeDropOff_new, _, distanceDriven_new = getOldData([file];checkUnique=false)
-        probabilities_pickUpTime_new, probabilities_dropOffTime_new, density_pickUp_new, density_dropOff_new = getRequestTimeDistribution(requestTimePickUp_new, requestTimeDropOff_new, time_range)
+        location_matrix_new, requestTimePickUp_offline_new,requestTimePickUp_online_new,requestTimeDropOff_offline_new,requestTimeDropOff_online_new, _, distanceDriven_new = getNewData([file];checkUnique=false) 
+        probabilities_pickUpTime_offline_new, probabilities_dropOffTime_offline_new, density_pickUp_new, density_dropOff_new = getRequestTimeDistribution(requestTimePickUp_offline_new, requestTimeDropOff_offline_new, time_range)
+        probabilities_pickUpTime_online_new, probabilities_dropOffTime_online_new, density_pickUp_new, density_dropOff_new = getRequestTimeDistribution(requestTimePickUp_online_new, requestTimeDropOff_online_new, time_range)
+        adj_probabilities_pickUpTime_offline_new, adj_probabilities_dropOffTime_offline_new = getOfflineRequestTimeDistribution(probabilities_pickUpTime_offline_new, probabilities_dropOffTime_offline_new, time_range)
+        adj_probabilities_pickUpTime_online_new, adj_probabilities_dropOffTime_online_new = getOnlineRequestTimeDistribution(probabilities_pickUpTime_online_new, probabilities_dropOffTime_online_new, time_range)
         probabilities_location_new, density_grid_new,x_range_new,y_range_new = getLocationDistribution(location_matrix_new)
         probabilities_distance_new, density_distance_new, distance_range_new = getDistanceDistribution(distanceDriven_new)
 
         # Plot data 
-        heatMapGen, pickUpTimeHistGen, dropOffTimeHistGen, requestTimeGen, distanceDrivenGen = plotDataSets(x_range_new,y_range_new,density_grid_new,location_matrix_new,requestTimePickUp_new,requestTimeDropOff_new,probabilities_pickUpTime_new,probabilities_dropOffTime_new,serviceWindow,prefix_new,distanceDriven_new)
-
+        #heatMapGen, pickUpTimeHistGen, dropOffTimeHistGen, requestTimeGen, distanceDrivenGen = plotDataSets(x_range_new,y_range_new,density_grid_new,location_matrix_new,requestTimePickUp_offline_new,requestTimePickUp_online_new,requestTimeDropOff_offline_new,requestTimeDropOff_online_new,adj_probabilities_pickUpTime_offline_new,adj_probabilities_pickUpTime_online_new,adj_probabilities_dropOffTime_offline_new,adj_probabilities_dropOffTime_online_new,serviceWindow,prefix_new,distanceDriven_new)
+        heatMapGen, offlinePickUpTimeHistGen, onlinePickUpTimeHistGen, offlineDropOffTimeHistGen, onlineDropOffTimeHistGen, offlineRequestTimeGen, onlineRequestTimeGen, allRequestTimeGen, distanceDrivenGen = plotDataSets(x_range_new,y_range_new,density_grid_new,location_matrix_new,requestTimePickUp_offline_new,requestTimePickUp_online_new,requestTimeDropOff_offline_new,requestTimeDropOff_online_new,adj_probabilities_pickUpTime_offline_new,adj_probabilities_pickUpTime_online_new,adj_probabilities_dropOffTime_offline_new,adj_probabilities_dropOffTime_online_new,serviceWindow,prefix_new,distanceDriven_new)
         p = plot(
-            heatMapBase, heatMapGen, pickUpTimeHistBase, pickUpTimeHistGen,
-            dropOffTimeHistBase, dropOffTimeHistGen, requestTimeBase, requestTimeGen,distanceDrivenBase, distanceDrivenGen,
-            layout=(5,2), size=(2000,1500),
+            heatMapGen, heatMapBase, offlinePickUpTimeHistGen, pickUpTimeHistBase, onlinePickUpTimeHistGen, pickUpTimeHistBase, offlineDropOffTimeHistGen, dropOffTimeHistBase, onlineDropOffTimeHistGen, dropOffTimeHistBase, 
+            offlineRequestTimeGen, requestTimeBase, onlineRequestTimeGen, requestTimeBase,
+            layout=(7,2), size=(2000,1500),
             plot_title="No. generated requests = " * string(nRequest),
             bottom_margin=5mm,
             left_margin=12mm, 
