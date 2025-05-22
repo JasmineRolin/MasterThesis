@@ -20,7 +20,7 @@ global GENERATE_VEHICLES = false
 #==
 # Constants for data generation 
 ==#
-global DoD = 0.4 # Degree of dynamism
+global DoD = 0.7 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 2*60 # 2 hours buffer
 global nData = 10
@@ -121,7 +121,7 @@ if GENERATE_DATA_AND_VEHICLES
     _= load_simulation_data("Data/Simulation data/")
 
     for nRequest in nRequestList
-        location_matrix, requestTime, newDataList, df_list,probabilities_time, probabilities_location, density_grid, x_range, y_range,requests, distanceDriven = generateDataSets(nRequest,DoD,nData,time_range,MAX_LAT, MIN_LAT, MAX_LONG, MIN_LONG)
+        location_matrix, requestTime, newDataList, df_list,probabilities_time,probabilities_offline,probabilities_online, probabilities_location, density_grid, x_range, y_range,requests, distanceDriven = generateDataSets(nRequest,DoD,nData,time_range,MAX_LAT, MIN_LAT, MAX_LONG, MIN_LONG)
 
         # Generate vehicles 
         for gamma in GammaList
@@ -154,7 +154,7 @@ if GENERATE_DATA_AND_VEHICLES
         #================================================#
         # Plot new data
         #================================================#
-        createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,density_grid,location_matrix,requestTime,probabilities_time,serviceWindow,distanceDriven)
+        createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,density_grid,location_matrix,requestTime,probabilities_time, probabilities_offline,probabilities_online,serviceWindow,distanceDriven)
         for gamma in GammaList
             plotAndSaveGantChart(nRequest,nData,gamma)
         end

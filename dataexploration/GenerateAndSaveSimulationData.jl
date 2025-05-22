@@ -189,7 +189,7 @@ function getRequestTimeDistribution(requestTime::Vector{Int}, time_range::Vector
 end
 
 
-function getOnlineRequestTimeDistribution(probabilities::Vector{Float64}, time_range::Vector{Int}; second_peak_center::Int=960, peak_boost=2.0, boost_width=60)
+function getOnlineRequestTimeDistribution(probabilities::Vector{Float64}, time_range::Vector{Int}; second_peak_center::Int=960, peak_boost=1.2, boost_width=60)
     # Apply a Gaussian weight centered at the second peak
     boost_weights = [1.0 + (peak_boost - 1.0) * exp(-((t - second_peak_center)^2) / (2 * boost_width^2)) for t in time_range]
     
@@ -198,7 +198,7 @@ function getOnlineRequestTimeDistribution(probabilities::Vector{Float64}, time_r
 
     # Suppress first 2 hours 
     for i in eachindex(time_range)
-        if time_range[i] <= 480
+        if time_range[i] <= serviceWindow[1] + callBuffer
             adjusted_probs[i] = 0.0
         end
     end
@@ -214,7 +214,7 @@ function getOnlineRequestTimeDistribution(probabilities::Vector{Float64}, time_r
     return adjusted_probs
 end
 
-function getOfflineRequestTimeDistribution(probabilities::Vector{Float64}, time_range::Vector{Int}; first_peak_center::Int=400, peak_boost=2.5, boost_width=60)
+function getOfflineRequestTimeDistribution(probabilities::Vector{Float64}, time_range::Vector{Int}; first_peak_center::Int=400, peak_boost=1.2, boost_width=60)
     # Apply a Gaussian weight centered at the second peak
     boost_weights = [1.0 + (peak_boost - 1.0) * exp(-((t - first_peak_center)^2) / (2 * boost_width^2)) for t in time_range]
     

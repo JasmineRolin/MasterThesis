@@ -82,7 +82,7 @@ function generateDataSets(nRequest,DoD,nData,time_range,max_lat, min_lat, max_lo
     # Generate request data 
     newDataList, df_list = generateData(nRequest,DoD,nData, probabilities_offline, probabilities_online, probabilities_location, time_range, x_range, y_range,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long)
 
-    return location_matrix, requestTime, newDataList, df_list, probabilities_time, probabilities_location, density_grid, x_range, y_range, requests, distanceDriven
+    return location_matrix, requestTime, newDataList, df_list, probabilities_time,probabilities_offline,probabilities_online,probabilities_location, density_grid, x_range, y_range, requests, distanceDriven
 end
 
 
@@ -157,7 +157,7 @@ function makeRequests(nSample::Int, DoD::Float64, probabilities_offline::Vector{
         dropoff_longitude, dropoff_latitude = sampled_location[2]
 
         # Determine type of request
-        if rand() < 0.8
+        if rand() < 0.5
             requestType = 0  # pick-up request
 
             sampled_indices = sample(1:length(probabilities_offline), Weights(probabilities_offline), 1)
@@ -193,7 +193,7 @@ function makeRequests(nSample::Int, DoD::Float64, probabilities_offline::Vector{
         dropoff_longitude, dropoff_latitude = sampled_location[2]
 
         # Determine type of request
-        if rand() < 0.2
+        if rand() < 0.5
             requestType = 0  # pick-up request
 
             sampled_indices = sample(1:length(probabilities_online), Weights(probabilities_online), 1)
@@ -311,7 +311,7 @@ end
 #==
 # Create plots 
 ==#
-function plotDataSets(x_range,y_range,density_grid,location_matrix,requestTime_offline,requestTime_online,probabilities_offline,probabilities_online,serviceWindow,prefix::String,distanceDriven)
+function plotDataSets(x_range,y_range,density_grid,location_matrix,requestTime_offline,requestTime_online,probabilities_offline,probabilities_online,probabilities_all,serviceWindow,prefix::String,distanceDriven)
     min_x = 5
     max_x = 24
 
@@ -324,8 +324,8 @@ function plotDataSets(x_range,y_range,density_grid,location_matrix,requestTime_o
     time_range_hours = time_range ./ 60
     probabilities_scaled_offline = probabilities_offline .* 60
 
-    p2 = histogram(requestTime_hours_offline, normalize=:pdf, label="", color=:blue)
-    plot!(time_range_hours, probabilities_scaled_offline, label="Probability Distribution", linewidth=4, linestyle=:solid, color=:red,bins=39)
+    p2 = histogram(requestTime_hours_offline, normalize=:pdf, label="", color=:blue, bins=24)
+    plot!(time_range_hours, probabilities_scaled_offline, label="Probability Distribution", linewidth=4, linestyle=:solid, color=:red)
     vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
     vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
     title!(prefix*" Offline Pick-up Request Time Distribution")
@@ -339,8 +339,8 @@ function plotDataSets(x_range,y_range,density_grid,location_matrix,requestTime_o
     time_range_hours = time_range ./ 60
     probabilities_scaled_online = probabilities_online .* 60
 
-    p3 = histogram(requestTime_hours_online, normalize=:pdf, label="", color=:blue)
-    plot!(time_range_hours, probabilities_scaled_online, label="Probability Distribution", linewidth=4, linestyle=:solid, color=:red,bins=39)
+    p3 = histogram(requestTime_hours_online, normalize=:pdf, label="", color=:blue, bins = 24)
+    plot!(time_range_hours, probabilities_scaled_online, label="Probability Distribution", linewidth=4, linestyle=:solid, color=:red)
     vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
     vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
     title!(prefix*" Online Pick-up Request Time Distribution")
@@ -351,7 +351,9 @@ function plotDataSets(x_range,y_range,density_grid,location_matrix,requestTime_o
 
     # Plot histogram of all requests
     requestTime = vcat(requestTime_hours_offline,requestTime_hours_online)
+    probabilities_scaled_all = probabilities_all .* 60
     p4 = histogram(requestTime, normalize=:pdf, label="", color=:blue,bins=24, size = (900,500))
+    plot!(time_range_hours, probabilities_scaled_all, label="Probability Distribution", linewidth=4, linestyle=:solid, color=:red)
     vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
     vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
     title!(prefix*" Request Time Distribution")
@@ -370,7 +372,7 @@ function plotDataSets(x_range,y_range,density_grid,location_matrix,requestTime_o
 end
 
 
-function plotDataSetsOriginal(x_range,y_range,density_grid,location_matrix,requestTime,probabilities_time,serviceWindow,prefix::String,distanceDriven)
+function plotDataSetsOriginal(x_range,y_range,density_grid,location_matrix,requestTime,probabilities_time,probabilities_online,probabilities_offline,serviceWindow,prefix::String,distanceDriven)
     min_x = 5
     max_x = 24
 
@@ -378,12 +380,42 @@ function plotDataSetsOriginal(x_range,y_range,density_grid,location_matrix,reque
     p1 = heatmap(x_range, y_range, -density_grid, xlabel="Longitude", ylabel="Latitude", title=prefix*" Location Density Map",c = :RdYlBu_9,colorbar=false)
     scatter!(location_matrix[:,1], location_matrix[:,2], marker=:circle, label="Locations", color=:blue,markersize=3)
 
-    # Plot request time distribution 
+    # Plot offline request time distribution 
+    requestTime_hours = requestTime ./ 60
+    time_range_hours = time_range ./ 60
+    probabilities_scaled_offline = probabilities_offline .* 60
+
+    p2 = histogram(requestTime_hours, normalize=:pdf, label="", color=:blue,bins=19)
+    plot!(time_range_hours, probabilities_scaled_offline, label="Probability Distribution", linewidth=4, linestyle=:solid, color=:red,bins=19)
+    vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+    vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+    title!(prefix*" Offline Request Time Distribution")
+    xlabel!("Time (Hours)")
+    ylabel!("Probability Density")
+    xtick_values = range(min_x, max_x, step=1)  # Adjust length for more ticks
+    plot!(xticks=xtick_values)
+
+    # Plot online request time distribution 
+    requestTime_hours = requestTime ./ 60
+    time_range_hours = time_range ./ 60
+    probabilities_scaled_online = probabilities_online .* 60
+
+    p3 = histogram(requestTime_hours, normalize=:pdf, label="", color=:blue,bins=19)
+    plot!(time_range_hours, probabilities_scaled_online, label="Probability Distribution", linewidth=4, linestyle=:solid, color=:red,bins=19)
+    vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+    vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+    title!(prefix*" Online Request Time Distribution")
+    xlabel!("Time (Hours)")
+    ylabel!("Probability Density")
+    xtick_values = range(min_x, max_x, step=1)  # Adjust length for more ticks
+    plot!(xticks=xtick_values)
+
+    # Plot all request time distribution 
     requestTime_hours = requestTime ./ 60
     time_range_hours = time_range ./ 60
     probabilities_scaled = probabilities_time .* 60
 
-    p2 = histogram(requestTime_hours, normalize=:pdf, label="", color=:blue)
+    p4 = histogram(requestTime_hours, normalize=:pdf, label="", color=:blue, bins=24)
     plot!(time_range_hours, probabilities_scaled, label="Probability Distribution", linewidth=4, linestyle=:solid, color=:red,bins=19)
     vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
     vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
@@ -393,13 +425,13 @@ function plotDataSetsOriginal(x_range,y_range,density_grid,location_matrix,reque
     xtick_values = range(min_x, max_x, step=1)  # Adjust length for more ticks
     plot!(xticks=xtick_values)
 
-    p3 = histogram(distanceDriven, normalize=:pdf, label="", color=:blue)
+    p5 = histogram(distanceDriven, normalize=:pdf, label="", color=:blue)
     title!(prefix*" Distance Driven Distribution")
     xlabel!("Driven distance")
     ylabel!("Probability Density")
 
 
-    return p1,p2,p3
+    return p1,p2,p3,p4,p5
 end
 
 # Create gant chart of vehicles and requests
@@ -475,10 +507,10 @@ end
 
 
 
-function createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,density_grid,location_matrix,requestTime,probabilities_time,serviceWindow,distanceDriven)
+function createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,density_grid,location_matrix,requestTime,probabilities_time,probabilities_offline,probabilities_online,serviceWindow,distanceDriven)
     # Create plots for base data 
     prefix = "Base Data"
-    heatMapBase, requestTimeBase, distanceDrivenBase = plotDataSetsOriginal(x_range,y_range,density_grid,location_matrix,requestTime,probabilities_time,serviceWindow,prefix,distanceDriven)
+    heatMapBase, requestTimeOfflineBase, requestTimeOnlineBase, requestTimeBase, distanceDrivenBase = plotDataSetsOriginal(x_range,y_range,density_grid,location_matrix,requestTime,probabilities_time,probabilities_online,probabilities_offline,serviceWindow,prefix,distanceDriven)
 
 
     prefix_new = "Gen. Data"
@@ -486,6 +518,8 @@ function createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,de
     # Generate plot for each new data set 
     for (idx,file) in enumerate(newDataList)
         location_matrix_new, requestTime_offline_new,requestTime_online_new, _, distanceDriven_new = getNewData([file];checkUnique=false) 
+        requestTime_all_new = vcat(requestTime_offline_new,requestTime_online_new)
+        probabilities_all_new, density_new = getRequestTimeDistribution(requestTime_all_new, time_range)
         probabilities_offline_new, density_new = getRequestTimeDistribution(requestTime_offline_new, time_range)
         probabilities_online_new, density_new = getRequestTimeDistribution(requestTime_online_new, time_range)
         adj_probabilities_offline_new = getOfflineRequestTimeDistribution(probabilities_offline_new, time_range)
@@ -494,10 +528,9 @@ function createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,de
         probabilities_distance_new, density_distance_new, distance_range_new = getDistanceDistribution(distanceDriven_new)
 
         # Plot data 
-        #heatMapGen, pickUpTimeHistGen, dropOffTimeHistGen, requestTimeGen, distanceDrivenGen = plotDataSets(x_range_new,y_range_new,density_grid_new,location_matrix_new,requestTimePickUp_offline_new,requestTimePickUp_online_new,requestTimeDropOff_offline_new,requestTimeDropOff_online_new,adj_probabilities_pickUpTime_offline_new,adj_probabilities_pickUpTime_online_new,adj_probabilities_dropOffTime_offline_new,adj_probabilities_dropOffTime_online_new,serviceWindow,prefix_new,distanceDriven_new)
-        heatMapGen, offlineTimeHistGen, onlineTimeHistGen, allTimeHistGen, distanceDrivenGen, = plotDataSets(x_range_new,y_range_new,density_grid_new,location_matrix_new,requestTime_offline_new,requestTime_online_new,adj_probabilities_offline_new,adj_probabilities_online_new,serviceWindow,prefix_new,distanceDriven_new)
+        heatMapGen, offlineTimeHistGen, onlineTimeHistGen, allTimeHistGen, distanceDrivenGen = plotDataSets(x_range_new,y_range_new,density_grid_new,location_matrix_new,requestTime_offline_new,requestTime_online_new,adj_probabilities_offline_new,adj_probabilities_online_new,probabilities_all_new,serviceWindow,prefix_new,distanceDriven_new)
         p = plot(
-            heatMapGen, heatMapBase, offlineTimeHistGen, requestTimeBase, onlineTimeHistGen, requestTimeBase, allTimeHistGen, requestTimeBase, distanceDrivenGen, distanceDrivenBase,
+            heatMapBase, heatMapGen, requestTimeOfflineBase, offlineTimeHistGen, requestTimeOnlineBase, onlineTimeHistGen, requestTimeBase, allTimeHistGen, distanceDrivenBase, distanceDrivenGen,
             layout=(5,2), size=(2000,1500),
             plot_title="No. generated requests = " * string(nRequest),
             bottom_margin=5mm,
