@@ -18,14 +18,19 @@ using Plots.PlotMeasures
 print("\033c")
 
 # Receive command line arguments 
-n = 20
+
+    # OBS!!! OBS!! #
+        gridSize = 10
+    # OBS!!! OBS!! #
+
+n = 100
 gamma = 0.7
 i = 1
 relocateVehicles = true
-gridSize = 5
 startFileIndex = 1
 endFileIndex = 20
 nPeriods = 48
+displayPlots = false
 
 # Find period length 
 maximumTime = 24*60 
@@ -57,10 +62,16 @@ push!(outputFiles, outPutFolder*"/Simulation_KPI_"*string(scenarioName)*"_"*stri
 # Read instance 
 scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile,gridFile)
 
+# Plot scenario 
+pRequests = plotRequestsAndVehicles(scenario,scenario.grid,n,gamma)
+display(pRequests)
+
+
 println("\t nOfflineRequests: ",length(scenario.offlineRequests))
 
 # Simulate scenario 
-solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = false,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles,nTimePeriods=nPeriods,periodLength=periodLength);
+useALNS = true
+solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles,nTimePeriods=nPeriods,periodLength=periodLength,ALNS = useALNS);
 
 state = State(solution,scenario.onlineRequests[end],0)
 feasible, msg = checkSolutionFeasibilityOnline(scenario,state)

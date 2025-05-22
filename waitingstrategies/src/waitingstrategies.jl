@@ -10,4 +10,8 @@ include("RelocateVehicleUtils.jl")
 using .RelocateVehicleUtils
 export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBalancePrCell
 
+include("WaitingStrategiesPlots.jl")
+using .WaitingStrategiesPlots
+export plotRequestsAndVehicles
+
 end # module waitingstrategies

@@ -576,24 +576,30 @@ function determineCurrentState(solution::Solution,event::Event,finalSolution::So
 
     # Update vehicle schedule
     for (vehicle,schedule) in enumerate(solution.vehicleSchedules)
-
+        println("Updating schedule: ", vehicle)
         # Check if vehicle is not available yet or has not started service yet
         if schedule.vehicle.availableTimeWindow.startTime > currentTime || schedule.route[1].startOfServiceTime > currentTime
             idx, splitTime = updateCurrentScheduleNotAvailableYet(schedule,currentState,vehicle)
-           # print(" - not available yet or not started service yet \n")
+            print(" - not available yet or not started service yet \n")
         # Check if entire route has been served and vehicle is not available anymore
-        elseif schedule.vehicle.availableTimeWindow.endTime < currentTime || length(schedule.route) == 1|| (schedule.route[end-1].endOfServiceTime < currentTime && schedule.route[end].startOfServiceTime == schedule.vehicle.availableTimeWindow.endTime)
+        elseif schedule.vehicle.availableTimeWindow.endTime < currentTime || length(schedule.route) == 1|| (schedule.route[end-1].endOfServiceTime < currentTime && schedule.route[end].startOfServiceTime == schedule.vehicle.availableTimeWindow.endTime && schedule.route[1].activity.activityType != DEPOT)
+            if schedule.vehicle.id == 4
+                println("-----------------------")
+                println("schedule.vehicle.availableTimeWindow.endTime: ", schedule.vehicle.availableTimeWindow.endTime)
+                println("Current time: ", currentTime)
+            end
+
             idx, splitTime = updateCurrentScheduleNotAvailableAnymore!(currentState,schedule,vehicle)
-          #  print(" - not available anymore \n")
+            print(" - not available anymore \n")
         # Check if vehicle has not been assigned yet
         elseif length(schedule.route) == 2 && schedule.route[1].activity.activityType == DEPOT
             idx, splitTime = updateCurrentScheduleNoAssignement!(vehicle,currentTime,currentState)
-            #print(" - no assignments \n")
+            print(" - no assignments \n")
 
         # We have completed the last activity and the vehicle is on-route to the depot but still available 
         elseif length(schedule.route) > 1 && schedule.route[end-1].endOfServiceTime < currentTime 
             idx,splitTime = updateCurrentScheduleRouteCompleted!(currentState,schedule,vehicle)
-          # print("- completed route but still available \n")
+           print("- completed route but still available \n")
         else
             # Determine index to split
             didSplit = false
@@ -601,14 +607,14 @@ function determineCurrentState(solution::Solution,event::Event,finalSolution::So
                if assignment.endOfServiceTime < currentTime && schedule.route[split + 1].endOfServiceTime > currentTime
                     idx, splitTime  = updateCurrentScheduleAtSplit!(scenario,schedule,vehicle,currentState,split)
                     didSplit = true
-                  # print(" - still available, split at ",split, ", \n")
+                   print(" - still available, split at ",split, ", \n")
                     break
                 end
             end
 
             if didSplit == false
                 idx, splitTime = updateCurrentScheduleAvailableKeepEntireRoute(schedule,currentState,vehicle)
-              # print(" - still available, keep entire route, \n")
+               print(" - still available, keep entire route, \n")
             end
         end
 
@@ -643,12 +649,12 @@ end
 # ------
 # Function to simulate a scenario
 # ------
-function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json",nTimePeriods::Int=24,periodLength::Int=60)
+function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json",nTimePeriods::Int=24,periodLength::Int=60,ALNS::Bool=true)
     
     if anticipation == true
         throw("Wrong function call for anticipation!")
     end
-    simulateScenario(scenario,"","","","","","","";printResults=printResults,saveResults=saveResults,displayPlots=displayPlots,outPutFileFolder=outPutFileFolder,saveALNSResults=saveALNSResults,displayALNSPlots=displayALNSPlots,historicRequestFiles = historicRequestFiles,gamma = gamma,relocateVehicles=relocateVehicles, anticipation=false, nExpected=nExpected, gridFile= gridFile, nTimePeriods = nTimePeriods,periodLength = periodLength)
+    simulateScenario(scenario,"","","","","","","";printResults=printResults,saveResults=saveResults,displayPlots=displayPlots,outPutFileFolder=outPutFileFolder,saveALNSResults=saveALNSResults,displayALNSPlots=displayALNSPlots,historicRequestFiles = historicRequestFiles,gamma = gamma,relocateVehicles=relocateVehicles, anticipation=false, nExpected=nExpected, gridFile= gridFile, nTimePeriods = nTimePeriods,periodLength = periodLength,ALNS=ALNS)
    
 end
 
@@ -762,7 +768,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     end
     if displayPlots
         display(createGantChartOfSolutionOnline(solution,"Initial Solution after ALNS",nFixed=scenario.nFixed))
-        #display(plotRoutes(solution,scenario,requestBank,"Initial Solution after ALNS"))
+        display(plotRoutes(solution,scenario,requestBank,"Initial Solution after ALNS"))
     end
 
     # Initialize visited routes 
@@ -864,11 +870,11 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         if displayPlots && event.id in requestBank
             #display(createGantChartOfSolutionAndEventOnlineComparison(solution, oldSolution, "Comparison Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event.request))
             display(createGantChartOfSolutionAndEventOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event.request,nFixed = scenario.nFixed))
-            #display(plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime)))       
+            display(plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime)))       
         elseif displayPlots
            #display(createGantChartOfSolutionOnlineComparison(solution, oldSolution,"Comparison Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime))
            display(createGantChartOfSolutionOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime,nFixed = scenario.nFixed))
-           #display(plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime)))       
+           display(plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime)))       
         end
 
     end
