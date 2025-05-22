@@ -28,40 +28,21 @@ end
 #===============================#
 for run in runList
     for method in methodList
-        for n in nRequestList
+        for n in nRequestList            
+            outPutFolder = "resultExploration/results/"*date*"/"*method*"/"*string(n)*"/run"*string(run)
+            outputFiles = Vector{String}()
 
-            # if method == "Anticipation"
-            #     for anticipationDegree in anticipationDegrees
-            #         outPutFolder = "resultExploration/results/"*date*"/"*method*"_"*string(anticipationDegree)*"/"*string(n)*"/run"*string(run)
-            #         outputFiles = Vector{String}()
+            for i in 1:10
+                scenarioName = string("Gen_Data_",n,"_",i,"_false")
+                push!(outputFiles, outPutFolder*"/Simulation_KPI_"*string(scenarioName)*".json")
+            end
 
-            #         for i in 1:10
-            #             scenarioName = string("Gen_Data_",n,"_",i,"_false")
-            #             push!(outputFiles, outPutFolder*"/Simulation_KPI_"*string(scenarioName)*".json")
-            #         end
-
-            #         # Get CSV
-            #         dfResults = processResults(outputFiles)
-            #         result_file = string(outPutFolder, "/results", ".csv")
-            #         append_mode = false
-            #         CSV.write(result_file, dfResults; append=append_mode)
-            #     end
-            # else
-                outPutFolder = "resultExploration/results/"*date*"/"*method*"/"*string(n)*"/run"*string(run)
-                outputFiles = Vector{String}()
-
-                for i in 1:10
-                    scenarioName = string("Gen_Data_",n,"_",i,"_false")
-                    push!(outputFiles, outPutFolder*"/Simulation_KPI_"*string(scenarioName)*".json")
-                end
-
-                # Get CSV
-                dfResults = processResults(outputFiles)
-                result_file = string(outPutFolder, "/results", ".csv")
-                append_mode = false
-                println(result_file)
-                CSV.write(result_file, dfResults; append=append_mode)
-            #end
+            # Get CSV
+            dfResults = processResults(outputFiles)
+            result_file = string(outPutFolder, "/results", ".csv")
+            append_mode = false
+            println(result_file)
+            CSV.write(result_file, dfResults; append=append_mode)
         end
     end
 end
@@ -92,40 +73,52 @@ for method in methodList
 end
 
 
-# # #===============================#
-# # # Plot results 
-# # #===============================#
-# for n in nRequestList
-#     p = plot(size = (1000,1000),title = "Results for n = $n", xlabel = "", ylabel = "No. taxis",leftmargin=5mm,topmargin=5mm,legend = :topright)
+#===============================#
+# Plot results 
+#===============================#
+for n in nRequestList
 
-#     nRows = 0
-#     maxnTaxi = 0
-#     minnTaxi = typemax(Int)
-#     for relocateVehicles in [true,false]
-#         outPutFolder = "runfiles/output/Waiting/"*string(n)
-#         resultFile = string(outPutFolder, "/results_", gamma,"_",relocateVehicles, ".csv")
-#         df = CSV.read(resultFile, DataFrame)
-#         nRows = nrow(df)
-#         maxnTaxi = max(maxnTaxi,maximum(df.nTaxi))
-#         minnTaxi = min(minnTaxi,minimum(df.nTaxi))
+    # Determine number of scenarios
+    nRows = 0
+    xtickLabel = String[]
+    maxVals = fill(-Inf, 3)
+    minVals = fill(Inf, 3)
 
-#         # Plot 
-#         color = relocateVehicles ? :blue : :red
-#         label = relocateVehicles ? "With Relocation" : "Without Relocation"
+    # Create containers for each metric
+    plots = [plot(legend=:topright) for _ in 1:3]
 
-#         plot!(df.nTaxi; linestyle = :dash, marker = :circle, color = color, label = label,markerstrokewidth=0,linewidth=2,markersize=5)
-#     end
+    for method in methodList
+        resultFile = "resultExploration/results/" * date * "/" * method * "/" * string(n) * "/results_avgOverRuns.csv"
+        df = CSV.read(resultFile, DataFrame)
 
-#     ylimMin = 5 * floor((minnTaxi - 2) / 5)
-#     ylimMax = 5 * ceil((maxnTaxi + 2) / 5)
-#     xtickLabel = ["Scenario $(i)" for i in 1:nRows]
-#     xticks!((1:nRows,xtickLabel),rotation=90)
-#     if n == 500 
-#         yticks!((ylimMin:10:ylimMax,string.(Int.(ylimMin:10:ylimMax))))
-#     else 
-#         yticks!((ylimMin:5:ylimMax,string.(Int.(ylimMin:5:ylimMax))))
-#     end
-#     ylims!(ylimMin, ylimMax)
+        nRows = nrow(df)
+        xtickLabel = ["Scenario $(i)" for i in 1:nRows]
 
-#     savefig(p, "plots/Waiting/results_$(n).png")
-# end
+        # Track global min/max
+        maxVals[1] = max(maxVals[1], maximum(df.nTaxi_mean))
+        minVals[1] = min(minVals[1], minimum(df.nTaxi_mean))
+        maxVals[2] = max(maxVals[2], maximum(df.UnservicedOfflineRequest_mean))
+        minVals[2] = min(minVals[2], minimum(df.UnservicedOfflineRequest_mean))
+        maxVals[3] = max(maxVals[3], maximum(df.UnservicedOnlineRequests_mean))
+        minVals[3] = min(minVals[3], minimum(df.UnservicedOnlineRequests_mean))
+
+        # Plot each metric
+        plot!(plots[1], df.nTaxi_mean; linestyle=:dash, marker=:circle, label=method, linewidth=2, markersize=5, markerstrokewidth=0)
+        plot!(plots[2], df.UnservicedOfflineRequest_mean; linestyle=:solid, marker=:diamond, label=method, linewidth=2, markersize=5, markerstrokewidth=0)
+        plot!(plots[3], df.UnservicedOnlineRequests_mean; linestyle=:dot, marker=:star5, label=method, linewidth=2, markersize=5, markerstrokewidth=0)
+    end
+
+    # Configure each subplot
+    ylabels = ["No. taxis", "Unserviced Offline Requests", "Unserviced Online Requests"]
+    for i in 1:3
+        ylimMin = 5 * floor((minVals[i] - 2) / 5)
+        ylimMax = 5 * ceil((maxVals[i] + 2) / 5)
+        yticksStep = n == 500 ? 10 : 5
+        plot!(plots[i], xticks=(1:nRows, xtickLabel), xrotation=90, ylabel=ylabels[i], ylims=(ylimMin, ylimMax), yticks=ylimMin:yticksStep:ylimMax)
+    end
+
+    # Compose the final plot
+    finalPlot = plot(plots[1], plots[2], plots[3]; layout=(3,1), size=(1000,1200),leftmargin=5mm,bottommargin=5mm,topmargin=5mm)
+    savefig(finalPlot, "plots/Anticipation/results_$(n).png")
+end
+
