@@ -328,7 +328,7 @@ function plotDataSets(x_range,y_range,density_grid,location_matrix,requestTime_o
     plot!(time_range_hours, probabilities_scaled_offline, label="Probability Distribution", linewidth=4, linestyle=:solid, color=:red)
     vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
     vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
-    title!(prefix*" Offline Pick-up Request Time Distribution")
+    title!(prefix*" Offline Request Time Distribution")
     xlabel!("Time (Hours)")
     ylabel!("Probability Density")
     xtick_values = range(min_x, max_x, step=1)  # Adjust length for more ticks
@@ -343,7 +343,7 @@ function plotDataSets(x_range,y_range,density_grid,location_matrix,requestTime_o
     plot!(time_range_hours, probabilities_scaled_online, label="Probability Distribution", linewidth=4, linestyle=:solid, color=:red)
     vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
     vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
-    title!(prefix*" Online Pick-up Request Time Distribution")
+    title!(prefix*" Online Request Time Distribution")
     xlabel!("Time (Hours)")
     ylabel!("Probability Density")
     xtick_values = range(min_x, max_x, step=1)  # Adjust length for more ticks
@@ -385,7 +385,7 @@ function plotDataSetsOriginal(x_range,y_range,density_grid,location_matrix,reque
     time_range_hours = time_range ./ 60
     probabilities_scaled_offline = probabilities_offline .* 60
 
-    p2 = histogram(requestTime_hours, normalize=:pdf, label="", color=:blue,bins=19)
+    p2 = histogram(requestTime_hours, normalize=:pdf, label="", color=:blue,bins=24)
     plot!(time_range_hours, probabilities_scaled_offline, label="Probability Distribution", linewidth=4, linestyle=:solid, color=:red,bins=19)
     vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
     vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
@@ -400,7 +400,7 @@ function plotDataSetsOriginal(x_range,y_range,density_grid,location_matrix,reque
     time_range_hours = time_range ./ 60
     probabilities_scaled_online = probabilities_online .* 60
 
-    p3 = histogram(requestTime_hours, normalize=:pdf, label="", color=:blue,bins=19)
+    p3 = histogram(requestTime_hours, normalize=:pdf, label="", color=:blue,bins=24)
     plot!(time_range_hours, probabilities_scaled_online, label="Probability Distribution", linewidth=4, linestyle=:solid, color=:red,bins=19)
     vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
     vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
