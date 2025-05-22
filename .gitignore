@@ -1,4 +1,5 @@
 .DS_Store 
 .DS_Store
 tests/output
-submitfiles/output
+
+submitfiles/generated_jobssubmitfiles/output
