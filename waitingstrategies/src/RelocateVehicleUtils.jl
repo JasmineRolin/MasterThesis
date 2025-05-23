@@ -12,7 +12,7 @@ export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBa
 ==#
 # Assuming hour is in the future (?)
 # Vehicles are being relocated to the depot of the previously relocated vehicle 
-function determineWaitingLocation(depotLocations::Dict{Tuple{Int,Int},Location},grid::Grid,nRequests::Int, vehicleBalance::Array{Int,3},period::Int,predictedDemand::Array{Float64,3})
+function determineWaitingLocation(time::Array{Int,2},depotLocations::Dict{Tuple{Int,Int},Location},grid::Grid,nRequests::Int, vehicleBalance::Array{Int,3},period::Int,predictedDemand::Array{Float64,3})
     # Determine cell with most deficit of vehicles
     vehicleBalanceInPeriod = vehicleBalance[period, :, :]
 

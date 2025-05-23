@@ -26,8 +26,8 @@ function load_simulation_data(input_dir::String)
     distance_range = Float64.(CSV.read(joinpath(input_dir, "distance_range.csv"), DataFrame).distance)
 
     probabilities_time = Float64.(CSV.read(joinpath(input_dir, "time_distribution.csv"), DataFrame).probability)
-    probabilities_offline =Float64.(CSV.read(joinpath(input_dir, "offline_time_distribution.csv"), DataFrame).probability)
-    probabilities_online = Float64.(CSV.read(joinpath(input_dir, "online_time_distribution.csv"), DataFrame).probability)
+    probabilities_offline = collect(Float64.(CSV.read(joinpath(input_dir, "offline_time_distribution.csv"), DataFrame).probability))
+    probabilities_online = collect(Float64.(CSV.read(joinpath(input_dir, "online_time_distribution.csv"), DataFrame).probability))
 
     x_range = Float64.(CSV.read(joinpath(input_dir, "x_range.csv"), DataFrame).x)
     y_range = Float64.(CSV.read(joinpath(input_dir, "y_range.csv"), DataFrame).y)
@@ -62,7 +62,7 @@ end
 #==
 # Generate data sets and vehicles
 ==#
-function generateDataSets(nRequest,DoD,nData,time_range,max_lat, min_lat, max_long, min_long)
+function generateDataSets(nRequest,DoD,nData,time_range,max_lat, min_lat, max_long, min_long,only_pickup)
     # Load simulation data
     probabilities_time,
     probabilities_offline,
@@ -80,7 +80,7 @@ function generateDataSets(nRequest,DoD,nData,time_range,max_lat, min_lat, max_lo
         distanceDriven= load_simulation_data("Data/Simulation data/")
 
     # Generate request data 
-    newDataList, df_list = generateData(nRequest,DoD,nData, probabilities_offline, probabilities_online, probabilities_location, time_range, x_range, y_range,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long)
+    newDataList, df_list = generateData(nRequest,DoD,nData, probabilities_offline, probabilities_online, probabilities_location, time_range, x_range, y_range,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long,only_pickup)
 
     return location_matrix, requestTime, newDataList, df_list, probabilities_time,probabilities_offline,probabilities_online,probabilities_location, density_grid, x_range, y_range, requests, distanceDriven
 end
@@ -89,7 +89,7 @@ end
 #==
 # Generate data sets
 ==#
-function generateData(nRequest,DoD,nData,probabilities_offline, probabilities_online, probabilities_location, time_range, x_range, y_range,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long)
+function generateData(nRequest,DoD,nData,probabilities_offline, probabilities_online, probabilities_location, time_range, x_range, y_range,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long,only_pickup)
     df_list = []
     newDataList = Vector{String}()  
     for i in 1:nData
@@ -101,7 +101,7 @@ function generateData(nRequest,DoD,nData,probabilities_offline, probabilities_on
         while retry_count < 5
             try
                 # Call the function that may throw the error
-                results = makeRequests(nRequest,DoD, probabilities_offline, probabilities_online, probabilities_location, time_range, x_range, y_range, output_file,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long)
+                results = makeRequests(nRequest,DoD, probabilities_offline, probabilities_online, probabilities_location, time_range, x_range, y_range, output_file,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long,only_pickup)
                 
                 println("Request generation succeeded!")
                 push!(df_list,results)
@@ -130,7 +130,7 @@ end
 #==
 # Make request
 ==#
-function makeRequests(nSample::Int, DoD::Float64, probabilities_offline::Vector{Float64}, probabilities_online::Vector{Float64}, probabilities_location::Vector{Float64}, time_range::Vector{Int}, x_range::Vector{Float64}, y_range::Vector{Float64}, output_file::String,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long)
+function makeRequests(nSample::Int, DoD::Float64, probabilities_offline::Vector{Float64}, probabilities_online::Vector{Float64}, probabilities_location::Vector{Float64}, time_range::Vector{Int}, x_range::Vector{Float64}, y_range::Vector{Float64}, output_file::String,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long,only_pickup)
     results = DataFrame(
         id = Int[],
         pickup_latitude = Float64[],
@@ -157,7 +157,7 @@ function makeRequests(nSample::Int, DoD::Float64, probabilities_offline::Vector{
         dropoff_longitude, dropoff_latitude = sampled_location[2]
 
         # Determine type of request
-        if rand() < 0.5
+        if only_pickup || rand() < 0.5
             requestType = 0  # pick-up request
 
             sampled_indices = sample(1:length(probabilities_offline), Weights(probabilities_offline), 1)
@@ -193,7 +193,7 @@ function makeRequests(nSample::Int, DoD::Float64, probabilities_offline::Vector{
         dropoff_longitude, dropoff_latitude = sampled_location[2]
 
         # Determine type of request
-        if rand() < 0.5
+        if only_pickup || rand() < 0.5
             requestType = 0  # pick-up request
 
             sampled_indices = sample(1:length(probabilities_online), Weights(probabilities_online), 1)
@@ -222,8 +222,9 @@ function makeRequests(nSample::Int, DoD::Float64, probabilities_offline::Vector{
     end
 
     # Determine call time
-    callTime(results, serviceWindow, callBuffer, preKnown)
-    #earlyCallTime(results, serviceWindow, earliestBuffer, callBuffer, preKnown)
+    # TODO: jas
+    #callTime(results, serviceWindow, callBuffer, preKnown)
+    earlyCallTime(results, serviceWindow, earliestBuffer, callBuffer, preKnown)
 
     # Write results to CSV
     mkpath(dirname(output_file))
@@ -325,15 +326,22 @@ function plotDataSets(x_range,y_range,density_grid,location_matrix,requestTime_o
     time_range_hours = time_range ./ 60
     probabilities_scaled_offline = probabilities_offline .* 60
 
-    p2 = histogram(requestTime_hours_offline, normalize=:pdf, label="", color=:blue, bins=24)
-    plot!(time_range_hours, probabilities_scaled_offline, label="Probability Distribution", linewidth=4, linestyle=:solid, color=:red)
-    vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
-    vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
-    title!(prefix*" Offline Request Time Distribution")
-    xlabel!("Time (Hours)")
-    ylabel!("Probability Density")
-    xtick_values = range(min_x, max_x, step=1)  # Adjust length for more ticks
-    plot!(xticks=xtick_values)
+    if requestTime_hours_offline == []
+        p2 = plot()
+        title!(prefix*" Offline Request Time Distribution")
+        xlabel!("Time (Hours)")
+        ylabel!("Probability Density")
+    else        
+        p2 = histogram(requestTime_hours_offline, normalize=:pdf, label="", color=:blue, bins=24)
+        plot!(time_range_hours, probabilities_scaled_offline, label="Probability Distribution", linewidth=4, linestyle=:solid, color=:red)
+        vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+        vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+        title!(prefix*" Offline Request Time Distribution")
+        xlabel!("Time (Hours)")
+        ylabel!("Probability Density")
+        xtick_values = range(min_x, max_x, step=1)  # Adjust length for more ticks
+        plot!(xticks=xtick_values)
+    end
 
     # Plot request time distribution online 
     requestTime_hours_online = requestTime_online ./ 60
@@ -549,7 +557,8 @@ function plotAndSaveGantChart(nRequest::Int,nData::Int,gamma::Float64)
         # Plot gant chart 
         requestFile = string("Data/Konsentra/",nRequest,"/GeneratedRequests_",nRequest,"_",idx,".csv")
         vehiclesFile = string("Data/Konsentra/",nRequest,"/Vehicles_",nRequest,"_",gamma,".csv")
-        parametersFile = "tests/resources/Parameters.csv"
+        # TODO: jas 
+        parametersFile = "tests/resources/ParametersShortCallTime.csv"
         distanceMatrixFile = string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",gamma,"_",idx,"_distance.txt")
         timeMatrixFile =  string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",gamma,"_",idx,"_time.txt")
         scenarioName = "No. requests = " * string(nRequest)

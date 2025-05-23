@@ -91,12 +91,16 @@ function earlyCallTime(df, serviceWindow, earliestBuffer, callBuffer, preKnown)
         else
             # Define the base time depending on request type
             if df[i, :request_type] == 0  # Pickup
+                
                 latest_possible = df[i, :request_time] - callBuffer
                 earliest_possible = df[i, :request_time] - earliestBuffer
+                requestTimePickUp = df[i, :request_time]
+
             else  # Dropoff
                 direct_pick_up_time = df[i, :request_time] - df[i, "direct_drive_time"]
                 latest_possible = direct_pick_up_time - callBuffer
                 earliest_possible = direct_pick_up_time - earliestBuffer
+                requestTimePickUp = direct_pick_up_time
             end
 
             # Clamp to service window
@@ -108,7 +112,7 @@ function earlyCallTime(df, serviceWindow, earliestBuffer, callBuffer, preKnown)
 
 
             
-            if ((df[i, :request_time]- df[i, "call_time"]) < 30) ||((df[i, :request_time]- df[i, "call_time"]) > 60)
+            if ((requestTimePickUp - df[i, "call_time"]) < callBuffer) ||((requestTimePickUp - df[i, "call_time"]) > earliestBuffer)
                 println(df[i, :request_time])
                 println(df[i, :request_type])
                 println(df[i, "direct_drive_time"])

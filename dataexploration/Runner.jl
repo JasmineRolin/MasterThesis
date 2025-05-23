@@ -20,19 +20,20 @@ global GENERATE_VEHICLES = false
 #==
 # Constants for data generation 
 ==#
-global DoD = 0.4 # Degree of dynamism
+global DoD = 1.0 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
-global callBuffer = 30 # 2 hours buffer
-global nData = 10
-global nRequestList = [20,100,300,500]
-global MAX_DELAY = 45 # TODO Astrid I just put something
-global earliestBuffer = 60
+global callBuffer = 15 # 2 hours buffer
+global nData = 40
+global nRequestList = [50]#,50,100,300,500]
+global MAX_DELAY = 15 # TODO Astrid I just put something
+global earliestBuffer = 30
+global ONLY_PICKUP = true
 
 #==
 # Constant for vehicle generation  
 ==#
 global vehicleCapacity = 4
-global GammaList = [0.5,0.7] 
+global GammaList = [0.5]#,0.7] 
 
 # TODO: burde vi bare have flad cost ? vi er jo ligeglade med cost faktisk 
 global shifts = Dict(
@@ -122,7 +123,7 @@ if GENERATE_DATA_AND_VEHICLES
     _= load_simulation_data("Data/Simulation data/")
 
     for nRequest in nRequestList
-        location_matrix, requestTime, newDataList, df_list,probabilities_time,probabilities_offline,probabilities_online, probabilities_location, density_grid, x_range, y_range,requests, distanceDriven = generateDataSets(nRequest,DoD,nData,time_range,MAX_LAT, MIN_LAT, MAX_LONG, MIN_LONG)
+        location_matrix, requestTime, newDataList, df_list,probabilities_time,probabilities_offline,probabilities_online, probabilities_location, density_grid, x_range, y_range,requests, distanceDriven = generateDataSets(nRequest,DoD,nData,time_range,MAX_LAT, MIN_LAT, MAX_LONG, MIN_LONG,ONLY_PICKUP)
 
         # Generate vehicles 
         for gamma in GammaList

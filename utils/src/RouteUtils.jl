@@ -268,6 +268,8 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
     visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(), TO::TimerOutput=TimerOutput(),
     newStartOfServiceTimes::Vector{Int} = Vector{Int}(),newEndOfServiceTimes::Vector{Int} = Vector{Int}(),waitingActivitiesToDelete::Vector{Int} = Vector{Int}(),waitingActivitiesToAdd::Vector{Int} = Vector{Int}(),visitedRouteIds::Set{Int}=Set{Int}())
 
+    println("ENTERED CHECK FEASIBILITY OF INSERTION AT POSITION")
+
     @unpack route,numberOfWalking, vehicle = vehicleSchedule
     @unpack time, distance,serviceTimes,requests = scenario
 
@@ -290,26 +292,35 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
 
         # TODO: lav lige et dobbelt check med astrid 
         if route[pickUpIdx+1].activity.timeWindow.endTime < pickUpStartTime 
+            println("HER 1")
+            println(" route[pickUpIdx+1].activity.timeWindow.endTime: ",  route[pickUpIdx+1].activity.timeWindow.endTime)
+            println("pickUpStartTime: ",  pickUpStartTime)
             return INFEASIBLE_ROUTE_DROPOFF
         end
 
         if route[pickUpIdx].activity.timeWindow.startTime > pickUpEndTime 
+            println("HER 2")
             return INFEASIBLE_ROUTE_PICKUP
         end
 
         if route[dropOffIdx+1].activity.timeWindow.endTime < dropOffStartTime
+            println("HER 3")
             return INFEASIBLE_RESULT
         end
 
         if route[dropOffIdx].activity.timeWindow.startTime > dropOffEndTime
+            println("HER 4")
             return INFEASIBLE_ROUTE__DROPOFF_FOREVER
         end
 
         @views for i in pickUpIdx:dropOffIdx
             if numberOfWalking[i] + 1 > vehicle.totalCapacity
+                println("HER 5")
                 return INFEASIBLE_ROUTE_DROPOFF
             end
         end
+
+        println("AFTER CHECK HIGH LEVEL CONSTRAINTS")
     end
 
     pickUpIdxInBlock = pickUpIdx + 1
@@ -396,6 +407,8 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
         detour = findDetour(time,serviceTimes,route[pickUpIdxInBlock-1].activity.id,route[pickUpIdxInBlock].activity.id,pickUpActivity.id) + findDetour(time,serviceTimes,route[dropOffIdxInBlock-2].activity.id,route[dropOffIdxInBlock-2].activity.id,dropOffActivity.id) 
     end
 
+
+
     # Detour just has to be "swallowed" by time in start and end 
     slackTime = 0
 
@@ -413,8 +426,13 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
         return false, newStartOfServiceTimes, newEndOfServiceTimes, waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, 0, waitingActivitiesToAdd, false, false, false
     end
 
+    println("AFTER DETOUR ")
+
     # Keep track of requests that are partially in route, i.e. pick-up is in visited route 
     requestsWithVisitedPickUp = Vector{Tuple{Int,Int}}() # Save (requestId,dropOffIdx)
+
+    println("maximumShiftBackward: ", maximumShiftBackward)
+    println("maximumShiftForward: ", maximumShiftForward)
 
     # Find new service times 
     idxActivityInSchedule = 1
@@ -462,6 +480,8 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                 arrivalAtNextActivity = newEndOfServiceTimes[idx-1] + time[previousActivityId,nextActivity.id] 
             end  
 
+            println("IN WAITING ACTIVITY 1")
+
             # Check if we can drive from previous activity to activity after waiting 
             if idx == nActivities-1 
                 # TODO: jas - we dont want to remove the waiting activity before depot 
@@ -470,8 +490,11 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                 feasible, maximumShiftBackwardTrial, maximumShiftForwardTrial = canActivityBeInserted(firstActivity.activity,nextActivity,arrivalAtNextActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
             end
 
+
             # Remove waiting activity 
             if feasible
+                println("IN WAITING ACTIVITY REMOVE")
+
                 maximumShiftBackward = maximumShiftBackwardTrial
                 maximumShiftForward = maximumShiftForwardTrial
 
@@ -489,6 +512,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
             # Keep waiting activity     
             else
+                println("IN WAITING ACTIVITY 2")
                 # Check if we can minimize waiting node
                 earliestArrivalFromCurrent = newEndOfServiceTimes[idx-1] + time[previousActivityId,currentActivityId] + time[currentActivityId,nextActivity.id]
                 latestArrival = currentActivity.timeWindow.endTime + time[currentActivityId,nextActivity.id]
@@ -619,6 +643,9 @@ function canActivityBeInserted(firstActivity::Activity,currentActivity::Activity
     currentActivityEndTime = currentActivity.timeWindow.endTime
     activityType = currentActivity.activityType
 
+    println("arrivalAtCurrentActivity: ", arrivalAtCurrentActivity)
+    println("arrivalAtCurrentActivity - maximumShiftBackward <= currentActivityEndTime: ",arrivalAtCurrentActivity - maximumShiftBackward <= currentActivityEndTime)
+    
     # CHeck if we can insert it directly
     if currentActivityStartTime <= arrivalAtCurrentActivity <= currentActivityEndTime
         # Service times for current activity 

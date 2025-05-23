@@ -363,21 +363,23 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
     min_j_to_consider = length(route) - 1
     for i in 1:length(route)-1
         for j in i:min_j_to_consider
-            countTotal[] += 1
+            # TODO: jas
+          #  countTotal[] += 1
 
             # Check if position is feasible
             feasible, _, _,_, totalCost, _, _, _, _, break_PICKUP, break_DROPOFF, break_DROPOFF_update_J  = checkFeasibilityOfInsertionAtPosition(request,vehicleSchedule,i,j,scenario,visitedRoute=visitedRoute,
                                                                                             newStartOfServiceTimes=newStartOfServiceTimes,newEndOfServiceTimes=newEndOfServiceTimes,waitingActivitiesToDelete=waitingActivitiesToDelete,
                                                                                             waitingActivitiesToAdd=waitingActivitiesToAdd,visitedRouteIds=visitedRouteIds,TO=TO)
 
-    
+           # println("Feasible: ", feasible, " i: ", i, " j: ", j, " totalCost: ", totalCost)
             # Update best position if feasible                                                                           
             if feasible && (totalCost < bestCost)
                 bestPickUp = i
                 bestDropOff = j
                 bestCost = totalCost
 
-                countFeasible[] += 1
+                # TODO: jas
+                #countFeasible[] += 1
             end
 
             if break_DROPOFF_update_J
