@@ -81,6 +81,51 @@ function callTime(df, serviceWindow, callBuffer, preKnown)
     end
 end
 
+
+function earlyCallTime(df, serviceWindow, earliestBuffer, callBuffer, preKnown)
+    for i in 1:nrow(df)
+        if preKnown[i]
+            # Pre-known requests call at (day before)
+            df[i, "call_time"] = 0
+        
+        else
+            # Define the base time depending on request type
+            if df[i, :request_type] == 0  # Pickup
+                latest_possible = df[i, :request_time] - callBuffer
+                earliest_possible = df[i, :request_time] - earliestBuffer
+            else  # Dropoff
+                direct_pick_up_time = df[i, :request_time] - df[i, "direct_drive_time"]
+                latest_possible = direct_pick_up_time - callBuffer
+                earliest_possible = direct_pick_up_time - earliestBuffer
+            end
+
+            # Clamp to service window
+            earliest_possible = max(earliest_possible, serviceWindow[1])
+            latest_possible = max(latest_possible, earliest_possible)  # Prevent invalid range
+
+            # Draw call time from uniform distribution in the allowed interval
+            df[i, "call_time"] = floor(rand(Uniform(earliest_possible, latest_possible)))
+
+
+            
+            if ((df[i, :request_time]- df[i, "call_time"]) < 30) ||((df[i, :request_time]- df[i, "call_time"]) > 60)
+                println(df[i, :request_time])
+                println(df[i, :request_type])
+                println(df[i, "direct_drive_time"])
+                println(df[i, :request_time] - df[i, "direct_drive_time"])
+                println(earliest_possible)
+                println(latest_possible)
+                
+                throw("ERROR")
+            end
+        end
+
+
+
+    end
+
+end
+
 # ------
 # Transform request type to right format
 # ------

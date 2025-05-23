@@ -223,6 +223,7 @@ function makeRequests(nSample::Int, DoD::Float64, probabilities_offline::Vector{
 
     # Determine call time
     callTime(results, serviceWindow, callBuffer, preKnown)
+    #earlyCallTime(results, serviceWindow, earliestBuffer, callBuffer, preKnown)
 
     # Write results to CSV
     mkpath(dirname(output_file))
