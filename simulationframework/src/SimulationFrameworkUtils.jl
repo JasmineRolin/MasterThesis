@@ -300,7 +300,7 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
     end
 
     # Find waiting location
-    waitingLocationId,waitingLocation,gridCell = determineWaitingLocation(depotLocations,grid,nRequests,vehicleBalance,period,predictedDemand)
+    waitingLocationId,waitingLocation,gridCell = determineWaitingLocation(time,depotLocations,grid,nRequests,vehicleBalance,period,previousWaitingLocationId)
 
     # Determine previous activity 
     if currentRouteLength == 2 # If only waiting and depot left in current schedule 
@@ -362,7 +362,7 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
         end
 
 
-        println("Relocating vehicle ",vehicle.id," to waiting location ",waitingLocationId," from location ",waitingLocationId, " in period ",period)
+        println("Relocating vehicle ",vehicle.id," to waiting location ",waitingLocationId," from location ",previousWaitingLocationId, " in period ",period)
         return 
     end
     println("Did not relocate vehicle ",vehicle.id," as no time")
@@ -888,11 +888,11 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         end
 
         # TODO: jas 
-        if event.id == 13 
-            # Update final solution with last state 
-            mergeCurrentStateIntoFinalSolution!(finalSolution,solution,scenario)
-            return finalSolution, requestBank
-        end
+        # if event.id == 13 
+        #     # Update final solution with last state 
+        #     mergeCurrentStateIntoFinalSolution!(finalSolution,solution,scenario)
+        #     return finalSolution, requestBank
+        # end
     end
 
     # Update final solution with last state 

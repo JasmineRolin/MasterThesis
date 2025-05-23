@@ -1,5 +1,5 @@
 
-using waitingstrategies, domain, offlinesolution, utils, simulationframework, onlinesolution
+using waitingstrategies, domain, offlinesolution, utils, simulationframework, onlinesolution,alns
 using Plots, JSON, Test
 using Plots.PlotMeasures
 
@@ -18,14 +18,14 @@ using Plots.PlotMeasures
 print("\033c")
 
 # Receive command line arguments 
-n = 20
-gridSize = 10
+n = 100
+gridSize = 5
 
 gamma = 0.5
-i = 2
-relocateVehicles = true
+i = 1
+relocateVehicles = false
 startFileIndex = 1
-endFileIndex = 20
+endFileIndex = 40
 nPeriods = 48
 displayPlots = false
 
@@ -71,11 +71,31 @@ printSolution(solution,printRouteHorizontal)
 @test feasible == true
 println(msg)
 
-pickUpIdx = 2 
-dropOffIdx = 2 
+# pickUpIdx = 2 
+# dropOffIdx = 2 
 
-feas, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd, _, _, _ = checkFeasibilityOfInsertionAtPosition(r, schedule,pickUpIdx,dropOffIdx,scenario)
+# feas, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd, _, _, _ = checkFeasibilityOfInsertionAtPosition(r, schedule,pickUpIdx,dropOffIdx,scenario)
 
+
+#============================================================================#
+# alnsParameters = "tests/resources/ALNSParameters3.json"
+
+# destroyMethods = Vector{GenericMethod}()
+# addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
+# addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
+# addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
+
+# # Choose repair methods
+# repairMethods = Vector{GenericMethod}()
+# addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
+# addMethod!(repairMethods,"regretInsertion",regretInsertion)
+
+# initialSolution, requestBankALNS = simpleConstruction(scenario,scenario.requests)
+# finalSolution,requestBankALNS,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBankALNS,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=false,stage="Offline")
+
+
+# println("Request bank: ", sort(requestBank), " with size: ", length(requestBank))
+# println("ALNS request bank: ", sort(requestBankALNS), " with size: ", length(requestBankALNS))
 #============================================================================#
 
 #==

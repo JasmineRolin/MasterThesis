@@ -81,7 +81,8 @@ end
 #==
 # Haversine distance between two points
 ==#
-function haversine_distance(lat1, lon1, lat2, lon2; speedKmh=60.0)
+# TODO: jas
+function haversine_distance(lat1, lon1, lat2, lon2; speedKmh=80.0)
     # Earth's radius in kilometers
     R = 6371.0
 
