@@ -2,9 +2,9 @@ module WaitingStrategiesPlots
 
 using Plots, domain
 
-export plotRequestsAndVehicles
+export plotRequestsAndVehiclesWait
 
-function plotRequestsAndVehicles(scenario,grid,n,gamma)
+function plotRequestsAndVehiclesWait(scenario,grid,n,gamma)
     max_lat = grid.maxLat 
     min_lat = grid.minLat
     max_long = grid.maxLong

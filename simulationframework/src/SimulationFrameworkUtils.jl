@@ -314,7 +314,7 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
     println("Activity before waiting: ",activityBeforeWaiting.activity.id, " arrival with new: ",tttt, " end time: ",vehicle.availableTimeWindow.endTime)
 
     if waitingLocationId == previousWaitingLocationId
-        println("Did not relocate vehicle ",vehicle.id," as same depot")
+        println("Did not relocate vehicle ",vehicle.id," as same previous")
         return
     end
  
@@ -365,7 +365,7 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
         end
 
 
-        println("Relocating vehicle ",vehicle.id," to waiting location ",waitingLocationId," from depot ",vehicle.depotId, " in period ",period)
+        println("Relocating vehicle ",vehicle.id," to waiting location ",waitingLocationId," from waiting location ",previousWaitingLocationId, " in period ",period)
         return 
     end
     println("Did not relocate vehicle ",vehicle.id," as no time")

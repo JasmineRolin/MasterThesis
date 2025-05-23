@@ -10,6 +10,10 @@ using Plots.PlotMeasures
 # Function to calculate the Silverman rule bandwidth
 ==#
 function silverman_bandwidth(data::Vector{T}) where T
+    if isempty(data)
+        return 0.0
+    end
+
     n = length(data)
     σ = std(data)
     iqr = quantile(data, 0.75) - quantile(data, 0.25)
@@ -137,24 +141,30 @@ function getRequestTimeDistribution(requestTimePickUp::Vector{Int}, requestTimeD
     bw_pickup = bandwidth_factor * silverman_bandwidth(requestTimePickUp)
     bw_dropoff = 1.5 * silverman_bandwidth(requestTimeDropOff)
 
+    # TODO: jas 
     # Compute KDE with Silverman’s bandwidth
     kde_pickUpTime = KernelDensity.kde(requestTimePickUp; bandwidth=bw_pickup)
-    kde_dropOffTime = KernelDensity.kde(requestTimeDropOff; bandwidth=bw_dropoff)
+    #kde_dropOffTime = KernelDensity.kde(requestTimeDropOff; bandwidth=bw_dropoff)
 
     # Compute density values
-    density_values_pickUp = [pdf(kde_pickUpTime, t) for t in time_range]
-    density_values_dropOff = [pdf(kde_dropOffTime, t) for t in time_range]
+    # TODO: jas
+   density_values_pickUp = [pdf(kde_pickUpTime, t) for t in time_range]
+   # density_values_dropOff = [pdf(kde_dropOffTime, t) for t in time_range]
 
     # Avoid zero probabilities
     epsilon = 0.0001
+    # TODO: jas 
     density_values_pickUp .= density_values_pickUp .+ epsilon
-    density_values_dropOff .= density_values_dropOff .+ 0.0008
+   # density_values_dropOff .= density_values_dropOff .+ 0.0008
 
     # Normalize to get probability distributions
+    # TODO: jas 
     probabilities_pickUpTime = density_values_pickUp / sum(density_values_pickUp)
-    probabilities_dropOffTime = density_values_dropOff / sum(density_values_dropOff)
+   # probabilities_dropOffTime = density_values_dropOff / sum(density_values_dropOff)
 
-    return probabilities_pickUpTime, probabilities_dropOffTime, density_values_pickUp, density_values_dropOff
+    # TODO: jas 
+    #return probabilities_pickUpTime, probabilities_dropOffTime, density_values_pickUp, density_values_dropOff
+    return return probabilities_pickUpTime, [], density_values_pickUp, []
 end
 
 #==

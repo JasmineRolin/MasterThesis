@@ -104,7 +104,10 @@ function load_request_data(nRequests::Int,nData::Int)
     df_list = []
 
     for i in 1:nData
-        filename = "Data/Konsentra/"*string(nRequests)*"/GeneratedRequests_"*string(nRequests)*"_"*string(i)*".csv"
+        # TODO: jas 
+       # filename = "Data/Konsentra/"*string(nRequests)*"/GeneratedRequests_"*string(nRequests)*"_"*string(i)*".csv"
+        filename = "Data/DataWaitingStrategies2/"*string(nRequests)*"/GeneratedRequests_"*string(nRequests)*"_"*string(i)*".csv"
+
         if isfile(filename)
             df = CSV.read(filename, DataFrame)
             push!(df_list, df)
@@ -140,7 +143,9 @@ function generateVehicles(shifts,df_list, probabilities_location, x_range, y_ran
     end
 
     # Generate vehicles 
-    generateVehiclesKonsentra(shifts,vehicleCapacity, locations,"Data/Konsentra/"*string(nRequest)*"/Vehicles_"*string(nRequest)*"_"*string(Gamma)*".csv")
+    # TODO: jas 
+    #generateVehiclesKonsentra(shifts,vehicleCapacity, locations,"Data/Konsentra/"*string(nRequest)*"/Vehicles_"*string(nRequest)*"_"*string(Gamma)*".csv")
+    generateVehiclesKonsentra(shifts,vehicleCapacity, locations,"Data/DataWaitingStrategies2/"*string(nRequest)*"/Vehicles_"*string(nRequest)*"_"*string(Gamma)*".csv")
 
     return average_demand_per_hour
 end
@@ -221,11 +226,18 @@ end
 
 # Plot request locations and vehicles 
 function plotRequestsAndVehicles(n,nData,gamma,max_lat,min_lat,max_long,min_long,NUM_ROWS,nCols,grid_centers,lat_step, long_step)
-    vehiclesFile = string("Data/Konsentra/", n, "/Vehicles_",n,"_", gamma, ".csv")
+    # TODO: jas 
+    #vehiclesFile = string("Data/Konsentra/", n, "/Vehicles_",n,"_", gamma, ".csv")
+    vehiclesFile = string("Data/DataWaitingStrategies2/", n, "/Vehicles_",n,"_", gamma, ".csv")
+    
+
     vehiclesDf = CSV.read(vehiclesFile, DataFrame)
 
     for i in 1:nData
-        fileName = string("Data/Konsentra/", n, "/GeneratedRequests_", n, "_", i, ".csv")
+        # TODO: jas 
+#        fileName = string("Data/Konsentra/", n, "/GeneratedRequests_", n, "_", i, ".csv")
+        fileName = string("Data/DataWaitingStrategies2/", n, "/GeneratedRequests_", n, "_", i, ".csv")
+
         requestsDf = CSV.read(fileName, DataFrame)
 
         p = plot(size = (1500, 1000))
@@ -267,6 +279,8 @@ function plotRequestsAndVehicles(n,nData,gamma,max_lat,min_lat,max_long,min_long
         end
 
         display(p)
-        savefig(p, string("plots/DataGeneration/RequestsAndVehicles_",gamma,"_",n,"_",i,".svg"))
+
+        # TODO: jas 
+       # savefig(p, string("plots/DataGeneration/RequestsAndVehicles_",gamma,"_",n,"_",i,".svg"))
     end
 end

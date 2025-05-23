@@ -101,11 +101,15 @@ function generateData(nRequest,nData,probabilities_pickUpTime, probabilities_dro
     for i in 1:nData
 
         # Make requests and save to CSV
-        output_file = "Data/Konsentra/"*string(nRequest)*"/GeneratedRequests_"*string(nRequest)*"_" * string(i) * ".csv"
+        # TODO: jas
+        #output_file = "Data/Konsentra/"*string(nRequest)*"/GeneratedRequests_"*string(nRequest)*"_" * string(i) * ".csv"
+        output_file = "Data/DataWaitingStrategies2/"*string(nRequest)*"/GeneratedRequests_"*string(nRequest)*"_" * string(i) * ".csv"
+
         push!(newDataList, output_file)
         retry_count = 0
         while retry_count < 5
-            try
+            # TODO: jas
+            #try
                 # Call the function that may throw the error
                 results = makeRequests(nRequest, probabilities_pickUpTime, probabilities_dropOffTime, probabilities_location, time_range, x_range, y_range, output_file,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long)
                 
@@ -113,19 +117,19 @@ function generateData(nRequest,nData,probabilities_pickUpTime, probabilities_dro
                 push!(df_list,results)
                 break  # Exit the loop if successful
         
-            catch e
-                if occursin("Degree of dynamism too low", sprint(showerror, e))
-                    retry_count += 1
-                    println("Error encountered: ", e)
-                    println("Retrying... Attempt: ", retry_count)
-                    sleep(1)  # Optional: Wait a second before retrying
-                else
-                    rethrow(e)  # Let other errors propagate
-                end
-            end
-            if retry_count == 5
-                println("Failed after 5 attempts. Exiting.")
-            end
+            # catch e
+            #     if occursin("Degree of dynamism too low", sprint(showerror, e))
+            #         retry_count += 1
+            #         println("Error encountered: ", e)
+            #         println("Retrying... Attempt: ", retry_count)
+            #         sleep(1)  # Optional: Wait a second before retrying
+            #     else
+            #         rethrow(e)  # Let other errors propagate
+            #     end
+            # end
+            # if retry_count == 5
+            #     println("Failed after 5 attempts. Exiting.")
+            # end
         end
 
     end
@@ -166,18 +170,25 @@ function makeRequests(nSample::Int, probabilities_pickUpTime::Vector{Float64}, p
             sampledTimePick = time_range[sampled_indices]
             requestTime = ceil(sampledTimePick[1])
         else
-            requestType = 1  # drop-off request
+            # TODO: jas 
+            #requestType = 1  # drop-off request
+            requestType = 0  # pick-up request
 
-            # Direct drive time 
-            directDriveTime = ceil(haversine_distance(pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude)[2])
+            # # Direct drive time 
+            # directDriveTime = ceil(haversine_distance(pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude)[2])
 
-            # Earliest request time 
-            earliestRequestTime = serviceWindow[1] + directDriveTime + MAX_DELAY
-            indices = time_range .>= earliestRequestTime
-            nTimes = sum(indices)
+            # # Earliest request time 
+            # earliestRequestTime = serviceWindow[1] + directDriveTime + MAX_DELAY
+            # indices = time_range .>= earliestRequestTime
+            # nTimes = sum(indices)
 
-            sampled_indices = sample(1:nTimes, Weights(probabilities_dropOffTime[indices]), 1)
-            sampledTimeDrop = time_range[indices][sampled_indices]
+            # sampled_indices = sample(1:nTimes, Weights(probabilities_dropOffTime[indices]), 1)
+            # sampledTimeDrop = time_range[indices][sampled_indices]
+            # requestTime = ceil(sampledTimeDrop[1])
+
+            # TODO: jas 
+            sampled_indices = sample(1:length(probabilities_dropOffTime), Weights(probabilities_dropOffTime), 1)
+            sampledTimeDrop = time_range[sampled_indices]
             requestTime = ceil(sampledTimeDrop[1])
         end
 
@@ -306,15 +317,16 @@ function plotDataSets(x_range,y_range,density_grid,location_matrix,requestTimePi
     time_range_hours = time_range ./ 60
     probabilities_dropOffTime_scaled = probabilities_dropOffTime .* 60
 
-    p3 = histogram(requestTimeDropOff_hours, normalize=:pdf, label="", color=:blue)
-    plot!(time_range_hours, probabilities_dropOffTime_scaled, label="Probability Distribution", linewidth=4, linestyle=:solid, color=:red,bins=19)
-    vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
-    vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
-    title!(prefix*" Drop-off Request Time Distribution")
-    xlabel!("Time (Hours)")
-    ylabel!("Probability Density")
-    xtick_values = range(min_x, max_x, step=1)  # Adjust length for more ticks
-    plot!(xticks=xtick_values)
+    # TODO: jas 
+    p3 = plot()#histogram(requestTimeDropOff_hours, normalize=:pdf, label="", color=:blue)
+    # plot!(time_range_hours, probabilities_dropOffTime_scaled, label="Probability Distribution", linewidth=4, linestyle=:solid, color=:red,bins=19)
+    # vline!([serviceWindow[1]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+    # vline!([serviceWindow[2]/60], linestyle=:dash, color=:grey, linewidth=2, label="")
+    # title!(prefix*" Drop-off Request Time Distribution")
+    # xlabel!("Time (Hours)")
+    # ylabel!("Probability Density")
+    # xtick_values = range(min_x, max_x, step=1)  # Adjust length for more ticks
+    # plot!(xticks=xtick_values)
 
    
     p4 = histogram(vcat(requestTimeDropOff_hours,requestTimePickUp_hours), normalize=:pdf, label="", color=:blue,bins=24, size = (900,500))
@@ -437,18 +449,29 @@ function createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,de
             right_margin=5mm
         )
         display(p)
-        savefig(p, string("plots/DataGeneration/Plot_",nRequest,"_",idx,".svg"))
+
+        # TODO: jas 
+        #savefig(p, string("plots/DataGeneration/Plot_",nRequest,"_",idx,".svg"))
     end
 end
 
 function plotAndSaveGantChart(nRequest::Int,nData::Int,gamma::Float64)
     for idx in 1:nData
         # Plot gant chart 
-        requestFile = string("Data/Konsentra/",nRequest,"/GeneratedRequests_",nRequest,"_",idx,".csv")
-        vehiclesFile = string("Data/Konsentra/",nRequest,"/Vehicles_",nRequest,"_",gamma,".csv")
-        parametersFile = "tests/resources/Parameters.csv"
-        distanceMatrixFile = string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",gamma,"_",idx,"_distance.txt")
-        timeMatrixFile =  string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",gamma,"_",idx,"_time.txt")
+        # TODO: jas
+        #requestFile = string("Data/Konsentra/",nRequest,"/GeneratedRequests_",nRequest,"_",idx,".csv")
+        requestFile = string("Data/DataWaitingStrategies2/",nRequest,"/GeneratedRequests_",nRequest,"_",idx,".csv")
+        #vehiclesFile = string("Data/Konsentra/",nRequest,"/Vehicles_",nRequest,"_",gamma,".csv")
+        vehiclesFile = string("Data/DataWaitingStrategies2/",nRequest,"/Vehicles_",nRequest,"_",gamma,".csv")
+       # parametersFile = "tests/resources/Parameters.csv"
+        parametersFile = "tests/resources/ParametersShortCallTime.csv"
+
+       # distanceMatrixFile = string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",gamma,"_",idx,"_distance.txt")
+       # timeMatrixFile =  string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",gamma,"_",idx,"_time.txt")
+       
+        distanceMatrixFile = string("Data/DataWaitingStrategies2/",nRequest,"/Matrices//GeneratedRequests_",nRequest,"_",gamma,"_",idx,"_distance.txt")
+        timeMatrixFile =  string("Data/DataWaitingStrategies2/",nRequest,"/Matrices//GeneratedRequests_",nRequest,"_",gamma,"_",idx,"_time.txt")
+
         scenarioName = "No. requests = " * string(nRequest)
 
         # Read instance 
@@ -456,7 +479,9 @@ function plotAndSaveGantChart(nRequest::Int,nData::Int,gamma::Float64)
 
         p2 = createGantChartOfRequestsAndVehicles(scenario.vehicles, scenario.requests, [],scenarioName)
         display(p2)
-        savefig(p2, string("plots/DataGeneration/GantChart_",nRequest,"_",gamma,"_",idx,".svg"))
+        
+        # TODO: jas
+        #savefig(p2, string("plots/DataGeneration/GantChart_",nRequest,"_",gamma,"_",idx,".svg"))
     end
 end
 

@@ -20,12 +20,12 @@ global GENERATE_VEHICLES = false
 #==
 # Constants for data generation 
 ==#
-global DoD = 0.4 # Degree of dynamism
+global DoD = 1 # Degree of dynamism # TODO: jas 
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
-global callBuffer = 2*60 # 2 hours buffer
-global nData = 10
-global nRequestList = [20]#[100,300,500]#[20,100,300,500]
-global MAX_DELAY = 45 # TODO Astrid I just put something
+global callBuffer = 15 # 2 hours buffer # TODO: jas
+global nData = 20
+global nRequestList = [300]#[100,300,500]#[20,100,300,500]
+global MAX_DELAY = 15 # TODO: jas
 
 #==
 # Constant for vehicle generation  
@@ -49,8 +49,11 @@ global MAX_LAT = 60.721
 global MIN_LAT = 59.165
 global MAX_LONG = 12.458
 global MIN_LONG = 9.948
-global NUM_ROWS = 10
-global NUM_COLS = 10
+
+#=!=! OBS! OBS! OBS! !=!=#
+global NUM_ROWS = 5
+global NUM_COLS = 5
+#=!=! OBS! OBS! OBS! !=!=#
 
 #==
 # Common 
@@ -144,8 +147,8 @@ if GENERATE_DATA_AND_VEHICLES
         for gamma in GammaList
             for i in 1:nData
                 println("n = ",nRequest," i = ",i)
-                requestFile = string("Data/Konsentra/",nRequest,"/GeneratedRequests_",nRequest,"_",i,".csv")
-                dataName = string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",gamma,"_",i)
+                requestFile = string("Data/DataWaitingStrategies2/",nRequest,"/GeneratedRequests_",nRequest,"_",i,".csv")# string("Data/Konsentra/",nRequest,"/GeneratedRequests_",nRequest,"_",i,".csv") # TODO: jas
+                dataName = string("Data/DataWaitingStrategies2/",nRequest,"/Matrices/GeneratedRequests_",nRequest,"_",gamma,"_",i) #string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",gamma,"_",i) # TODO: jas
                 
                 getTimeDistanceMatrix(requestFile, depotLocations, dataName)
             end
@@ -155,6 +158,7 @@ if GENERATE_DATA_AND_VEHICLES
         #================================================#
         # Plot new data
         #================================================#
+        println(newDataList)
         createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,density_grid,location_matrix,requestTimePickUp,requestTimeDropOff,probabilities_pickUpTime,probabilities_dropOffTime,serviceWindow,distanceDriven)
         for gamma in GammaList
             plotAndSaveGantChart(nRequest,nData,gamma)

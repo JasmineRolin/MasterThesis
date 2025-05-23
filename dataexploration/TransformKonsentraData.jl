@@ -39,13 +39,15 @@ function preKnownRequests(df, DoD, serviceWindow, callBuffer)
 
     # Known due to probabilty and degree of dynamism
     findNumberKnown = totalNumberKnown - numberKnownDueToTime
-    if findNumberKnown < 0
-        throw(ArgumentError("Degree of dynamism too low. Could be: " * string(numberKnownDueToTime / nrow(df))))
-    end
+
+    # TODO: jas 
+    # if findNumberKnown < 0
+    #     throw(ArgumentError("Degree of dynamism too low. Could be: " * string(numberKnownDueToTime / nrow(df))))
+    # end
 
     # Select indices based on weighted probability
     probabilityRequest = probabiltyRequest ./ sum(probabiltyRequest)
-    selectedIndices = sample(requestWithLaterTime, Weights(probabilityRequest), findNumberKnown; replace=false)
+    selectedIndices = [] #sample(requestWithLaterTime, Weights(probabilityRequest), findNumberKnown; replace=false) # TODO: jas
     
     for idx in selectedIndices
         known_requests[idx] = true
@@ -59,6 +61,8 @@ end
 # Function to determine call times
 # ------
 function callTime(df, serviceWindow, callBuffer, preKnown)
+    latestCallTimeBuffer = 30 
+
     for i in 1:nrow(df)
         if preKnown[i]
             df[i, "call_time"] = 0
@@ -67,12 +71,19 @@ function callTime(df, serviceWindow, callBuffer, preKnown)
             df[i, "call_time"] = serviceWindow[1]
         else
             # Determine latest call time 
-            if df[i,:request_type] == 0 # Pick up
-               call_window = [serviceWindow[1], df[i, :request_time] - callBuffer]
-            else # Drop off 
-                direct_pick_up_time = df[i, :request_time] - df[i,"direct_drive_time"]
-                call_window = [serviceWindow[1],direct_pick_up_time - callBuffer]
-            end
+            # if df[i,:request_type] == 0 # Pick up
+            #    call_window = [serviceWindow[1], df[i, :request_time] - callBuffer]
+            # else # Drop off 
+            #     direct_pick_up_time = df[i, :request_time] - df[i,"direct_drive_time"]
+            #     call_window = [serviceWindow[1],direct_pick_up_time - callBuffer]
+            # end
+
+            # TODO: jas 
+            # Determine latest call time 
+            latestCallTime = df[i, :request_time] - callBuffer
+            earliestCallTime = max(serviceWindow[1], latestCallTime - latestCallTimeBuffer)
+            call_window = [earliestCallTime, latestCallTime]
+           
 
             # Generate call time from a uniform distribution
             call_time = floor(rand(Uniform(call_window[1], call_window[2])))
