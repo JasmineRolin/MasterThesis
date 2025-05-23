@@ -318,9 +318,6 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
         return
     end
  
-  
-
-
     # Is there time to relocate vehicle 
     if activityBeforeWaiting.endOfServiceTime + time[activityBeforeWaiting.activity.id,waitingLocationId] + time[waitingLocationId,vehicle.depotId] <= vehicle.availableTimeWindow.endTime
 
