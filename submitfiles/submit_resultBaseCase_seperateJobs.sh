@@ -3,7 +3,7 @@
 n_requests_list=("20" "100" "300" "500")
 run_tags=("run1" "run2" "run3")
 gamma="0.5"
-date="2025-05-22"
+date="2025-05-22_expCost100"
 
 mkdir -p submitfiles/generated_jobs
 

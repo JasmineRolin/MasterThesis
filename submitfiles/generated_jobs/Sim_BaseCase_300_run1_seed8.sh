@@ -26,4 +26,4 @@ Pkg.develop(path="simulationframework");
 Pkg.resolve();
 '
 
-julia --project=. resultExploration/resultsBase.jl "300" "0" "0.5" "2025-05-22" "run1" "BaseCase" "8"
+julia --project=. resultExploration/resultsBase.jl "300" "0" "0.5" "2025-05-22_expCost100" "run1" "BaseCase" "8"

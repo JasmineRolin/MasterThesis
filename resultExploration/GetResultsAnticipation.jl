@@ -2,11 +2,11 @@ using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures
 
 methodListBase = ["Anticipation","BaseCase"]
-nRequestList = [300,500]
-runList = [1]
+nRequestList = [300]
+runList = [1,2,3]
 gamma = 0.5
 anticipationDegrees = [0.4]
-date = "2025-05-20_2"
+date = "2025-05-22_expCost100"
 
 #==============================#
 # Create method list 
@@ -118,7 +118,9 @@ for n in nRequestList
     end
 
     # Compose the final plot
+    mkdir("plots/Anticipation/"*date*"/")
+
     finalPlot = plot(plots[1], plots[2], plots[3]; layout=(3,1), size=(1000,1200),leftmargin=5mm,bottommargin=5mm,topmargin=5mm)
-    savefig(finalPlot, "plots/Anticipation/results_$(n).png")
+    savefig(finalPlot, "plots/Anticipation/"*date*"/results_$(n).png")
 end
 
