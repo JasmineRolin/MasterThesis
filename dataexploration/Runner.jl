@@ -13,7 +13,7 @@ include("MakeAndSaveDistanceAndTimeMatrix.jl")
 include("GenerateLargeDataSets.jl")
 
 
-global GENERATE_SIMULATION_DATA = false
+global GENERATE_SIMULATION_DATA = true
 global GENERATE_DATA_AND_VEHICLES = true
 global GENERATE_VEHICLES = false
 
@@ -22,16 +22,17 @@ global GENERATE_VEHICLES = false
 ==#
 global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
-global callBuffer = 2*60 # 2 hours buffer
+global callBuffer = 30 # 2 hours buffer
 global nData = 10
-global nRequestList = [20]#[100,300,500]#[20,100,300,500]
+global nRequestList = [20,100,300,500]
 global MAX_DELAY = 45 # TODO Astrid I just put something
+global earliestBuffer = 60
 
 #==
 # Constant for vehicle generation  
 ==#
 global vehicleCapacity = 4
-global GammaList = [0.7] #[0.5,0.7,0.9]
+global GammaList = [0.5,0.7] 
 
 # TODO: burde vi bare have flad cost ? vi er jo ligeglade med cost faktisk 
 global shifts = Dict(
@@ -86,13 +87,14 @@ oldDataList = ["Data/Konsentra/TransformedData_30.01.csv",
             "Data/Konsentra/TransformedData_Data.csv"]
 
 # Smooting factors for KDE 
-bandwidth_factor_time = 1.5 
+bandwidth_factor_time_offline = 1.0
+bandwidth_factor_time_online = 1.5 
 bandwidth_factor_location = 1.25
 bandwidth_factor_distance = 2.0
 
 
 if GENERATE_SIMULATION_DATA
-    run_and_save_simulation(oldDataList, "Data/Simulation data/", bandwidth_factor_location, bandwidth_factor_time, bandwidth_factor_distance,time_range)
+    run_and_save_simulation(oldDataList, "Data/Simulation data/", bandwidth_factor_location, bandwidth_factor_time_offline, bandwidth_factor_time_online, bandwidth_factor_distance,time_range)
 end
 
 
@@ -107,7 +109,6 @@ if GENERATE_DATA_AND_VEHICLES
     _,
     _,
     _,
-    _,
     base_probabilities_location,
     _,
     base_x_range,
@@ -118,12 +119,11 @@ if GENERATE_DATA_AND_VEHICLES
     _,
     _,
     _,
-    _,
     _= load_simulation_data("Data/Simulation data/")
 
     for nRequest in nRequestList
-        location_matrix, requestTimePickUp, requestTimeDropOff, newDataList, df_list, probabilities_pickUpTime, probabilities_dropOffTime, density_pickUp, density_dropOff, probabilities_location, density_grid, x_range, y_range,requests, distanceDriven = generateDataSets(nRequest,nData,time_range,MAX_LAT, MIN_LAT, MAX_LONG, MIN_LONG)
-        
+        location_matrix, requestTime, newDataList, df_list,probabilities_time,probabilities_offline,probabilities_online, probabilities_location, density_grid, x_range, y_range,requests, distanceDriven = generateDataSets(nRequest,DoD,nData,time_range,MAX_LAT, MIN_LAT, MAX_LONG, MIN_LONG)
+
         # Generate vehicles 
         for gamma in GammaList
             println("Gamma = ",gamma)
@@ -155,7 +155,7 @@ if GENERATE_DATA_AND_VEHICLES
         #================================================#
         # Plot new data
         #================================================#
-        createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,density_grid,location_matrix,requestTimePickUp,requestTimeDropOff,probabilities_pickUpTime,probabilities_dropOffTime,serviceWindow,distanceDriven)
+        createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,density_grid,location_matrix,requestTime,probabilities_time, probabilities_offline,probabilities_online,serviceWindow,distanceDriven)
         for gamma in GammaList
             plotAndSaveGantChart(nRequest,nData,gamma)
         end

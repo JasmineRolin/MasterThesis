@@ -1,0 +1,5 @@
+id,start_of_availability,end_of_availability,maximum_ride_time,capacity_walking,depot_latitude,depot_longitude
+1,600,960,950,4,59.8652,11.5795
+2,1080,1440,1422,4,59.8652,10.826500000000001
+3,840,1200,1186,4,59.8652,11.3285
+4,360,720,714,4,60.331999999999994,11.0775

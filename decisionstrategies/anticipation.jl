@@ -52,7 +52,7 @@ function createExpectedRequests(N::Int,nFixedRequests::Int)
         direct_drive_time = Int[],
     )
 
-    probabilities_pickUpTime,probabilities_dropOffTime,_,_,probabilities_location,_,x_range,y_range,probabilities_distance,_,distance_range,_,_,_,_,_= load_simulation_data("Data/Simulation data/")
+    _,probabilities_offline,probabilities_online,probabilities_location,_,x_range,y_range,probabilities_distance,_,distance_range,_,_,_,_= load_simulation_data("Data/Simulation data/")
     time_range = collect(range(6*60,23*60))
     max_lat, min_lat, max_long, min_long = MAX_LAT, MIN_LAT, MAX_LONG, MIN_LONG
 
@@ -63,14 +63,14 @@ function createExpectedRequests(N::Int,nFixedRequests::Int)
         pickup_longitude, pickup_latitude = sampled_location[1]
         dropoff_longitude, dropoff_latitude = sampled_location[2]
 
-
         # Determine type of request
         if rand() < 0.5
             requestType = 0  # pick-up request
 
-            sampled_indices = sample(1:length(probabilities_pickUpTime), Weights(probabilities_pickUpTime), 1)
+            sampled_indices = sample(1:length(probabilities_online), Weights(probabilities_online), 1)
             sampledTimePick = time_range[sampled_indices]
             requestTime = ceil(sampledTimePick[1])
+
         else
             requestType = 1  # drop-off request
 
@@ -82,11 +82,12 @@ function createExpectedRequests(N::Int,nFixedRequests::Int)
             indices = time_range .>= earliestRequestTime
             nTimes = sum(indices)
 
-            sampled_indices = sample(1:nTimes, Weights(probabilities_dropOffTime[indices]), 1)
+            sampled_indices = sample(1:nTimes, Weights(probabilities_online[indices]), 1)
             sampledTimeDrop = time_range[indices][sampled_indices]
             requestTime = ceil(sampledTimeDrop[1])
         end
 
+        # Append results for the request
         push!(requestDF, (i, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, requestType, requestTime,"WALKING",0,0))
         append!(expectedRequestIds, i+nFixedRequests)
         
