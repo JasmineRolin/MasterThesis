@@ -314,13 +314,10 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
     println("Activity before waiting: ",activityBeforeWaiting.activity.id, " arrival with new: ",tttt, " end time: ",vehicle.availableTimeWindow.endTime)
 
     if waitingLocationId == previousWaitingLocationId
-        println("Did not relocate vehicle ",vehicle.id," as same depot")
+        println("Did not relocate vehicle ",vehicle.id," as same previous")
         return
     end
  
-  
-
-
     # Is there time to relocate vehicle 
     if activityBeforeWaiting.endOfServiceTime + time[activityBeforeWaiting.activity.id,waitingLocationId] + time[waitingLocationId,vehicle.depotId] <= vehicle.availableTimeWindow.endTime
 
@@ -365,7 +362,7 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
         end
 
 
-        println("Relocating vehicle ",vehicle.id," to waiting location ",waitingLocationId," from depot ",vehicle.depotId, " in period ",period)
+        println("Relocating vehicle ",vehicle.id," to waiting location ",waitingLocationId," from location ",waitingLocationId, " in period ",period)
         return 
     end
     println("Did not relocate vehicle ",vehicle.id," as no time")
@@ -582,7 +579,7 @@ function determineCurrentState(solution::Solution,event::Event,finalSolution::So
             idx, splitTime = updateCurrentScheduleNotAvailableYet(schedule,currentState,vehicle)
            # print(" - not available yet or not started service yet \n")
         # Check if entire route has been served and vehicle is not available anymore
-        elseif schedule.vehicle.availableTimeWindow.endTime < currentTime || length(schedule.route) == 1|| (schedule.route[end-1].endOfServiceTime < currentTime && schedule.route[end].startOfServiceTime == schedule.vehicle.availableTimeWindow.endTime)
+        elseif schedule.vehicle.availableTimeWindow.endTime < currentTime || length(schedule.route) == 1|| (schedule.route[end-1].endOfServiceTime < currentTime && schedule.route[end].startOfServiceTime == schedule.vehicle.availableTimeWindow.endTime && schedule.route[1].activity.activityType != DEPOT)
             idx, splitTime = updateCurrentScheduleNotAvailableAnymore!(currentState,schedule,vehicle)
           #  print(" - not available anymore \n")
         # Check if vehicle has not been assigned yet
