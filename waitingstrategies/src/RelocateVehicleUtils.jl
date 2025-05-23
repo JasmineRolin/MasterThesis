@@ -115,10 +115,6 @@ function determineActiveVehiclesAndDemandPrCell(solution::Solution,endOfPeriodIn
             # Update demand 
             if a.activity.activityType == PICKUP
                 realisedDemand[rowIdx,colIdx] += 1
-            elseif a.activity.activityType == DROPOFF
-              #  realisedDemand[rowIdx,colIdx] -= 1
-
-                realisedDemand[rowIdx,colIdx] -= 0
             end
         end
 
