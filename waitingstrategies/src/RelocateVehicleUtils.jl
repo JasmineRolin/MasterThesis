@@ -13,34 +13,40 @@ export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBa
 # Assuming hour is in the future (?)
 # Vehicles are being relocated to the depot of the previously relocated vehicle 
 function determineWaitingLocation(time::Array{Int,2},depotLocations::Dict{Tuple{Int,Int},Location},grid::Grid,nRequests::Int, vehicleBalance::Array{Int,3},period::Int,currentWaitingId::Int)
-    # Determine cell with most deficit of vehicles
-    vehicleBalanceInPeriod = vehicleBalance[period, :, :]
+#     # Determine cell with most deficit of vehicles
+#     vehicleBalanceInPeriod = vehicleBalance[period, :, :]
 
-   # println("Vehicle balance in period: \n", vehicleBalanceInPeriod)
+#    # println("Vehicle balance in period: \n", vehicleBalanceInPeriod)
 
-    # Find the minimum value
-    minValue = minimum(vehicleBalanceInPeriod)
-    println("Minimum value: ", minValue)
+#     # Find the minimum value
+#     minValue = minimum(vehicleBalanceInPeriod)
+#     println("Minimum value: ", minValue)
 
-    # Get all indices where the value equals the minimum
-    minIndices = findall(x -> x == minValue, vehicleBalanceInPeriod)
-    #println("Indices with minimum value: ", minIndices)
+#     # Get all indices where the value equals the minimum
+#     minIndices = findall(x -> x == minValue, vehicleBalanceInPeriod)
+#     #println("Indices with minimum value: ", minIndices)
 
-    # Retrive all depots ids for minimum values 
-    depotIds = [findDepotIdFromGridCell(grid, nRequests, (idx[1], idx[2])) for idx in minIndices]
-    #println("Depot ids: ", depotIds)
+#     # Retrive all depots ids for minimum values 
+#     depotIds = [findDepotIdFromGridCell(grid, nRequests, (idx[1], idx[2])) for idx in minIndices]
+#     #println("Depot ids: ", depotIds)
 
-    # Retrieve drive times to depot ids 
-    times = [time[currentWaitingId,d] for d in depotIds]
-    #println("Drive times: ", times)
+#     # Retrieve drive times to depot ids 
+#     times = [time[currentWaitingId,d] for d in depotIds]
+#     #println("Drive times: ", times)
 
-    # Find depots with minimum drive time
-    minTimeIdx = argmin(times)
-    println("minimum drive time: ", times[minTimeIdx])
-    minRowIdx = minIndices[minTimeIdx][1]
-    minColIdx = minIndices[minTimeIdx][2]
-    depotId = depotIds[minTimeIdx]
-    println("Depot id with minimum drive time: ", depotId)
+#     # Find depots with minimum drive time
+#     minTimeIdx = argmin(times)
+#     println("minimum drive time: ", times[minTimeIdx])
+#     minRowIdx = minIndices[minTimeIdx][1]
+#     minColIdx = minIndices[minTimeIdx][2]
+#     depotId = depotIds[minTimeIdx]
+#     println("Depot id with minimum drive time: ", depotId)
+
+    # TODO: jas 
+    # Relocate to center 
+    minRowIdx = Int(ceil(grid.nRows/2))
+    minColIdx = Int(ceil(grid.nRows/2))
+    depotId = findDepotIdFromGridCell(grid, nRequests, (minRowIdx, minColIdx))
 
     return depotId,depotLocations[(minRowIdx,minColIdx)],(minRowIdx,minColIdx)
 end
