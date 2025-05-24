@@ -5,48 +5,71 @@ using UnPack, Random
 using ..GeneratePredictedDemand
 using StatsBase 
 
-export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBalancePrCell
+export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBalancePrCell,determineWaitingLocation2
 
 #==
  Method to determine waiting location of a vehicle
 ==#
 # Assuming hour is in the future (?)
-# Vehicles are being relocated to the depot of the previously relocated vehicle 
+# Vehicles are being relocated to the depot of the previously relocated vehicle
+function determineWaitingLocation2(nRequests::Int,depotLocations::Dict{Tuple{Int,Int},Location},grid::Grid,probabilityGrid::Array{Float64,2}, activeVehiclesPrCell::Array{Int,3},period::Int)
+
+    # Active vehicles in period
+    activeVehiclesInPeriod = activeVehiclesPrCell[period,:,:]
+
+    # Calculate utility (?)/weighted probability 
+    score = probabilityGrid ./ (activeVehiclesInPeriod .+ 1)
+
+    # Find max score 
+    argMaxIdx = argmax(score)
+    maxRowIdx = argMaxIdx[1]
+    maxColIdx = argMaxIdx[2]
+
+    # Find depot location
+    depotId = findDepotIdFromGridCell(grid, nRequests, (maxRowIdx, maxColIdx))
+
+    println("Max score: ", score[maxRowIdx, maxColIdx])
+    println("Number of vehicles in cell: ", activeVehiclesInPeriod[maxRowIdx, maxColIdx])
+    println("Probability in cell: ", probabilityGrid[maxRowIdx, maxColIdx])
+
+    return depotId,depotLocations[(maxRowIdx,maxColIdx)],(maxRowIdx,maxColIdx)
+end
+
 function determineWaitingLocation(time::Array{Int,2},depotLocations::Dict{Tuple{Int,Int},Location},grid::Grid,nRequests::Int, vehicleBalance::Array{Int,3},period::Int,currentWaitingId::Int)
-#     # Determine cell with most deficit of vehicles
-#     vehicleBalanceInPeriod = vehicleBalance[period, :, :]
+    # Determine cell with most deficit of vehicles
+    vehicleBalanceInPeriod = vehicleBalance[period, :, :]
 
-#    # println("Vehicle balance in period: \n", vehicleBalanceInPeriod)
+   # println("Vehicle balance in period: \n", vehicleBalanceInPeriod)
 
-#     # Find the minimum value
-#     minValue = minimum(vehicleBalanceInPeriod)
-#     println("Minimum value: ", minValue)
+    # Find the minimum value
+    minValue = minimum(vehicleBalanceInPeriod)
+    println("Minimum value: ", minValue)
 
-#     # Get all indices where the value equals the minimum
-#     minIndices = findall(x -> x == minValue, vehicleBalanceInPeriod)
-#     #println("Indices with minimum value: ", minIndices)
+    # Get all indices where the value equals the minimum
+    minIndices = findall(x -> x == minValue, vehicleBalanceInPeriod)
+    #println("Indices with minimum value: ", minIndices)
 
-#     # Retrive all depots ids for minimum values 
-#     depotIds = [findDepotIdFromGridCell(grid, nRequests, (idx[1], idx[2])) for idx in minIndices]
-#     #println("Depot ids: ", depotIds)
+    # Retrive all depots ids for minimum values 
+    depotIds = [findDepotIdFromGridCell(grid, nRequests, (idx[1], idx[2])) for idx in minIndices]
+    #println("Depot ids: ", depotIds)
 
-#     # Retrieve drive times to depot ids 
-#     times = [time[currentWaitingId,d] for d in depotIds]
-#     #println("Drive times: ", times)
+    # Retrieve drive times to depot ids 
+    times = [time[currentWaitingId,d] for d in depotIds]
+    #println("Drive times: ", times)
 
-#     # Find depots with minimum drive time
-#     minTimeIdx = argmin(times)
-#     println("minimum drive time: ", times[minTimeIdx])
-#     minRowIdx = minIndices[minTimeIdx][1]
-#     minColIdx = minIndices[minTimeIdx][2]
-#     depotId = depotIds[minTimeIdx]
-#     println("Depot id with minimum drive time: ", depotId)
+    # Find depots with minimum drive time
+    minTimeIdx = argmin(times)
+    println("minimum drive time: ", times[minTimeIdx])
+    minRowIdx = minIndices[minTimeIdx][1]
+    minColIdx = minIndices[minTimeIdx][2]
+    depotId = depotIds[minTimeIdx]
+    println("Depot id with minimum drive time: ", depotId)
 
     # TODO: jas 
     # Relocate to center 
-    minRowIdx = Int(ceil(grid.nRows/2))
-    minColIdx = Int(ceil(grid.nRows/2))
-    depotId = findDepotIdFromGridCell(grid, nRequests, (minRowIdx, minColIdx))
+    # minRowIdx = Int(ceil(grid.nRows/2))
+    # minColIdx = Int(ceil(grid.nRows/2))
+    # depotId = findDepotIdFromGridCell(grid, nRequests, (minRowIdx, minColIdx))
 
     return depotId,depotLocations[(minRowIdx,minColIdx)],(minRowIdx,minColIdx)
 end
@@ -108,6 +131,7 @@ function determineActiveVehiclesAndDemandPrCell(solution::Solution,endOfPeriodIn
         if vehicle.availableTimeWindow.startTime > endOfPeriodInMinutes || vehicle.availableTimeWindow.endTime < startOfPeriodInMinutes
             continue
         end
+      
 
         # Check first and last activity in schedule
         if route[1].startOfServiceTime > endOfPeriodInMinutes || route[end].endOfServiceTime < startOfPeriodInMinutes
@@ -124,7 +148,7 @@ function determineActiveVehiclesAndDemandPrCell(solution::Solution,endOfPeriodIn
             if a.startOfServiceTime > endOfPeriodInMinutes || a.endOfServiceTime < startOfPeriodInMinutes
                 continue
             end
-
+       
             # Find grid cell of activity 
             rowIdx, colIdx = determineGridCell(a.activity.location.lat, a.activity.location.long, minLat, minLong, nRows, nCols, latStep, longStep)
 

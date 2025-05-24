@@ -1,9 +1,75 @@
 module GeneratePredictedDemand
 
-using CSV, DataFrames, JSON, domain, UnPack
+using CSV, DataFrames, JSON, domain, UnPack, utils
 using Statistics, ImageFiltering
 
-export generatePredictedDemand,generatePredictedVehiclesDemand,generatePredictedVehiclesDemandInPeriod,generatePredictedVehiclesDemandInHorizon
+export generatePredictedDemand,generatePredictedVehiclesDemand,generatePredictedVehiclesDemandInPeriod,generatePredictedVehiclesDemandInHorizon,getProbabilityGrid
+
+
+function getProbabilityGrid(scenario::Scenario)
+
+    # Retrieve depot locations 
+    depotLocations = scenario.depotLocations
+    grid = scenario.grid
+
+    # Retrieve simulation location probabilties
+    x_range, y_range, probabilities_location = loadLocationDistribution("Data/Simulation data/")
+
+    ny = length(y_range)
+
+    # Aggregate probabilities for each grid cell
+    probabilitiesGrid = zeros(Float64, grid.nRows, grid.nCols)
+
+    for (idx,p) in enumerate(probabilities_location)
+        long = x_range[(idx - 1) ÷ ny + 1]
+        lat = y_range[(idx - 1) % ny + 1]
+        
+        cell = findClosestGridCenter(depotLocations, lat, long)
+
+      #  println("Cell: ", cell, " Lat: ", lat, " Long: ", long, " Probability: ", p)
+
+        # Accumulate probabilities in the grid cell
+        probabilitiesGrid[cell[1], cell[2]] += p
+
+    end
+    
+    return probabilitiesGrid
+end
+
+#==
+ Method to load location distribution data
+==#
+function loadLocationDistribution(input_dir::String)
+    x_range = Float64.(CSV.read(joinpath(input_dir, "x_range.csv"), DataFrame).x)
+    y_range = Float64.(CSV.read(joinpath(input_dir, "y_range.csv"), DataFrame).y)
+    probabilities_location = coalesce.(Float64.(CSV.read(joinpath(input_dir, "probabilities_location.csv"), DataFrame).probability), 0.0)
+
+    return (
+        x_range,
+        y_range,
+        probabilities_location
+    )
+end
+
+#==
+    Method to find the closest grid center to a given location
+==#
+function findClosestGridCenter(depotLocations::Dict{Tuple{Int64, Int64}, Location},lat::Float64,long::Float64)
+    closestCenter = nothing
+    minDist = Inf
+
+    for (cell, loc) in depotLocations
+        cellLat, cellLong = loc.lat, loc.long
+        dist = haversine_distance(lat, long, cellLat, cellLong)[1]
+        if dist < minDist
+            minDist = dist
+            closestCenter = cell
+        end
+    end
+ 
+    return closestCenter
+end
+
 
 #==
  Method to generate predicted demand  
