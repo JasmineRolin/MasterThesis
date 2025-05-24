@@ -276,7 +276,6 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
     currentSolution::Solution,schedule::VehicleSchedule,currentSchedule::VehicleSchedule,finalSolution::Solution,nTimePeriods::Int,periodLength::Int,vehicleDemand::Array{Int,3},displayPlots::Bool)
     
     vehicle = schedule.vehicle
-    println("==> vehicle: ",vehicle.id)
     currentRouteLength = length(currentSchedule.route)
     waitingIdx = currentRouteLength - 1
     finalSchedule = finalSolution.vehicleSchedules[vehicle.id]
@@ -284,7 +283,6 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
     previousWaitingLocationId = currentSchedule.route[waitingIdx].activity.id
 
    
-
     # Determine relocation time 
     relocationTime = currentSchedule.route[waitingIdx].startOfServiceTime
 
@@ -349,11 +347,12 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
         waitingStartPeriod = min(Int(ceil(waitingActivityStartTime / periodLength)), nTimePeriods)
         waitingEndPeriod = min(Int(ceil(waitingActivityEndTime / periodLength)), nTimePeriods)
 
-        vehicleBalance[waitingStartPeriod:waitingEndPeriod,previousGridCell[1],previousGridCell[2]] .-= 1
-        vehicleBalance[waitingStartPeriod:waitingEndPeriod,gridCell[1],gridCell[2]] .+= 1
+        # TODO: jas
+        # vehicleBalance[waitingStartPeriod:waitingEndPeriod,previousGridCell[1],previousGridCell[2]] .-= 1
+        # vehicleBalance[waitingStartPeriod:waitingEndPeriod,gridCell[1],gridCell[2]] .+= 1
 
-        activeVehiclesPerCell[waitingStartPeriod:waitingEndPeriod,previousGridCell[1],previousGridCell[2]] .-= 1
-        activeVehiclesPerCell[waitingStartPeriod:waitingEndPeriod,gridCell[1],gridCell[2]] .+= 1
+        # activeVehiclesPerCell[waitingStartPeriod:waitingEndPeriod,previousGridCell[1],previousGridCell[2]] .-= 1
+        # activeVehiclesPerCell[waitingStartPeriod:waitingEndPeriod,gridCell[1],gridCell[2]] .+= 1
 
         if any(activeVehiclesPerCell[waitingStartPeriod:waitingEndPeriod,:,:] .< 0)
             println("Warning: Negative vehicle balance after relocation of vehicle ",vehicle.id," in period ",period)
@@ -413,11 +412,15 @@ function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nReques
 
     # Go through current schedules in order and relocate vehicles 
     for currentSchedule in currentVehicleSchedules[sortedIdx]
+        
         route = currentSchedule.route
         routeLength  = length(route)
         vehicle = currentSchedule.vehicle
         endOfAvailableTimeWindow = currentSchedule.vehicle.availableTimeWindow.endTime
         schedule = vehicleSchedules[vehicle.id]
+
+        println("==> vehicle: ",vehicle.id)
+
 
         # Check if vehicle should be relocated 
         # Either the route is completed or the route is "full" and there is no room for waiting activity 
@@ -476,15 +479,15 @@ function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nReques
             currentState.solution.totalIdleTime += endOfAvailableTimeWindow - arrivalAtDepot
 
             # Update vehicle balance pr. cell 
-            gridCell = determineGridCell(vehicle.depotLocation,grid)
+            # gridCell = determineGridCell(vehicle.depotLocation,grid)
 
-            waitingActivityStartTime = waitingActivity.startOfServiceTime
-            waitingActivityEndTime = waitingActivity.endOfServiceTime
-            waitingStartPeriod = min(Int(ceil(waitingActivityStartTime / periodLength)), nTimePeriods)
-            waitingEndPeriod = min(Int(ceil(waitingActivityEndTime / periodLength)), nTimePeriods)
+            # waitingActivityStartTime = waitingActivity.startOfServiceTime
+            # waitingActivityEndTime = waitingActivity.endOfServiceTime
+            # waitingStartPeriod = min(Int(ceil(waitingActivityStartTime / periodLength)), nTimePeriods)
+            # waitingEndPeriod = min(Int(ceil(waitingActivityEndTime / periodLength)), nTimePeriods)
 
-            vehicleBalance[waitingStartPeriod:waitingEndPeriod,gridCell[1],gridCell[2]] .+= 1
-            activeVehiclesPerCell[waitingStartPeriod:waitingEndPeriod,gridCell[1],gridCell[2]] .+= 1
+            # vehicleBalance[waitingStartPeriod:waitingEndPeriod,gridCell[1],gridCell[2]] .+= 1
+            # activeVehiclesPerCell[waitingStartPeriod:waitingEndPeriod,gridCell[1],gridCell[2]] .+= 1
 
         # If we are driving to the waiting location we have to arrive at the waiting location before we can relocate again 
         # The waiting duration has to be longer than the period length
@@ -511,6 +514,8 @@ function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nReques
         end
 
         # TODO: jas 
+        activeVehiclesPerCell  = determineActiveVehiclesPrCell(grid,currentState.solution,nTimePeriods,periodLength)
+
         # Relocate waiting activity 
         relocateWaitingActivityBeforeDepot!(time,distance,nRequests,grid,depotLocations,vehicleBalance,activeVehiclesPerCell,probabilityGrid,realisedDemand,predictedDemand,
         currentState.solution,schedule,currentSchedule,finalSolution,nTimePeriods,periodLength,vehicleDemand,displayPlots)
@@ -710,7 +715,11 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
    
 end
 
-function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixFile::String,timeMatrixFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json", ALNS::Bool=true, nTimePeriods::Int=24,periodLength::Int=60,testALNS::Bool=false, keepExpectedRequests::Bool=false,measureSlack::Bool=false)
+function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMatrixFile::String,timeMatrixFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json", ALNS::Bool=true, nTimePeriods::Int=24,periodLength::Int=60,testALNS::Bool=false, keepExpectedRequests::Bool=false,measureSlack::Bool=false)
+
+    # Copy scenario so that we don't modify actual scenario
+    # TODO: jas - important
+    scenario = copyScenario(scenarioInput)
 
     # Retrieve info 
     if relocateVehicles

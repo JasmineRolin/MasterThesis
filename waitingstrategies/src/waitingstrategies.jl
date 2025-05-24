@@ -8,7 +8,7 @@ export generatePredictedDemand,generatePredictedVehiclesDemand,generatePredicted
 
 include("RelocateVehicleUtils.jl")
 using .RelocateVehicleUtils
-export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBalancePrCell,determineWaitingLocation2
+export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBalancePrCell,determineWaitingLocation2,determineActiveVehiclesPrCell
 
 include("WaitingStrategiesPlots.jl")
 using .WaitingStrategiesPlots

@@ -5,7 +5,7 @@ using UnPack, Random
 using ..GeneratePredictedDemand
 using StatsBase 
 
-export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBalancePrCell,determineWaitingLocation2
+export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBalancePrCell,determineWaitingLocation2, determineActiveVehiclesPrCell
 
 #==
  Method to determine waiting location of a vehicle
@@ -115,6 +115,32 @@ function determineVehicleBalancePrCell(grid::Grid,gamma::Float64,predictedDemand
     return vehicleBalance, activeVehiclesPerCell, realisedDemand, vehicleDemand, maxDemandInHorizon
 end
 
+
+function determineActiveVehiclesPrCell(grid::Grid,solution::Solution,nTimePeriods::Int,periodLength::Int)
+    # unpack grid 
+    @unpack minLat,maxLat,minLong,maxLong, nRows,nCols,latStep,longStep = grid 
+    
+    # Initialize vehicle balance
+    realisedDemand = zeros(Int,nTimePeriods,nRows,nCols)
+    activeVehiclesPerCell = zeros(Int,nTimePeriods,nRows,nCols) # TODO: remove returning this (only for test)
+
+    # TODO: set correctly 
+    planningHorizon = 4
+
+    # Find vehicle balance for each hour
+    # TODO: update to only be future time periods 
+    for period in 1:nTimePeriods
+        # Determine minutes
+        startOfPeriodInMinutes = (period - 1) * periodLength
+        endOfPeriodInMinutes = period * periodLength
+
+        # Determine currently planned active vehicles pr. cell  
+        activeVehiclesPerCell[period,:,:],realisedDemand[period,:,:] = determineActiveVehiclesAndDemandPrCell(solution,endOfPeriodInMinutes,startOfPeriodInMinutes,minLat,minLong,nRows,nCols,latStep,longStep)
+    end
+   
+    return activeVehiclesPerCell
+end
+
 function determineActiveVehiclesAndDemandPrCell(solution::Solution,endOfPeriodInMinutes::Int,startOfPeriodInMinutes::Int,minLat::Float64,minLong::Float64, nRows::Int,nCols::Int,latStep::Float64,longStep::Float64)
     # Initialize surplus/deficit of vehicles 
     activeVehiclesPerCell = zeros(Int,nRows,nCols)
@@ -174,5 +200,9 @@ function determineActiveVehiclesAndDemandPrCell(solution::Solution,endOfPeriodIn
     return activeVehiclesPerCell, realisedDemand
 
 end
+
+
+
+
 
 end

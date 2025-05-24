@@ -18,12 +18,12 @@ using Plots.PlotMeasures
 print("\033c")
 
 # Receive command line arguments 
-n = 50
-gridSize = 5
+n = 100
+gridSize = 15
 
 gamma = 0.5
 i = 1
-relocateVehicles = false
+#relocateVehicles = false
 startFileIndex = 1
 endFileIndex = 40
 nPeriods = 48
@@ -53,7 +53,7 @@ requestFile = "Data/DataWaitingStrategies/$(n)/GeneratedRequests_$(n)_$(i).csv"
 distanceMatrixFile = string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
 timeMatrixFile =  string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
 scenarioName = string("Gen_Data_",n,"_",gamma,"_",i)
-push!(outputFiles, outPutFolder*"/Simulation_KPI_"*string(scenarioName)*"_"*string(relocateVehicles)*".json")
+#push!(outputFiles, outPutFolder*"/Simulation_KPI_"*string(scenarioName)*"_"*string(relocateVehicles)*".json")
 
 
 # Read instance 
@@ -62,8 +62,7 @@ scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,dis
 println("\t nOfflineRequests: ",length(scenario.offlineRequests))
 
 # Simulate scenario 
-relocateVehicles = true 
-solutionTrue, requestBankTrue = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles,nTimePeriods=nPeriods,periodLength=periodLength);
+solutionTrue, requestBankTrue = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength);
 
 state = State(solutionTrue,scenario.onlineRequests[end],0)
 feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
@@ -76,8 +75,7 @@ println(msg)
 # dropOffIdx = 1 
 # feas, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd, _, _, _ = checkFeasibilityOfInsertionAtPosition(r, schedule,pickUpIdx,dropOffIdx,scenario)
 
-relocateVehicles = false 
-solutionFalse, requestBankFalse = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles,nTimePeriods=nPeriods,periodLength=periodLength);
+solutionFalse, requestBankFalse = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=false,nTimePeriods=nPeriods,periodLength=periodLength);
 
 state = State(solutionFalse,scenario.onlineRequests[end],0)
 feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
@@ -106,8 +104,8 @@ finalSolution,requestBankALNS,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNew
 #println("Request bank: ", sort(requestBank), " with size: ", length(requestBank))
 #println("ALNS request bank: ", sort(requestBankALNS), " with size: ", length(requestBankALNS))
 
-println("Relocation vehicles true: ", solutionTrue.nTaxi)
-println("Relocation vehicles false: ", solutionFalse.nTaxi)
+println("Relocation vehicles TRUE: ", solutionTrue.nTaxi)
+println("Relocation vehicles FALSE: ", solutionFalse.nTaxi)
 println("ALNS solution: ", finalSolution.nTaxi)
 
 #============================================================================#
