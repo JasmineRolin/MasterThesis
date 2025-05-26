@@ -12,30 +12,32 @@ export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBa
 ==#
 # Assuming hour is in the future (?)
 # Vehicles are being relocated to the depot of the previously relocated vehicle
-function determineWaitingLocation2(time::Array{Int,2},nRequests::Int,depotLocations::Dict{Tuple{Int,Int},Location},grid::Grid,probabilityGrid::Array{Float64,2}, activeVehiclesPrCell::Array{Int,3},period::Int,currentGridCell::Tuple{Int,Int},currentWaitingId::Int,activityBeforeWaitingId::Int)
+function determineWaitingLocation2(time::Array{Int,2},nRequests::Int,depotLocations::Dict{Tuple{Int,Int},Location},grid::Grid,probabilityGrid::Array{Float64,2}, activeVehiclesPrCell::Array{Int,3},period::Int,currentGridCell::Tuple{Int,Int},currentWaitingId::Int,activityBeforeWaitingId::Int,isRouteEmpty::Bool)
 
     # Active vehicles in period
-    activeVehiclesInPeriod = activeVehiclesPrCell[period,:,:]
+    activeVehiclesInPeriod = activeVehiclesPrCell[period, :, :]
 
     # We dont count the current vehicle in the cell
    # activeVehiclesInPeriod[currentGridCell[1],currentGridCell[2]] -= 1
     
     # Find time between current cell and depot locations
     nRows, nCols = size(probabilityGrid)
-    driveTimeMatrix = fill(Inf, nRows, nCols)
+    driveTimeMatrix = zeros(nRows, nCols)
 
     # Compute drive times to each depot location
-    for r in 1:nRows, c in 1:nCols
+    if !isRouteEmpty # TODO: jas 
+        for r in 1:nRows, c in 1:nCols
 
-        # if (r,c) == currentGridCell
-        #     # add small time penalty so that current cell is not always selected 
-        #     driveTimeMatrix[r, c] = haversine_distance(depotLocations[(1,1)].lat, depotLocations[(1,1)].long,depotLocations[(1,2)].lat, depotLocations[(1,2)].long)[2]
-        #     continue
-        # end
+            # if (r,c) == currentGridCell
+            #     # add small time penalty so that current cell is not always selected 
+            #     driveTimeMatrix[r, c] = haversine_distance(depotLocations[(1,1)].lat, depotLocations[(1,1)].long,depotLocations[(1,2)].lat, depotLocations[(1,2)].long)[2]
+            #     continue
+            # end
 
-        depotId = findDepotIdFromGridCell(grid, nRequests, (r, c))
-        #driveTimeMatrix[r, c] = time[currentWaitingId, depotId]
-        driveTimeMatrix[r, c] = time[activityBeforeWaitingId, depotId]
+            depotId = findDepotIdFromGridCell(grid, nRequests, (r, c))
+            #driveTimeMatrix[r, c] = time[currentWaitingId, depotId]
+            driveTimeMatrix[r, c] = time[activityBeforeWaitingId, depotId]
+        end
     end
 
     # Avoid division by zero or extremely small numbers
@@ -64,6 +66,9 @@ function determineWaitingLocation2(time::Array{Int,2},nRequests::Int,depotLocati
     # Find depot location
     depotId = findDepotIdFromGridCell(grid, nRequests, (maxRowIdx, maxColIdx))
 
+    println("----- relocation ------")
+    println("From cell: ", currentGridCell)
+    println("To cell: ", (maxRowIdx, maxColIdx))
     println("Max score: ", score[maxRowIdx, maxColIdx])
     println("Number of vehicles in cell: ", activeVehiclesInPeriod[maxRowIdx, maxColIdx])
     println("Probability in cell: ", probabilityGrid[maxRowIdx, maxColIdx])
@@ -164,8 +169,6 @@ function determineActiveVehiclesPrCell(grid::Grid,solution::Solution,nTimePeriod
     realisedDemand = zeros(Int,nTimePeriods,nRows,nCols)
     activeVehiclesPerCell = zeros(Int,nTimePeriods,nRows,nCols) # TODO: remove returning this (only for test)
 
-    # TODO: set correctly 
-    planningHorizon = 4
 
     # Find vehicle balance for each hour
     # TODO: update to only be future time periods 

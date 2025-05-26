@@ -259,7 +259,6 @@ function run_and_save_simulation(data_files::Vector{String}, output_dir::String,
     location_matrix, requestTime,requests, distanceDriven = getOldData(data_files)
 
     # Find time and location distributions
-    # TODO: jas bliver det brugt? 
     time_probabilities, density_offline = getRequestTimeDistribution(requestTime, time_range,bandwidth_factor=bandwidth_factor_time_offline)
     probabilities_offline, density_offline = getRequestTimeDistribution(requestTime, time_range,bandwidth_factor=bandwidth_factor_time_offline)
     probabilities_online, density_online = getRequestTimeDistribution(requestTime, time_range,bandwidth_factor=bandwidth_factor_time_online)

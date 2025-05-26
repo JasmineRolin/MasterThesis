@@ -484,7 +484,6 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
             # Check if we can drive from previous activity to activity after waiting 
             if idx == nActivities-1 
-                # TODO: jas - we dont want to remove the waiting activity before depot 
                 feasible = false
             else
                 feasible, maximumShiftBackwardTrial, maximumShiftForwardTrial = canActivityBeInserted(firstActivity.activity,nextActivity,arrivalAtNextActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)

@@ -46,7 +46,7 @@ function getProbabilityGrid(scenario::Scenario,historicRequestFiles::Vector{Stri
     latStep = scenario.grid.latStep
     longStep = scenario.grid.longStep
 
-    
+
     demandGrid = zeros(Float64,nRows, nCols)
 
     for requestFile in historicRequestFiles
@@ -115,7 +115,6 @@ end
 #==
  Method to generate predicted demand  
 ==#
-# TODO: jas - do something else than plain average
 function generatePredictedDemand(grid::Grid, historicRequestFiles::Vector{String}, nTimePeriods::Int,periodLength::Int)
     @unpack minLat,maxLat,minLong,maxLong, nRows,nCols,latStep,longStep = grid 
 

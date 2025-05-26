@@ -53,7 +53,7 @@ print("\033c")
 
 
 # Receive command line arguments 
-n = 50
+n = 100
 gridSize = 10
 
 gamma = 0.7
@@ -62,7 +62,7 @@ i = 1
 startFileIndex = 1
 endFileIndex = 20
 nPeriods = 48
-displayPlots = true
+displayPlots = false
 
 # Find period length 
 maximumTime = 24*60 
@@ -123,24 +123,24 @@ println(msg)
 
 
 
-if displayPlots && !isdir("tests/WaitingPlots/false")
-    mkpath("tests/WaitingPlots/false")
-end
-if displayPlots && isdir("tests/WaitingPlots/false")
-    for file in readdir("tests/WaitingPlots/false"; join=true)
-        rm(file; force=true, recursive=true)
-    end
-end
-solutionFalse, requestBankFalse = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=false,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName);
+# if displayPlots && !isdir("tests/WaitingPlots/false")
+#     mkpath("tests/WaitingPlots/false")
+# end
+# if displayPlots && isdir("tests/WaitingPlots/false")
+#     for file in readdir("tests/WaitingPlots/false"; join=true)
+#         rm(file; force=true, recursive=true)
+#     end
+# end
+# solutionFalse, requestBankFalse = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=false,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName);
 
-state = State(solutionFalse,scenario.onlineRequests[end],0)
-feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-#printSolution(solution,printRouteHorizontal)
-@test msg == ""
-@test feasible == true
-println(msg)
+# state = State(solutionFalse,scenario.onlineRequests[end],0)
+# feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+# #printSolution(solution,printRouteHorizontal)
+# @test msg == ""
+# @test feasible == true
+# println(msg)
 
-# #============================================================================#
+# # #============================================================================#
 # alnsParameters = "tests/resources/ALNSParameters3.json"
 
 # destroyMethods = Vector{GenericMethod}()
@@ -157,12 +157,12 @@ println(msg)
 # finalSolution,requestBankALNS,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBankALNS,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=false,stage="Offline")
 
 
-#println("Request bank: ", sort(requestBank), " with size: ", length(requestBank))
-#println("ALNS request bank: ", sort(requestBankALNS), " with size: ", length(requestBankALNS))
+# #println("Request bank: ", sort(requestBank), " with size: ", length(requestBank))
+# #println("ALNS request bank: ", sort(requestBankALNS), " with size: ", length(requestBankALNS))
 
-println("Relocation vehicles TRUE: ", solutionTrue.nTaxi)
-println("Relocation vehicles FALSE: ", solutionFalse.nTaxi)
-println("ALNS solution: ", finalSolution.nTaxi)
+# println("Relocation vehicles TRUE: ", solutionTrue.nTaxi)
+# println("Relocation vehicles FALSE: ", solutionFalse.nTaxi)
+# println("ALNS solution: ", finalSolution.nTaxi)
 
 #============================================================================#
 

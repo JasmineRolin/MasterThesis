@@ -627,7 +627,9 @@ function plotRelocation(probabilityGrid,score,predictedDemand,activeVehiclesPerC
     # scatter!(p1,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
 
 
-    p2 = heatmap(activeVehiclesPerCell[period,:,:], 
+    activeVehiclesInPeriod = activeVehiclesPerCell[period, :, :]
+
+    p2 = heatmap(activeVehiclesInPeriod, 
     clim=(avg_min, avg_max),
     c=:viridis,         # color map
     xlabel="Longitude (grid cols)", 
