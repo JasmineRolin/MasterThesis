@@ -5,7 +5,9 @@ using Statistics, ImageFiltering
 
 export generatePredictedDemand,generatePredictedVehiclesDemand,generatePredictedVehiclesDemandInPeriod,generatePredictedVehiclesDemandInHorizon,getProbabilityGrid
 
-
+#==
+ Method to get probability grid from simulation data 
+==#
 function getProbabilityGrid(scenario::Scenario)
 
     # Retrieve depot locations 
@@ -26,8 +28,6 @@ function getProbabilityGrid(scenario::Scenario)
         
         cell = findClosestGridCenter(depotLocations, lat, long)
 
-      #  println("Cell: ", cell, " Lat: ", lat, " Long: ", long, " Probability: ", p)
-
         # Accumulate probabilities in the grid cell
         probabilitiesGrid[cell[1], cell[2]] += p
 
@@ -36,7 +36,9 @@ function getProbabilityGrid(scenario::Scenario)
     return probabilitiesGrid
 end
 
-
+#==
+ Method to get probability grid from historic data 
+==#
 function getProbabilityGrid(scenario::Scenario,historicRequestFiles::Vector{String})
 
     nRows = scenario.grid.nRows
@@ -113,7 +115,7 @@ end
 
 
 #==
- Method to generate predicted demand  
+ Method to generate predicted demand from historic request files
 ==#
 function generatePredictedDemand(grid::Grid, historicRequestFiles::Vector{String}, nTimePeriods::Int,periodLength::Int)
     @unpack minLat,maxLat,minLong,maxLong, nRows,nCols,latStep,longStep = grid 
@@ -151,7 +153,7 @@ function generatePredictedDemand(grid::Grid, historicRequestFiles::Vector{String
 end
 
 #==
- Generate predicted capacity of vehicles 
+ Generate predicted demand of vehicles 
 ==#
 # Assuming homogenous vehicles
 function generatePredictedVehiclesDemand(grid::Grid,gamma::Float64, averageDemand::Array{Float64,3},nTimePeriods::Int)
@@ -163,10 +165,6 @@ function generatePredictedVehiclesDemand(grid::Grid,gamma::Float64, averageDeman
     end 
 
     return vehicleDemand
-end
-
-function generatePredictedVehiclesDemandInPeriod(gamma::Float64, predictedDemand::Array{Float64,2},realisedDemand::Array{Int,2})
-   return Int.(ceil.(predictedDemand.*gamma))
 end
 
 function generatePredictedVehiclesDemandInHorizon(gamma::Float64, predictedDemand::Array{Float64,3},period::Int,endPeriod::Int)

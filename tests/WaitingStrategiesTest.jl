@@ -53,7 +53,7 @@ print("\033c")
 
 
 # Receive command line arguments 
-n = 100
+n = 50
 gridSize = 10
 
 gamma = 0.7

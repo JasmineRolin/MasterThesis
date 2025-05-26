@@ -10,34 +10,19 @@ export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBa
 #==
  Method to determine waiting location of a vehicle
 ==#
-# Assuming hour is in the future (?)
-# Vehicles are being relocated to the depot of the previously relocated vehicle
 function determineWaitingLocation2(time::Array{Int,2},nRequests::Int,depotLocations::Dict{Tuple{Int,Int},Location},grid::Grid,probabilityGrid::Array{Float64,2}, activeVehiclesPrCell::Array{Int,3},period::Int,currentGridCell::Tuple{Int,Int},currentWaitingId::Int,activityBeforeWaitingId::Int,isRouteEmpty::Bool)
 
     # Active vehicles in period
     activeVehiclesInPeriod = activeVehiclesPrCell[period, :, :]
 
-    # We dont count the current vehicle in the cell
-   # activeVehiclesInPeriod[currentGridCell[1],currentGridCell[2]] -= 1
-    
     # Find time between current cell and depot locations
     nRows, nCols = size(probabilityGrid)
     driveTimeMatrix = zeros(nRows, nCols)
 
-    # Compute drive times to each depot location
-    if !isRouteEmpty # TODO: jas 
-        for r in 1:nRows, c in 1:nCols
-
-            # if (r,c) == currentGridCell
-            #     # add small time penalty so that current cell is not always selected 
-            #     driveTimeMatrix[r, c] = haversine_distance(depotLocations[(1,1)].lat, depotLocations[(1,1)].long,depotLocations[(1,2)].lat, depotLocations[(1,2)].long)[2]
-            #     continue
-            # end
-
-            depotId = findDepotIdFromGridCell(grid, nRequests, (r, c))
-            #driveTimeMatrix[r, c] = time[currentWaitingId, depotId]
-            driveTimeMatrix[r, c] = time[activityBeforeWaitingId, depotId]
-        end
+    # Compute drive times to each depot location from previous activity 
+    for r in 1:nRows, c in 1:nCols
+        depotId = findDepotIdFromGridCell(grid, nRequests, (r, c))
+        driveTimeMatrix[r, c] = time[activityBeforeWaitingId, depotId]
     end
 
     # Avoid division by zero or extremely small numbers
@@ -51,14 +36,15 @@ function determineWaitingLocation2(time::Array{Int,2},nRequests::Int,depotLocati
     maxRowIdx = argMaxIdx[1]
     maxColIdx = argMaxIdx[2]
 
+    # TODO: jas - delete when tested 
     # Flatten score matrix
     # flatScores = vec(score)
     # weights = Weights(flatScores)
 
-    # # Sample a linear index based on weights
+    # Sample a linear index based on weights
     # sampledIdx = sample(1:length(flatScores), weights)
 
-    # # Convert linear index back to row and column
+    # Convert linear index back to row and column
     # nRows, nCols = size(score)
     # maxRowIdx = ((sampledIdx - 1) ÷ nCols) + 1
     # maxColIdx = ((sampledIdx - 1) % nCols) + 1
@@ -72,10 +58,6 @@ function determineWaitingLocation2(time::Array{Int,2},nRequests::Int,depotLocati
     println("Max score: ", score[maxRowIdx, maxColIdx])
     println("Number of vehicles in cell: ", activeVehiclesInPeriod[maxRowIdx, maxColIdx])
     println("Probability in cell: ", probabilityGrid[maxRowIdx, maxColIdx])
-
-    # Add back current vehicle in the cell
-   # activeVehiclesInPeriod[currentGridCell[1],currentGridCell[2]] += 1
-
 
     return depotId,depotLocations[(maxRowIdx,maxColIdx)],(maxRowIdx,maxColIdx), score
 end
