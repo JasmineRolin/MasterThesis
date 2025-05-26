@@ -39,12 +39,12 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
         @test feasible == true
         @test msg == ""
     #end
-    dfResults = processResults(outputFiles)
-    CSV.write(outPutFolder*"/results.csv", dfResults)
+    #dfResults = processResults(outputFiles)
+    #CSV.write(outPutFolder*"/results.csv", dfResults)
 
 end
 
-main(50,0.5,0.7,"2025-05-23","","BaseCase",1)
+#main(50,0.5,0.7,"2025-05-23","","BaseCase",1)
 
 if abspath(PROGRAM_FILE) == @__FILE__
     n = parse(Int, ARGS[1])

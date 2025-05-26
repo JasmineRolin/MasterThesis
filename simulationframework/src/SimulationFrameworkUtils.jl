@@ -762,6 +762,9 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
     if displayPlots
         p = createGantChartOfSolutionOnline(solution, "Initial Solution after ALNS", nFixed = scenario.nFixed)
         display(p)
+        if !isdir(outPutFileFolder)
+            mkpath(outPutFileFolder)
+        end
         savefig(p, outPutFileFolder*"/initial_solution_gantt.png")
         #display(plotRoutes(solution,scenario,requestBank,"Initial Solution after ALNS"))
     end

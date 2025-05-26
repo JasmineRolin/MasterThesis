@@ -46,16 +46,12 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
         solution, requestBank = inHindsightSolution(scenario,repairMethods,destroyMethods,parametersFile,alnsParameters,scenarioName,displayPlots=true)
         
         if saveResults
-            if !isdir(outPutFolder)
-                mkpath(outPutFolder)
+            mkpath(outPutFolder)  # ensure folder exists
+            fileName = outPutFolder * "/Simulation_KPI_" * string(scenario.name) * "_false.txt"
+        
+            open(fileName, "a") do io
+                println(io, "Dataset: $i, TotalCost: $(solution.totalCost), UnservedRequests: $(length(requestBank))")
             end
-            fileName = outPutFolder*"/Simulation_KPI_"*string(scenario.name)*"_"*"false"*".json"
-            KPIDict = writeOnlineKPIsToFile(fileName,scenario,solution,requestBank,Int[],0.0,0.0,0)
-            println("=== KPI Summary ===")
-            for (key, value) in KPIDict
-                println(rpad(key, 30), ": ", value)
-            end
-
         end
 
 
@@ -70,7 +66,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
 
 end
 
-main(50,0.5,0.5,"2025-05-23","","BaseCase",1)
+#main(50,0.5,0.5,"2025-05-23","","BaseCase",1)
 
 if abspath(PROGRAM_FILE) == @__FILE__
     n = parse(Int, ARGS[1])
