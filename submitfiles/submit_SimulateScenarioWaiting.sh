@@ -9,7 +9,8 @@ gridSize=10
 nRequestsList=(300) 
 relocateOptions=(true false)
 numRuns=3  
-numSteps=20   
+numHistoricRequestFiles=20   
+numData=20   
 
 mkdir -p submitfiles/generated_jobs
 for nRequests in "${nRequestsList[@]}"; do
@@ -47,9 +48,8 @@ Pkg.develop(path="simulationframework");
 Pkg.resolve();
 '
 
-for i in \$(seq 1 ${numSteps}); do
-    endFile=\$((1 + 19))
-    julia --project=. runfiles/RunSimulationWaiting.jl "${nRequests}" "${gamma}" "\${i}" "${relocateVehicles}" "${gridSize}" "1" "\${endFile}" "${nPeriods}" "${run}" &
+for i in \$(seq 1 ${numData}); do
+    julia --project=. runfiles/RunSimulationWaiting.jl "${nRequests}" "${gamma}" "\${i}" "${relocateVehicles}" "${gridSize}" "${numHistoricRequestFiles}" "${nPeriods}" "${run}" &
 done
 
 wait

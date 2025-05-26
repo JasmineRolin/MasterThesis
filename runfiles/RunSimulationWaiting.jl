@@ -27,10 +27,9 @@ function main()
     i = parse(Int,ARGS[3])
     relocateVehicles = parse(Bool,ARGS[4])
     gridSize = parse(Int,ARGS[5])
-    startFileIndex = parse(Int,ARGS[6])
-    endFileIndex = parse(Int,ARGS[7])
-    nPeriods = parse(Int,ARGS[8])
-    run = parse(Int,ARGS[9])
+    nHistoricRequestFiles = parse(Int,ARGS[6])
+    nPeriods = parse(Int,ARGS[7])
+    run = parse(Int,ARGS[8])
 
     displayPlots = false
 
@@ -39,12 +38,11 @@ function main()
     periodLength = Int(maximumTime / nPeriods)
 
     # Retrieve historic request files 
-    historicIndexes = setdiff(collect(startFileIndex:endFileIndex),i)
     historicRequestFiles = Vector{String}()
-    for j in historicIndexes
-        push!(historicRequestFiles,"Data/DataWaitingStrategies/$(n)/GeneratedRequests_$(n)_$(j).csv")
+    for j in 1:nHistoricRequestFiles
+        push!(historicRequestFiles,"Data/DataWaitingStrategies/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
     end
-    
+
 
     # File names 
     vehiclesFile = string("Data/DataWaitingStrategies/",n,"/Vehicles_",n,"_",gamma,".csv")

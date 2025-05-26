@@ -23,8 +23,8 @@ global GENERATE_VEHICLES = false
 global DoD = 1.0 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 5 # 2 hours buffer
-global nData = 20
-global nRequestList = [300]#,50,100,300,500]
+global nData = 10
+global nRequestList = [20,100,300,500]#,50,100,300,500]
 global MAX_DELAY = 15 # TODO Astrid I just put something
 global earliestBuffer = 15
 global ONLY_PICKUP = true
@@ -47,14 +47,14 @@ global shifts = Dict(
 #==
 # Grid constants 
 ==#
-# global MAX_LAT = 60.721
-# global MIN_LAT = 59.165
-# global MAX_LONG = 12.458
-# global MIN_LONG = 9.948
-global MAX_LAT = 60.7
-global MIN_LAT = 59.1
-global MAX_LONG = 12.4
-global MIN_LONG = 9.9
+global MAX_LAT = 60.721
+global MIN_LAT = 59.165
+global MAX_LONG = 12.458
+global MIN_LONG = 9.948
+# global MAX_LAT = 60.7
+# global MIN_LAT = 59.1
+# global MAX_LONG = 12.4
+# global MIN_LONG = 9.9
 global NUM_ROWS = 10
 global NUM_COLS = 10
 
