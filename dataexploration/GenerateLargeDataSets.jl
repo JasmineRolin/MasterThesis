@@ -157,7 +157,7 @@ function makeRequests(nSample::Int, DoD::Float64, probabilities_offline::Vector{
         dropoff_longitude, dropoff_latitude = sampled_location[2]
 
         # Determine type of request
-        if rand() < 0.5
+        if rand() <= 1  #TODO only pickup requests
             requestType = 0  # pick-up request
 
             sampled_indices = sample(1:length(probabilities_offline), Weights(probabilities_offline), 1)
@@ -193,7 +193,7 @@ function makeRequests(nSample::Int, DoD::Float64, probabilities_offline::Vector{
         dropoff_longitude, dropoff_latitude = sampled_location[2]
 
         # Determine type of request
-        if rand() < 0.5
+        if rand() <=1 #TODO change
             requestType = 0  # pick-up request
 
             sampled_indices = sample(1:length(probabilities_online), Weights(probabilities_online), 1)
@@ -222,8 +222,8 @@ function makeRequests(nSample::Int, DoD::Float64, probabilities_offline::Vector{
     end
 
     # Determine call time
-    callTime(results, serviceWindow, callBuffer, preKnown)
-    #earlyCallTime(results, serviceWindow, earliestBuffer, callBuffer, preKnown)
+    #callTime(results, serviceWindow, callBuffer, preKnown)
+    earlyCallTime(results, serviceWindow, earliestBuffer, callBuffer, preKnown)
 
     # Write results to CSV
     mkpath(dirname(output_file))

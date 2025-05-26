@@ -108,7 +108,7 @@ function earlyCallTime(df, serviceWindow, earliestBuffer, callBuffer, preKnown)
 
 
             
-            if ((df[i, :request_time]- df[i, "call_time"]) < 30) ||((df[i, :request_time]- df[i, "call_time"]) > 60)
+            if ((df[i, :request_time]- df[i, "call_time"]) < 60) ||((df[i, :request_time]- df[i, "call_time"]) > 120)
                 println(df[i, :request_time])
                 println(df[i, :request_type])
                 println(df[i, "direct_drive_time"])

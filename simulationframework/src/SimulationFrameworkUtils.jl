@@ -649,7 +649,9 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
    
 end
 
-function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixFile::String,timeMatrixFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json", ALNS::Bool=true, nTimePeriods::Int=24,periodLength::Int=60,testALNS::Bool=false, keepExpectedRequests::Bool=false,measureSlack::Bool=false)
+function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMatrixFile::String,timeMatrixFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json", ALNS::Bool=true, nTimePeriods::Int=24,periodLength::Int=60,testALNS::Bool=false, keepExpectedRequests::Bool=false,measureSlack::Bool=false)
+
+    scenario = copyScenario(scenarioInput)
 
     # Retrieve info 
     if relocateVehicles
@@ -758,7 +760,9 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         printSolution(solution,printRouteHorizontal)
     end
     if displayPlots
-        display(createGantChartOfSolutionOnline(solution,"Initial Solution after ALNS",nFixed=scenario.nFixed))
+        p = createGantChartOfSolutionOnline(solution, "Initial Solution after ALNS", nFixed = scenario.nFixed)
+        display(p)
+        savefig(p, outPutFileFolder*"/initial_solution_gantt.png")
         #display(plotRoutes(solution,scenario,requestBank,"Initial Solution after ALNS"))
     end
 
@@ -893,9 +897,24 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         println("Request bank: ", requestBank)
     end
     if displayPlots
-        display(createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge",nFixed=scenario.nFixed))
+        p = createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge",nFixed=scenario.nFixed)
+        display(p)
+        savefig(p, outPutFileFolder*"/final_solution_gantt.png")
         display(plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge"))
         display(createGantChartOfSolutionOnlineComparison(finalSolution, initialSolution,"Comparison between initial and final solution"))
+    end
+
+    if ALNS == false
+        servicedRequests = []
+        for(vehicle, schedule) in enumerate(finalSolution.vehicleSchedules)
+            for activity in schedule.route
+                if activity.activity.activityType == PICKUP
+                    push!(servicedRequests,activity.activity.id)
+                end
+            end
+        end
+        ids = [req.id for req in scenario.requests]
+        requestBank = setdiff(ids,servicedRequests)
     end
 
     # Print summary 
@@ -950,6 +969,8 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         @test msg == ""
         @test feasible == true
     end
+
+    updateIds!(finalSolution,scenario.nFixed,scenario.nExpected)
 
     return finalSolution, requestBank
 

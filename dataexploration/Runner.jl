@@ -20,13 +20,13 @@ global GENERATE_VEHICLES = false
 #==
 # Constants for data generation 
 ==#
-global DoD = 0.4 # Degree of dynamism
+global DoD = 0.6 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
-global callBuffer = 30 # 2 hours buffer
+global callBuffer = 60 # 2 hours buffer
 global nData = 10
-global nRequestList = [20,100,300,500]
-global MAX_DELAY = 45 # TODO Astrid I just put something
-global earliestBuffer = 60
+global nRequestList = 300#[20,100,300,500]
+global MAX_DELAY = 60 # TODO Astrid I just put something
+global earliestBuffer = 2*60
 
 #==
 # Constant for vehicle generation  
@@ -36,10 +36,10 @@ global GammaList = [0.5,0.7]
 
 # TODO: burde vi bare have flad cost ? vi er jo ligeglade med cost faktisk 
 global shifts = Dict(
-    "Morning"    => Dict("TimeWindow" => [6*60, 12*60], "cost" => 2.0, "nVehicles" => 0, "y" => []),
+    "Morning"    => Dict("TimeWindow" => [6*60, 12*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
     "Noon"       => Dict("TimeWindow" => [10*60, 16*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
-    "Afternoon"  => Dict("TimeWindow" => [14*60, 20*60], "cost" => 3.0, "nVehicles" => 0, "y" => []),
-    "Evening"    => Dict("TimeWindow" => [18*60, 24*60], "cost" => 4.0, "nVehicles" => 0, "y" => [])
+    "Afternoon"  => Dict("TimeWindow" => [14*60, 20*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
+    "Evening"    => Dict("TimeWindow" => [18*60, 24*60], "cost" => 1.0, "nVehicles" => 0, "y" => [])
 )
 
 
