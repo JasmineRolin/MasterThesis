@@ -24,7 +24,7 @@ global DoD = 0.6 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 60 # 2 hours buffer
 global nData = 10
-global nRequestList = 300#[20,100,300,500]
+global nRequestList = [20,100,300,500]
 global MAX_DELAY = 60 # TODO Astrid I just put something
 global earliestBuffer = 2*60
 

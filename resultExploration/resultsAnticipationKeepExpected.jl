@@ -12,19 +12,11 @@ using CSV
  
 function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, run::String, resultType::String, i::Int)
 
-#n = 20 
-#nExpectedPercentage = 0.4
-#gamma = 0.5
-#date = "2025-05-23"
-#run = ""
-#resultType = "AnticipationKeepExpected"
-#i = 1
-
     dataset = "DoD 60 Calltime60-120"
     vehiclesFile = string("Data/Konsentra/",dataset,"/",n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/ParametersShortCallTime2.csv"
     alnsParameters = "tests/resources/ALNSParameters_offlineAnticipation.json"
-    outPutFolder = string("resultExploration/results/",date,"/",run,"/",resultType,"/",n)
+    outPutFolder = string("resultExploration/results/",date,"/",resultType,"/",n,"/",run)
     outputFiles = Vector{String}()
     gridFile = string("Data/Konsentra/grid.json")
 
