@@ -1,6 +1,6 @@
 module OnlineSolutionResults
 
-using Plots, JSON, DataFrames
+using Plots, JSON, DataFrames, Random
 using Plots.PlotMeasures
 using domain, utils 
 
@@ -216,6 +216,8 @@ function plotRoutesOnline(solution::Solution,scenario::Scenario,requestBank::Vec
     # Plot routes 
     palette_func = palette(:rainbow, length(solution.vehicleSchedules))
     colors = [palette_func[i] for i in 1:length(solution.vehicleSchedules)]
+    colors = shuffle(colors)
+
     arrow_scale = 0.8 
     for (i, vehicleSchedule) in enumerate(solution.vehicleSchedules)
         routeLats = [v.activity.location.lat for v in vehicleSchedule.route]

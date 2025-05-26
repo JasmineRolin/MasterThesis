@@ -24,7 +24,7 @@ global DoD = 1.0 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 5 # 2 hours buffer
 global nData = 20
-global nRequestList = [100]#,50,100,300,500]
+global nRequestList = [300]#,50,100,300,500]
 global MAX_DELAY = 15 # TODO Astrid I just put something
 global earliestBuffer = 15
 global ONLY_PICKUP = true
@@ -37,10 +37,10 @@ global GammaList = [0.7]#,0.7]
 
 # TODO: burde vi bare have flad cost ? vi er jo ligeglade med cost faktisk 
 global shifts = Dict(
-    "Morning"    => Dict("TimeWindow" => [6*60, 12*60], "cost" => 2.0, "nVehicles" => 0, "y" => []),
+    "Morning"    => Dict("TimeWindow" => [6*60, 12*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
     "Noon"       => Dict("TimeWindow" => [10*60, 16*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
-    "Afternoon"  => Dict("TimeWindow" => [14*60, 20*60], "cost" => 3.0, "nVehicles" => 0, "y" => []),
-    "Evening"    => Dict("TimeWindow" => [18*60, 24*60], "cost" => 4.0, "nVehicles" => 0, "y" => [])
+    "Afternoon"  => Dict("TimeWindow" => [14*60, 20*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
+    "Evening"    => Dict("TimeWindow" => [18*60, 24*60], "cost" => 1.0, "nVehicles" => 0, "y" => [])
 )
 
 

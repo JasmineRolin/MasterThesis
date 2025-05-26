@@ -644,9 +644,11 @@ function canActivityBeInserted(firstActivity::Activity,currentActivity::Activity
     currentActivityEndTime = currentActivity.timeWindow.endTime
     activityType = currentActivity.activityType
 
-   # println("arrivalAtCurrentActivity: ", arrivalAtCurrentActivity)
-   # println("arrivalAtCurrentActivity - maximumShiftBackward <= currentActivityEndTime: ",arrivalAtCurrentActivity - maximumShiftBackward <= currentActivityEndTime)
-
+    # println("activity: ", currentActivity.id)
+    # println("arrivalAtCurrentActivity: ", arrivalAtCurrentActivity)
+    # println("arrivalAtCurrentActivity - maximumShiftBackward <= currentActivityEndTime: ",arrivalAtCurrentActivity - maximumShiftBackward <= currentActivityEndTime)
+    # println("currentActivityStartTime <= arrivalAtCurrentActivity <= currentActivityEndTime: ",currentActivityStartTime <= arrivalAtCurrentActivity <= currentActivityEndTime
+    # )
     # CHeck if we can insert it directly
     if currentActivityStartTime <= arrivalAtCurrentActivity <= currentActivityEndTime
         # Service times for current activity 
@@ -730,6 +732,7 @@ function canActivityBeInserted(firstActivity::Activity,currentActivity::Activity
 
         return true, maximumShiftBackward, maximumShiftForward
     else
+       # println("Cannot insert activity: ", currentActivity.id)
         return false, -1, -1
     end
 end

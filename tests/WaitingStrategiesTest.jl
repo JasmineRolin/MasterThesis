@@ -49,20 +49,20 @@ print("\033c")
 # score = probabilityGrid ./ (activeVehiclesInPeriod .+ 1) ./ driveTimeMatrix
 # Use historic data 
 # grid = 10 
-#  true is a bit better than false
+# better 
 
 
 # Receive command line arguments 
-n = 100
+n = 50
 gridSize = 10
 
 gamma = 0.7
-i = 2
+i = 1
 #relocateVehicles = false
 startFileIndex = 1
 endFileIndex = 20
 nPeriods = 48
-displayPlots = false
+displayPlots = true
 
 # Find period length 
 maximumTime = 24*60 
@@ -120,6 +120,9 @@ println(msg)
 # pickUpIdx = 1
 # dropOffIdx = 1 
 # feas, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd, _, _, _ = checkFeasibilityOfInsertionAtPosition(r, schedule,pickUpIdx,dropOffIdx,scenario)
+
+
+
 if displayPlots && !isdir("tests/WaitingPlots/false")
     mkpath("tests/WaitingPlots/false")
 end
@@ -137,21 +140,21 @@ feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
 @test feasible == true
 println(msg)
 
-#============================================================================#
-alnsParameters = "tests/resources/ALNSParameters3.json"
+# #============================================================================#
+# alnsParameters = "tests/resources/ALNSParameters3.json"
 
-destroyMethods = Vector{GenericMethod}()
-addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
-addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
-addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
+# destroyMethods = Vector{GenericMethod}()
+# addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
+# addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
+# addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
 
-# Choose repair methods
-repairMethods = Vector{GenericMethod}()
-addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
-addMethod!(repairMethods,"regretInsertion",regretInsertion)
+# # Choose repair methods
+# repairMethods = Vector{GenericMethod}()
+# addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
+# addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
-initialSolution, requestBankALNS = simpleConstruction(scenario,scenario.requests)
-finalSolution,requestBankALNS,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBankALNS,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=false,stage="Offline")
+# initialSolution, requestBankALNS = simpleConstruction(scenario,scenario.requests)
+# finalSolution,requestBankALNS,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBankALNS,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=false,stage="Offline")
 
 
 #println("Request bank: ", sort(requestBank), " with size: ", length(requestBank))

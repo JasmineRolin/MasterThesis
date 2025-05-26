@@ -31,6 +31,8 @@ function main()
     endFileIndex = parse(Int,ARGS[7])
     nPeriods = parse(Int,ARGS[8])
 
+    displayPlots = true
+
     # Find period length 
     maximumTime = 24*60 
     periodLength = Int(maximumTime / nPeriods)
@@ -70,7 +72,7 @@ function main()
     println("\t nOfflineRequests: ",length(scenario.offlineRequests))
 
     # Simulate scenario 
-    solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = false,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles,nTimePeriods=nPeriods,periodLength=periodLength);
+    solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles,nTimePeriods=nPeriods,periodLength=periodLength);
 
     state = State(solution,scenario.onlineRequests[end],0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)

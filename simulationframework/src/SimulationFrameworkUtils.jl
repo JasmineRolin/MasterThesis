@@ -273,7 +273,7 @@ function updateLastWaitingActivityInRoute!(time::Array{Int,2},distance::Array{Fl
 end
 
 function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{Float64,2},nRequests::Int,grid::Grid,depotLocations::Dict{Tuple{Int,Int},Location},vehicleBalance::Array{Int,3},activeVehiclesPerCell::Array{Int,3},probabilityGrid::Array{Float64,2},realisedDemand::Array{Int,3},predictedDemand::Array{Float64,3},
-    currentSolution::Solution,schedule::VehicleSchedule,currentSchedule::VehicleSchedule,finalSolution::Solution,nTimePeriods::Int,periodLength::Int,vehicleDemand::Array{Int,3},displayPlots::Bool)
+    currentSolution::Solution,schedule::VehicleSchedule,currentSchedule::VehicleSchedule,finalSolution::Solution,nTimePeriods::Int,periodLength::Int,vehicleDemand::Array{Int,3},displayPlots::Bool,scenarioName::String)
     
     vehicle = schedule.vehicle
     currentRouteLength = length(currentSchedule.route)
@@ -340,7 +340,9 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
         previousGridCell = determineGridCell(previousWaitingLocation,grid)
 
         if displayPlots
-            display(plotRelocation(probabilityGrid,score,predictedDemand,activeVehiclesPerCell,realisedDemand,vehicleBalance,gridCell,previousGridCell,period,periodLength,vehicle.id,vehicleDemand))
+            p = plotRelocation(probabilityGrid,score,predictedDemand,activeVehiclesPerCell,realisedDemand,vehicleBalance,gridCell,previousGridCell,period,periodLength,vehicle.id,vehicleDemand)
+            display(p)
+            savefig(p,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"/CurrentSolutionTime"*string(event.callTime)*"RELOCATION.png")
         end
 
         # Update vehicle balance
@@ -391,7 +393,7 @@ end
 #------
 function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nRequests::Int,grid::Grid,depotLocations::Dict{Tuple{Int,Int},Location},
     vehicleBalance::Array{Int,3},activeVehiclesPerCell::Array{Int,3},probabilityGrid::Array{Float64,2},realisedDemand::Array{Int,3},predictedDemand::Array{Float64,3},
-    currentState::State,solution::Solution,finalSolution::Solution,currentTime::Int,nTimePeriods::Int,periodLength::Int,vehicleDemand::Array{Int,3},displayPlots::Bool)
+    currentState::State,solution::Solution,finalSolution::Solution,currentTime::Int,nTimePeriods::Int,periodLength::Int,vehicleDemand::Array{Int,3},displayPlots::Bool,scenarioName::String)
    
     # Retrieve vehicle schedules in solution 
     vehicleSchedules = solution.vehicleSchedules
@@ -520,7 +522,7 @@ function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nReques
 
         # Relocate waiting activity 
         relocateWaitingActivityBeforeDepot!(time,distance,nRequests,grid,depotLocations,vehicleBalance,activeVehiclesPerCell,probabilityGrid,realisedDemand,predictedDemand,
-        currentState.solution,schedule,currentSchedule,finalSolution,nTimePeriods,periodLength,vehicleDemand,displayPlots)
+        currentState.solution,schedule,currentSchedule,finalSolution,nTimePeriods,periodLength,vehicleDemand,displayPlots,scenarioName)
 
     end 
 end
@@ -620,7 +622,7 @@ end
 # ------
 # Function to determine current state
 # ------
-function determineCurrentState(solution::Solution,event::Event,finalSolution::Solution,scenario::Scenario,visitedRoute::Dict{Int,Dict{String,Int}},grid::Grid,depotLocations::Dict{Tuple{Int,Int},Location},predictedDemand::Array{Float64,3},probabilityGrid::Array{Float64,2};relocateVehicles::Bool=false,nTimePeriods::Int=24,periodLength::Int=60,gamma::Float64=0.5,displayPlots::Bool=false)
+function determineCurrentState(solution::Solution,event::Event,finalSolution::Solution,scenario::Scenario,visitedRoute::Dict{Int,Dict{String,Int}},grid::Grid,depotLocations::Dict{Tuple{Int,Int},Location},predictedDemand::Array{Float64,3},probabilityGrid::Array{Float64,2},scenarioName::String;relocateVehicles::Bool=false,nTimePeriods::Int=24,periodLength::Int=60,gamma::Float64=0.5,displayPlots::Bool=false)
     nRequests = length(scenario.requests)
     time = scenario.time
     distance = scenario.distance
@@ -698,7 +700,7 @@ function determineCurrentState(solution::Solution,event::Event,finalSolution::So
 
         relocateVehicles!(time,distance,nRequests,grid,depotLocations,
         vehicleBalance,activeVehiclesPerCell,probabilityGrid,realisedDemand,predictedDemand,
-        currentState,solution,finalSolution,currentTime,nTimePeriods,periodLength,vehicleDemand,displayPlots)
+        currentState,solution,finalSolution,currentTime,nTimePeriods,periodLength,vehicleDemand,displayPlots,scenarioName)
     end
 
     return currentState, finalSolution
@@ -877,7 +879,7 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         println("----------------")
 
         # Determine current state
-        currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario,visitedRoute,grid,depotLocations,predictedDemand,probabilityGrid,relocateVehicles=relocateVehicles,gamma=gamma,displayPlots=displayPlots,nTimePeriods=nTimePeriods,periodLength=periodLength)
+        currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario,visitedRoute,grid,depotLocations,predictedDemand,probabilityGrid,scenarioName,relocateVehicles=relocateVehicles,gamma=gamma,displayPlots=displayPlots,nTimePeriods=nTimePeriods,periodLength=periodLength)
         oldSolution = copySolution(currentState.solution)
 
         if printResults
@@ -947,8 +949,8 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
             p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime))
             display(p1)
             display(p2)
-            savefig(p1,"tests/WaitingPlots/"*string(relocateVehicles)*"/CurrentSolutionTime"*string(event.callTime)*".png")
-            savefig(p2,"tests/WaitingPlots/"*string(relocateVehicles)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
+            savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"/CurrentSolutionTime"*string(event.callTime)*".png")
+            savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
 
         elseif displayPlots
            #display(createGantChartOfSolutionOnlineComparison(solution, oldSolution,"Comparison Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime))
@@ -959,15 +961,15 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
            p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime))
            display(p1)
            display(p2)
-           savefig(p1,"tests/WaitingPlots/"*string(relocateVehicles)*"/CurrentSolutionTime"*string(event.callTime)*".png")
-           savefig(p2,"tests/WaitingPlots/"*string(relocateVehicles)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
+           savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"/CurrentSolutionTime"*string(event.callTime)*".png")
+           savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
         end
 
         # TODO: jas 
-        # if event.id == 49
+        # if event.id == 37
         #     # Update final solution with last state 
         #     mergeCurrentStateIntoFinalSolution!(finalSolution,solution,scenario)
-        #     return finalSolution, requestBank
+        #     return finalSolution, requestBank, visitedRoute
         # end
     end
 
@@ -1002,8 +1004,8 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         p2  =plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge")
         display(p1)
         display(p2)
-        savefig(p1,"tests/WaitingPlots/"*string(relocateVehicles)*"/FinalSolution.png")
-        savefig(p2,"tests/WaitingPlots/"*string(relocateVehicles)*"/FinalSolutionRoutes.png")
+        savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"/FinalSolution.png")
+        savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"/FinalSolutionRoutes.png")
     end
 
     # Print summary 
