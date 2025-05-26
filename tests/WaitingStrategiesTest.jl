@@ -108,7 +108,7 @@ if displayPlots && isdir("tests/WaitingPlots/true")
         rm(file; force=true, recursive=true)
     end
 end
-solutionTrue, requestBankTrue = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength);
+solutionTrue, requestBankTrue = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName);
 
 state = State(solutionTrue,scenario.onlineRequests[end],0)
 feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
@@ -131,7 +131,7 @@ if displayPlots && isdir("tests/WaitingPlots/false")
         rm(file; force=true, recursive=true)
     end
 end
-solutionFalse, requestBankFalse = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=false,nTimePeriods=nPeriods,periodLength=periodLength);
+solutionFalse, requestBankFalse = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=false,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName);
 
 state = State(solutionFalse,scenario.onlineRequests[end],0)
 feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
