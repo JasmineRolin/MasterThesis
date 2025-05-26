@@ -307,17 +307,19 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
         println("No active vehicle in cell: ", previousGridCell, " for vehicle ",vehicle.id," in period ",period)
     end
 
-    # Find waiting location
-    # TODO: jas 
-   # waitingLocationId,waitingLocation,gridCell = determineWaitingLocation(time,depotLocations,grid,nRequests,vehicleBalance,period,previousWaitingLocationId)
-    waitingLocationId,waitingLocation,gridCell = determineWaitingLocation2(nRequests,depotLocations,grid,probabilityGrid,activeVehiclesPerCell,period)
-
     # Determine previous activity 
     if currentRouteLength == 2 # If only waiting and depot left in current schedule 
         activityBeforeWaiting = finalSchedule.route[end]
     else
         activityBeforeWaiting = currentSchedule.route[waitingIdx-1]
     end
+
+    # Find waiting location
+    # TODO: jas 
+    # waitingLocationId,waitingLocation,gridCell = determineWaitingLocation(time,depotLocations,grid,nRequests,vehicleBalance,period,previousWaitingLocationId)
+    activityBeforeWaitingId = activityBeforeWaiting.activity.id
+    waitingLocationId,waitingLocation,gridCell,score = determineWaitingLocation2(time,nRequests,depotLocations,grid,probabilityGrid,activeVehiclesPerCell,period,previousGridCell,previousWaitingLocationId,activityBeforeWaitingId)
+
 
     println("Waiting location: ",waitingLocationId, ", period: ",period, ", relocation time: ",relocationTime) 
     tttt = activityBeforeWaiting.endOfServiceTime + time[activityBeforeWaiting.activity.id,waitingLocationId] + time[waitingLocationId,vehicle.depotId]
@@ -338,7 +340,7 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
         previousGridCell = determineGridCell(previousWaitingLocation,grid)
 
         if displayPlots
-            display(plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,vehicleBalance,gridCell,previousGridCell,period,periodLength,vehicle.id,vehicleDemand))
+            display(plotRelocation(probabilityGrid,score,predictedDemand,activeVehiclesPerCell,realisedDemand,vehicleBalance,gridCell,previousGridCell,period,periodLength,vehicle.id,vehicleDemand))
         end
 
         # Update vehicle balance
@@ -618,7 +620,7 @@ end
 # ------
 # Function to determine current state
 # ------
-function determineCurrentState(solution::Solution,event::Event,finalSolution::Solution,scenario::Scenario,visitedRoute::Dict{Int,Dict{String,Int}},grid::Grid,depotLocations::Dict{Tuple{Int,Int},Location},predictedDemand::Array{Float64,3};relocateVehicles::Bool=false,nTimePeriods::Int=24,periodLength::Int=60,gamma::Float64=0.5,displayPlots::Bool=false)
+function determineCurrentState(solution::Solution,event::Event,finalSolution::Solution,scenario::Scenario,visitedRoute::Dict{Int,Dict{String,Int}},grid::Grid,depotLocations::Dict{Tuple{Int,Int},Location},predictedDemand::Array{Float64,3},probabilityGrid::Array{Float64,2};relocateVehicles::Bool=false,nTimePeriods::Int=24,periodLength::Int=60,gamma::Float64=0.5,displayPlots::Bool=false)
     nRequests = length(scenario.requests)
     time = scenario.time
     distance = scenario.distance
@@ -692,7 +694,7 @@ function determineCurrentState(solution::Solution,event::Event,finalSolution::So
         vehicleBalance,activeVehiclesPerCell,realisedDemand, vehicleDemand = determineVehicleBalancePrCell(grid,gamma,predictedDemand,currentState.solution,nTimePeriods,periodLength)
 
         # TODO: jas 
-        probabilityGrid = getProbabilityGrid(scenario)
+       # probabilityGrid = getProbabilityGrid(scenario,histori)
 
         relocateVehicles!(time,distance,nRequests,grid,depotLocations,
         vehicleBalance,activeVehiclesPerCell,probabilityGrid,realisedDemand,predictedDemand,
@@ -734,8 +736,12 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
     # Generate predicted demand
     if relocateVehicles
         predictedDemand = generatePredictedDemand(grid, historicRequestFiles,nTimePeriods,periodLength)
+
+        # TODO: jas 
+        probabilityGrid = getProbabilityGrid(scenario,historicRequestFiles)
     else 
         predictedDemand = zeros(Float64,0,0,0)
+        probabilityGrid = zeros(Float64,0,0)
     end
 
     # Choose destroy methods
@@ -871,7 +877,7 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         println("----------------")
 
         # Determine current state
-        currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario,visitedRoute,grid,depotLocations,predictedDemand,relocateVehicles=relocateVehicles,gamma=gamma,displayPlots=displayPlots,nTimePeriods=nTimePeriods,periodLength=periodLength)
+        currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario,visitedRoute,grid,depotLocations,predictedDemand,probabilityGrid,relocateVehicles=relocateVehicles,gamma=gamma,displayPlots=displayPlots,nTimePeriods=nTimePeriods,periodLength=periodLength)
         oldSolution = copySolution(currentState.solution)
 
         if printResults

@@ -36,6 +36,47 @@ function getProbabilityGrid(scenario::Scenario)
     return probabilitiesGrid
 end
 
+
+function getProbabilityGrid(scenario::Scenario,historicRequestFiles::Vector{String})
+
+    nRows = scenario.grid.nRows
+    nCols = scenario.grid.nCols
+    minLat = scenario.grid.minLat
+    minLong = scenario.grid.minLong
+    latStep = scenario.grid.latStep
+    longStep = scenario.grid.longStep
+
+    
+    demandGrid = zeros(Float64,nRows, nCols)
+
+    for requestFile in historicRequestFiles
+        df = CSV.read(requestFile, DataFrame)
+
+        for row in eachrow(df)
+            lat = row.pickup_latitude
+            lon = row.pickup_longitude
+
+            # Count demand as +1 for pickup and -1 for dropoff
+            if row.request_type == 0
+                timeVal = row.request_time
+            else 
+                timeVal = row.request_time- row.direct_drive_time
+            end
+
+            # Determine grid cell
+            rowIdx, colIdx = determineGridCell(lat, lon, minLat, minLong, nRows, nCols, latStep, longStep)
+
+            # Update demand grid 
+            demandGrid[rowIdx, colIdx] += 1
+        end
+    end
+
+    nRequests = sum(demandGrid)
+    probabilitiesGrid = demandGrid ./ nRequests
+    
+    return probabilitiesGrid
+end
+
 #==
  Method to load location distribution data
 ==#

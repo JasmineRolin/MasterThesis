@@ -17,15 +17,50 @@ using Plots.PlotMeasures
 
 print("\033c")
 
+# Results 
+
+# 100/300 
+# Gamma = 0.7
+# time from previous activity 
+# choose max score 
+# almost same results (1 diff )
+# Seems like the solution could not be better? 
+#     score = probabilityGrid ./ (activeVehiclesInPeriod .+ 1) ./ driveTimeMatrix
+# Use historic data 
+# grid = 10 
+
+
+# 100 
+# cal buffer = 5 min 
+# Gamma = 0.5 
+# time from previous activity 
+# choose max score 
+# score = probabilityGrid ./ (activeVehiclesInPeriod .+ 1) ./ driveTimeMatrix
+# Use historic data 
+# grid = 10 
+#  true is a bit better than false
+
+
+# 100 
+# cal buffer = 5 min 
+# Gamma = 0.7
+# time from previous activity 
+# choose max score 
+# score = probabilityGrid ./ (activeVehiclesInPeriod .+ 1) ./ driveTimeMatrix
+# Use historic data 
+# grid = 10 
+#  true is a bit better than false
+
+
 # Receive command line arguments 
 n = 100
-gridSize = 15
+gridSize = 10
 
-gamma = 0.5
-i = 1
+gamma = 0.7
+i = 2
 #relocateVehicles = false
 startFileIndex = 1
-endFileIndex = 40
+endFileIndex = 20
 nPeriods = 48
 displayPlots = false
 
@@ -58,10 +93,21 @@ scenarioName = string("Gen_Data_",n,"_",gamma,"_",i)
 
 # Read instance 
 scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile,gridFile)
+pScen = plotRequestsAndVehiclesWait(scenario,scenario.grid)
+display(pScen)
+savefig(pScen,"tests/WaitingPlots/RequestsAndVehicles_$(n)_$(i)_$(gamma).png")
 
 println("\t nOfflineRequests: ",length(scenario.offlineRequests))
 
 # Simulate scenario 
+if displayPlots && !isdir("tests/WaitingPlots/true")
+    mkpath("tests/WaitingPlots/true")
+end
+if displayPlots && isdir("tests/WaitingPlots/true")
+    for file in readdir("tests/WaitingPlots/true"; join=true)
+        rm(file; force=true, recursive=true)
+    end
+end
 solutionTrue, requestBankTrue = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength);
 
 state = State(solutionTrue,scenario.onlineRequests[end],0)
@@ -74,7 +120,14 @@ println(msg)
 # pickUpIdx = 1
 # dropOffIdx = 1 
 # feas, newStartOfServiceTimes, newEndOfServiceTimes,waitingActivitiesToDelete, totalCost, totalDistance, totalIdleTime, totalTime, waitingActivitiesToAdd, _, _, _ = checkFeasibilityOfInsertionAtPosition(r, schedule,pickUpIdx,dropOffIdx,scenario)
-
+if displayPlots && !isdir("tests/WaitingPlots/false")
+    mkpath("tests/WaitingPlots/false")
+end
+if displayPlots && isdir("tests/WaitingPlots/false")
+    for file in readdir("tests/WaitingPlots/false"; join=true)
+        rm(file; force=true, recursive=true)
+    end
+end
 solutionFalse, requestBankFalse = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=false,nTimePeriods=nPeriods,periodLength=periodLength);
 
 state = State(solutionFalse,scenario.onlineRequests[end],0)

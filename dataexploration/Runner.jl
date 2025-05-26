@@ -22,18 +22,18 @@ global GENERATE_VEHICLES = false
 ==#
 global DoD = 1.0 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
-global callBuffer = 15 # 2 hours buffer
-global nData = 10
+global callBuffer = 5 # 2 hours buffer
+global nData = 20
 global nRequestList = [100]#,50,100,300,500]
 global MAX_DELAY = 15 # TODO Astrid I just put something
-global earliestBuffer = 30
+global earliestBuffer = 15
 global ONLY_PICKUP = true
 
 #==
 # Constant for vehicle generation  
 ==#
 global vehicleCapacity = 4
-global GammaList = [0.5]#,0.7] 
+global GammaList = [0.7]#,0.7] 
 
 # TODO: burde vi bare have flad cost ? vi er jo ligeglade med cost faktisk 
 global shifts = Dict(
@@ -55,8 +55,8 @@ global MAX_LAT = 60.7
 global MIN_LAT = 59.1
 global MAX_LONG = 12.4
 global MIN_LONG = 9.9
-global NUM_ROWS = 15
-global NUM_COLS = 15
+global NUM_ROWS = 10
+global NUM_COLS = 10
 
 #==
 # Common 
