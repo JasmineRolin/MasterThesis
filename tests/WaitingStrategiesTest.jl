@@ -53,11 +53,11 @@ print("\033c")
 
 
 # Receive command line arguments 
-n = 20
+n = 100
 gridSize = 10
 
 gamma = 0.7
-i = 1
+i = 3
 nHistoricRequestFiles = 20
 nPeriods = 48
 displayPlots = false
