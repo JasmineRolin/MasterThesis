@@ -23,7 +23,8 @@ function ALNSResult(specificationsFileName::String,KPIFileName::String,ALNSOutpu
         # Destroy weight plot
         destroyWeightPlot = createDestroyWeightPlot(ALNSOutput,configuration,scenario.name)
 
-        weightPlot = plot(repairWeightPlot, destroyWeightPlot, layout=layout=(2,1), size=(2500, 2500),
+        weightPlot = plot(repairWeightPlot, destroyWeightPlot, layout=layout=(2,1),guidefont=font(24),
+                tickfont=font(18),legendfont=font(18),titlefont=font(26), size=(2500, 2500),
                         bottom_margin=12mm, left_margin=12mm,
                         top_margin=5mm, right_margin=5mm)
 
@@ -174,7 +175,10 @@ function createRepairWeightPlot(df::DataFrame,configuration::ALNSConfiguration,s
     rw_columns = filter(col -> startswith(string(col), "RW"), names(df))
 
     # Create a plot
-    p = plot(title=string(scenarioName," - Repair Weights Over Iterations"), xlabel="Iteration", ylabel="RW",size=(2000,1000))
+    p = plot(title=string(scenarioName," - Repair Weights Over Iterations"), xlabel="Iteration", ylabel="RW",guidefont=font(24),
+    tickfont=font(18),
+    legendfont=font(18),
+    titlefont=font(26),size=(2000,1000))
 
     # Plot each RW column
     for (idx,col) in enumerate(rw_columns)
@@ -200,7 +204,10 @@ function createDestroyWeightPlot(df::DataFrame,configuration::ALNSConfiguration,
     rw_columns = filter(col -> startswith(string(col), "DW"), names(df))
 
     # Create a plot
-    p = plot(title=string(scenarioName," - Destroy Weights Over Iterations"), xlabel="Iteration", ylabel="DW",size=(2000,1000))
+    p = plot(title=string(scenarioName," - Destroy Weights Over Iterations"), xlabel="Iteration", ylabel="DW",guidefont=font(24),
+    tickfont=font(18),
+    legendfont=font(18),
+    titlefont=font(26),size=(2000,1000))
 
     # Plot each RW column
     for (idx,col) in enumerate(rw_columns)

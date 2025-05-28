@@ -186,7 +186,7 @@ end
 
 # #@testset "Run all generated data sets " begin
     print("\033c")
-    n = 100 # Number of requests in scenario - 20, 100, 300 or 500 
+    n = 500 # Number of requests in scenario - 20, 100, 300 or 500 
     i = 3 # Scenario number - 1:10 
     gamma = 0.7 # Vehicles 
 
@@ -195,7 +195,7 @@ end
     folder = "DoD 40/"
     vehiclesFile = string("Data/Konsentra/",folder,n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"
-    alnsParameters = "tests/resources/ALNSParameters_Article.json"
+    alnsParameters = "tests/resources/ALNSParameters_Offline.json"
 
     # Set both true to see plots 
     displayPlots = true

@@ -22,7 +22,7 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
 
     if saveOutPut
         outputFile = open(fileName, "w")
-        write(outputFile, "Iteration,TotalCost,nRequestBank,IsAccepted,IsImproved,IsNewBest,DM,RM," *
+        write(outputFile, "Iteration,TotalCost,nRequestBank,p,delta,IsAccepted,IsImproved,IsNewBest,DM,RM," *
                           join(["DW$i" for i in 1:nDestroy], ",") * "," *
                           join(["RW$i" for i in 1:nRepair], ",") *
                           join(["nD$i" for i in 1:nDestroy], ",") * "," *
@@ -115,6 +115,8 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
             write(outputFile, string(iteration), ",",
                 string(trialState.currentSolution.totalCost), ",",
                 string(length(trialState.requestBank)), ",",
+                string(p), ",",
+                string(delta), ",",
                 string(isAccepted), ",",
                 string(isImproved), ",",
                 string(isNewBest), ",",
