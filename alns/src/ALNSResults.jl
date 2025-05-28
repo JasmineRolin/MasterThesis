@@ -127,13 +127,18 @@ function createCostPlot(df::DataFrame, scenarioName::String)
               xlabel="Iteration",
               ylabel="Total Cost",
               title=string(scenarioName, " - ALNS Total Cost Over Iterations"),
-              legend=:topright)
+              legend=:topright,
+              size=(2500, 1250),
+              guidefont=font(24),
+                tickfont=font(18),
+                legendfont=font(18),
+                titlefont=font(26))
 
     scatter!(p1, iterations[onlyAccepted], total_cost[onlyAccepted],
-             markershape=:circle, color=:yellow, label="Accepted",markerstrokewidth=0)
+             markershape=:circle, color=:yellow, label="Accepted",markersize=9,markerstrokewidth=0)
 
     scatter!(p1, iterations[onlyImproved], total_cost[onlyImproved],
-             markershape=:circle, color=:orange, label="Improved",markerstrokewidth=0)
+             markershape=:circle, color=:orange, label="Improved",markersize=9,markerstrokewidth=0)
 
     scatter!(p1, iterations[isNewBest], total_cost[isNewBest],
              markershape=:star5, color=:green, label="New Best", markersize=10,markerstrokewidth=0)
@@ -152,7 +157,7 @@ function createCostPlot(df::DataFrame, scenarioName::String)
                      bottom_margin=12mm, left_margin=12mm,
                      top_margin=5mm, right_margin=5mm)
 
-    return finalPlot
+    return p1
 end
 
 

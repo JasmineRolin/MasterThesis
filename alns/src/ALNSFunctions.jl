@@ -184,16 +184,6 @@ end
 #==
  Method to check acceptance of new solution using simulated annealing acceptance criterion 
 ==#
-function accept(tempature::Float64,delta::Float64)
-    delta = Float64(delta)
-    p = exp(-delta/tempature)
-    if rand() < p 
-        return true,p,delta 
-    end
-
-    return false,p,delta
-end
-
 function accept(timeLimit::Float64,startTime::Float64,trialCost::Float64,bestCost::Float64)
     
     startThreshold = 1
