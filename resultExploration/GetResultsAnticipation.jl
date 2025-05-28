@@ -1,12 +1,12 @@
 using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures
 
-methodListBase = ["BaseCase", "AnticipationKeepExpected","InHindsight"]
+methodListBase = ["BaseCase","InHindsight"]
 nRequestList = [20,100,300,500]
 runList = [1,2,3,4,5]
-gamma = 0.5
+gamma = 0.7
 anticipationDegrees = [0.6]
-date = "2025-05-26_v1"
+date = "2025-05-28_original_0.7"
 
 #==============================#
 # Create method list 
