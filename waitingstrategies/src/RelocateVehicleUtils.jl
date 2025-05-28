@@ -36,19 +36,6 @@ function determineWaitingLocation2(time::Array{Int,2},nRequests::Int,depotLocati
     maxRowIdx = argMaxIdx[1]
     maxColIdx = argMaxIdx[2]
 
-    # TODO: jas - delete when tested 
-    # Flatten score matrix
-    # flatScores = vec(score)
-    # weights = Weights(flatScores)
-
-    # Sample a linear index based on weights
-    # sampledIdx = sample(1:length(flatScores), weights)
-
-    # Convert linear index back to row and column
-    # nRows, nCols = size(score)
-    # maxRowIdx = ((sampledIdx - 1) ÷ nCols) + 1
-    # maxColIdx = ((sampledIdx - 1) % nCols) + 1
-
     # Find depot location
     depotId = findDepotIdFromGridCell(grid, nRequests, (maxRowIdx, maxColIdx))
 
@@ -92,11 +79,6 @@ function determineWaitingLocation(time::Array{Int,2},depotLocations::Dict{Tuple{
     depotId = depotIds[minTimeIdx]
     println("Depot id with minimum drive time: ", depotId)
 
-    # TODO: jas 
-    # Relocate to center 
-    # minRowIdx = Int(ceil(grid.nRows/2))
-    # minColIdx = Int(ceil(grid.nRows/2))
-    # depotId = findDepotIdFromGridCell(grid, nRequests, (minRowIdx, minColIdx))
 
     return depotId,depotLocations[(minRowIdx,minColIdx)],(minRowIdx,minColIdx)
 end

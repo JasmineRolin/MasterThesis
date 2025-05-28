@@ -1,25 +1,27 @@
 #!/bin/bash
 
-# TODO: change i and endfile!!!
-
+# Constants
 gamma=0.7
 nPeriods=48
 gridSize=10
 
 nRequestsList=(20 100 300 500) 
-relocateOptions=(true false)
+relocateOptions=("true false" "true true" "false false")  # Pair values as strings
 numRuns=3  
 numHistoricRequestFiles=20   
 numData=10   
 
 mkdir -p submitfiles/generated_jobs
 for nRequests in "${nRequestsList[@]}"; do
-    for relocateVehicles in "${relocateOptions[@]}"; do
-            for run in $(seq 1 $numRuns); do
-                job_name="Sim_Waiting_${nRequests}_${relocateVehicles}_${run}"
-                job_file="submitfiles/generated_jobs/${job_name}.sh"
+    for optionPair in "${relocateOptions[@]}"; do
+        relocateVehicles=$(echo $optionPair | cut -d' ' -f1)
+        relocateWithDemand=$(echo $optionPair | cut -d' ' -f2)
 
-      cat > "$job_file" <<EOF
+        for run in $(seq 1 $numRuns); do
+            job_name="Sim_Waiting_${nRequests}_${relocateVehicles}_${relocateWithDemand}_${run}"
+            job_file="submitfiles/generated_jobs/${job_name}.sh"
+
+            cat > "$job_file" <<EOF
 #!/bin/sh
 #BSUB -J "${job_name}"
 #BSUB -o submitfiles/output/output_%J.out
@@ -49,17 +51,14 @@ Pkg.resolve();
 '
 
 for i in \$(seq 1 ${numData}); do
-    julia --project=. runfiles/RunSimulationWaiting.jl "${nRequests}" "${gamma}" "\${i}" "${relocateVehicles}" "${gridSize}" "${numHistoricRequestFiles}" "${nPeriods}" "${run}" &
+    julia --project=. runfiles/RunSimulationWaiting.jl "${nRequests}" "${gamma}" "\${i}" "${relocateVehicles}" "${relocateWithDemand}" "${gridSize}" "${numHistoricRequestFiles}" "${nPeriods}" "${run}" &
 done
 
 wait
 EOF
 
-      # Make it executable
-      chmod +x "$job_file"
-
-      # Optionally submit the job right away
-      bsub < "$job_file"
+            chmod +x "$job_file"
+            bsub < "$job_file"
+        done
     done
-  done
 done
