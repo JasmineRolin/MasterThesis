@@ -15,8 +15,7 @@ for n in nRequestList
 
         for relocateVehicles in relocateVehiclesList
             outputFiles = Vector{String}()
-
-            # TODO: jas 
+ 
             for i in 1:10
                 scenarioName = string("Gen_Data_",n,"_",gamma,"_",i,"_Run",run)
                 push!(outputFiles, outPutFolder*"/Simulation_KPI_"*string(scenarioName)*"_"*string(relocateVehicles)*".json")
