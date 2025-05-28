@@ -12,10 +12,10 @@ using CSV
 
 function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, run::String, resultType::String, i::Int)
     saveResults = true
-    dataset = "DoD 60 Calltime60-120"
+    dataset = "Original"
     vehiclesFile = string("Data/Konsentra/",dataset,"/",n,"/Vehicles_",n,"_",gamma,".csv")
-    parametersFile = "tests/resources/ParametersShortCallTime2.csv"
-    alnsParameters = "tests/resources/ALNSParameters_offline.json"
+    parametersFile = "tests/resources/Parameters.csv"
+    alnsParameters = "tests/resources/ALNSParameters_InHindSight.json"
     outPutFolder = string("resultExploration/results/",date,"/",resultType,"/",n,"/",run)
     outputFiles = Vector{String}()
     gridFile = string("Data/Konsentra/grid.json")
