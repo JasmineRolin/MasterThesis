@@ -13,7 +13,7 @@ date="2025-05-28_original_0.7"
 mkdir -p submitfiles/generated_jobs
 
 # Define case types
-case_types=("InHindsight" "BaseCase")
+case_types=("InHindsight")
 
 for case_type in "${case_types[@]}"; do
   for n_requests in "${n_requests_list[@]}"; do

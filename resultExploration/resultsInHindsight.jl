@@ -15,7 +15,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
     dataset = "Original"
     vehiclesFile = string("Data/Konsentra/",dataset,"/",n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"
-    alnsParameters = "tests/resources/ALNSParameters_InHindSight.json"
+    alnsParameters = "tests/resources/ALNSParameters_InHindsight.json"
     outPutFolder = string("resultExploration/results/",date,"/",resultType,"/",n,"/",run)
     outputFiles = Vector{String}()
     gridFile = string("Data/Konsentra/grid.json")
