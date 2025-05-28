@@ -1,7 +1,7 @@
 using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures
 
-nRequestList = [100,300]
+nRequestList = [20,100, 300, 500]
 nRuns = 3
 relocateVehiclesList = [true,false]
 gamma = 0.7 
@@ -17,7 +17,7 @@ for n in nRequestList
             outputFiles = Vector{String}()
 
             # TODO: jas 
-            for i in 1:20#:81
+            for i in 1:10
                 scenarioName = string("Gen_Data_",n,"_",gamma,"_",i,"_Run",run)
                 push!(outputFiles, outPutFolder*"/Simulation_KPI_"*string(scenarioName)*"_"*string(relocateVehicles)*".json")
             end
@@ -85,6 +85,7 @@ end
 # Plot results 
 #===============================#
 for n in nRequestList
+    println("n requests: ",n)
     p = plot(size = (1000,1000),title = "Results for n = $n", xlabel = "", ylabel = "No. taxis",leftmargin=5mm,topmargin=5mm,legend = :topright)
 
     nRows = 0
@@ -119,4 +120,5 @@ for n in nRequestList
     ylims!(ylimMin, ylimMax)
 
     savefig(p, "plots/Waiting/results_$(n).png")
+    println("saved plot at: ", "plots/Waiting/results_$(n).png")
 end

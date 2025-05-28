@@ -64,7 +64,6 @@ function main()
 
     println("====> SCENARIO: ",scenarioName)
     println("\t Run: ", run)
-    println("\t With historic requests files: ",historicIndexes)
     println("\t gamma: ",gamma)
     println("\t Relocate vehicles: ",relocateVehicles)
     println("\t Grid size: ",gridSize)

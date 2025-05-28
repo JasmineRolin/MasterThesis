@@ -6,11 +6,11 @@ gamma=0.7
 nPeriods=48
 gridSize=10
 
-nRequestsList=(300) 
+nRequestsList=(20 100 300 500) 
 relocateOptions=(true false)
 numRuns=3  
 numHistoricRequestFiles=20   
-numData=20   
+numData=10   
 
 mkdir -p submitfiles/generated_jobs
 for nRequests in "${nRequestsList[@]}"; do
