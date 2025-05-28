@@ -110,7 +110,7 @@ include("../decisionstrategies/anticipation.jl")
     # Files 
     vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,".csv")
     parametersFile = "tests/resources/Parameters.csv"
-    alnsParameters = "tests/resources/ALNSParameters3.json"
+    alnsParameters = "tests/resources/ALNSParameters_offlineAnticipation.json"
     gridFile = "Data/Konsentra/grid.json"
 
     # Set both true to see plots 
