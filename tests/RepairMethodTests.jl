@@ -70,7 +70,7 @@ end
    parametersFile = "tests/resources/Parameters.csv"
    distanceMatrixFile = "Data/Matrices/Konsentra_Data_distance.txt"
    timeMatrixFile = "Data/Matrices/Konsentra_Data_time.txt"
-   alnsParametersFile = "tests/resources/ALNSParameters.json"
+   alnsParametersFile = "tests/resources/ALNSParameters_Article.json"
    scenarioName = "Konsentra"
 
    # Read instance 

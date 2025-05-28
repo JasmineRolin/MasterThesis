@@ -24,8 +24,6 @@ mutable struct ALNSParameters
     timeLimit::Float64 
     printSegmentSize::Int # Number of iterations before printing 
     segmentSize::Int # Number of iterations in a segment
-    w::Float64 # Start temperature control parameter. Choose start temperature so that from initial sol we have w% chance of accepting a worse solution
-    coolingRate::Float64 # Cooling rate for simulated annealing. The closer to 1 the slower the temperature decreases -> accept worse for longer time 
     reactionFactor::Float64 # How quickly to react to new score -  new_weight = old_weight*(1-reactionFactor) + score *reactionFactor;
     scoreAccepted::Float64 # Score given for an accepted solution
 	scoreImproved::Float64 # Score given for a solution that is better than the current solution
@@ -48,8 +46,6 @@ mutable struct ALNSParameters
         timeLimit=10.0, 
         printSegmentSize=100,
         segmentSize=100, # TODO: not from paper 
-        w=0.05,
-        coolingRate=0.99975,
         reactionFactor=0.01, 
         scoreAccepted=2.0, 
         scoreImproved=4.0, 
@@ -62,7 +58,7 @@ mutable struct ALNSParameters
         maxNumberOfIterationsWithoutImprovement=1000,
         maxNumberOfIterationsWithoutNewBest=5000
         )
-        return new(timeLimit,printSegmentSize,segmentSize, w, coolingRate,reactionFactor, scoreAccepted, scoreImproved, scoreNewBest,minPercentToDestroy,maxPercentToDestroy,p,shawRemovalPhi,shawRemovalXi,0.0,0.0,0.0,0.0,0.0,0.0,maxNumberOfIterationsWithoutImprovement,maxNumberOfIterationsWithoutNewBest)
+        return new(timeLimit,printSegmentSize,segmentSize,reactionFactor, scoreAccepted, scoreImproved, scoreNewBest,minPercentToDestroy,maxPercentToDestroy,p,shawRemovalPhi,shawRemovalXi,0.0,0.0,0.0,0.0,0.0,0.0,maxNumberOfIterationsWithoutImprovement,maxNumberOfIterationsWithoutNewBest)
     end
 end
 
@@ -80,8 +76,6 @@ function ALNSParametersToDict(params::ALNSParameters)
         "timeLimit" => params.timeLimit,
         "printSegmentSize" => params.printSegmentSize,
         "segmentSize" => params.segmentSize,
-        "w" => params.w,
-        "coolingRate" => params.coolingRate,
         "reactionFactor" => params.reactionFactor,
         "scoreAccepted" => params.scoreAccepted,
         "scoreImproved" => params.scoreImproved,
