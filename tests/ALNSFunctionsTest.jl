@@ -5,7 +5,7 @@ using alns, domain, utils, TimerOutputs
 Test ALNSFunctions
 ==#
 @testset "readALNSParameters test" begin 
-    parametersFile = "tests/resources/ALNSParameters.json"
+    parametersFile = "tests/resources/ALNSParameters_Article.json"
 
     # Read parameters 
     parameters = readALNSParameters(parametersFile)
