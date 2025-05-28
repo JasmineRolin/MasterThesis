@@ -12,8 +12,8 @@ export splitRequests
 #==
  Allowed delay/early arrival
 ==#
-global MAX_DELAY = 60
-global MAX_EARLY_ARRIVAL = 30
+global MAX_DELAY = 45
+global MAX_EARLY_ARRIVAL = 15
 
 
 #==
@@ -201,6 +201,7 @@ function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maxim
 
         # Check that call time is before buffer
         if callTime > requestTime - bufferTime
+            println("CallTime:", callTime, " RequestTime:", requestTime, " Buffer:", bufferTime)
             throw(ArgumentError(string("Call time is not before required buffer period for request: ",id)))
         end
 

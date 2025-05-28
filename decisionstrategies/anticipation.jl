@@ -13,7 +13,7 @@ using JSON
 # Constants for data generation 
 ==#
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
-global MAX_DELAY = 60 
+global MAX_DELAY = 45 
 
 #==
 # Grid constants 
