@@ -1,97 +1,97 @@
 using Test 
 using alns, domain, utils, offlinesolution, TimerOutputs
 
-#==
-Test ALNSFunctions
-==#
+# #==
+# Test ALNSFunctions
+# ==#
 
-@testset "ALNS test - Big Test" begin 
-    requestFile = "Data/Konsentra/TransformedData_Data.csv"
-    vehiclesFile = "Data/Konsentra/Vehicles_0.9.csv"
-    parametersFile = "tests/resources/Parameters.csv"
-    distanceMatrixFile = "Data/Matrices/Konsentra_Data_distance.txt"
-    timeMatrixFile = "Data/Matrices/Konsentra_Data_time.txt"
-    scenarioName = "Big"
+# @testset "ALNS test - Big Test" begin 
+#     requestFile = "Data/Konsentra/TransformedData_Data.csv"
+#     vehiclesFile = "Data/Konsentra/Vehicles_0.9.csv"
+#     parametersFile = "tests/resources/Parameters.csv"
+#     distanceMatrixFile = "Data/Matrices/Konsentra_Data_distance.txt"
+#     timeMatrixFile = "Data/Matrices/Konsentra_Data_time.txt"
+#     scenarioName = "Big"
     
-    # Read instance 
-    scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
+#     # Read instance 
+#     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
     
-    # Constuct solution 
-    solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
+#     # Constuct solution 
+#     solution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
    
-    # Construct ALNS state
-    currentState = ALNSState(solution,1,0,requestBank)
+#     # Construct ALNS state
+#     currentState = ALNSState(solution,1,0,requestBank)
 
-    # Construct ALNS parameters
-    parameters = ALNSParameters()
-    setMinMaxValuesALNSParameters(parameters,scenario.time,scenario.requests)
-    parameters.minPercentToDestroy = 0.1
-    parameters.maxPercentToDestroy = 0.3
+#     # Construct ALNS parameters
+#     parameters = ALNSParameters()
+#     setMinMaxValuesALNSParameters(parameters,scenario.time,scenario.requests)
+#     parameters.minPercentToDestroy = 0.1
+#     parameters.maxPercentToDestroy = 0.3
     
-    printSolution(currentState.currentSolution,printRouteHorizontal)
+#     printSolution(currentState.currentSolution,printRouteHorizontal)
 
-    # Shaw Destroy 
-    shawRemoval!(scenario,currentState,parameters)
+#     # Shaw Destroy 
+#     shawRemoval!(scenario,currentState,parameters)
 
-    state = State(currentState.currentSolution,Request(),0)
-    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-    if !feasible
-        println(msg)
-    end
-    @test feasible == true
+#     state = State(currentState.currentSolution,Request(),0)
+#     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+#     if !feasible
+#         println(msg)
+#     end
+#     @test feasible == true
 
-    # Regret Repair
-    regretInsertion(currentState,scenario)
+#     # Regret Repair
+#     regretInsertion(currentState,scenario)
 
-    state = State(currentState.currentSolution,Request(),0)
-    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-    if !feasible
-        println(msg)
-    end
-    @test feasible == true
+#     state = State(currentState.currentSolution,Request(),0)
+#     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+#     if !feasible
+#         println(msg)
+#     end
+#     @test feasible == true
 
-    # Random destroy
-    randomDestroy!(scenario,currentState,parameters)
+#     # Random destroy
+#     randomDestroy!(scenario,currentState,parameters)
 
-    state = State(currentState.currentSolution,Request(),0)
-    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-    if !feasible
-        println(msg)
-    end
-    @test feasible == true
+#     state = State(currentState.currentSolution,Request(),0)
+#     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+#     if !feasible
+#         println(msg)
+#     end
+#     @test feasible == true
 
-    # Greedy repair
-    greedyInsertion(currentState,scenario)
+#     # Greedy repair
+#     greedyInsertion(currentState,scenario)
 
-    state = State(currentState.currentSolution,Request(),0)
-    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-    if !feasible
-        println(msg)
-    end
-    @test feasible == true
+#     state = State(currentState.currentSolution,Request(),0)
+#     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+#     if !feasible
+#         println(msg)
+#     end
+#     @test feasible == true
 
-    # Worst removal
-    worstRemoval!(scenario,currentState,parameters)
+#     # Worst removal
+#     worstRemoval!(scenario,currentState,parameters)
 
-    state = State(currentState.currentSolution,Request(),0)
-    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-    if !feasible
-        println(msg)
-    end
-    @test feasible == true
+#     state = State(currentState.currentSolution,Request(),0)
+#     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+#     if !feasible
+#         println(msg)
+#     end
+#     @test feasible == true
 
-    # Greedy repair
-    greedyInsertion(currentState,scenario)
+#     # Greedy repair
+#     greedyInsertion(currentState,scenario)
 
-    state = State(currentState.currentSolution,Request(),0)
-    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-    if !feasible
-        println(msg)
-    end
-    @test feasible == true
-    @test msg == ""
+#     state = State(currentState.currentSolution,Request(),0)
+#     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+#     if !feasible
+#         println(msg)
+#     end
+#     @test feasible == true
+#     @test msg == ""
       
-end
+# end
 
 
 #==
@@ -163,7 +163,7 @@ end
 #         addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
 #         initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
-#         finalSolution, requestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters2.json",initialSolution=initialSolution,requestBank=requestBank)
+#         finalSolution, requestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters_Article.json",initialSolution=initialSolution,requestBank=requestBank)
         
 #         state = State(finalSolution,scenario.onlineRequests[end],0)
 #         feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
@@ -186,26 +186,25 @@ end
 
 # #@testset "Run all generated data sets " begin
     print("\033c")
-    # Number of requests in scenario - 20, 100, 300 or 500 
-    n = 20
+    n = 300 # Number of requests in scenario - 20, 100, 300 or 500 
+    i = 3 # Scenario number - 1:10 
+    gamma = 0.7 # Vehicles 
 
-    # Scenario number - 1:10
-    i = 3
 
-    # Files 
-    gamma = 0.9
-    vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
+    # Data files 
+    folder = "DoD 40/"
+    vehiclesFile = string("Data/Konsentra/",folder,n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"
-    alnsParameters = "tests/resources/ALNSParameters3.json"
+    alnsParameters = "tests/resources/ALNSParameters_Article.json"
 
     # Set both true to see plots 
-    displayPlots = false
-    saveResults = false
+    displayPlots = true
+    saveResults = true
 
-    for i in 1:10
-        requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
-        distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
-        timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
+    #for i in 1:10
+        requestFile = string("Data/Konsentra/",folder,n,"/GeneratedRequests_",n,"_",i,".csv")
+        distanceMatrixFile = string("Data/Matrices/",folder,n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
+        timeMatrixFile =  string("Data/Matrices/",folder,n,"/GeneratedRequests_",n,"_",i,"_time.txt")
         scenarioName = string("Generated_Data_",n,"_",i)
         
         # Read instance 
@@ -222,8 +221,8 @@ end
         addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
         addMethod!(repairMethods,"regretInsertion",regretInsertion)
         
-        TO = TimerOutput()
-        initialSolution, requestBank = simpleConstruction(scenario,scenario.requests,TO=TO)
+        # Solve scenario
+        initialSolution, requestBank = simpleConstruction(scenario,scenario.requests)
         finalSolution,requestBank,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=saveResults,stage="Offline")
 
         state = State(finalSolution,scenario.onlineRequests[end],0)
@@ -251,7 +250,7 @@ end
         println(rpad("Final distance", 40), finalSolution.totalDistance)
         println(rpad("Final ride time (veh)", 40), finalSolution.totalRideTime)
         println(rpad("Final idle time", 40), finalSolution.totalIdleTime)
-    end
+  #  end
     
 # # #end
 

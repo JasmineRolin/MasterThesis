@@ -10,7 +10,7 @@ test = createExpectedRequests(40,100)
 # Files 
 vehicleFile = string("Data/Konsentra/20/Vehicles_20_0.5.csv")
 parametersFile = "tests/resources/Parameters.csv"
-alnsParameters = "tests/resources/ALNSParameters3.json"
+alnsParameters = "tests/resources/ALNSParameters_offlineAnticipation.json"
 gridFile = "Data/Konsentra/grid.json"
 requestFile = string("Data/Konsentra/20/GeneratedRequests_20_1.csv")
 

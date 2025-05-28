@@ -19,8 +19,6 @@ function readALNSParameters(parametersFile::String)::ALNSParameters
         Float64(jsonData["timeLimit"]),
         Int(jsonData["printSegmentSize"]),
         Int(jsonData["segmentSize"]),
-        Float64(jsonData["w"]),
-        Float64(jsonData["coolingRate"]),
         Float64(jsonData["reactionFactor"]),
         Float64(jsonData["scoreAccepted"]),
         Float64(jsonData["scoreImproved"]),

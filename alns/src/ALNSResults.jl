@@ -23,8 +23,9 @@ function ALNSResult(specificationsFileName::String,KPIFileName::String,ALNSOutpu
         # Destroy weight plot
         destroyWeightPlot = createDestroyWeightPlot(ALNSOutput,configuration,scenario.name)
 
-        # Temperature plot
-        temperaturePlot = createTemperaturePlot(ALNSOutput,scenario.name)
+        weightPlot = plot(repairWeightPlot, destroyWeightPlot, layout=layout=(2,1), size=(2500, 2500),
+                        bottom_margin=12mm, left_margin=12mm,
+                        top_margin=5mm, right_margin=5mm)
 
         # Gant chart 
         gantChart = createGantChartOfRequestsAndVehicles(scenario.vehicles,requests,requestBank,scenario.name)
@@ -40,9 +41,8 @@ function ALNSResult(specificationsFileName::String,KPIFileName::String,ALNSOutpu
 
         # Display and save plots
         savefig(costPlot, joinpath(plotFolder, "ALNSCostPlot.png"))
-        savefig(repairWeightPlot, joinpath(plotFolder, "ALNSRepairWeightPlot.png"))
-        savefig(destroyWeightPlot, joinpath(plotFolder, "ALNSDestroyWeightPlot.png"))
-        savefig(temperaturePlot, joinpath(plotFolder, "ALNSTemperaturePlot.png"))
+        #savefig(repairWeightPlot, joinpath(plotFolder, "ALNSRepairWeightPlot.png"))
+        savefig(weightPlot, joinpath(plotFolder, "ALNSWeightPlot.png"))
         savefig(gantChart, joinpath(plotFolder, "ALNSGantChart.png"))
         savefig(gantChartSolution, joinpath(plotFolder, "ALNSGantChartSolution.png"))
         savefig(routePlot, joinpath(plotFolder, "ALNSRoutePlot.png"))
@@ -50,9 +50,8 @@ function ALNSResult(specificationsFileName::String,KPIFileName::String,ALNSOutpu
 
         if displayPlots
             display(costPlot)
-            display(repairWeightPlot)
-            display(destroyWeightPlot)
-            display(temperaturePlot)
+           # display(repairWeightPlot)
+            display(weightPlot)
             display(gantChart) 
             display(gantChartSolution)
             display(routePlot)
@@ -177,6 +176,9 @@ function createRepairWeightPlot(df::DataFrame,configuration::ALNSConfiguration,s
         plot!(p, iterations, df[!, col], label=repair_methods[idx].name)
     end
 
+    ylabel!(p, "Weight")
+    xlabel!(p, "Iteration")
+
     return p
 end
 
@@ -200,23 +202,13 @@ function createDestroyWeightPlot(df::DataFrame,configuration::ALNSConfiguration,
         plot!(p, iterations, df[!, col], label=destroyMethods[idx].name)
     end
 
-    return p
-end
 
-#==
- Method to create plot of temperature
-==#
-function createTemperaturePlot(df::DataFrame,scenarioName::String)
-    # Extract iteration numbers
-    iterations = df.Iteration
-
-
-    # Create a plot
-    p = plot(title=string(scenarioName," - Temperature"), xlabel="Iteration", ylabel="Temperature")
-    plot!(p, iterations, df[!, "Temperature"])
+    ylabel!(p, "Weight")
+    xlabel!(p, "Iteration")
 
     return p
 end
+
 
 # Create gant chart of vehicles and requests
 function createGantChartOfRequestsAndVehicles(vehicles, requests, requestBank,scenarioName)
