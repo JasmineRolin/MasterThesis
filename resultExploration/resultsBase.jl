@@ -14,7 +14,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
 
     dataset = "Original"
     vehiclesFile = string("Data/Konsentra/",dataset,"/",n,"/Vehicles_",n,"_",gamma,".csv")
-    parametersFile = "tests/resources/ParametersShortCallTime2.csv"
+    parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters_offline.json"
     outPutFolder = string("resultExploration/results/",date,"/",resultType,"/",n,"/",run)
     outputFiles = Vector{String}()
