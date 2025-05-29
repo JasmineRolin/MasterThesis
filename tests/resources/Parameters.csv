@@ -1,2 +1,2 @@
 start_of_planning_period,end_of_planning_period,vehicle_cost_pr_hour,vehicle_start_up_cost,service_time_wheelchair,service_time_walking,buffer_time,maximum_ride_time_percent,minimum_maximum_ride_time,taxi_parameter,taxi_parameter_expected
-360,1380,50,200,5,2,120,200,20,1000,100
+360,1380,50,200,5,2,60,200,20,1000,100

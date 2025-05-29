@@ -4,9 +4,9 @@ using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures
 methodListBase = ["BaseCase","InHindsight"]
 nRequestList = [20,100,300,500]
 runList = [1,2,3,4,5]
-gamma = 0.7
+gamma = 0.5
 anticipationDegrees = [0.6]
-date = "2025-05-28_original_0.7"
+date = "2025-05-28_original_v2_0.5"
 
 #==============================#
 # Create method list 
@@ -166,7 +166,7 @@ for n in nRequestList
     end
 
     # Configure each subplot
-    ylabels = ["No. taxis", "Unserviced Offline Requests", "Unserviced Online Requests"]
+    ylabels = ["Unserviced Requests", "Unserviced Offline Requests", "Unserviced Online Requests"]
     for i in 1:3
         ylimMin = 5 * floor((minVals[i] - 2) / 5)
         ylimMax = 5 * ceil((maxVals[i] + 2) / 5)
@@ -181,5 +181,7 @@ for n in nRequestList
 
     finalPlot = plot(plots[1], plots[2], plots[3]; layout=(3,1), size=(1000,1200),leftmargin=5mm,bottommargin=5mm,topmargin=5mm)
     savefig(finalPlot, "plots/Anticipation/"*date*"/results_$(n).png")
+    singlePlot = plot(plots[1]; title = "No. Requests: $(n), Gamma: $(gamma)")
+    savefig(singlePlot, "plots/Anticipation/$(date)/results_$(n)_single.png")
 end
 
