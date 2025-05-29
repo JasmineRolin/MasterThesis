@@ -3,17 +3,17 @@
 ################
 #    change inputs here
 ################
-n_requests_list=("20" "100" "300" "500")
+n_requests_list=("20")
 anticipation_levels=("0.4")
-run_tags=("run1" "run2" "run3" "run4" "run5")
-gamma="0.7"
-date="2025-05-28_original_0.7"
+run_tags=("run4")
+gamma="0.5"
+date="2025-05-28_original_v2_0.5"
 ####################
 
 mkdir -p submitfiles/generated_jobs
 
 # Define case types
-case_types=("InHindsight")
+case_types=("BaseCase")
 
 for case_type in "${case_types[@]}"; do
   for n_requests in "${n_requests_list[@]}"; do
