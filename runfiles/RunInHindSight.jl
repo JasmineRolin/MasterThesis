@@ -7,18 +7,16 @@ using alns
 using CSV
 
 
-
-
-
-
-#function main()
+function main()
     # Receive command line arguments 
-    n =20 #parse(Int,ARGS[1])
-    gamma =0.7 #parse(Float64,ARGS[2])
-    i = 1#parse(Int,ARGS[3])
-    gridSize = 10 #parse(Int,ARGS[4])
-    run = 1#parse(Int,ARGS[5])
+    n = parse(Int,ARGS[1])
+    gamma = parse(Float64,ARGS[2])
+    i = parse(Int,ARGS[3])
+    gridSize = parse(Int,ARGS[4])
+    run = parse(Int,ARGS[5])
     
+    displayPlots = false
+
     # File names 
     vehiclesFile = string("Data/DataWaitingStrategies/",n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/ParametersShortCallTime.csv"
@@ -27,6 +25,7 @@ using CSV
     requestFile = "Data/DataWaitingStrategies/$(n)/GeneratedRequests_$(n)_$(i).csv"
     distanceMatrixFile = string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
     timeMatrixFile =  string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
+    alnsParameters = "tests/resources/ALNSParameters_offline.json"
     scenarioName = string("Gen_Data_",n,"_",gamma,"_",i,"_Run",run)    
     
     # Read instance 
@@ -46,8 +45,9 @@ using CSV
     addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
     # Get solution
-    initialSolution, requestBankALNS = simpleConstruction(scenario,scenario.requests)
-    solution,requestBankALNS,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBankALNS,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=false,stage="Offline")
+    startSimulation = time()
+    initialSolution, requestBankInitial = simpleConstruction(scenario,scenario.requests)
+    solution,requestBank,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBankInitial,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=false,stage="Offline")
         
     # TODO remove when stable
     state = State(solution,scenario.onlineRequests[end],0)
@@ -57,8 +57,13 @@ using CSV
 
 
     # Save resulsts 
+    endSimulation = time()
+    totalElapsedTime = endSimulation - startSimulation
+    averageResponseTime = 0.0
+    eventsInsertedByALNS = 0
+
     mkpath(outPutFolder)  # ensure folder exists
-    fileName = outPutFileFolder*"/Simulation_KPI_"*string(scenario.name)*"_inhindsight_.json"
-    KPIDict = writeOnlineKPIsToFile(fileName,scenario,finalSolution,requestBank,requestBankOffline,totalElapsedTime,averageResponseTime,eventsInsertedByALNS)
-#end
+    fileName = outPutFolder*"/Simulation_KPI_"*string(scenario.name)*"_inhindsight_.json"
+    KPIDict = writeOnlineKPIsToFile(fileName,scenario,solution,Vector{Int}(),requestBank,totalElapsedTime,averageResponseTime,eventsInsertedByALNS)
+end
 
