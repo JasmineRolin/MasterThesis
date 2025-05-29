@@ -1,9 +1,9 @@
 using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures
 
-nRequestList = [20,100, 300, 500]
+nRequestList = [20,100]#,100, 300, 500]
 nRuns = 3
-relocateVehiclesList = [true,false]
+relocateVehiclesList = [(true,false),(true,true),(false,false)]
 gamma = 0.7 
 
 #===============================#
@@ -13,17 +13,17 @@ for n in nRequestList
     for run in 1:nRuns 
         outPutFolder = "runfiles/output/Waiting/"*string(n)*"/Run"*string(run)
 
-        for relocateVehicles in relocateVehiclesList
+        for relocateVehiclesOption in relocateVehiclesList
             outputFiles = Vector{String}()
  
             for i in 1:10
                 scenarioName = string("Gen_Data_",n,"_",gamma,"_",i,"_Run",run)
-                push!(outputFiles, outPutFolder*"/Simulation_KPI_"*string(scenarioName)*"_"*string(relocateVehicles)*".json")
+                push!(outputFiles, outPutFolder*"/Simulation_KPI_"*string(scenarioName)*"_"*string(relocateVehiclesOption[1])*"_"*string(relocateVehiclesOption[2])*".json")
             end
 
             # Get CSV
             dfResults = processResults(outputFiles)
-            result_file = string(outPutFolder, "/results_", gamma,"_",relocateVehicles, ".csv")
+            result_file = string(outPutFolder, "/results_", gamma,"_",relocateVehiclesOption[1],"_",relocateVehiclesOption[2], ".csv")
             append_mode = false
             CSV.write(result_file, dfResults; append=append_mode)
         end
@@ -34,33 +34,12 @@ end
 #===============================#
 # Get averages 
 #===============================#
-function average_kpis_by_data_size(base_path::String,dataSizeList,relocateVehicles)
-    all_data = DataFrame()
-
-    for dataSize in dataSizeList
-        full_path = joinpath(base_path, string(dataSize), "results_"*string(gamma)*"_"*string(relocateVehicles)*".csv")
-        df = CSV.read(full_path, DataFrame)
-        df[!, :DataSize] = fill(dataSize, nrow(df))
-        append!(all_data, df)
-    end
-
-    # Select all KPI columns (excluding identifiers like ScenarioName)
-    exclude_cols = [:ScenarioName]
-    kpi_cols = names(all_data, Not(vcat(exclude_cols, [:DataSize])))
-
-    # Compute average for each KPI grouped by DataSize
-    grouped = combine(groupby(all_data, :DataSize),
-        kpi_cols .=> mean ∘ skipmissing .=> kpi_cols)
-
-    return grouped
-end
-
-function average_kpis_by_run(base_path::String,dataSizeList,nRuns,relocateVehicles)
+function average_kpis_by_run(base_path::String,dataSizeList,nRuns,relocateVehiclesOption)
     for n in dataSizeList
         all_runs_data = DataFrame()
         
         for run in 1:nRuns
-            filePath = base_path*"/"* string(n) * "/Run" * string(run) * "/results_"*string(gamma)*"_"*string(relocateVehicles)*".csv"
+            filePath = base_path*"/"* string(n) * "/Run" * string(run) * "/results_"*string(gamma)*"_"*string(relocateVehiclesOption[1])*"_"*string(relocateVehiclesOption[2])*".csv"
             df = CSV.read(filePath, DataFrame)
             append!(all_runs_data, df)
         end
@@ -70,13 +49,13 @@ function average_kpis_by_run(base_path::String,dataSizeList,nRuns,relocateVehicl
         grouped = groupby(all_runs_data, :BaseScenario)
         avg_data = combine(grouped, names(all_runs_data, Number) .=> mean)
 
-        CSV.write(base_path*"/"*string(n)*"/results_avgOverRuns_"*string(relocateVehicles)*".csv", avg_data)
+        CSV.write(base_path*"/"*string(n)*"/results_avgOverRuns_"*string(relocateVehiclesOption[1])*"_"*string(relocateVehiclesOption[2])*".csv", avg_data)
 
     end
 end
 
-for relocateVehicles in relocateVehiclesList
-    average_kpis_by_run("runfiles/output/Waiting/",nRequestList,nRuns,relocateVehicles)
+for relocateVehiclesOption in relocateVehiclesList
+    average_kpis_by_run("runfiles/output/Waiting/",nRequestList,nRuns,relocateVehiclesOption)
 end
 
 
@@ -90,17 +69,25 @@ for n in nRequestList
     nRows = 0
     maxnTaxi = 0
     minnTaxi = typemax(Int)
-    for relocateVehicles in relocateVehiclesList
+    for relocateVehiclesOption in relocateVehiclesList
         outPutFolder = "runfiles/output/Waiting/"*string(n)
-        resultFile = string(outPutFolder, "/results_avgOverRuns_",relocateVehicles,".csv")
+        resultFile = string(outPutFolder, "/results_avgOverRuns_",relocateVehiclesOption[1],"_",relocateVehiclesOption[2],".csv")
         df = CSV.read(resultFile, DataFrame)
         nRows = nrow(df)
         maxnTaxi = max(maxnTaxi,maximum(df.nTaxi_mean))
         minnTaxi = min(minnTaxi,minimum(df.nTaxi_mean))
 
         # Plot 
-        color = relocateVehicles ? :blue : :red
-        label = relocateVehicles ? "With Relocation" : "Without Relocation"
+        if relocateVehiclesOption[1] && relocateVehiclesOption[2]
+            color = :green
+            label = "Relocation, method 1"
+        elseif relocateVehiclesOption[1] && !relocateVehiclesOption[2]
+            color = :blue
+            label = "Relocation, method 2"
+        else
+            color = :red
+            label = "Without Relocation"
+        end
 
         plot!(df.nTaxi_mean; linestyle = :dash, marker = :circle, color = color, label = label,markerstrokewidth=0,linewidth=2,markersize=5)
     end
