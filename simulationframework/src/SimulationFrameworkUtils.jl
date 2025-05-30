@@ -293,10 +293,6 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
         previousGridCell = determineGridCell(previousWaitingLocation,grid)
 
         println("==> No relocation needed for vehicle ",vehicle.id," in period ",period, " minimum: ",minimum(vehicleBalance[period,:,:]), " maximum predicted demand: ", maximum(predictedDemand[period,:,:]))
-        if displayPlots
-           # display(plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,vehicleBalance,previousGridCell,previousGridCell,period,periodLength,vehicle.id,vehicleDemand))
-        end
-        
         return
     end
 

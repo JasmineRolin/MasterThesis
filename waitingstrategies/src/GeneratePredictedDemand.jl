@@ -6,37 +6,6 @@ using Statistics, ImageFiltering
 export generatePredictedDemand,generatePredictedVehiclesDemand,generatePredictedVehiclesDemandInPeriod,generatePredictedVehiclesDemandInHorizon,getProbabilityGrid
 
 #==
- Method to get probability grid from simulation data 
-==#
-function getProbabilityGrid(scenario::Scenario)
-
-    # Retrieve depot locations 
-    depotLocations = scenario.depotLocations
-    grid = scenario.grid
-
-    # Retrieve simulation location probabilties
-    x_range, y_range, probabilities_location = loadLocationDistribution("Data/Simulation data/")
-
-    ny = length(y_range)
-
-    # Aggregate probabilities for each grid cell
-    probabilitiesGrid = zeros(Float64, grid.nRows, grid.nCols)
-
-    for (idx,p) in enumerate(probabilities_location)
-        long = x_range[(idx - 1) ÷ ny + 1]
-        lat = y_range[(idx - 1) % ny + 1]
-        
-        cell = findClosestGridCenter(depotLocations, lat, long)
-
-        # Accumulate probabilities in the grid cell
-        probabilitiesGrid[cell[1], cell[2]] += p
-
-    end
-    
-    return probabilitiesGrid
-end
-
-#==
  Method to get probability grid from historic data 
 ==#
 function getProbabilityGrid(scenario::Scenario,historicRequestFiles::Vector{String})
@@ -57,13 +26,6 @@ function getProbabilityGrid(scenario::Scenario,historicRequestFiles::Vector{Stri
         for row in eachrow(df)
             lat = row.pickup_latitude
             lon = row.pickup_longitude
-
-            # Count demand as +1 for pickup and -1 for dropoff
-            if row.request_type == 0
-                timeVal = row.request_time
-            else 
-                timeVal = row.request_time- row.direct_drive_time
-            end
 
             # Determine grid cell
             rowIdx, colIdx = determineGridCell(lat, lon, minLat, minLong, nRows, nCols, latStep, longStep)

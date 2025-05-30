@@ -208,8 +208,4 @@ function determineActiveVehiclesAndDemandPrCell(solution::Solution,endOfPeriodIn
 
 end
 
-
-
-
-
 end

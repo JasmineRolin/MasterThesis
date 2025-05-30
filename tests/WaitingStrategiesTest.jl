@@ -17,7 +17,7 @@ print("\033c")
 n = 20
 i = 2
 gridSize = 10
-displayPlots = true
+displayPlots = false
 
 gamma = 0.7
 nPeriods = 48
@@ -151,7 +151,7 @@ println("ALNS solution: ", finalSolution.nTaxi)
 #============================================================================#
 #============================================================================#
 
-probabilityGrid = getProbabilityGrid(scenario)
+probabilityGrid = getProbabilityGrid(scenario,historicRequestFiles)
 
 p = heatmap(probabilityGrid, 
 c=:viridis,         # color map
