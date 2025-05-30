@@ -10,6 +10,7 @@ relocateOptions=("true false" "true true" "false false")  # Pair values as strin
 numRuns=3  
 numHistoricRequestFiles=20   
 numData=10   
+baseScenario="true"
 
 mkdir -p submitfiles/generated_jobs
 for nRequests in "${nRequestsList[@]}"; do
@@ -51,7 +52,7 @@ Pkg.resolve();
 '
 
 for i in \$(seq 1 ${numData}); do
-    julia --project=. runfiles/RunSimulationWaiting.jl "${nRequests}" "${gamma}" "\${i}" "${relocateVehicles}" "${relocateWithDemand}" "${gridSize}" "${numHistoricRequestFiles}" "${nPeriods}" "${run}" &
+    julia --project=. runfiles/RunSimulationWaiting.jl "${nRequests}" "${gamma}" "\${i}" "${relocateVehicles}" "${relocateWithDemand}" "${gridSize}" "${numHistoricRequestFiles}" "${nPeriods}" "${run}" "${baseScenario}"&
 done
 
 wait
