@@ -4,9 +4,10 @@
 gamma=0.7
 gridSize=10
 
-nRequestsList=(20 100 300 500) 
+nRequestsList=(100 300 500) 
 numRuns=3  
-numData=10   
+numData=10  
+baseScenario="true"
 
 mkdir -p submitfiles/generated_jobs
 for nRequests in "${nRequestsList[@]}"; do
@@ -44,7 +45,7 @@ Pkg.resolve();
 '
 
 for i in \$(seq 1 ${numData}); do
-    julia --project=. runfiles/RunInHindSight.jl "${nRequests}" "${gamma}" "\${i}" "${gridSize}" "${run}" &
+    julia --project=. runfiles/RunInHindSight.jl "${nRequests}" "${gamma}" "\${i}" "${gridSize}" "${run}" "${baseScenario}" &
 done
 
 wait

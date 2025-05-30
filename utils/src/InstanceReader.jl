@@ -9,12 +9,6 @@ export readVehicles
 export readRequests
 export splitRequests
 
-#==
- Allowed delay/early arrival
-==#
-global MAX_DELAY = 15
-global MAX_EARLY_ARRIVAL = 5
-
 
 #==
  Function to read instance 
