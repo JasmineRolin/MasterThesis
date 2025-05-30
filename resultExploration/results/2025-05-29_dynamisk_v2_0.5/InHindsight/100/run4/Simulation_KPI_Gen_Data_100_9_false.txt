@@ -1,0 +1,1 @@
+Dataset: 9, TotalCost: 9013.657287468644, UnservedRequests: 8

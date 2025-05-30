@@ -3,17 +3,17 @@
 ################
 #    change inputs here
 ################
-n_requests_list=("20")
-anticipation_levels=("0.4")
-run_tags=("run4")
+n_requests_list=("20" "100" "300")
+anticipation_levels=("0.6")
+run_tags=("run1" "run2" "run3" "run4" "run5")
 gamma="0.5"
-date="2025-05-28_original_v2_0.5"
+date="2025-05-29_dynamisk_v2_0.5"
 ####################
 
 mkdir -p submitfiles/generated_jobs
 
 # Define case types
-case_types=("BaseCase")
+case_types=("BaseCase" "InHindsight" "AnticipationKeepExpected")
 
 for case_type in "${case_types[@]}"; do
   for n_requests in "${n_requests_list[@]}"; do
@@ -50,8 +50,8 @@ for case_type in "${case_types[@]}"; do
 #!/bin/sh
 #BSUB -J "${job_name}"
 #BSUB -o submitfiles/output/output_%J.out
-#BSUB -q hpc
-#BSUB -n 8
+#BSUB -q man
+#BSUB -n 5
 #BSUB -R "rusage[mem=2GB] span[hosts=1]"
 #BSUB -W 11:00
 #BSUB -u s194351@student.dtu.dk
