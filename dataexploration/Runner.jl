@@ -20,14 +20,14 @@ global GENERATE_VEHICLES = false
 #==
 # Constants for data generation 
 ==#
-global DoD = 1.0 # Degree of dynamism
+global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
-global callBuffer = 5 # 2 hours buffer
-global nData = 10
+global callBuffer = 2*60 # 2 hours buffer
+global nData = 20
 global nRequestList = [20,100,300,500]#,50,100,300,500]
-global MAX_DELAY = 15 # TODO Astrid I just put something
+global MAX_DELAY = 45 # TODO Astrid I just put something
 global earliestBuffer = 15
-global ONLY_PICKUP = true
+global ONLY_PICKUP = false
 
 #==
 # Constant for vehicle generation  
@@ -35,7 +35,6 @@ global ONLY_PICKUP = true
 global vehicleCapacity = 4
 global GammaList = [0.7]#,0.7] 
 
-# TODO: burde vi bare have flad cost ? vi er jo ligeglade med cost faktisk 
 global shifts = Dict(
     "Morning"    => Dict("TimeWindow" => [6*60, 12*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
     "Noon"       => Dict("TimeWindow" => [10*60, 16*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
@@ -51,10 +50,6 @@ global MAX_LAT = 60.721
 global MIN_LAT = 59.165
 global MAX_LONG = 12.458
 global MIN_LONG = 9.948
-# global MAX_LAT = 60.7
-# global MIN_LAT = 59.1
-# global MAX_LONG = 12.4
-# global MIN_LONG = 9.9
 global NUM_ROWS = 10
 global NUM_COLS = 10
 
@@ -137,10 +132,10 @@ if GENERATE_DATA_AND_VEHICLES
             average_demand_per_hour = generateVehicles(shifts,df_list, base_probabilities_location, base_x_range, base_y_range,gamma,vehicleCapacity,nRequest,MAX_LAT,MIN_LAT,MAX_LONG,MIN_LONG,NUM_ROWS,NUM_COLS)
 
             # Plot demand and shifts
-            plotDemandAndShifts(average_demand_per_hour,shifts,gamma)
+            #plotDemandAndShifts(average_demand_per_hour,shifts,gamma)
 
             # Plot request and vehicle locations 
-            plotRequestsAndVehicles(nRequest,nData,gamma,MAX_LAT,MIN_LAT,MAX_LONG,MIN_LONG,NUM_ROWS,NUM_COLS,grid_centers,lat_step,long_step)
+            #plotRequestsAndVehicles(nRequest,nData,gamma,MAX_LAT,MIN_LAT,MAX_LONG,MIN_LONG,NUM_ROWS,NUM_COLS,grid_centers,lat_step,long_step)
         end
 
         # Generate time and distance matrices  
@@ -160,9 +155,9 @@ if GENERATE_DATA_AND_VEHICLES
         #================================================#
         # Plot new data
         #================================================#
-        createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,density_grid,location_matrix,requestTime,probabilities_time, probabilities_offline,probabilities_online,serviceWindow,distanceDriven)
+       # createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,density_grid,location_matrix,requestTime,probabilities_time, probabilities_offline,probabilities_online,serviceWindow,distanceDriven)
         for gamma in GammaList
-            plotAndSaveGantChart(nRequest,nData,gamma)
+           # plotAndSaveGantChart(nRequest,nData,gamma)
         end
     end
 
