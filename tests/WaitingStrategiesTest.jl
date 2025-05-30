@@ -15,7 +15,7 @@ print("\033c")
 
 # Parameters 
 n = 20
-i = 2
+i = 8
 gridSize = 10
 displayPlots = false
 
@@ -44,7 +44,7 @@ scenarioName = string("Gen_Data_",n,"_",gamma,"_",i)
 
 
 # Read instance 
-scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile,gridFile)
+scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile,gridFile,maxDelay=15,maxEarlyArrival=5)
 pScen = plotRequestsAndVehiclesWait(scenario,scenario.grid)
 display(pScen)
 savefig(pScen,"tests/WaitingPlots/RequestsAndVehicles_$(n)_$(i)_$(gamma).png")
@@ -52,164 +52,151 @@ savefig(pScen,"tests/WaitingPlots/RequestsAndVehicles_$(n)_$(i)_$(gamma).png")
 println("\t nOfflineRequests: ",length(scenario.offlineRequests))
 
 
-#============================================================================#
-# Solve with relocation using common request location probability grid
-#============================================================================#
-if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/true_false")
-    mkpath("tests/WaitingPlots/true_true")
-end
-if displayPlots && isdir("tests/WaitingPlots/true_false")
-    for file in readdir("tests/WaitingPlots/true_false"; join=true)
-        rm(file; force=true, recursive=true)
-    end
-end
+# #============================================================================#
+# # Solve with relocation using common request location probability grid
+# #============================================================================#
+# if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/true_false")
+#     mkpath("tests/WaitingPlots/true_true")
+# end
+# if displayPlots && isdir("tests/WaitingPlots/true_false")
+#     for file in readdir("tests/WaitingPlots/true_false"; join=true)
+#         rm(file; force=true, recursive=true)
+#     end
+# end
 
-# Simulate scenario 
-solutionTrue, requestBankTrue = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
+# # Simulate scenario 
+# solutionTrue, requestBankTrue = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
 
-state = State(solutionTrue,scenario.onlineRequests[end],0)
-feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-@test msg == ""
-@test feasible == true
-println(msg)
-
-
-#============================================================================#
-# Solve with relocation using request demand discretized in grid and time 
-#============================================================================#
-if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/true_true")
-    mkpath("tests/WaitingPlots/true_true")
-end
-if displayPlots && isdir("tests/WaitingPlots/true_true")
-    for file in readdir("tests/WaitingPlots/true_true"; join=true)
-        rm(file; force=true, recursive=true)
-    end
-end
-
-# Simulate scenario 
-solutionTrueDemand, requestBankTrueDemand = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = true);
-
-state = State(solutionTrueDemand,scenario.onlineRequests[end],0)
-feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-@test msg == ""
-@test feasible == true
-println(msg)
+# state = State(solutionTrue,scenario.onlineRequests[end],0)
+# feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+# @test msg == ""
+# @test feasible == true
+# println(msg)
 
 
-#============================================================================#
-# Solve without relocation
-#============================================================================#
-if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/false_false")
-    mkpath("tests/WaitingPlots/true_true")
-end
-if displayPlots && isdir("tests/WaitingPlots/false_false")
-    for file in readdir("tests/WaitingPlots/true_true"; join=true)
-        rm(file; force=true, recursive=true)
-    end
-end
+# #============================================================================#
+# # Solve with relocation using request demand discretized in grid and time 
+# #============================================================================#
+# if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/true_true")
+#     mkpath("tests/WaitingPlots/true_true")
+# end
+# if displayPlots && isdir("tests/WaitingPlots/true_true")
+#     for file in readdir("tests/WaitingPlots/true_true"; join=true)
+#         rm(file; force=true, recursive=true)
+#     end
+# end
 
-# Simulate scenario 
-solutionFalse, requestBankFalse = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=false,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
+# # Simulate scenario 
+# solutionTrueDemand, requestBankTrueDemand = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = true);
 
-state = State(solutionFalse,scenario.onlineRequests[end],0)
-feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-@test msg == ""
-@test feasible == true
-println(msg)
-
-#============================================================================#
-# Solve in-hindsigth
-#============================================================================#
-alnsParameters = "tests/resources/ALNSParameters_offline.json"
-
-destroyMethods = Vector{GenericMethod}()
-addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
-addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
-addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
-
-# Choose repair methods
-repairMethods = Vector{GenericMethod}()
-addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
-addMethod!(repairMethods,"regretInsertion",regretInsertion)
-
-initialSolution, requestBankALNS = simpleConstruction(scenario,scenario.requests)
-finalSolution,requestBankALNS,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBankALNS,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=false,stage="Offline")
+# state = State(solutionTrueDemand,scenario.onlineRequests[end],0)
+# feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+# @test msg == ""
+# @test feasible == true
+# println(msg)
 
 
+# #============================================================================#
+# # Solve without relocation
+# #============================================================================#
+# if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/false_false")
+#     mkpath("tests/WaitingPlots/true_true")
+# end
+# if displayPlots && isdir("tests/WaitingPlots/false_false")
+#     for file in readdir("tests/WaitingPlots/true_true"; join=true)
+#         rm(file; force=true, recursive=true)
+#     end
+# end
 
-#============================================================================#
-# Result
-#============================================================================#
-println("Relocation vehicles TRUE: ", solutionTrue.nTaxi)
-println("Relocation vehicles TRUE DEMAND: ", solutionTrueDemand.nTaxi)
-println("Relocation vehicles FALSE: ", solutionFalse.nTaxi)
-println("ALNS solution: ", finalSolution.nTaxi)
+# # Simulate scenario 
+# solutionFalse, requestBankFalse = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=false,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
+
+# state = State(solutionFalse,scenario.onlineRequests[end],0)
+# feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+# @test msg == ""
+# @test feasible == true
+# println(msg)
+
+# #============================================================================#
+# # Solve in-hindsigth
+# #============================================================================#
+# alnsParameters = "tests/resources/ALNSParameters_offline.json"
+
+# destroyMethods = Vector{GenericMethod}()
+# addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
+# addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
+# addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
+
+# # Choose repair methods
+# repairMethods = Vector{GenericMethod}()
+# addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
+# addMethod!(repairMethods,"regretInsertion",regretInsertion)
+
+# initialSolution, requestBankALNS = simpleConstruction(scenario,scenario.requests)
+# finalSolution,requestBankALNS,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBankALNS,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=false,stage="Offline")
 
 
-#============================================================================#
-# Plots 
-#============================================================================#
-#============================================================================#
 
-probabilityGrid = getProbabilityGrid(scenario,historicRequestFiles)
+# #============================================================================#
+# # Result
+# #============================================================================#
+# println("Relocation vehicles TRUE: ", solutionTrue.nTaxi)
+# println("Relocation vehicles TRUE DEMAND: ", solutionTrueDemand.nTaxi)
+# println("Relocation vehicles FALSE: ", solutionFalse.nTaxi)
+# println("ALNS solution: ", finalSolution.nTaxi)
 
-p = heatmap(probabilityGrid, 
-c=:viridis,         # color map
-xlabel="Longitude (grid cols)", 
-ylabel="Latitude (grid rows)", 
-title="Realised Demand",
-colorbar_title="Requests")
-display(p)
+
+# #============================================================================#
+# # Plots 
+# #============================================================================#
+# #============================================================================#
+
+# probabilityGrid = getProbabilityGrid(scenario,historicRequestFiles)
+
+# p = heatmap(probabilityGrid, 
+# c=:viridis,         # color map
+# xlabel="Longitude (grid cols)", 
+# ylabel="Latitude (grid rows)", 
+# title="Realised Demand",
+# colorbar_title="Requests")
+# display(p)
 
 #============================================================================#
 
 #==
  Plot time windows of pick ups 
 ==#
-requests = scenario.requests
-requests = sort(requests, by = r -> r.pickUpActivity.timeWindow.startTime)
-n = length(requests)
-labels = [string("Request ",r.id) for r in requests]
-start_times = [r.pickUpActivity.timeWindow.startTime for r in requests]
-end_times = [r.pickUpActivity.timeWindow.endTime for r in requests]
-call_times = [r.callTime for r in requests]
-durationsCallTime = end_times .- call_times
-durationsCallTimeStart = start_times .- call_times
-
-# Plotting
-p = plot(size = (1800,1200),legend=true, xlabel="Minutes after midnight", yticks=(1:n, labels), title="Pickup Time Windows with Call Times for Base Scenario",leftmargin=5mm,topmargin=5mm,rightmargin=5mm,bottommargin=5mm)
-
-# Add bars for time windows
-
-for i in 1:n
-    y = i # reverse order to show first request at the top
-    if i == 1
-        label = "Pickup Time Window"
-    else
-        label = ""
-    end
-    plot!([start_times[i], end_times[i]], [y, y], lw=10, color=:blue,label=label)
-    annotate!([end_times[i]], [y+0.1], text("$(durationsCallTime[i])", :black, 10, :bottom))
-    annotate!([start_times[i]], [y+0.1], text("$(durationsCallTimeStart[i])", :black, 10, :bottom))
-end
-
-# Add vertical red lines for call times
-firstPlot = true
-for i in 1:n
-    y = i
-    if i == 1
-        label = "Call Time"
-    else
-        label = ""
-    end
-    plot!([call_times[i], call_times[i]], [y-0.3, y+0.3], color=:red, lw=2, linestyle=:solid,label=label)
-end
+title = "Pick-Up Time Windows with Call Times for Dynamic Scenario"
+p = plotScenario(scenario.requests,title)
 
 display(p)
-savefig(p,"tests/WaitingPlots/PickUpTimeWindowsExampleBase.png")
+savefig(p,"plots/Waiting/PickUpTimeWindowsExampleDynamic.png")
+
+#==
+ Plot time windows for pick up for original problem 
+==#
+i = 5
+vehiclesFileBase = string("Data/Konsentra/DoD 40/",n,"/Vehicles_",n,"_",gamma,".csv")
+parametersFileBase = "tests/resources/Parameters.csv"
+gridFileBase = "Data/Konsentra/grid_$(gridSize).json"
+requestFileBase = "Data/Konsentra/DoD 40/$(n)/GeneratedRequests_$(n)_$(i).csv"
+distanceMatrixFileBase = string("Data/Matrices/DoD 40/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+
+timeMatrixFileBase =  string("Data/Matrices/DoD 40/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
+scenarioNameBase = string("Gen_Data_",n,"_",gamma,"_",i)
+scenarioNameBase = string("Gen_Data_",n,"_",gamma,"_",i)
 
 
-# for r in scenario.onlineRequests
+# Read instance 
+scenarioBase = readInstance(requestFileBase,vehiclesFileBase,parametersFileBase,scenarioNameBase,distanceMatrixFileBase,timeMatrixFileBase,gridFileBase)
+title = "Pick-Up Time Windows with Call Times for Base Scenario"
+p = plotScenario(scenarioBase.requests,title)
+
+display(p)
+savefig(p,"plots/Waiting/PickUpTimeWindowsExampleBase.png")
+
+
+# for r in scenarioBase.requests
 #     println("Request $(r.id), request type $(r.requestType)") 
 #     println("\t Call time: $(r.callTime)")
 #     println("\t Duration from call time to start TW: $(r.pickUpActivity.timeWindow.startTime - r.callTime)")

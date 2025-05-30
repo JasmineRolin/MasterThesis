@@ -1,8 +1,8 @@
 module WaitingStrategiesPlots
 
-using Plots, domain
+using Plots, domain, Plots.PlotMeasures
 
-export plotRequestsAndVehiclesWait
+export plotRequestsAndVehiclesWait,plotScenario
 
 function plotRequestsAndVehiclesWait(scenario,grid)
     max_lat = grid.maxLat 
@@ -79,6 +79,62 @@ function plotRequestsAndVehiclesWait(scenario,grid)
     end
 
     return p
+end
+
+
+#==
+ Plot scenario with call times 
+==#
+function plotScenario(requests::Vector{Request}, title::String)
+    requests = sort(requests, by = r -> r.pickUpActivity.timeWindow.startTime)
+    n = length(requests)
+
+    # Labels 
+    labels = [string("Request ",r.id) for r in requests]
+
+    # Times 
+    start_times = [r.pickUpActivity.timeWindow.startTime for r in requests]
+    end_times = [r.pickUpActivity.timeWindow.endTime for r in requests]
+    call_times = [r.callTime for r in requests]
+    durationsCallTime = end_times .- call_times
+    durationsCallTimeStart = start_times .- call_times
+
+    # Plotting
+    p = plot(size = (1800,1200),legend=true, xlabel="Minutes after midnight", 
+        yticks=(1:n, labels), title=title,leftmargin=5mm,topmargin=5mm,rightmargin=5mm,bottommargin=5mm,
+        legendfontsize = 17,
+        ytickfont = font(14),
+        xtickfont = font(14),
+        xguidefont = font(16),
+        titlefont = font(18))
+
+    # Add bars for time windows
+
+    for i in 1:n
+        y = i # reverse order to show first request at the top
+        if i == 1
+            label = "Pickup Time Window"
+        else
+            label = ""
+        end
+        plot!([start_times[i], end_times[i]], [y, y], lw=10, color=:blue,label=label)
+        annotate!([end_times[i]], [y+0.1], text("$(durationsCallTime[i])", :black, 12, :bottom))
+        annotate!([start_times[i]], [y+0.1], text("$(durationsCallTimeStart[i])", :black, 12, :bottom))
+    end
+
+    # Add vertical red lines for call times
+    firstPlot = true
+    for i in 1:n
+        y = i
+        if i == 1
+            label = "Call Time"
+        else
+            label = ""
+        end
+        plot!([call_times[i], call_times[i]], [y-0.3, y+0.3], color=:red, linestyle=:solid,label=label,linewidth=5)
+    end
+
+    return p 
 end
 
 

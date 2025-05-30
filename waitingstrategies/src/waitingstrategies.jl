@@ -12,6 +12,6 @@ export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBa
 
 include("WaitingStrategiesPlots.jl")
 using .WaitingStrategiesPlots
-export plotRequestsAndVehiclesWait
+export plotRequestsAndVehiclesWait, plotScenario
 
 end # module waitingstrategies

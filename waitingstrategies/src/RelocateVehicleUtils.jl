@@ -13,6 +13,7 @@ export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBa
 function determineWaitingLocation2(time::Array{Int,2},nRequests::Int,depotLocations::Dict{Tuple{Int,Int},Location},grid::Grid,probabilityGrid::Array{Float64,2}, activeVehiclesPrCell::Array{Int,3},period::Int,currentGridCell::Tuple{Int,Int},currentWaitingId::Int,activityBeforeWaitingId::Int,isRouteEmpty::Bool)
 
     # Active vehicles in period
+    # TODO: jas - perioden burde jo i virkeligheden være den periode hvor man ankommer til grid cell 
     activeVehiclesInPeriod = activeVehiclesPrCell[period, :, :]
 
     # Find time between current cell and depot locations
@@ -61,24 +62,18 @@ function determineWaitingLocation(time::Array{Int,2},depotLocations::Dict{Tuple{
 
     # Get all indices where the value equals the minimum
     minIndices = findall(x -> x == minValue, vehicleBalanceInPeriod)
-    #println("Indices with minimum value: ", minIndices)
 
     # Retrive all depots ids for minimum values 
     depotIds = [findDepotIdFromGridCell(grid, nRequests, (idx[1], idx[2])) for idx in minIndices]
-    #println("Depot ids: ", depotIds)
 
     # Retrieve drive times to depot ids 
     times = [time[currentWaitingId,d] for d in depotIds]
-    #println("Drive times: ", times)
 
     # Find depots with minimum drive time
     minTimeIdx = argmin(times)
-    println("minimum drive time: ", times[minTimeIdx])
     minRowIdx = minIndices[minTimeIdx][1]
     minColIdx = minIndices[minTimeIdx][2]
     depotId = depotIds[minTimeIdx]
-    println("Depot id with minimum drive time: ", depotId)
-
 
     return depotId,depotLocations[(minRowIdx,minColIdx)],(minRowIdx,minColIdx)
 end
