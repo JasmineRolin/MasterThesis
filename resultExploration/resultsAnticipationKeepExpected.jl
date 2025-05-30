@@ -10,9 +10,16 @@ using CSV
 
 
  
-function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, run::String, resultType::String, i::Int)
+#function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, run::String, resultType::String, i::Int)
+    n = 100
+    nExpectedPercentage = 0.6
+    gamma = 0.5
+    date = "2025-05-29"
+    run = ""
+    resultType = "AnticipationKeepExpected"
+    i = 1
 
-    dataset = "DoD 60 Calltime60-120"
+    dataset = "Dynamisk_v2"
     vehiclesFile = string("Data/Konsentra/",dataset,"/",n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters_offlineAnticipation.json"
@@ -37,9 +44,9 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
     #dfResults = processResults(outputFiles)
     #CSV.write(outPutFolder*"/results.csv", dfResults)
 
-end
+#end
 
-#main(50,0.6,0.7,"2025-05-23","","AnticipationKeepExpected",1)
+#main(100,0.6,0.5,"2025-05-29","","AnticipationKeepExpected",1)
 
 if abspath(PROGRAM_FILE) == @__FILE__
     n = parse(Int, ARGS[1])

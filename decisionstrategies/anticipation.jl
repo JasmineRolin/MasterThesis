@@ -412,7 +412,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
     nRequests = 0
 
     # Create different scenarios and solve problem with known offline requests and predicted online requests 
-    for i in 1:10 #TODO change
+    for i in 1:1 #TODO change
         println("==========================================")
         println("Run: ", i)
 
@@ -654,7 +654,7 @@ end
 
 function match_similar_requests(reqs1::Vector{Request}, reqs2::Vector{Request};
                                 max_time_diff=15,
-                                max_dist_km=2.0)
+                                max_dist_km=1.5)
 
     matches = Tuple{Int, Int, Float64}[]
     used = Set{Int}()
@@ -726,7 +726,8 @@ function plot_matched_request_gantts(reqs1::Vector{Request}, reqs2::Vector{Reque
     # First Gantt chart (left)
     p1 = plot(title="Expected Requests", size=(1000, 600), xlabel="Time (min after midnight)", ylabel="Requests", legend=false)
     y1_labels, y1_ticks = String[], Int[]
-    for (i, req) in enumerate(reqs1)
+    sorted_requests = sort(reqs1; by = r -> r.pickUpActivity.timeWindow.startTime)
+    for (i, req) in enumerate(sorted_requests)
         y = length(reqs1) - i + 1
         color_pickup = in(req.id, matched_ids1) ? :green : :red
         color_dropoff = in(req.id, matched_ids1) ? :lightgreen : :orange

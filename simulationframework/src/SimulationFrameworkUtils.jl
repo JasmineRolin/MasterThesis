@@ -798,6 +798,10 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
 
     for (itr,event) in enumerate(events)
 
+        if itr == 1
+            throw("No simulation")
+        end
+
         startTimeEvent = time()
         println("------------------------------------------------------------------------------------------------------------------------------------------------")
         println("Event: id: ", itr, ", time: ", event.callTime, " request id: ", event.id, " pick up time: ",event.request.pickUpActivity.timeWindow)
