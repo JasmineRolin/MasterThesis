@@ -31,8 +31,7 @@ function main()
     # Read instance 
     scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile,gridFile)
 
-
-    println("Running in hindsigt for n: ", n, " run: ", run)
+    println("Running in hindsigt for n: ", n," i: ", i, " run: ", run)
     # Choose destroy methods
     destroyMethods = Vector{GenericMethod}()
     addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
@@ -67,3 +66,4 @@ function main()
     KPIDict = writeOnlineKPIsToFile(fileName,scenario,solution,Vector{Int}(),requestBank,totalElapsedTime,averageResponseTime,eventsInsertedByALNS)
 end
 
+main()

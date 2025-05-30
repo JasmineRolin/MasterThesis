@@ -4,7 +4,7 @@
 gamma=0.7
 gridSize=10
 
-nRequestsList=(20) 
+nRequestsList=(20 100 300 500) 
 numRuns=3  
 numData=10   
 

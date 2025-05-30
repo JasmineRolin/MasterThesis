@@ -1,9 +1,9 @@
 using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures
 
-nRequestList = [20,100]#,100, 300, 500]
+nRequestList = [20,100, 300, 500]
 nRuns = 3
-relocateVehiclesList = [(true,false),(true,true),(false,false)]
+relocateVehiclesList = [("true","false"),("true","true"),("false","false"),("inhindsight","")]
 gamma = 0.7 
 
 #===============================#
@@ -78,15 +78,18 @@ for n in nRequestList
         minnTaxi = min(minnTaxi,minimum(df.nTaxi_mean))
 
         # Plot 
-        if relocateVehiclesOption[1] && relocateVehiclesOption[2]
+        if relocateVehiclesOption[1] == "true" && relocateVehiclesOption[2] == "true"
             color = :green
             label = "Relocation, method 1"
-        elseif relocateVehiclesOption[1] && !relocateVehiclesOption[2]
+        elseif relocateVehiclesOption[1] == "true" && relocateVehiclesOption[2] == "false"
             color = :blue
             label = "Relocation, method 2"
-        else
+        elseif relocateVehiclesOption[1] == "false" && relocateVehiclesOption[2] == "false"
             color = :red
             label = "Without Relocation"
+        else
+            color = :black 
+            label = "In Hindsight"
         end
 
         plot!(df.nTaxi_mean; linestyle = :dash, marker = :circle, color = color, label = label,markerstrokewidth=0,linewidth=2,markersize=5)
