@@ -1,8 +1,8 @@
 using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures
 
-methodListBase = ["BaseCase","InHindsight","AnticipationKeepExpected"]
-nRequestList = [20,100]
+methodListBase = ["BaseCase","InHindsight"]
+nRequestList = [20,100,300,500]
 runList = [1,2,3,4,5]
 gamma = 0.5
 anticipationDegrees = [0.6]
@@ -176,13 +176,13 @@ for n in nRequestList
     end
 
     # Compose the final plot
-    if !isdir("plots/Anticipation/"*date*"/")
-        mkpath("plots/Anticipation/"*date*"/")
+    if !isdir("plots/Anticipation/"*date*"_noAnti/")
+        mkpath("plots/Anticipation/"*date*"_noAnti/")
     end
 
     finalPlot = plot(plots[1], plots[2], plots[3]; layout=(3,1), size=(1000,1200),leftmargin=5mm,bottommargin=5mm,topmargin=5mm)
-    savefig(finalPlot, "plots/Anticipation/"*date*"/results_$(n).png")
+    savefig(finalPlot, "plots/Anticipation/"*date*"_noAnti/results_$(n).png")
     singlePlot = plot(plots[1]; title = "No. Requests: $(n), Gamma: $(gamma)")
-    savefig(singlePlot, "plots/Anticipation/$(date)/results_$(n)_single.png")
+    savefig(singlePlot, "plots/Anticipation/$(date)_noAnti/results_$(n)_single.png")
 end
 
