@@ -1,4 +1,0 @@
-Dod: 0.4
-Tidsvinduer: 15 før og 45 efter
-Kun Pickup requests
-Calltime: start til 2 timer før 

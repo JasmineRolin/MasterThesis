@@ -3,5 +3,5 @@
 tests/output
 
 submitfiles/output
-
+submitfiles/error
 submitfiles/generated_jobs
