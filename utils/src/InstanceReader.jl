@@ -20,7 +20,7 @@ global MAX_EARLY_ARRIVAL = 15
  Function to read instance 
  Takes request, vehicles and parameters .csv as input 
 ==#
-function readInstance(requestFile::String, vehicleFile::String, parametersFile::String,scenarioName=""::String,distanceMatrixFile=""::String,timeMatrixFile=""::String,gridFile::String = "";useAnticipationOnlineRequests::Bool = false)::Scenario
+function readInstance(requestFile::String, vehicleFile::String, parametersFile::String,scenarioName=""::String,distanceMatrixFile=""::String,timeMatrixFile=""::String,gridFile::String = "")::Scenario
 
     # Check that files exist 
     if !isfile(requestFile)
@@ -89,12 +89,6 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
 
     # Get requests 
     requests = readRequests(requestsDf,nRequests,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time)
-
-    if useAnticipationOnlineRequests
-        for r in requests
-            r.callTime = 0 
-        end
-    end
 
     # Split into offline and online requests
     onlineRequests, offlineRequests = splitRequests(requests)
@@ -185,7 +179,7 @@ end
 #==
  Function to read requests 
 ==#
-function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maximumRideTimePercent::Int, minimumMaximumRideTime::Int,time::Array{Int,2};extraN::Int=0)
+function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maximumRideTimePercent::Int, minimumMaximumRideTime::Int,time::Array{Int,2};extraN::Int=0, useAnticipationOnlineRequests::Bool=false)
     requests = Vector{Request}()
 
     for row in eachrow(requestDf)
@@ -200,7 +194,11 @@ function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maxim
         requestType = row.request_type == 0 ? PICKUP_REQUEST : DROPOFF_REQUEST
 
         # Read call time 
-        callTime = Int(floor(row.call_time))
+        if useAnticipationOnlineRequests
+            callTime = 0
+        else
+            callTime = Int(floor(row.call_time))
+        end
 
         # Read request time 
         requestTime = row.request_time 

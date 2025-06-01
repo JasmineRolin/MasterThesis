@@ -114,7 +114,7 @@ function getDistanceAndTimeMatrixFromDataFrame(requestsDf::DataFrame,expectedReq
 end
 
 
-function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicleFile::String, parametersFile::String,scenarioName=""::String,gridFile::String = "")
+function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicleFile::String, parametersFile::String,scenarioName=""::String,gridFile::String = "";useAnticipationOnlineRequests::Bool=false)
 
     # Check that files exist 
     if !isfile(requestFile)
@@ -180,7 +180,11 @@ function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicle
     end
 
     # Generate expected requests
-    newExpectedRequestsDf = createExpectedRequests(nNewExpected,nRequests)
+    if useAnticipationOnlineRequests
+        newExpectedRequestsDf = makeAnticipationOnlineRequests(requestsDf, nRequests)
+    else
+        newExpectedRequestsDf = createExpectedRequests(nNewExpected,nRequests)
+    end
 
     # Read time and distance matrices from input or initialize empty matrices
     distance, time = getDistanceAndTimeMatrixFromDataFrame(requestsDf,newExpectedRequestsDf,depotCoordinates)
@@ -188,6 +192,7 @@ function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicle
     # Get requests 
     requests = readRequests(requestsDf,nRequests+nNewExpected,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time)
     expectedRequests = readRequests(newExpectedRequestsDf,nNewExpected,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time,extraN=nRequests)
+    
     allRequests = vcat(requests, expectedRequests)
 
     # Split into offline and online requests
@@ -200,6 +205,31 @@ function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicle
     end
 
 end
+
+
+function makeAnticipationOnlineRequests(requestDF::DataFrame, nRequests::Int)
+
+    # Filter requests where call_time > 0
+    filteredDF = requestDF[requestDF.call_time .> 0, :]
+
+    # Create modified copy with updated values
+    newIds = collect(1:nrow(filteredDF)) #.+ nRequests
+    newDF = DataFrame(
+        id = newIds,
+        pickup_latitude = filteredDF.pickup_latitude,
+        pickup_longitude = filteredDF.pickup_longitude,
+        dropoff_latitude = filteredDF.dropoff_latitude,
+        dropoff_longitude = filteredDF.dropoff_longitude,
+        request_type = filteredDF.request_type,
+        request_time = filteredDF.request_time,
+        mobility_type = filteredDF.mobility_type,
+        call_time = fill(0, nrow(filteredDF)),  # reset call_time
+        direct_drive_time = filteredDF.direct_drive_time,
+    )
+
+    return newDF
+end
+
 
 
 function removeExpectedRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},solution::Solution,nExpected::Int,nFixed::Int,nNotServicedExpectedRequests::Int,requestBank::Vector{Int},taxiParameter::Float64,taxiParameterExpected::Float64;TO::TimerOutput=TimerOutput())
@@ -418,9 +448,10 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         println("Run: ", i)
 
         # Make scenario
-        if useAnticipateOnlineRequests
+        if useAnticipationOnlineRequests
             scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile,useAnticipationOnlineRequests=true)
-        else
+        else 
+
             scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile)
         end
         time = scenario.time
@@ -433,6 +464,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         nRequests = length(requests)
 
         # Get solution
+        println(scenario.offlineRequests)
         initialSolution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
 
         # TODO: remove 
@@ -496,7 +528,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
             solution = copySolution(originalSolution)
             
             # Generate new scenario
-            if useAnticipateOnlineRequests
+            if useAnticipationOnlineRequests
                 scenario2 = scenario
             else
                 scenario2 = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile)
