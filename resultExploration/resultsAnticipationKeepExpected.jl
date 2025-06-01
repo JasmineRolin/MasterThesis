@@ -10,16 +10,8 @@ using CSV
 
 
  
-#function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, run::String, resultType::String, i::Int)
+function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, run::String, resultType::String, i::Int)
 
-    n = 20
-    nExpectedPercentage = 0.4
-    gamma = 0.5
-    date = "2025-06-01_test"
-    run = ""
-    resultType = "AnticipationKeepExpected"
-    i = 1
-    
     dataset = "Original_v2"
     vehiclesFile = string("Data/Konsentra/",dataset,"/",n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"
@@ -46,7 +38,7 @@ using CSV
     #dfResults = processResults(outputFiles)
     #CSV.write(outPutFolder*"/results.csv", dfResults)
 
-#end
+end
 
 #main(20,0.4,0.5,"2025-06-01_test","","AnticipationKeepExpected",1)
 
