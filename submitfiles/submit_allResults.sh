@@ -7,13 +7,13 @@ n_requests_list=("500")
 anticipation_levels=("0.6")
 run_tags=("run1" "run2" "run3" "run4" "run5")
 gamma="0.5"
-date="2025-05-29_dynamisk_v2_0.5"
+date="2025-05-31_original_v2_0.5_long"
 ####################
 
 mkdir -p submitfiles/generated_jobs
 
 # Define case types
-case_types=("AnticipationKeepExpected")
+case_types=("AnticipationKeepExpected" "InHindsight" "BaseCase")
 
 for case_type in "${case_types[@]}"; do
   for n_requests in "${n_requests_list[@]}"; do
