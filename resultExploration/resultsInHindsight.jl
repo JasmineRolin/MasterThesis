@@ -43,14 +43,14 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
         addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
         # Get solution
-        solution, requestBank = inHindsightSolution(scenario,repairMethods,destroyMethods,parametersFile,alnsParameters,scenarioName,displayPlots=true)
+        solution, requestBank, ALNSIterations = inHindsightSolution(scenario,repairMethods,destroyMethods,parametersFile,alnsParameters,scenarioName,displayPlots=true)
         
         if saveResults
             mkpath(outPutFolder)  # ensure folder exists
             fileName = outPutFolder * "/Simulation_KPI_" * string(scenario.name) * "_false.txt"
         
             open(fileName, "a") do io
-                println(io, "Dataset: $i, TotalCost: $(solution.totalCost), UnservedRequests: $(length(requestBank))")
+                println(io, "Dataset: $i, TotalCost: $(solution.totalCost), UnservedRequests: $(length(requestBank)), ALNSIterations: $(ALNSIterations)")
             end
         end
 

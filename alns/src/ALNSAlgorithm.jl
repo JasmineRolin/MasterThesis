@@ -179,7 +179,7 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
     
     # show(TO)
 
-    return currentState.bestSolution, currentState.bestRequestBank, pVals, deltaVals, isImprovedVec, isAcceptedVec, isNewBestVec
+    return currentState.bestSolution, currentState.bestRequestBank, pVals, deltaVals, isImprovedVec, isAcceptedVec, isNewBestVec, iteration
 end
 
 end

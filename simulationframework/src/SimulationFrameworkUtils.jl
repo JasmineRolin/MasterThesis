@@ -687,10 +687,10 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
     currentState = State(scenario,Request(),0)
 
     if anticipation == false
-        solution, requestBank = offlineSolution(scenario,repairMethods,destroyMethods,parametersFile,alnsParameters,scenarioName)
+        solution, requestBank, ALNSIterations = offlineSolution(scenario,repairMethods,destroyMethods,parametersFile,alnsParameters,scenarioName)
         nNotServicedExpectedRequests = 0 # Dummy
     elseif anticipation == true && keepExpectedRequests == false
-        solution, requestBank, resultsAnticipation = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,length(scenario.offlineRequests),displayPlots=displayPlots)
+        solution, requestBank, resultsAnticipation,_,_,_,_,ALNSIterations = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,length(scenario.offlineRequests),displayPlots=displayPlots)
         updateIds!(solution,length(scenario.requests),nExpected)
         requestBank = requestBank[requestBank .<= scenario.nFixed]
 
@@ -705,7 +705,7 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         end
         nNotServicedExpectedRequests = 0 # Dummy
     else
-        solution, requestBank, resultsAnticipation, scenario = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,length(scenario.offlineRequests),displayPlots=displayPlots,keepExpectedRequests=keepExpectedRequests)
+        solution, requestBank, resultsAnticipation, scenario,_,_,_,ALNSIterations = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,length(scenario.offlineRequests),displayPlots=displayPlots,keepExpectedRequests=keepExpectedRequests)
         nRequestBankTemp = length(requestBank)
         requestBank = requestBank[requestBank .<= scenario.nFixed]
         nNotServicedExpectedRequests = nRequestBankTemp - length(requestBank) 
@@ -795,8 +795,11 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
     averageNotServicedExpectedRequests = zeros(Float64,totalEvents)
     averageNotServicedExpectedRequestsRelevant = zeros(Float64,totalEvents)
 
-
     for (itr,event) in enumerate(events)
+
+        if itr == 2
+            throw("No simulaition")
+        end
 
         startTimeEvent = time()
         println("------------------------------------------------------------------------------------------------------------------------------------------------")
@@ -942,7 +945,7 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
             mkpath(outPutFileFolder)
         end
         fileName = outPutFileFolder*"/Simulation_KPI_"*string(scenario.name)*"_"*string(relocateVehicles)*".json"
-        KPIDict = writeOnlineKPIsToFile(fileName,scenario,finalSolution,requestBank,requestBankOffline,totalElapsedTime,averageResponseTime,eventsInsertedByALNS)
+        KPIDict = writeOnlineKPIsToFile(fileName,scenario,finalSolution,requestBank,requestBankOffline,totalElapsedTime,averageResponseTime,eventsInsertedByALNS,ALNSIterations)
         println("=== KPI Summary ===")
         for (key, value) in KPIDict
             println(rpad(key, 30), ": ", value)

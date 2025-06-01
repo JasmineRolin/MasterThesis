@@ -686,7 +686,7 @@ end
 #==
  Write KPIs to file  
 ==#
-function writeOnlineKPIsToFile(fileName::String, scenario::Scenario,solution::Solution,requestBank::Vector{Int}, requestBankOffline::Vector{Int},totalElapsedTime::Float64,averageResponseTime::Float64,eventsInsertedByALNS::Int)
+function writeOnlineKPIsToFile(fileName::String, scenario::Scenario,solution::Solution,requestBank::Vector{Int}, requestBankOffline::Vector{Int},totalElapsedTime::Float64,averageResponseTime::Float64,eventsInsertedByALNS::Int,ALNSIterations::Int)
     # Find drive times for customers
     totalDirectRideTime = length(requestBank) == length(scenario.requests) ? 0 : sum(r.directDriveTime for r in scenario.requests if !(r.id in requestBank)) 
     totalActualRideTime = 0
@@ -747,7 +747,8 @@ function writeOnlineKPIsToFile(fileName::String, scenario::Scenario,solution::So
         "TotalElapsedTime" => round(totalElapsedTime,digits=2),
         "AverageResponseTime" => round(averageResponseTime,digits=2), 
         "EventsInsertedByALNS" => eventsInsertedByALNS,
-        "AveragePercentRideSharing" => round(averagePercentRideSharing,digits=3)
+        "AveragePercentRideSharing" => round(averagePercentRideSharing,digits=3),
+        "ALNSIterations" => ALNSIterations
     )
 
     # Write the dictionary to a JSON file

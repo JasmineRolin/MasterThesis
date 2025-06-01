@@ -20,7 +20,7 @@ global MAX_EARLY_ARRIVAL = 15
  Function to read instance 
  Takes request, vehicles and parameters .csv as input 
 ==#
-function readInstance(requestFile::String, vehicleFile::String, parametersFile::String,scenarioName=""::String,distanceMatrixFile=""::String,timeMatrixFile=""::String,gridFile::String = "")::Scenario
+function readInstance(requestFile::String, vehicleFile::String, parametersFile::String,scenarioName=""::String,distanceMatrixFile=""::String,timeMatrixFile=""::String,gridFile::String = "";useAnticipationOnlineRequests::Bool = false)::Scenario
 
     # Check that files exist 
     if !isfile(requestFile)
@@ -89,6 +89,12 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
 
     # Get requests 
     requests = readRequests(requestsDf,nRequests,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time)
+
+    if useAnticipationOnlineRequests
+        for r in requests
+            r.callTime = 0 
+        end
+    end
 
     # Split into offline and online requests
     onlineRequests, offlineRequests = splitRequests(requests)

@@ -44,7 +44,7 @@ function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::
     ALNSOutputFileName = string(outputFileFolderWithDate,"ALNSOutput.csv")
 
     # Call ALNS 
-    solution, requestBank,pVals,deltaVals,isImprovedVec,isAcceptedVec,isNewBestVec = ALNS(scenario,initialSolution, requestBank,configuration,parameters, ALNSOutputFileName, alreadyRejected = alreadyRejected,event = event, visitedRoute=visitedRoute, saveOutPut = saveResults,stage=stage, nNotServicedExpectedRequests=nNotServicedExpectedRequests)
+    solution, requestBank,pVals,deltaVals,isImprovedVec,isAcceptedVec,isNewBestVec, noIterations = ALNS(scenario,initialSolution, requestBank,configuration,parameters, ALNSOutputFileName, alreadyRejected = alreadyRejected,event = event, visitedRoute=visitedRoute, saveOutPut = saveResults,stage=stage, nNotServicedExpectedRequests=nNotServicedExpectedRequests)
 
     # Create results 
     specificationsFileName = string(outputFileFolderWithDate,"ALNSSpecifications.json")
@@ -53,7 +53,7 @@ function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::
 
     ALNSResult(specificationsFileName,KPIFileName,ALNSOutputFileName,scenario,configuration,solution,requests,requestBank,parameters,saveResults=saveResults,displayPlots=displayPlots,plotFolder=plotFolder)
 
-    return solution, requestBank,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec # TODO: remove
+    return solution, requestBank,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec, noIterations # TODO: remove
 end
 
 

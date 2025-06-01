@@ -15,9 +15,9 @@ function offlineSolution(scenario::Scenario,repairMethods::Vector{GenericMethod}
     initialSolution, initialRequestBank = simpleConstruction(scenario,scenario.offlineRequests) 
         
     # Run ALNS for offline solution 
-    solution,requestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution =  initialSolution, requestBank = initialRequestBank, displayPlots = displayALNSPlots, saveResults = saveALNSResults,outPutFileFolder=outputFileFolder)
+    solution,requestBank,_,_,_,_, noIterations = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution =  initialSolution, requestBank = initialRequestBank, displayPlots = displayALNSPlots, saveResults = saveALNSResults,outPutFileFolder=outputFileFolder)
 
-    return solution, requestBank
+    return solution, requestBank,noIterations
 
 end
 
@@ -30,7 +30,7 @@ function inHindsightSolution(scenario::Scenario,repairMethods::Vector{GenericMet
     initialSolution, initialRequestBank = simpleConstruction(scenario,scenario.requests) 
         
     # Run ALNS for offline solution 
-    solution,requestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods; event = scenario.onlineRequests[end],parametersFile=alnsParameters,initialSolution =  initialSolution, requestBank = initialRequestBank, displayPlots = displayALNSPlots, saveResults = saveALNSResults,outPutFileFolder=outputFileFolder)
+    solution,requestBank,_,_,_,_, noIterations = runALNS(scenario, scenario.requests, destroyMethods,repairMethods; event = scenario.onlineRequests[end],parametersFile=alnsParameters,initialSolution =  initialSolution, requestBank = initialRequestBank, displayPlots = displayALNSPlots, saveResults = saveALNSResults,outPutFileFolder=outputFileFolder)
 
     if displayPlots
         display(createGantChartOfSolutionOffline(solution,"In-hindsigt solution",nFixed=scenario.nFixed))
@@ -45,7 +45,7 @@ function inHindsightSolution(scenario::Scenario,repairMethods::Vector{GenericMet
     println(rpad("Final ride time (veh)", 40), solution.totalRideTime)
     println(rpad("Final idle time", 40), solution.totalIdleTime)
 
-    return solution, requestBank
+    return solution, requestBank, noIterations
 
 end
 

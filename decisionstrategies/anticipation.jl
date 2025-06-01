@@ -395,7 +395,7 @@ end
 #==
  Create offline solution with anticipation
 ==#
-function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},destroyMethods::Vector{GenericMethod},requestFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String,nExpected::Int,gridFile::String,nOfflineOriginal::Int;displayPlots::Bool=false,keepExpectedRequests::Bool=false)
+function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},destroyMethods::Vector{GenericMethod},requestFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String,nExpected::Int,gridFile::String,nOfflineOriginal::Int;displayPlots::Bool=false,keepExpectedRequests::Bool=false,useAnticipationOnlineRequests::Bool=false)
 
     # Variables to determine best solution
     bestRunId = -1
@@ -404,20 +404,25 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
     bestRequestBank::Union{Nothing, Vector{Int}} = nothing
     bestScenario::Union{Nothing, Scenario} = nothing
     bestNotServicedExpectedRequests = typemax(Int)
+    bestALNSIterations = typemax(Int)
     results = DataFrame(runId = String[],
                         averageObj = Float64[],
                         averageNotServicedExpectedRequests = Float64[],
                         nInitialNotServicedFixedRequests = Int[],
-                        nInitialNotServicedExpectedRequests = Int[])
+                        nInitialNotServicedExpectedRequests = Int[], ALNSIterations = Int[])
     nRequests = 0
 
     # Create different scenarios and solve problem with known offline requests and predicted online requests 
-    for i in 1:10 #TODO change
+    for i in 1:2 #TODO change
         println("==========================================")
         println("Run: ", i)
 
         # Make scenario
-        scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile)
+        if useAnticipateOnlineRequests
+            scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile,useAnticipationOnlineRequests=true)
+        else
+            scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile)
+        end
         time = scenario.time
         distance = scenario.distance
         serviceTimes = scenario.serviceTimes
@@ -438,7 +443,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
             throw(msg)
            end
 
-        originalSolution, originalRequestBank,_,_, _,_,_ = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
+        originalSolution, originalRequestBank,_,_, _,_,_,ALNSIterations = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
         
         # Save solution with requests
         if keepExpectedRequests
@@ -491,7 +496,11 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
             solution = copySolution(originalSolution)
             
             # Generate new scenario
-            scenario2 = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile)
+            if useAnticipateOnlineRequests
+                scenario2 = scenario
+            else
+                scenario2 = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile)
+            end
 
             # Insert expected requests randomly into solution using regret insertion
             expectedRequestsIds = collect(nFixed+1:nFixed+nExpected)
@@ -523,6 +532,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         if averageObj < bestAverageObj 
             bestAverageObj = averageObj
             bestNotServicedExpectedRequests = averageNotServicedExpectedRequests
+            bestALNSIterations = ALNSIterations
             if keepExpectedRequests
                 bestSolution = originalSolutionWithAllRequests
                 bestRequestBank = originalRequestBankWithAllRequests
@@ -535,7 +545,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
 
         # Save results
         push!(results, (runId = "Run $i", averageObj = averageObj, averageNotServicedExpectedRequests = averageNotServicedExpectedRequests, 
-                        nInitialNotServicedFixedRequests = nNotServicedFixedRequests, nInitialNotServicedExpectedRequests = nNotServicedExpectedRequests))
+                        nInitialNotServicedFixedRequests = nNotServicedFixedRequests, nInitialNotServicedExpectedRequests = nNotServicedExpectedRequests, ALNSIterations = ALNSIterations))
         
         println("BEST RUN: ", bestRunId)
 
@@ -551,9 +561,9 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
     end
 
     if keepExpectedRequests
-        return bestSolution, bestRequestBank, results, bestScenario, Scenario(), true, ""
+        return bestSolution, bestRequestBank, results, bestScenario, Scenario(), true, "", bestALNSIterations
     else
-        return bestSolution, bestRequestBank, results, Scenario(), Scenario(), true, ""
+        return bestSolution, bestRequestBank, results, Scenario(), Scenario(), true, "", bestALNSIterations
     end
     
 
