@@ -272,8 +272,8 @@ function updateLastWaitingActivityInRoute!(time::Array{Int,2},distance::Array{Fl
     return arrivalAtWaiting
 end
 
-function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{Float64,2},nRequests::Int,grid::Grid,depotLocations::Dict{Tuple{Int,Int},Location},vehicleBalance::Array{Int,3},activeVehiclesPerCell::Array{Int,3},realisedDemand::Array{Int,3},predictedDemand::Array{Float64,3},
-    currentSolution::Solution,schedule::VehicleSchedule,currentSchedule::VehicleSchedule,finalSolution::Solution,nTimePeriods::Int,periodLength::Int,vehicleDemand::Array{Int,3},displayPlots::Bool)
+function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{Float64,2},nRequests::Int,grid::Grid,depotLocations::Dict{Tuple{Int,Int},Location},vehicleBalance::Array{Int,3},activeVehiclesPerCell::Array{Int,3},probabilityGrid::Array{Float64,2},realisedDemand::Array{Int,3},predictedDemand::Array{Float64,3},
+    currentSolution::Solution,schedule::VehicleSchedule,currentSchedule::VehicleSchedule,finalSolution::Solution,nTimePeriods::Int,periodLength::Int,vehicleDemand::Array{Int,3},displayPlots::Bool,scenarioName::String,currentTime::Int,relocateWithDemand::Bool)
     
     vehicle = schedule.vehicle
     currentRouteLength = length(currentSchedule.route)
@@ -288,19 +288,20 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
     # Determine period 
     period = min(Int(ceil(relocationTime / periodLength)), nTimePeriods)
 
-    if all(vehicleBalance[period,:,:] .>= 0)
+    # If we relocate using demand 
+     if relocateWithDemand && all(vehicleBalance[period,:,:] .>= 0)
         previousGridCell = determineGridCell(previousWaitingLocation,grid)
 
         println("==> No relocation needed for vehicle ",vehicle.id," in period ",period, " minimum: ",minimum(vehicleBalance[period,:,:]), " maximum predicted demand: ", maximum(predictedDemand[period,:,:]))
-        if displayPlots
-            display(plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,vehicleBalance,previousGridCell,previousGridCell,period,periodLength,vehicle.id,vehicleDemand))
-        end
-        
         return
     end
 
-    # Find waiting location
-    waitingLocationId,waitingLocation,gridCell = determineWaitingLocation(depotLocations,grid,nRequests,vehicleBalance,period,predictedDemand)
+    # Find current grid cell of waiting activity
+    previousGridCell = determineGridCell(previousWaitingLocation,grid)
+    if activeVehiclesPerCell[period,previousGridCell[1],previousGridCell[2]] <= 0
+        println("No active vehicle in cell: ", previousGridCell, " for vehicle ",vehicle.id," in period ",period)
+        throw(ArgumentError("No active vehicle in cell: $(previousGridCell) for vehicle $(vehicle.id) in period $(period)"))
+    end
 
     # Determine previous activity 
     if currentRouteLength == 2 # If only waiting and depot left in current schedule 
@@ -309,9 +310,15 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
         activityBeforeWaiting = currentSchedule.route[waitingIdx-1]
     end
 
-    println("==> Waiting location: ",waitingLocationId, ", period: ",period, ", relocation time: ",relocationTime) 
-    tttt = activityBeforeWaiting.endOfServiceTime + time[activityBeforeWaiting.activity.id,waitingLocationId] + time[waitingLocationId,vehicle.depotId]
-    println("Activity before waiting: ",activityBeforeWaiting.activity.id, " arrival with new: ",tttt, " end time: ",vehicle.availableTimeWindow.endTime)
+    # Find waiting location
+    if relocateWithDemand
+        waitingLocationId,waitingLocation,gridCell = determineWaitingLocation(time,depotLocations,grid,nRequests,vehicleBalance,period,previousWaitingLocationId)
+    else
+        activityBeforeWaitingId = activityBeforeWaiting.activity.id
+        isRouteEmpty = isVehicleScheduleEmpty(currentSchedule)
+        waitingLocationId,waitingLocation,gridCell,score = determineWaitingLocation2(time,nRequests,depotLocations,grid,probabilityGrid,activeVehiclesPerCell,period,previousGridCell,previousWaitingLocationId,activityBeforeWaitingId,isRouteEmpty)
+    end
+    println("Waiting location: ",waitingLocationId, ", period: ",period, ", relocation time: ",relocationTime) 
 
     if waitingLocationId == previousWaitingLocationId
         println("Did not relocate vehicle ",vehicle.id," as same previous")
@@ -327,8 +334,17 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
         # Determine previous grid cell 
         previousGridCell = determineGridCell(previousWaitingLocation,grid)
 
+        # Plot relocation 
         if displayPlots
-            display(plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,vehicleBalance,gridCell,previousGridCell,period,periodLength,vehicle.id,vehicleDemand))
+            if relocateWithDemand 
+                p = plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,vehicleBalance,gridCell,previousGridCell,period,periodLength,vehicle,vehicleDemand)
+                display(p)
+                savefig(p,"tests/WaitingPlots/"*scenarioName*"/true_true/CurrentSolutionTime"*string(currentTime)*"RELOCATION.png")
+            else
+                p = plotRelocation2(probabilityGrid,score,predictedDemand,activeVehiclesPerCell,realisedDemand,vehicleBalance,gridCell,previousGridCell,period,periodLength,vehicle.id,vehicleDemand)
+                display(p)
+                savefig(p,"tests/WaitingPlots/"*scenarioName*"/true_false/CurrentSolutionTime"*string(currentTime)*"RELOCATION.png")
+            end
         end
 
         # Update vehicle balance
@@ -337,11 +353,10 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
         waitingStartPeriod = min(Int(ceil(waitingActivityStartTime / periodLength)), nTimePeriods)
         waitingEndPeriod = min(Int(ceil(waitingActivityEndTime / periodLength)), nTimePeriods)
 
-        vehicleBalance[waitingStartPeriod:waitingEndPeriod,previousGridCell[1],previousGridCell[2]] .-= 1
-        vehicleBalance[waitingStartPeriod:waitingEndPeriod,gridCell[1],gridCell[2]] .+= 1
-
-        activeVehiclesPerCell[waitingStartPeriod:waitingEndPeriod,previousGridCell[1],previousGridCell[2]] .-= 1
-        activeVehiclesPerCell[waitingStartPeriod:waitingEndPeriod,gridCell[1],gridCell[2]] .+= 1
+        if any(activeVehiclesPerCell[waitingStartPeriod:waitingEndPeriod,:,:] .< 0)
+            println("Warning: Negative vehicle balance after relocation of vehicle ",vehicle.id," in period ",period)
+            println("Previous grid cell: ",previousGridCell," New grid cell: ",gridCell)
+        end
 
         # Update final solution 
         if currentRouteLength == 2 && length(finalSchedule.route) > 0 # If previous activity is in final solution 
@@ -361,8 +376,8 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
             finalSolution.totalRideTime += newTime
         end
 
+        println("Relocating vehicle ",vehicle.id," to waiting location ",waitingLocationId," from location ",previousWaitingLocationId, " in period ",period)
 
-        println("Relocating vehicle ",vehicle.id," to waiting location ",waitingLocationId," from location ",waitingLocationId, " in period ",period)
         return 
     end
     println("Did not relocate vehicle ",vehicle.id," as no time")
@@ -372,8 +387,8 @@ end
 # Function to relocate vehicles
 #------
 function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nRequests::Int,grid::Grid,depotLocations::Dict{Tuple{Int,Int},Location},
-    vehicleBalance::Array{Int,3},activeVehiclesPerCell::Array{Int,3},realisedDemand::Array{Int,3},predictedDemand::Array{Float64,3},
-    currentState::State,solution::Solution,finalSolution::Solution,currentTime::Int,nTimePeriods::Int,periodLength::Int,vehicleDemand::Array{Int,3},displayPlots::Bool)
+    vehicleBalance::Array{Int,3},activeVehiclesPerCell::Array{Int,3},probabilityGrid::Array{Float64,2},realisedDemand::Array{Int,3},predictedDemand::Array{Float64,3},
+    currentState::State,solution::Solution,finalSolution::Solution,currentTime::Int,nTimePeriods::Int,periodLength::Int,vehicleDemand::Array{Int,3},displayPlots::Bool,scenarioName::String,relocateWithDemand::Bool,gamma::Float64)
    
     # Retrieve vehicle schedules in solution 
     vehicleSchedules = solution.vehicleSchedules
@@ -400,38 +415,24 @@ function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nReques
         endOfAvailableTimeWindow = currentSchedule.vehicle.availableTimeWindow.endTime
         schedule = vehicleSchedules[vehicle.id]
 
+        println("\n==> vehicle: ",vehicle.id)
+
         # Check if vehicle should be relocated 
-        # Either the route is completed or the route is "full" and there is no room for waiting activity 
-        if  routeLength == 1 || endOfAvailableTimeWindow <= currentTime ||
-            (routeLength > 2 && (route[end-1].activity.activityType != WAITING) && route[end].startOfServiceTime == endOfAvailableTimeWindow)
+        # Either the route is completed or the route is "full" and there is no room for waiting activity or the route is empty
+        if  routeLength == 1 || endOfAvailableTimeWindow <= currentTime || # Completed route 
+            (routeLength > 2 && (route[end-1].activity.activityType != WAITING) && route[end].startOfServiceTime == endOfAvailableTimeWindow) || # Full route 
+            (routeLength == 2 && route[1].activity.activityType == DEPOT && route[end].activity.activityType == DEPOT) # Empty route 
             continue
         end
 
-        # Add waiting to empty route 
-        if routeLength == 2 && route[1].activity.activityType == DEPOT && route[end].activity.activityType == DEPOT 
-                arrivalAtDepot = currentSchedule.route[1].endOfServiceTime
-            
-                # Create waiting activity to replace depot activity
-                waitingActivity = ActivityAssignment(Activity(vehicle.depotId,-1,WAITING, vehicle.depotLocation,TimeWindow(arrivalAtDepot,endOfAvailableTimeWindow)), vehicle,arrivalAtDepot,endOfAvailableTimeWindow)
-            
-                # Update route with waiting activity 
-                currentSchedule.route = vcat([route[1]],[waitingActivity],[route[end]])
-               
-                currentSchedule.route[end].startOfServiceTime = endOfAvailableTimeWindow
-                currentSchedule.route[end].endOfServiceTime = endOfAvailableTimeWindow
-                currentSchedule.activeTimeWindow.endTime = endOfAvailableTimeWindow
-                currentSchedule.totalTime += endOfAvailableTimeWindow - arrivalAtDepot
-                currentSchedule.totalIdleTime += endOfAvailableTimeWindow - arrivalAtDepot
-                currentSchedule.numberOfWalking = vcat(currentSchedule.numberOfWalking,[0])
-    
-                currentState.solution.totalRideTime += endOfAvailableTimeWindow - arrivalAtDepot
-                currentState.solution.totalIdleTime += endOfAvailableTimeWindow - arrivalAtDepot
-        # Add waiting activity at end of route at depot if necesarry 
-        elseif route[end-1].activity.activityType != WAITING
+        # Add waiting activity at end of route if not already there
+        if route[end-1].activity.activityType != WAITING
+            println("Adding waiting activity at end of route for vehicle ",vehicle.id)
+
             arrivalAtDepot = currentSchedule.route[end].startOfServiceTime
             endOfAvailableTimeWindow = currentSchedule.vehicle.availableTimeWindow.endTime
         
-            # Create waiting activity to replace depot activity
+            # Create waiting activity at depot activity 
             waitingActivity = ActivityAssignment(Activity(vehicle.depotId,-1,WAITING, vehicle.depotLocation,TimeWindow(arrivalAtDepot,endOfAvailableTimeWindow)), vehicle,arrivalAtDepot,endOfAvailableTimeWindow)
         
             # Update route with waiting activity 
@@ -451,12 +452,44 @@ function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nReques
 
             currentState.solution.totalRideTime += endOfAvailableTimeWindow - arrivalAtDepot
             currentState.solution.totalIdleTime += endOfAvailableTimeWindow - arrivalAtDepot
+
+        # If we are driving to the waiting location we have to arrive at the waiting location before we can relocate again 
+        # The waiting duration has to be longer than the period length
+        # We add another waiting activity, where we can relocate the vehicle again
+        elseif length(route) == 2 && (route[end-1].endOfServiceTime - route[end-1].startOfServiceTime) > periodLength 
+            println("Adding extra waiting activity for vehicle ",vehicle.id," at end of route")
+
+            # End current waiting activity after one period length
+            waitingActivity = currentSchedule.route[end-1]
+
+            # Update end of service time for waiting activity
+            oldEndOfServiceTime = waitingActivity.endOfServiceTime
+            newEndOfServiceTime = waitingActivity.startOfServiceTime + periodLength
+            waitingActivity.endOfServiceTime = newEndOfServiceTime
+
+            # Add waiting activity 
+            newWaitingActivity = ActivityAssignment(Activity(waitingActivity.activity.id,-1,WAITING, waitingActivity.activity.location,TimeWindow(newEndOfServiceTime,oldEndOfServiceTime)), vehicle,newEndOfServiceTime,oldEndOfServiceTime)
+
+            # Update route 
+            currentSchedule.numberOfWalking = vcat(currentSchedule.numberOfWalking,[0])
+            currentSchedule.route = vcat(currentSchedule.route[1:(end-1)],[newWaitingActivity],[route[end]])
+
+        # If we are driving to the waiting location and we cannot relocate, continue 
+        elseif length(route) == 2 && (route[end-1].endOfServiceTime - route[end-1].startOfServiceTime) <= periodLength 
+            continue
+        end
+
+        # Determine active vehicles per cell 
+        # Inefficient but works for now
+        if relocateWithDemand
+            vehicleBalance,activeVehiclesPerCell,realisedDemand, vehicleDemand = determineVehicleBalancePrCell(grid,gamma,predictedDemand,currentState.solution,nTimePeriods,periodLength)
+        else
+            activeVehiclesPerCell = determineActiveVehiclesPrCell(grid,currentState.solution,nTimePeriods,periodLength)
         end
 
         # Relocate waiting activity 
-        relocateWaitingActivityBeforeDepot!(time,distance,nRequests,grid,depotLocations,vehicleBalance,activeVehiclesPerCell,realisedDemand,predictedDemand,
-        currentState.solution,schedule,currentSchedule,finalSolution,nTimePeriods,periodLength,vehicleDemand,displayPlots)
-
+        relocateWaitingActivityBeforeDepot!(time,distance,nRequests,grid,depotLocations,vehicleBalance,activeVehiclesPerCell,probabilityGrid,realisedDemand,predictedDemand,
+        currentState.solution,schedule,currentSchedule,finalSolution,nTimePeriods,periodLength,vehicleDemand,displayPlots,scenarioName,currentState.event.callTime,relocateWithDemand)
     end 
 end
 
@@ -555,7 +588,7 @@ end
 # ------
 # Function to determine current state
 # ------
-function determineCurrentState(solution::Solution,event::Event,finalSolution::Solution,scenario::Scenario,visitedRoute::Dict{Int,Dict{String,Int}},grid::Grid,depotLocations::Dict{Tuple{Int,Int},Location},predictedDemand::Array{Float64,3};relocateVehicles::Bool=false,nTimePeriods::Int=24,periodLength::Int=60,gamma::Float64=0.5,displayPlots::Bool=false)
+function determineCurrentState(solution::Solution,event::Event,finalSolution::Solution,scenario::Scenario,visitedRoute::Dict{Int,Dict{String,Int}},grid::Grid,depotLocations::Dict{Tuple{Int,Int},Location},predictedDemand::Array{Float64,3},probabilityGrid::Array{Float64,2},scenarioName::String;relocateVehicles::Bool=false,nTimePeriods::Int=24,periodLength::Int=60,gamma::Float64=0.5,displayPlots::Bool=false,relocateWithDemand::Bool=false)
     nRequests = length(scenario.requests)
     time = scenario.time
     distance = scenario.distance
@@ -629,8 +662,8 @@ function determineCurrentState(solution::Solution,event::Event,finalSolution::So
         vehicleBalance,activeVehiclesPerCell,realisedDemand, vehicleDemand = determineVehicleBalancePrCell(grid,gamma,predictedDemand,currentState.solution,nTimePeriods,periodLength)
 
         relocateVehicles!(time,distance,nRequests,grid,depotLocations,
-        vehicleBalance,activeVehiclesPerCell,realisedDemand,predictedDemand,
-        currentState,solution,finalSolution,currentTime,nTimePeriods,periodLength,vehicleDemand,displayPlots)
+        vehicleBalance,activeVehiclesPerCell,probabilityGrid,realisedDemand,predictedDemand,
+        currentState,solution,finalSolution,currentTime,nTimePeriods,periodLength,vehicleDemand,displayPlots,scenarioName,relocateWithDemand,gamma)
     end
 
     return currentState, finalSolution
@@ -640,16 +673,23 @@ end
 # ------
 # Function to simulate a scenario
 # ------
-function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json",nTimePeriods::Int=24,periodLength::Int=60)
+function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json",nTimePeriods::Int=24,periodLength::Int=60,scenarioName::String="",relocateWithDemand::Bool=false)
     
     if anticipation == true
         throw("Wrong function call for anticipation!")
     end
-    simulateScenario(scenario,"","","","","","","";printResults=printResults,saveResults=saveResults,displayPlots=displayPlots,outPutFileFolder=outPutFileFolder,saveALNSResults=saveALNSResults,displayALNSPlots=displayALNSPlots,historicRequestFiles = historicRequestFiles,gamma = gamma,relocateVehicles=relocateVehicles, anticipation=false, nExpected=nExpected, gridFile= gridFile, nTimePeriods = nTimePeriods,periodLength = periodLength)
+    simulateScenario(scenario,"","","","","","",scenarioName;printResults=printResults,saveResults=saveResults,displayPlots=displayPlots,outPutFileFolder=outPutFileFolder,saveALNSResults=saveALNSResults,displayALNSPlots=displayALNSPlots,historicRequestFiles = historicRequestFiles,gamma = gamma,relocateVehicles=relocateVehicles, anticipation=false, nExpected=nExpected, gridFile= gridFile, nTimePeriods = nTimePeriods,periodLength = periodLength,relocateWithDemand = relocateWithDemand)
    
 end
 
-function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixFile::String,timeMatrixFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json", ALNS::Bool=true, nTimePeriods::Int=24,periodLength::Int=60,testALNS::Bool=false, keepExpectedRequests::Bool=false,measureSlack::Bool=false)
+function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMatrixFile::String,timeMatrixFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json", ALNS::Bool=true, nTimePeriods::Int=24,periodLength::Int=60,testALNS::Bool=false, keepExpectedRequests::Bool=false,measureSlack::Bool=false,relocateWithDemand::Bool=false)
+
+    if !isdir("tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand))
+        mkpath("tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand))
+    end
+
+    # Copy scenario so that we don't modify actual scenario
+    scenario = copyScenario(scenarioInput)
 
     # Retrieve info 
     if relocateVehicles
@@ -664,8 +704,10 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
     # Generate predicted demand
     if relocateVehicles
         predictedDemand = generatePredictedDemand(grid, historicRequestFiles,nTimePeriods,periodLength)
+        probabilityGrid = getProbabilityGrid(scenario,historicRequestFiles)
     else 
         predictedDemand = zeros(Float64,0,0,0)
+        probabilityGrid = zeros(Float64,0,0)
     end
 
     # Choose destroy methods
@@ -758,8 +800,12 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         printSolution(solution,printRouteHorizontal)
     end
     if displayPlots
-        display(createGantChartOfSolutionOnline(solution,"Initial Solution after ALNS",nFixed=scenario.nFixed))
-        #display(plotRoutes(solution,scenario,requestBank,"Initial Solution after ALNS"))
+        p1 = createGantChartOfSolutionOnline(solution,"Initial Solution after ALNS",nFixed=scenario.nFixed)
+        p2 = plotRoutes(solution,scenario,requestBank,"Initial Solution after ALNS")
+        display(p1)
+        display(p2)
+        # savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/InitialSolutionAfterALNS.png")
+        # savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/InitialSolutionAfterALNSRoutes.png")
     end
 
     # Initialize visited routes 
@@ -797,7 +843,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         println("----------------")
 
         # Determine current state
-        currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario,visitedRoute,grid,depotLocations,predictedDemand,relocateVehicles=relocateVehicles,gamma=gamma,displayPlots=displayPlots,nTimePeriods=nTimePeriods,periodLength=periodLength)
+        currentState, finalSolution = determineCurrentState(solution,event,finalSolution,scenario,visitedRoute,grid,depotLocations,predictedDemand,probabilityGrid,scenarioName,relocateVehicles=relocateVehicles,gamma=gamma,displayPlots=displayPlots,nTimePeriods=nTimePeriods,periodLength=periodLength,relocateWithDemand=relocateWithDemand)
         oldSolution = copySolution(currentState.solution)
 
         if printResults
@@ -859,15 +905,21 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         end
 
         if displayPlots && event.id in requestBank
-            #display(createGantChartOfSolutionAndEventOnlineComparison(solution, oldSolution, "Comparison Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event.request))
-            display(createGantChartOfSolutionAndEventOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event.request,nFixed = scenario.nFixed))
-            #display(plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime)))       
-        elseif displayPlots
-           #display(createGantChartOfSolutionOnlineComparison(solution, oldSolution,"Comparison Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime))
-           display(createGantChartOfSolutionOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime,nFixed = scenario.nFixed))
-           #display(plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime)))       
-        end
+            p1 = createGantChartOfSolutionAndEventOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event.request,nFixed = scenario.nFixed)
+            p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime))
+            display(p1)
+            display(p2)
+            # savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*".png")
+            # savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
 
+        elseif displayPlots
+           p1 = createGantChartOfSolutionOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime,nFixed = scenario.nFixed)
+           p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime))
+           display(p1)
+           display(p2)
+           # savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*".png")
+           # savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
+        end
     end
 
     # Update final solution with last state 
@@ -893,9 +945,12 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         println("Request bank: ", requestBank)
     end
     if displayPlots
-        display(createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge",nFixed=scenario.nFixed))
-        display(plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge"))
-        display(createGantChartOfSolutionOnlineComparison(finalSolution, initialSolution,"Comparison between initial and final solution"))
+        p1 = createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge",nFixed=scenario.nFixed)
+        p2  = plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge")
+        display(p1)
+        display(p2)
+        # savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/FinalSolution.png")
+        # savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/FinalSolutionRoutes.png")
     end
 
     # Print summary 
@@ -919,7 +974,7 @@ function simulateScenario(scenario::Scenario,requestFile::String,distanceMatrixF
         if !isdir(outPutFileFolder)
             mkpath(outPutFileFolder)
         end
-        fileName = outPutFileFolder*"/Simulation_KPI_"*string(scenario.name)*"_"*string(relocateVehicles)*".json"
+        fileName = outPutFileFolder*"/Simulation_KPI_"*string(scenario.name)*"_"*string(relocateVehicles)*"_"*string(relocateWithDemand)*".json"
         KPIDict = writeOnlineKPIsToFile(fileName,scenario,finalSolution,requestBank,requestBankOffline,totalElapsedTime,averageResponseTime,eventsInsertedByALNS)
         println("=== KPI Summary ===")
         for (key, value) in KPIDict

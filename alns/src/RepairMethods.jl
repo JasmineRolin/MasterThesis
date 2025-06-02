@@ -370,7 +370,7 @@ function findBestFeasibleInsertionRoute(request::Request, vehicleSchedule::Vehic
                                                                                             newStartOfServiceTimes=newStartOfServiceTimes,newEndOfServiceTimes=newEndOfServiceTimes,waitingActivitiesToDelete=waitingActivitiesToDelete,
                                                                                             waitingActivitiesToAdd=waitingActivitiesToAdd,visitedRouteIds=visitedRouteIds,TO=TO)
 
-    
+           # println("Feasible: ", feasible, " i: ", i, " j: ", j, " totalCost: ", totalCost)
             # Update best position if feasible                                                                           
             if feasible && (totalCost < bestCost)
                 bestPickUp = i

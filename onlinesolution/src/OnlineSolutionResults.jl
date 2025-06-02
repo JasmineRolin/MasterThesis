@@ -1,11 +1,11 @@
 module OnlineSolutionResults
 
-using Plots, JSON, DataFrames
+using Plots, JSON, DataFrames, Random
 using Plots.PlotMeasures
 using domain, utils 
 
 export createGantChartOfSolutionOnline, createGantChartOfSolutionOnlineComparison,writeOnlineKPIsToFile,processResults,createGantChartOfSolutionAndEventOnline, createGantChartOfSolutionAndEventOnlineComparison, plotRoutesOnline
-export plotRelocation,createGantChartOfSolutionAnticipation
+export plotRelocation,createGantChartOfSolutionAnticipation,plotRelocation2
 
 # Plot vehicle schedules 
 # Define a function to plot activity assignments for each vehicle
@@ -216,6 +216,8 @@ function plotRoutesOnline(solution::Solution,scenario::Scenario,requestBank::Vec
     # Plot routes 
     palette_func = palette(:rainbow, length(solution.vehicleSchedules))
     colors = [palette_func[i] for i in 1:length(solution.vehicleSchedules)]
+    colors = shuffle(colors)
+
     arrow_scale = 0.8 
     for (i, vehicleSchedule) in enumerate(solution.vehicleSchedules)
         routeLats = [v.activity.location.lat for v in vehicleSchedule.route]
@@ -289,25 +291,6 @@ function plotRoutesOnline(solution::Solution,scenario::Scenario,requestBank::Vec
         end
     end
 
-  
-    # # Request bank 
-    # for (idx,r) in enumerate(requestBank)
-    #     if idx == 1
-    #         scatter!([scenario.requests[r].pickUpActivity.location.long], [scenario.requests[r].pickUpActivity.location.lat], label = "PU request bank", color = :red, markersize = 10, marker = :circle,markerstrokewidth=1,markerstrokecolor=:red)
-    #         annotate!(scenario.requests[r].pickUpActivity.location.long, scenario.requests[r].pickUpActivity.location.lat+offset, text("PU$(r)", :center, 8, color = :red))
-
-    #         scatter!([scenario.requests[r].dropOffActivity.location.long], [scenario.requests[r].dropOffActivity.location.lat], label = "DO request bank", color = :red, markersize = 10, marker = :square,markerstrokewidth=1,markerstrokecolor=:red)
-    #         annotate!(scenario.requests[r].dropOffActivity.location.long, scenario.requests[r].dropOffActivity.location.lat+offset, text("DO$(r)", :center, 8, color = :red))
-    #     else
-    #         scatter!([scenario.requests[r].pickUpActivity.location.long], [scenario.requests[r].pickUpActivity.location.lat], label = "", color = :red, markersize = 10, marker = :circle,markerstrokewidth=1,markerstrokecolor=:red)
-    #         annotate!(scenario.requests[r].pickUpActivity.location.long, scenario.requests[r].pickUpActivity.location.lat+offset, text("PU$(r)", :center, 8, color = :red))
-
-    #         scatter!([scenario.requests[r].dropOffActivity.location.long], [scenario.requests[r].dropOffActivity.location.lat], label = "", color = :red, markersize = 10, marker = :square,markerstrokewidth=1,markerstrokecolor=:red)
-    #         annotate!(scenario.requests[r].dropOffActivity.location.long, scenario.requests[r].dropOffActivity.location.lat+offset, text("DO$(r)", :center, 8, color = :red))
-    #     end
-
-    # end
-  
     # Event 
     if event.id != 0
         r = event
@@ -678,6 +661,49 @@ function plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,veh
 
     # Combine all into a vertical layout: super title + 3 plots
     p = plot(super_title, plot(p0,p1, p2, p3,p4,p5, layout=(3,2)), layout = @layout([a{0.01h}; b{0.99h}]), size=(1500,1100))
+
+    return p
+end
+
+
+function plotRelocation2(probabilityGrid,score,predictedDemand,activeVehiclesPerCell,realisedDemand,vehicleBalance,gridCell,depotGridCell,period,periodLength,vehicle,vehicleDemand)
+    avg_min = min(minimum(vehicleBalance),minimum(activeVehiclesPerCell))
+    avg_max = max(maximum(activeVehiclesPerCell),maximum(vehicleBalance))
+
+    activeVehiclesInPeriod = activeVehiclesPerCell[period, :, :]
+
+    p1 = heatmap(activeVehiclesInPeriod, 
+    clim=(avg_min, avg_max),
+    c=:viridis,         # color map
+    xlabel="Longitude (grid cols)", 
+    ylabel="Latitude (grid rows)", 
+    title="Vehicles per Grid Cell in solution",
+    colorbar_title="Vehicle balance")
+    scatter!(p1,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:green)
+    scatter!(p1,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
+
+    p2 = heatmap(probabilityGrid[:,:], 
+    c=:viridis,         # color map
+    xlabel="Longitude (grid cols)", 
+    ylabel="Latitude (grid rows)", 
+    title="Probability grid",
+    colorbar_title="Probability")
+    scatter!(p2,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:green)
+    scatter!(p2,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
+
+    p3 = heatmap(score, 
+    c=:viridis,         # color map
+    xlabel="Longitude (grid cols)", 
+    ylabel="Latitude (grid rows)", 
+    title="Score",
+    colorbar_title="Score")
+    scatter!(p3,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:green)
+    scatter!(p3,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
+
+    super_title = plot(title = "Vehicle Demand Overview - period start $((period-1)*periodLength), vehicle $(vehicle)", grid=false, framestyle=:none)
+
+    # Combine all into a vertical layout: super title + 3 plots
+    p = plot(super_title, plot(p1,p2,p3, layout=(1,3)), layout = @layout([a{0.01h}; b{0.99h}]), size=(1500,1100))
 
     return p
 end

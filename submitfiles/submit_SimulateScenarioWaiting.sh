@@ -1,5 +1,30 @@
+#!/bin/bash
+
+# Constants
+gamma=0.7
+nPeriods=48
+gridSize=10
+
+nRequestsList=(20 100 300 500) 
+relocateOptions=("true false" "true true" "false false")  # Pair values as strings
+numRuns=3  
+numHistoricRequestFiles=20   
+numData=10   
+baseScenario="true"
+
+mkdir -p submitfiles/generated_jobs
+for nRequests in "${nRequestsList[@]}"; do
+    for optionPair in "${relocateOptions[@]}"; do
+        relocateVehicles=$(echo $optionPair | cut -d' ' -f1)
+        relocateWithDemand=$(echo $optionPair | cut -d' ' -f2)
+
+        for run in $(seq 1 $numRuns); do
+            job_name="Sim_Waiting_${nRequests}_${relocateVehicles}_${relocateWithDemand}_${run}"
+            job_file="submitfiles/generated_jobs/${job_name}.sh"
+
+            cat > "$job_file" <<EOF
 #!/bin/sh
-#BSUB -J "Simulate_scenario"
+#BSUB -J "${job_name}"
 #BSUB -o submitfiles/output/output_%J.out
 #BSUB -q hpc
 #BSUB -n 8
@@ -8,12 +33,9 @@
 #BSUB -W 10:00
 #BSUB -u s194321@student.dtu.dk
 #BSUB -N 
-# end of BSUB options
 
-# Load Julia module
 module load julia/1.10.2
 
-# Activate project and install dependencies
 julia --project=. -e '
 using Pkg;
 Pkg.activate(".");
@@ -26,32 +48,18 @@ Pkg.develop(path="offlinesolution");
 Pkg.develop(path="onlinesolution");
 Pkg.develop(path="alns");
 Pkg.develop(path="simulationframework");
-Pkg.develop(path="waitingstrategies");
 Pkg.resolve();
 '
 
-#
-#        !!!# OBS OBS OBS OBS OBS #!!!!!
-#
-#        To run the scenarios with short call time (in Data/WaitingStrategies)
-#        - change MAX_DELAY = 15 and MAX_EARLY_ARRIVAL = 5 in instance reader 
-#        - outcomment check for buffer in instance reader in readRequests
-#                if callTime > requestTime - bufferTime
-#                    throw(ArgumentError(string("Call time is not before required buffer period for request: ",id)))
-#                end
-#
-
-
-# OBS: update grid size!!
-gridSize=10
-nRequests=500
-relocateVehicles=false
-
-# Loop to run simulation
-for i in {1..81..20}; do
-    endFile=$((i + 19))
-    julia --project=. runfiles/RunSimulationWaiting.jl "$nRequests" "0.7" "$i" "$relocateVehicles" "$gridSize" "$i" "$endFile" "48" &
+for i in \$(seq 1 ${numData}); do
+    julia --project=. runfiles/RunSimulationWaiting.jl "${nRequests}" "${gamma}" "\${i}" "${relocateVehicles}" "${relocateWithDemand}" "${gridSize}" "${numHistoricRequestFiles}" "${nPeriods}" "${run}" "${baseScenario}"&
 done
 
+wait
+EOF
 
-wait  # Wait for all background Julia jobs to finish
+            chmod +x "$job_file"
+            bsub < "$job_file"
+        done
+    done
+done
