@@ -3,8 +3,8 @@ using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures
 
 nRequestList = [20,100, 300, 500]
 nRuns = 3
-relocateVehiclesList = [("true","false"),("true","true"),("false","false"),("inhindsight","")]
-gamma = 0.7 
+relocateVehiclesList =  [("true","false"),("true","true"),("false","false"),("inhindsight","")]
+gamma = 0.5
 baseFolder = "runfiles/output/Waiting/Base/"
 
 #===============================#
@@ -65,7 +65,7 @@ end
 #===============================#
 for n in nRequestList
     println("n requests: ",n)
-    p = plot(size = (1000,1000),title = "Results for n = $n", xlabel = "", ylabel = "No. taxis",leftmargin=5mm,topmargin=5mm,legend = :topright)
+    p = plot(size = (1000,1000),title = "Results for n = $n", xlabel = "", ylabel = "No. unserviced requests",leftmargin=5mm,topmargin=5mm,legend = :topright)
 
     nRows = 0
     maxnTaxi = 0

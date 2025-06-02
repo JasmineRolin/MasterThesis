@@ -50,7 +50,7 @@ function main()
         # File names 
         vehiclesFile = string("Data/DataWaitingStrategies/",n,"/Vehicles_",n,"_",gamma,".csv")
         parametersFile = "tests/resources/ParametersShortCallTime.csv"
-        outPutFolder = "runfiles/output/Waiting/"*string(n)*"/Run"*string(run)
+        outPutFolder = "runfiles/output/Waiting/Dynamic/"*string(n)*"/Run"*string(run)
         gridFile = "Data/Konsentra/grid_$(gridSize).json"
 
         requestFile = string("Data/DataWaitingStrategies/",n,"/GeneratedRequests_",n,"_",i,".csv")
@@ -73,8 +73,16 @@ function main()
         requestFile = "Data/Konsentra/DoD 40/$(n)/GeneratedRequests_$(n)_$(i).csv"
         distanceMatrixFile = string("Data/Matrices/DoD 40/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
         outPutFolder = "runfiles/output/Waiting/Base/"*string(n)*"/Run"*string(run)
-
         timeMatrixFile =  string("Data/Matrices/DoD 40/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
+
+        # vehiclesFile = string("Data/Konsentra/Original_v2/",n,"/Vehicles_",n,"_",gamma,".csv")
+        # parametersFile = "tests/resources/Parameters.csv"
+        # gridFile = "Data/Konsentra/grid_$(gridSize).json"
+        # requestFile = "Data/Konsentra/Original_v2/$(n)/GeneratedRequests_$(n)_$(i).csv"
+        # distanceMatrixFile = string("Data/Matrices/Original_v2/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+        # outPutFolder = "runfiles/output/Waiting/Base/"*string(n)*"/Run"*string(run)
+        # timeMatrixFile =  string("Data/Matrices/Original_v2/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
+
         scenarioName = string("Gen_Data_",n,"_",gamma,"_",i,"_Run",run)
         
         maxDelay = 45 

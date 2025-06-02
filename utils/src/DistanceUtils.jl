@@ -15,6 +15,8 @@ function getDistanceAndTimeMatrix(distanceMatrixFile=""::String,timeMatrixFile="
         error("Error: timeMatrixFile file $timeMatrixFile does not exist.")
     end 
 
+    println("Distance reading ")
+
     # Read time and distance file if given else calculate
     if distanceMatrixFile != "" && timeMatrixFile != ""
         lines = readlines(distanceMatrixFile)
@@ -24,6 +26,12 @@ function getDistanceAndTimeMatrix(distanceMatrixFile=""::String,timeMatrixFile="
         lines = readlines(timeMatrixFile)
         time = [parse.(Int, split(line)) for line in lines]
         time = convert(Matrix{Int}, hcat(time...)')
+
+
+        requestsDf = CSV.read(requestFile, DataFrame)
+        dist, tim = getDistanceAndTimeMatrixFromDataFrame(requestsDf,depotLocations)
+        println("Dist diff: ", sum(dist-distance))
+        println("Time diff: ", sum(time-tim))
 
         return distance, time
     end 
