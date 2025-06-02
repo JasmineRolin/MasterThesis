@@ -5,8 +5,8 @@ methodListBase = ["BaseCase","InHindsight","AnticipationKeepExpected"]
 nRequestList = [20,100,300,500]
 runList = [1,2,3,4,5]
 gamma = 0.5
-anticipationDegrees = [0.6]
-date = "2025-05-31_original_v2_0.5"
+anticipationDegrees = [0.4]
+date = "2025-05-31_original_v2_0.5_online"
 
 #==============================#
 # Create method list 
