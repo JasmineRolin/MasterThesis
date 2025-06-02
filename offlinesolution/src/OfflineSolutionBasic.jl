@@ -30,7 +30,7 @@ function inHindsightSolution(scenario::Scenario,repairMethods::Vector{GenericMet
     initialSolution, initialRequestBank = simpleConstruction(scenario,scenario.requests) 
         
     # Run ALNS for offline solution 
-    solution,requestBank,_,_,_,_, noIterations = runALNS(scenario, scenario.requests, destroyMethods,repairMethods; event = scenario.onlineRequests[end],parametersFile=alnsParameters,initialSolution =  initialSolution, requestBank = initialRequestBank, displayPlots = displayALNSPlots, saveResults = saveALNSResults,outPutFileFolder=outputFileFolder)
+    solution,requestBank,_,_,_,_, noIterations = runALNS(scenario, scenario.requests, destroyMethods,repairMethods; event = scenario.onlineRequests[end],parametersFile=alnsParameters,initialSolution =  initialSolution, requestBank = initialRequestBank, displayPlots = displayALNSPlots, saveResults = saveALNSResults,outPutFileFolder=outputFileFolder, stage="Offline")
 
     if displayPlots
         display(createGantChartOfSolutionOffline(solution,"In-hindsigt solution",nFixed=scenario.nFixed))

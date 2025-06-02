@@ -1,0 +1,1 @@
+{"slackAfterALNS":0,"nInitialNotServicedExpectedRequests":[48,47],"averageObj":[13255.303394958508,13423.140078035449],"slackBeforeALNS":0,"nInitialNotServicedFixedRequests":[1,1],"averageNotServicedExpectedRequests":[65.0,65.0],"ALNSIterations":[10447,10040],"runId":["Run 1","Run 2"]}

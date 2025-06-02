@@ -443,7 +443,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
     nRequests = 0
 
     # Create different scenarios and solve problem with known offline requests and predicted online requests 
-    for i in 1:10 #TODO change
+    for i in 1:2 #TODO change
         println("==========================================")
         println("Run: ", i)
 
@@ -464,7 +464,6 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         nRequests = length(requests)
 
         # Get solution
-        println(scenario.offlineRequests)
         initialSolution, requestBank = simpleConstruction(scenario,scenario.offlineRequests)
 
         # TODO: remove 
