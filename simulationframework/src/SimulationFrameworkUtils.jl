@@ -315,8 +315,10 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
         waitingLocationId,waitingLocation,gridCell = determineWaitingLocation(time,depotLocations,grid,nRequests,vehicleBalance,period,previousWaitingLocationId)
     else
         activityBeforeWaitingId = activityBeforeWaiting.activity.id
+        endOfServiceActivityBeforeWaiting = activityBeforeWaiting.endOfServiceTime
+
         isRouteEmpty = isVehicleScheduleEmpty(currentSchedule)
-        waitingLocationId,waitingLocation,gridCell,score = determineWaitingLocation2(time,nRequests,depotLocations,grid,probabilityGrid,activeVehiclesPerCell,period,previousGridCell,previousWaitingLocationId,activityBeforeWaitingId,isRouteEmpty)
+        waitingLocationId,waitingLocation,gridCell,score = determineWaitingLocation2(time,nRequests,depotLocations,grid,probabilityGrid,activeVehiclesPerCell,period,previousGridCell,previousWaitingLocationId,activityBeforeWaitingId,isRouteEmpty,endOfServiceActivityBeforeWaiting,periodLength,nTimePeriods)
     end
     println("Waiting location: ",waitingLocationId, ", period: ",period, ", relocation time: ",relocationTime) 
 

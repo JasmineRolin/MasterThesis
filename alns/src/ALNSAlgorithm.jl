@@ -1,7 +1,7 @@
 module ALNSAlgorithm
 
 using UnPack, domain, utils, ..ALNSDomain, ..ALNSFunctions
-using TimerOutputs
+using TimerOutputs, Plots
 
 export ALNS
 
@@ -34,6 +34,9 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
     printSegmentSize, maxNumberOfIterationsWithoutImprovement,
     maxNumberOfIterationsWithoutNewBest = parameters
 
+    println("max iterations without improvement: ", maxNumberOfIterationsWithoutImprovement)
+    println("max iterations without new best: ", maxNumberOfIterationsWithoutNewBest)
+
     currentState = ALNSState(initialSolution, nDestroy, nRepair, requestBank)
     initialCost = initialSolution.totalCost
 
@@ -49,7 +52,16 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
 
     reset_timer!(TO)  # Reset timer for this ALNS run
 
-    while !(termination(startTime, timeLimit) || numberOfIterationsSinceLastImprovement > maxNumberOfIterationsWithoutImprovement || numberOfIterationsSinceLastBest > maxNumberOfIterationsWithoutNewBest)
+    # Find start temperature 
+    # TODO: jas - do not remove unserviced requests 
+    w = 0.05
+    percent = 0.25
+    startTemperature = findStartTemperature(w, initialSolution, 0.0,percent)
+    tempVec = []
+    println("Start temperature: ", startTemperature)
+
+    # Run ALNS loop
+    while !(termination(startTime, timeLimit)) #|| numberOfIterationsSinceLastImprovement > maxNumberOfIterationsWithoutImprovement || numberOfIterationsSinceLastBest > maxNumberOfIterationsWithoutNewBest)
         isAccepted, isImproved, isNewBest = false, false, false
 
         trialState = copyALNSState(currentState)
@@ -80,9 +92,16 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
             true
         end
 
-        acceptBool, p, delta = accept(parameters.timeLimit, startTime, trialState.currentSolution.totalCost, currentState.bestSolution.totalCost)
+
+        # TODO: jas - new acceptance criteria
+        acceptBool,p, temparature, delta = accept(parameters.timeLimit, startTime, trialState.currentSolution.totalCost, currentState.bestSolution.totalCost,startTemperature)
+        
+        # TODO: jas 
+       #startTemperature = temparature
+        
         push!(pVals, p)
         push!(deltaVals, delta)
+        push!(tempVec, temparature)
 
         if acceptOnlinePhase && !seenBefore && (trialState.currentSolution.totalCost < currentState.currentSolution.totalCost - epsilon)
             isImproved, isAccepted = true, true
@@ -155,6 +174,19 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
             numberOfIterationsSinceLastBest += 1
         end
 
+        # TODO: jas 
+        # if numberOfIterationsSinceLastImprovement > maxNumberOfIterationsWithoutImprovement || numberOfIterationsSinceLastBest > maxNumberOfIterationsWithoutNewBest
+        #     w = 0.15
+        #     percent = 0.50
+        #     startTemperature = findStartTemperature(w, currentState.currentSolution, 0.0,percent)
+        #     push!(tempVec, startTemperature)
+
+        #     println("Reset temperature: ", startTemperature)
+
+        #     numberOfIterationsSinceLastImprovement = 0
+        #     numberOfIterationsSinceLastBest = 0
+        # end
+
         push!(isImprovedVec, isImproved)
         push!(isNewBestVec, isNewBest)
         push!(isAcceptedVec, isAccepted)
@@ -174,10 +206,23 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
     # TODO: remove 
     println("Total number of iterations: ", iteration)
     println("Termination: max since last improvement: ", numberOfIterationsSinceLastImprovement > maxNumberOfIterationsWithoutImprovement,
-        ", max since last best: ", numberOfIterationsSinceLastBest > maxNumberOfIterationsWithoutNewBest)
+        ", max since last best: ", numberOfIterationsSinceLastBest > maxNumberOfIterationsWithoutNewBest, ", number since last best: ", numberOfIterationsSinceLastBest)
     # println("\n Timing Breakdown:")
     
     # show(TO)
+
+
+    pp = plot(size = (1000,1000))
+    plot!(pVals, label = "prob", xlabel = "Iteration", ylabel = "prob", title = "prob over iterations")
+    display(pp)
+
+    ptemp = plot(size = (1000,1000))
+    plot!(tempVec, label = "temp", xlabel = "Iteration", ylabel = "temp", title = "temp over iterations")
+    display(ptemp)
+
+    pdelta = plot(size = (1000,1000))
+    plot!(deltaVals, label = "delta", xlabel = "Iteration", ylabel = "delta", title = "delta over iterations")
+    display(pdelta)
 
     return currentState.bestSolution, currentState.bestRequestBank, pVals, deltaVals, isImprovedVec, isAcceptedVec, isNewBestVec
 end

@@ -28,7 +28,8 @@ function readALNSParameters(parametersFile::String)::ALNSParameters
         Float64(jsonData["p"]),
         Float64(jsonData["shawRemovalPhi"]),
         Float64(jsonData["shawRemovalXi"]),
-        Int(jsonData["maxNumberOfIterationsWithoutImprovement"])
+        Int(jsonData["maxNumberOfIterationsWithoutImprovement"]),
+        Int(jsonData["maxNumberOfIterationsWithoutNewBest"])
         )
 end
 
@@ -139,12 +140,15 @@ end
 #==
  Method to set start temperature to use in simulated annealing 
 ==#
-function findStartTemperature(w::Float64, solution::Solution,taxiParameter::Float64)::Float64 
+function findStartTemperature(w::Float64, solution::Solution,taxiParameter::Float64,percent::Float64)::Float64 
     # Cost of solution without request bank 
     cost = solution.totalCost - solution.nTaxi*taxiParameter 
     
     # Find start temperature 
-    return (w*cost)/0.6931
+    #return (w*cost)/0.6931
+
+    # TODO: jas
+    return -(w*cost)/log(percent)
 end
 
 #==
@@ -205,5 +209,34 @@ function accept(timeLimit::Float64,startTime::Float64,trialCost::Float64,bestCos
 
     return false,startThreshold*(1-elapsedTime/timeLimit),delta/bestCost 
 end
+
+function accept(timeLimit::Float64, startTime::Float64, trialCost::Float64, bestCost::Float64, startTemperature::Float64)
+    # delta = trialCost - bestCost
+    # elapsedTime = time() - startTime
+    # t_ratio = elapsedTime / timeLimit
+
+    # # Cooling schedule
+    # alpha = 1
+    # #temperature = startTemperature * (1.0 - t_ratio)
+    # temperature = startTemperature * exp(-alpha * t_ratio)
+
+
+    # # Probabilistic acceptance of worse solution
+    # prob = exp(-delta / temperature)
+
+
+    # return rand() < prob, prob, temperature, delta
+
+      
+    startThreshold = 0.5
+    delta = abs(bestCost - trialCost)
+    elapsedTime = time() - startTime
+    if delta/bestCost < startThreshold*(1-elapsedTime/timeLimit)
+        return true,startThreshold*(1-elapsedTime/timeLimit),delta/bestCost,0
+    end
+
+    return false,startThreshold*(1-elapsedTime/timeLimit), 0,0
+end
+
 
 end
