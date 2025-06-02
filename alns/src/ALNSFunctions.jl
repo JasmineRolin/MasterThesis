@@ -210,33 +210,4 @@ function accept(timeLimit::Float64,startTime::Float64,trialCost::Float64,bestCos
     return false,startThreshold*(1-elapsedTime/timeLimit),delta/bestCost 
 end
 
-function accept(timeLimit::Float64, startTime::Float64, trialCost::Float64, bestCost::Float64, startTemperature::Float64)
-    # delta = trialCost - bestCost
-    # elapsedTime = time() - startTime
-    # t_ratio = elapsedTime / timeLimit
-
-    # # Cooling schedule
-    # alpha = 1
-    # #temperature = startTemperature * (1.0 - t_ratio)
-    # temperature = startTemperature * exp(-alpha * t_ratio)
-
-
-    # # Probabilistic acceptance of worse solution
-    # prob = exp(-delta / temperature)
-
-
-    # return rand() < prob, prob, temperature, delta
-
-      
-    startThreshold = 0.5
-    delta = abs(bestCost - trialCost)
-    elapsedTime = time() - startTime
-    if delta/bestCost < startThreshold*(1-elapsedTime/timeLimit)
-        return true,startThreshold*(1-elapsedTime/timeLimit),delta/bestCost,0
-    end
-
-    return false,startThreshold*(1-elapsedTime/timeLimit), 0,0
-end
-
-
 end
