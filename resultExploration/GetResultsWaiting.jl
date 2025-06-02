@@ -5,13 +5,14 @@ nRequestList = [20,100, 300, 500]
 nRuns = 3
 relocateVehiclesList = [("true","false"),("true","true"),("false","false"),("inhindsight","")]
 gamma = 0.7 
+baseFolder = "runfiles/output/Waiting/Base/"
 
 #===============================#
 # Retrieve CSV files 
 #===============================#
 for n in nRequestList
     for run in 1:nRuns 
-        outPutFolder = "runfiles/output/Waiting/"*string(n)*"/Run"*string(run)
+        outPutFolder = baseFolder*string(n)*"/Run"*string(run)
 
         for relocateVehiclesOption in relocateVehiclesList
             outputFiles = Vector{String}()
@@ -55,7 +56,7 @@ function average_kpis_by_run(base_path::String,dataSizeList,nRuns,relocateVehicl
 end
 
 for relocateVehiclesOption in relocateVehiclesList
-    average_kpis_by_run("runfiles/output/Waiting/",nRequestList,nRuns,relocateVehiclesOption)
+    average_kpis_by_run(baseFolder,nRequestList,nRuns,relocateVehiclesOption)
 end
 
 
@@ -70,7 +71,7 @@ for n in nRequestList
     maxnTaxi = 0
     minnTaxi = typemax(Int)
     for relocateVehiclesOption in relocateVehiclesList
-        outPutFolder = "runfiles/output/Waiting/"*string(n)
+        outPutFolder = baseFolder*string(n)
         resultFile = string(outPutFolder, "/results_avgOverRuns_",relocateVehiclesOption[1],"_",relocateVehiclesOption[2],".csv")
         df = CSV.read(resultFile, DataFrame)
         nRows = nrow(df)

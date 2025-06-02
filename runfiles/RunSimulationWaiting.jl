@@ -72,7 +72,7 @@ function main()
         gridFile = "Data/Konsentra/grid_$(gridSize).json"
         requestFile = "Data/Konsentra/DoD 40/$(n)/GeneratedRequests_$(n)_$(i).csv"
         distanceMatrixFile = string("Data/Matrices/DoD 40/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
-        outPutFolder = "runfiles/output/Waiting/Base/"*string(n)
+        outPutFolder = "runfiles/output/Waiting/Base/"*string(n)*"/Run"*string(run)
 
         timeMatrixFile =  string("Data/Matrices/DoD 40/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
         scenarioName = string("Gen_Data_",n,"_",gamma,"_",i,"_Run",run)
