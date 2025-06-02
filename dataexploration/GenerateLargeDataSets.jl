@@ -222,7 +222,6 @@ function makeRequests(nSample::Int, DoD::Float64, probabilities_offline::Vector{
     end
 
     # Determine call time
-    # TODO: jas - remove before merge 
     callTime(results, serviceWindow, callBuffer, preKnown)
     #earlyCallTime(results, serviceWindow, earliestBuffer, callBuffer, preKnown)
 
@@ -557,8 +556,8 @@ function plotAndSaveGantChart(nRequest::Int,nData::Int,gamma::Float64)
         # Plot gant chart 
         requestFile = string("Data/Konsentra/",nRequest,"/GeneratedRequests_",nRequest,"_",idx,".csv")
         vehiclesFile = string("Data/Konsentra/",nRequest,"/Vehicles_",nRequest,"_",gamma,".csv")
-        # TODO: jas - remove before merge 
-        parametersFile = "tests/resources/ParametersShortCallTime.csv"
+        parametersFile = "tests/resources/ParametersShort.csv"
+        #parametersFile = "tests/resources/ParametersShortCallTime.csv"
         distanceMatrixFile = string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",gamma,"_",idx,"_distance.txt")
         timeMatrixFile =  string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",gamma,"_",idx,"_time.txt")
         scenarioName = "No. requests = " * string(nRequest)

@@ -704,8 +704,6 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
     # Generate predicted demand
     if relocateVehicles
         predictedDemand = generatePredictedDemand(grid, historicRequestFiles,nTimePeriods,periodLength)
-
-        # TODO: jas 
         probabilityGrid = getProbabilityGrid(scenario,historicRequestFiles)
     else 
         predictedDemand = zeros(Float64,0,0,0)
@@ -806,8 +804,8 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         p2 = plotRoutes(solution,scenario,requestBank,"Initial Solution after ALNS")
         display(p1)
         display(p2)
-        savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/InitialSolutionAfterALNS.png")
-        savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/InitialSolutionAfterALNSRoutes.png")
+        # savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/InitialSolutionAfterALNS.png")
+        # savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/InitialSolutionAfterALNSRoutes.png")
     end
 
     # Initialize visited routes 
@@ -907,36 +905,21 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         end
 
         if displayPlots && event.id in requestBank
-            #display(createGantChartOfSolutionAndEventOnlineComparison(solution, oldSolution, "Comparison Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event.request))
-            #display(createGantChartOfSolutionAndEventOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event.request,nFixed = scenario.nFixed))
-           # display(plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime)))   
-            
             p1 = createGantChartOfSolutionAndEventOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event.request,nFixed = scenario.nFixed)
             p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime))
             display(p1)
             display(p2)
-            savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*".png")
-            savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
+            # savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*".png")
+            # savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
 
         elseif displayPlots
-           #display(createGantChartOfSolutionOnlineComparison(solution, oldSolution,"Comparison Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime))
-           #display(createGantChartOfSolutionOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime,nFixed = scenario.nFixed))
-           #display(plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime)))    
-
            p1 = createGantChartOfSolutionOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime,nFixed = scenario.nFixed)
            p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime))
            display(p1)
            display(p2)
-           savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*".png")
-           savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
+           # savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*".png")
+           # savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
         end
-
-        # TODO: jas 
-        # if itr > 3 #event.id == 37
-        #     # Update final solution with last state 
-        #     mergeCurrentStateIntoFinalSolution!(finalSolution,solution,scenario)
-        #     return finalSolution, requestBank, visitedRoute
-        # end
     end
 
     # Update final solution with last state 
@@ -962,16 +945,12 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         println("Request bank: ", requestBank)
     end
     if displayPlots
-        # display(createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge",nFixed=scenario.nFixed))
-        # display(plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge"))
-        # display(createGantChartOfSolutionOnlineComparison(finalSolution, initialSolution,"Comparison between initial and final solution"))
-
         p1 = createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge",nFixed=scenario.nFixed)
         p2  = plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge")
         display(p1)
         display(p2)
-        savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/FinalSolution.png")
-        savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/FinalSolutionRoutes.png")
+        # savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/FinalSolution.png")
+        # savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/FinalSolutionRoutes.png")
     end
 
     # Print summary 
