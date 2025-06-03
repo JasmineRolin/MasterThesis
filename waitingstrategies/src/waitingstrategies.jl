@@ -4,10 +4,14 @@ global N_TIME_PERIODS = 24
 
 include("GeneratePredictedDemand.jl")
 using .GeneratePredictedDemand
-export generatePredictedDemand,generatePredictedVehiclesDemand,generatePredictedVehiclesDemandInPeriod,generatePredictedVehiclesDemandInHorizon
+export generatePredictedDemand,generatePredictedVehiclesDemand,generatePredictedVehiclesDemandInPeriod,generatePredictedVehiclesDemandInHorizon,getProbabilityGrid
 
 include("RelocateVehicleUtils.jl")
 using .RelocateVehicleUtils
-export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBalancePrCell
+export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBalancePrCell,determineWaitingLocation2,determineActiveVehiclesPrCell
+
+include("WaitingStrategiesPlots.jl")
+using .WaitingStrategiesPlots
+export plotRequestsAndVehiclesWait, plotScenario
 
 end # module waitingstrategies

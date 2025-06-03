@@ -3,7 +3,7 @@ module ALNSResults
 using DataFrames, CSV, Plots, JSON, domain,..ALNSDomain
 using Plots.PlotMeasures
 
-export ALNSResult, plotRoutes
+export ALNSResult, plotRoutes,createGantChartOfSolution,createGantChartOfRequestsAndVehicles
 
 #==
  Method to plot ALNS results  

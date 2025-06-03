@@ -22,19 +22,19 @@ global GENERATE_VEHICLES = false
 ==#
 global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
-global callBuffer = 120 # 2 hours buffer
+global callBuffer = 2*60 # 2 hours buffer
 global nData = 10
-global nRequestList = [20]
+global nRequestList = [20]#,50,100,300,500]
 global MAX_DELAY = 45 # TODO Astrid I just put something
-global earliestBuffer = 2*60
+global earliestBuffer = 15
+global ONLY_PICKUP = false
 
 #==
 # Constant for vehicle generation  
 ==#
 global vehicleCapacity = 4
-global GammaList = [0.5,0.7] 
+global GammaList = [0.5]
 
-# TODO: burde vi bare have flad cost ? vi er jo ligeglade med cost faktisk 
 global shifts = Dict(
     "Morning"    => Dict("TimeWindow" => [6*60, 12*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
     "Noon"       => Dict("TimeWindow" => [10*60, 16*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
@@ -122,7 +122,7 @@ if GENERATE_DATA_AND_VEHICLES
     _= load_simulation_data("Data/Simulation data/")
 
     for nRequest in nRequestList
-        location_matrix, requestTime, newDataList, df_list,probabilities_time,probabilities_offline,probabilities_online, probabilities_location, density_grid, x_range, y_range,requests, distanceDriven = generateDataSets(nRequest,DoD,nData,time_range,MAX_LAT, MIN_LAT, MAX_LONG, MIN_LONG)
+        location_matrix, requestTime, newDataList, df_list,probabilities_time,probabilities_offline,probabilities_online, probabilities_location, density_grid, x_range, y_range,requests, distanceDriven = generateDataSets(nRequest,DoD,nData,time_range,MAX_LAT, MIN_LAT, MAX_LONG, MIN_LONG,ONLY_PICKUP)
 
         # Generate vehicles 
         for gamma in GammaList
@@ -139,8 +139,8 @@ if GENERATE_DATA_AND_VEHICLES
         end
 
         # Generate time and distance matrices  
-        depotLocations = Vector{Tuple{Float64,Float64}}()
-        [push!(depotLocations,(loc[1],loc[2])) for loc in grid_centers]
+        depotLocations = findDepotLocations(NUM_ROWS, NUM_COLS, MIN_LAT, MIN_LONG, lat_step, long_step, nRequest)[2]
+
         for gamma in GammaList
             for i in 1:nData
                 println("n = ",nRequest," i = ",i)
@@ -173,10 +173,9 @@ if GENERATE_VEHICLES
 
     for nRequest in nRequestList
         # Load simulation data
-        probabilities_pickUpTime,
-        probabilities_dropOffTime,
-        density_pickUp,
-        density_dropOff,
+        probabilities_time,
+        probabilities_offline,
+        probabilities_online,
         probabilities_location,
         density_grid,
         x_range,
@@ -185,10 +184,9 @@ if GENERATE_VEHICLES
         density_distance,
         distance_range,
         location_matrix,
-        requestTimePickUp,
-        requestTimeDropOff,
+        requestTime,
         requests,
-        distanceDriven= load_simulation_data("Data/Simulation data/")
+        distanceDriven = load_simulation_data("Data/Simulation data/")
 
         # Read data
         df_list = load_request_data(nRequest,nData)
@@ -207,8 +205,8 @@ if GENERATE_VEHICLES
         end
 
         # Generate time and distance matrices  
-        depotLocations = Vector{Tuple{Float64,Float64}}()
-        [push!(depotLocations,(loc[1],loc[2])) for loc in grid_centers]
+        depotLocations = findDepotLocations(NUM_ROWS, NUM_COLS, MIN_LAT, MIN_LONG, lat_step, long_step, nRequest)[2]
+
         for gamma in GammaList
             for i in 1:nData
                 println("n = ",nRequest," i = ",i)

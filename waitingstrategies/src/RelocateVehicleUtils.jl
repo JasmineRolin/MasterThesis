@@ -1,33 +1,88 @@
 module RelocateVehicleUtils
 
-using domain 
+using domain, utils 
 using UnPack, Random 
 using ..GeneratePredictedDemand
 using StatsBase 
 
-export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBalancePrCell
+export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBalancePrCell,determineWaitingLocation2, determineActiveVehiclesPrCell
 
 #==
  Method to determine waiting location of a vehicle
 ==#
-# Assuming hour is in the future (?)
-# Vehicles are being relocated to the depot of the previously relocated vehicle 
-function determineWaitingLocation(depotLocations::Dict{Tuple{Int,Int},Location},grid::Grid,nRequests::Int, vehicleBalance::Array{Int,3},period::Int,predictedDemand::Array{Float64,3})
+function determineWaitingLocation2(time::Array{Int,2},nRequests::Int,depotLocations::Dict{Tuple{Int,Int},Location},grid::Grid,probabilityGrid::Array{Float64,2}, activeVehiclesPrCell::Array{Int,3},period::Int,currentGridCell::Tuple{Int,Int},currentWaitingId::Int,activityBeforeWaitingId::Int,isRouteEmpty::Bool,endOfServiceActivityBeforeWaiting::Int,periodLength::Int,nTimePeriods::Int)
+
+    # Active vehicles in period
+    # TODO: jas - perioden burde jo i virkeligheden være den periode hvor man ankommer til grid cell 
+    activeVehiclesInPeriod = activeVehiclesPrCell[period, :, :]
+
+    # Find time between current cell and depot locations
+    nRows, nCols = size(probabilityGrid)
+    driveTimeMatrix = zeros(nRows, nCols)
+    score = zeros(nRows, nCols)
+
+    # Compute drive times to each depot location from previous activity 
+    for r in 1:nRows, c in 1:nCols
+        depotId = findDepotIdFromGridCell(grid, nRequests, (r, c))
+        driveTimeMatrix[r, c] = time[activityBeforeWaitingId, depotId]
+
+        # TODO: jas
+        # waitingStart = endOfServiceActivityBeforeWaiting + driveTimeMatrix[r, c]
+        # periodNew = min(Int(ceil(waitingStart / periodLength)), nTimePeriods)
+        # activeVehicles = activeVehiclesPrCell[periodNew, r, c]
+        # score[r,c] = probabilityGrid[r, c] / (activeVehicles +1) / (driveTimeMatrix[r,c] + 1)
+
+        #println("Period new: ", periodNew, " period: ", period)
+    end
+
+    # Avoid division by zero or extremely small numbers
+    driveTimeMatrix .+= 1.0
+
+    # Calculate utility (?)/weighted probability 
+    score = probabilityGrid ./ (activeVehiclesInPeriod .+ 1) ./ driveTimeMatrix
+
+    # Find max score 
+    argMaxIdx = argmax(score)
+    maxRowIdx = argMaxIdx[1]
+    maxColIdx = argMaxIdx[2]
+
+    # Find depot location
+    depotId = findDepotIdFromGridCell(grid, nRequests, (maxRowIdx, maxColIdx))
+
+    println("----- relocation ------")
+    println("From cell: ", currentGridCell)
+    println("To cell: ", (maxRowIdx, maxColIdx))
+    println("Max score: ", score[maxRowIdx, maxColIdx])
+    println("Number of vehicles in cell: ", activeVehiclesInPeriod[maxRowIdx, maxColIdx])
+    println("Probability in cell: ", probabilityGrid[maxRowIdx, maxColIdx])
+
+    return depotId,depotLocations[(maxRowIdx,maxColIdx)],(maxRowIdx,maxColIdx), score
+end
+
+function determineWaitingLocation(time::Array{Int,2},depotLocations::Dict{Tuple{Int,Int},Location},grid::Grid,nRequests::Int, vehicleBalance::Array{Int,3},period::Int,currentWaitingId::Int)
     # Determine cell with most deficit of vehicles
     vehicleBalanceInPeriod = vehicleBalance[period, :, :]
 
+   # println("Vehicle balance in period: \n", vehicleBalanceInPeriod)
+
     # Find the minimum value
     minValue = minimum(vehicleBalanceInPeriod)
+    println("Minimum value: ", minValue)
 
     # Get all indices where the value equals the minimum
     minIndices = findall(x -> x == minValue, vehicleBalanceInPeriod)
 
-    # Randomly select one of the indices
-    chosenIdx = rand(minIndices)
+    # Retrive all depots ids for minimum values 
+    depotIds = [findDepotIdFromGridCell(grid, nRequests, (idx[1], idx[2])) for idx in minIndices]
 
-    minRowIdx = chosenIdx[1]
-    minColIdx = chosenIdx[2]
-    depotId = findDepotIdFromGridCell(grid, nRequests, (minRowIdx, minColIdx))
+    # Retrieve drive times to depot ids 
+    times = [time[currentWaitingId,d] for d in depotIds]
+
+    # Find depots with minimum drive time
+    minTimeIdx = argmin(times)
+    minRowIdx = minIndices[minTimeIdx][1]
+    minColIdx = minIndices[minTimeIdx][2]
+    depotId = depotIds[minTimeIdx]
 
     return depotId,depotLocations[(minRowIdx,minColIdx)],(minRowIdx,minColIdx)
 end
@@ -73,6 +128,30 @@ function determineVehicleBalancePrCell(grid::Grid,gamma::Float64,predictedDemand
     return vehicleBalance, activeVehiclesPerCell, realisedDemand, vehicleDemand, maxDemandInHorizon
 end
 
+
+function determineActiveVehiclesPrCell(grid::Grid,solution::Solution,nTimePeriods::Int,periodLength::Int)
+    # unpack grid 
+    @unpack minLat,maxLat,minLong,maxLong, nRows,nCols,latStep,longStep = grid 
+    
+    # Initialize vehicle balance
+    realisedDemand = zeros(Int,nTimePeriods,nRows,nCols)
+    activeVehiclesPerCell = zeros(Int,nTimePeriods,nRows,nCols) # TODO: remove returning this (only for test)
+
+
+    # Find vehicle balance for each hour
+    # TODO: update to only be future time periods 
+    for period in 1:nTimePeriods
+        # Determine minutes
+        startOfPeriodInMinutes = (period - 1) * periodLength
+        endOfPeriodInMinutes = period * periodLength
+
+        # Determine currently planned active vehicles pr. cell  
+        activeVehiclesPerCell[period,:,:],realisedDemand[period,:,:] = determineActiveVehiclesAndDemandPrCell(solution,endOfPeriodInMinutes,startOfPeriodInMinutes,minLat,minLong,nRows,nCols,latStep,longStep)
+    end
+   
+    return activeVehiclesPerCell
+end
+
 function determineActiveVehiclesAndDemandPrCell(solution::Solution,endOfPeriodInMinutes::Int,startOfPeriodInMinutes::Int,minLat::Float64,minLong::Float64, nRows::Int,nCols::Int,latStep::Float64,longStep::Float64)
     # Initialize surplus/deficit of vehicles 
     activeVehiclesPerCell = zeros(Int,nRows,nCols)
@@ -89,6 +168,7 @@ function determineActiveVehiclesAndDemandPrCell(solution::Solution,endOfPeriodIn
         if vehicle.availableTimeWindow.startTime > endOfPeriodInMinutes || vehicle.availableTimeWindow.endTime < startOfPeriodInMinutes
             continue
         end
+      
 
         # Check first and last activity in schedule
         if route[1].startOfServiceTime > endOfPeriodInMinutes || route[end].endOfServiceTime < startOfPeriodInMinutes
@@ -105,7 +185,7 @@ function determineActiveVehiclesAndDemandPrCell(solution::Solution,endOfPeriodIn
             if a.startOfServiceTime > endOfPeriodInMinutes || a.endOfServiceTime < startOfPeriodInMinutes
                 continue
             end
-
+       
             # Find grid cell of activity 
             rowIdx, colIdx = determineGridCell(a.activity.location.lat, a.activity.location.long, minLat, minLong, nRows, nCols, latStep, longStep)
 

@@ -310,6 +310,8 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
                 return INFEASIBLE_ROUTE_DROPOFF
             end
         end
+
+     #   println("AFTER CHECK HIGH LEVEL CONSTRAINTS")
     end
 
     pickUpIdxInBlock = pickUpIdx + 1
@@ -396,6 +398,8 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
         detour = findDetour(time,serviceTimes,route[pickUpIdxInBlock-1].activity.id,route[pickUpIdxInBlock].activity.id,pickUpActivity.id) + findDetour(time,serviceTimes,route[dropOffIdxInBlock-2].activity.id,route[dropOffIdxInBlock-2].activity.id,dropOffActivity.id) 
     end
 
+
+
     # Detour just has to be "swallowed" by time in start and end 
     slackTime = 0
 
@@ -462,16 +466,18 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
                 arrivalAtNextActivity = newEndOfServiceTimes[idx-1] + time[previousActivityId,nextActivity.id] 
             end  
 
+
             # Check if we can drive from previous activity to activity after waiting 
             if idx == nActivities-1 
-                # TODO: jas - we dont want to remove the waiting activity before depot 
                 feasible = false
             else
                 feasible, maximumShiftBackwardTrial, maximumShiftForwardTrial = canActivityBeInserted(firstActivity.activity,nextActivity,arrivalAtNextActivity,maximumShiftBackward,maximumShiftForward,newStartOfServiceTimes,newEndOfServiceTimes,serviceTimes,idx)
             end
 
+
             # Remove waiting activity 
             if feasible
+
                 maximumShiftBackward = maximumShiftBackwardTrial
                 maximumShiftForward = maximumShiftForwardTrial
 
@@ -489,6 +495,7 @@ function checkFeasibilityOfInsertionInRoute(time::Array{Int,2},distance::Array{F
 
             # Keep waiting activity     
             else
+
                 # Check if we can minimize waiting node
                 earliestArrivalFromCurrent = newEndOfServiceTimes[idx-1] + time[previousActivityId,currentActivityId] + time[currentActivityId,nextActivity.id]
                 latestArrival = currentActivity.timeWindow.endTime + time[currentActivityId,nextActivity.id]
@@ -619,7 +626,7 @@ function canActivityBeInserted(firstActivity::Activity,currentActivity::Activity
     currentActivityEndTime = currentActivity.timeWindow.endTime
     activityType = currentActivity.activityType
 
-    # CHeck if we can insert it directly
+    # Check if we can insert it directly
     if currentActivityStartTime <= arrivalAtCurrentActivity <= currentActivityEndTime
         # Service times for current activity 
         newStartOfServiceTimes[idx] = arrivalAtCurrentActivity
@@ -702,6 +709,7 @@ function canActivityBeInserted(firstActivity::Activity,currentActivity::Activity
 
         return true, maximumShiftBackward, maximumShiftForward
     else
+       # println("Cannot insert activity: ", currentActivity.id)
         return false, -1, -1
     end
 end

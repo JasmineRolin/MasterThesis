@@ -9,18 +9,12 @@ export readVehicles
 export readRequests
 export splitRequests
 
-#==
- Allowed delay/early arrival
-==#
-global MAX_DELAY = 45
-global MAX_EARLY_ARRIVAL = 15
-
 
 #==
  Function to read instance 
  Takes request, vehicles and parameters .csv as input 
 ==#
-function readInstance(requestFile::String, vehicleFile::String, parametersFile::String,scenarioName=""::String,distanceMatrixFile=""::String,timeMatrixFile=""::String,gridFile::String = "")::Scenario
+function readInstance(requestFile::String, vehicleFile::String, parametersFile::String,scenarioName=""::String,distanceMatrixFile=""::String,timeMatrixFile=""::String,gridFile::String = "";maxDelay::Int=45,maxEarlyArrival::Int=15)::Scenario
 
     # Check that files exist 
     if !isfile(requestFile)
@@ -87,7 +81,7 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     distance, time = getDistanceAndTimeMatrix(distanceMatrixFile,timeMatrixFile,requestFile,depotCoordinates)
 
     # Get requests 
-    requests = readRequests(requestsDf,nRequests,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time)
+    requests = readRequests(requestsDf,nRequests,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time,maxDelay,maxEarlyArrival)
 
     # Split into offline and online requests
     onlineRequests, offlineRequests = splitRequests(requests)
@@ -178,7 +172,7 @@ end
 #==
  Function to read requests 
 ==#
-function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maximumRideTimePercent::Int, minimumMaximumRideTime::Int,time::Array{Int,2};extraN::Int=0, useAnticipationOnlineRequests::Bool=false)
+function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maximumRideTimePercent::Int, minimumMaximumRideTime::Int,time::Array{Int,2},maxDelay::Int,maxEarlyArrival::Int;extraN::Int=0,useAnticipationOnlineRequests::Bool=false)
     requests = Vector{Request}()
 
     for row in eachrow(requestDf)
@@ -202,9 +196,18 @@ function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maxim
         # Read request time 
         requestTime = row.request_time 
 
+        if requestTime == 0
+            requestTimePU = requestTime
+        else
+            requestTimePU = requestTime - row.direct_drive_time
+        end
+
         # Check that call time is before buffer
-        if callTime > requestTime - bufferTime
-            println("CallTime:", callTime, " RequestTime:", requestTime, " Buffer:", bufferTime)
+        if callTime > requestTimePU - bufferTime
+            println("Call time: ",callTime)
+            println("Request time: ",requestTime)
+            println("Buffer time: ",bufferTime)
+            println("Request time PU: ",requestTimePU)
             throw(ArgumentError(string("Call time is not before required buffer period for request: ",id)))
         end
 
@@ -221,10 +224,10 @@ function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maxim
         dropOffTimeWindow = TimeWindow(0,0)
 
         if requestType == PICKUP_REQUEST
-            pickUpTimeWindow = findTimeWindowOfRequestedPickUpTime(requestTime,MAX_DELAY,MAX_EARLY_ARRIVAL)
+            pickUpTimeWindow = findTimeWindowOfRequestedPickUpTime(requestTime,maxDelay,maxEarlyArrival)
             dropOffTimeWindow = findTimeWindowOfDropOff(pickUpTimeWindow,directDriveTime,maximumRideTime)
         else
-            dropOffTimeWindow = findTimeWindowOfRequestedDropOffTime(requestTime,MAX_DELAY,MAX_EARLY_ARRIVAL)
+            dropOffTimeWindow = findTimeWindowOfRequestedDropOffTime(requestTime,maxDelay,maxEarlyArrival)
             pickUpTimeWindow = findTimeWindowOfPickUp(dropOffTimeWindow,directDriveTime,maximumRideTime)
         end
 

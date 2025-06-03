@@ -28,7 +28,8 @@ function readALNSParameters(parametersFile::String)::ALNSParameters
         Float64(jsonData["p"]),
         Float64(jsonData["shawRemovalPhi"]),
         Float64(jsonData["shawRemovalXi"]),
-        Int(jsonData["maxNumberOfIterationsWithoutImprovement"])
+        Int(jsonData["maxNumberOfIterationsWithoutImprovement"]),
+        Int(jsonData["maxNumberOfIterationsWithoutNewBest"])
         )
 end
 

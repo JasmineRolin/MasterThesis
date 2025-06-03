@@ -47,7 +47,7 @@ export regretInsertion
 ==#
 include("ALNSResults.jl")
 using .ALNSResults 
-export ALNSResult, plotRoutes
+export ALNSResult, plotRoutes,createGantChartOfSolution,createGantChartOfRequestsAndVehicles
 
 #==
  Import from ALNSAlgorithm

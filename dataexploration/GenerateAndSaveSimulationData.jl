@@ -10,6 +10,10 @@ using Plots.PlotMeasures
 # Function to calculate the Silverman rule bandwidth
 ==#
 function silverman_bandwidth(data::Vector{T}) where T
+    if isempty(data)
+        return 0.0
+    end
+
     n = length(data)
     σ = std(data)
     iqr = quantile(data, 0.75) - quantile(data, 0.25)
@@ -17,6 +21,10 @@ function silverman_bandwidth(data::Vector{T}) where T
 end
 
 function silverman_bandwidth_2D(data::Vector{T}) where T
+    if isempty(data)
+        return 0.0
+    end
+
     n = length(data)
     σ = std(data)
     iqr = quantile(data, 0.75) - quantile(data, 0.25)
@@ -169,6 +177,10 @@ function getDistanceDistribution(distanceDriven::Vector{Float64}; bandwidth_fact
 end
 
 function getRequestTimeDistribution(requestTime::Vector{Int}, time_range::Vector{Int}; bandwidth_factor=1.0)
+    if isempty(requestTime)
+        return Vector{Float64}(), Vector{Float64}()
+    end
+
     # Compute Silverman’s bandwidth and apply scaling
     bw = bandwidth_factor * silverman_bandwidth(requestTime)
 
@@ -215,6 +227,10 @@ function getOnlineRequestTimeDistribution(probabilities::Vector{Float64}, time_r
 end
 
 function getOfflineRequestTimeDistribution(probabilities::Vector{Float64}, time_range::Vector{Int}; first_peak_center::Int=400, peak_boost=1.2, boost_width=60)
+    if probabilities == nothing || isempty(probabilities)
+        return Vector{Float64}()
+    end
+
     # Apply a Gaussian weight centered at the second peak
     boost_weights = [1.0 + (peak_boost - 1.0) * exp(-((t - first_peak_center)^2) / (2 * boost_width^2)) for t in time_range]
     

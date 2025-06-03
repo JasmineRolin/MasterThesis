@@ -1,14 +1,84 @@
 module GeneratePredictedDemand
 
-using CSV, DataFrames, JSON, domain, UnPack
+using CSV, DataFrames, JSON, domain, UnPack, utils
 using Statistics, ImageFiltering
 
-export generatePredictedDemand,generatePredictedVehiclesDemand,generatePredictedVehiclesDemandInPeriod,generatePredictedVehiclesDemandInHorizon
+export generatePredictedDemand,generatePredictedVehiclesDemand,generatePredictedVehiclesDemandInPeriod,generatePredictedVehiclesDemandInHorizon,getProbabilityGrid
 
 #==
- Method to generate predicted demand  
+ Method to get probability grid from historic data 
 ==#
-# TODO: jas - do something else than plain average
+function getProbabilityGrid(scenario::Scenario,historicRequestFiles::Vector{String})
+
+    nRows = scenario.grid.nRows
+    nCols = scenario.grid.nCols
+    minLat = scenario.grid.minLat
+    minLong = scenario.grid.minLong
+    latStep = scenario.grid.latStep
+    longStep = scenario.grid.longStep
+
+
+    demandGrid = zeros(Float64,nRows, nCols)
+
+    for requestFile in historicRequestFiles
+        df = CSV.read(requestFile, DataFrame)
+
+        for row in eachrow(df)
+            lat = row.pickup_latitude
+            lon = row.pickup_longitude
+
+            # Determine grid cell
+            rowIdx, colIdx = determineGridCell(lat, lon, minLat, minLong, nRows, nCols, latStep, longStep)
+
+            # Update demand grid 
+            demandGrid[rowIdx, colIdx] += 1
+        end
+    end
+
+    nRequests = sum(demandGrid)
+    probabilitiesGrid = demandGrid ./ nRequests
+    
+    return probabilitiesGrid
+end
+
+#==
+ Method to load location distribution data
+==#
+function loadLocationDistribution(input_dir::String)
+    x_range = Float64.(CSV.read(joinpath(input_dir, "x_range.csv"), DataFrame).x)
+    y_range = Float64.(CSV.read(joinpath(input_dir, "y_range.csv"), DataFrame).y)
+    probabilities_location = coalesce.(Float64.(CSV.read(joinpath(input_dir, "probabilities_location.csv"), DataFrame).probability), 0.0)
+
+    return (
+        x_range,
+        y_range,
+        probabilities_location
+    )
+end
+
+#==
+    Method to find the closest grid center to a given location
+==#
+function findClosestGridCenter(depotLocations::Dict{Tuple{Int64, Int64}, Location},lat::Float64,long::Float64)
+    closestCenter = nothing
+    minDist = Inf
+
+    for (cell, loc) in depotLocations
+        cellLat, cellLong = loc.lat, loc.long
+        dist = haversine_distance(lat, long, cellLat, cellLong)[1]
+        if dist < minDist
+            minDist = dist
+            closestCenter = cell
+        end
+    end
+ 
+    return closestCenter
+end
+
+
+#==
+ Method to generate predicted demand from historic request files
+==#
 function generatePredictedDemand(grid::Grid, historicRequestFiles::Vector{String}, nTimePeriods::Int,periodLength::Int)
     @unpack minLat,maxLat,minLong,maxLong, nRows,nCols,latStep,longStep = grid 
 
@@ -45,7 +115,7 @@ function generatePredictedDemand(grid::Grid, historicRequestFiles::Vector{String
 end
 
 #==
- Generate predicted capacity of vehicles 
+ Generate predicted demand of vehicles 
 ==#
 # Assuming homogenous vehicles
 function generatePredictedVehiclesDemand(grid::Grid,gamma::Float64, averageDemand::Array{Float64,3},nTimePeriods::Int)
@@ -57,10 +127,6 @@ function generatePredictedVehiclesDemand(grid::Grid,gamma::Float64, averageDeman
     end 
 
     return vehicleDemand
-end
-
-function generatePredictedVehiclesDemandInPeriod(gamma::Float64, predictedDemand::Array{Float64,2},realisedDemand::Array{Int,2})
-   return Int.(ceil.(predictedDemand.*gamma))
 end
 
 function generatePredictedVehiclesDemandInHorizon(gamma::Float64, predictedDemand::Array{Float64,3},period::Int,endPeriod::Int)
