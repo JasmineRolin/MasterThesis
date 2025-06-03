@@ -60,14 +60,16 @@ function findDepotLocations(grid::Grid,nRequests::Int)
     gridCentersLong = [grid.minLong + (j + 0.5) * grid.longStep for j in 0:grid.nCols-1]
 
     depotLocations = Dict{Tuple{Int,Int}, Location}()
+    depotCoordinates = Vector{Tuple{Float64,Float64}}()
     for (i, lat) in enumerate(gridCentersLat)
         for (j, lon) in enumerate(gridCentersLong)
             depotId = findDepotIdFromGridCell(grid, nRequests, (i, j))
             depotLocations[(i, j)] = Location("D$(depotId)", lat, lon)
+            push!(depotCoordinates,(lat,lon))
         end
     end
 
-    return depotLocations
+    return depotLocations, depotCoordinates
 end
 
 #==

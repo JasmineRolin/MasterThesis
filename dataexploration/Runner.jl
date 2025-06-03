@@ -20,11 +20,11 @@ global GENERATE_VEHICLES = false
 #==
 # Constants for data generation 
 ==#
-global DoD = 0.6 # Degree of dynamism
+global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
-global callBuffer = 60 # 2 hours buffer
+global callBuffer = 120 # 2 hours buffer
 global nData = 10
-global nRequestList = [20,100,300,500]
+global nRequestList = [20]
 global MAX_DELAY = 45 # TODO Astrid I just put something
 global earliestBuffer = 2*60
 

@@ -169,7 +169,7 @@ function findGridCenters(max_lat, min_lat, max_long, min_long, nRows, nCols)
     # Generate grid cell centers
     grid_centers_lat = [min_lat + (i + 0.5) * lat_step for i in 0:nRows-1]
     grid_centers_long = [min_long + (j + 0.5) * long_step for j in 0:nCols-1]
-    grid_centers = [(lat, lon) for lat in grid_centers_lat, lon in grid_centers_long]
+    grid_centers = [(lat, lon) for lon in grid_centers_long, lat in grid_centers_lat]
 
     return lat_step, long_step, grid_centers
 end

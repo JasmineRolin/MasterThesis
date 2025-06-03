@@ -62,8 +62,7 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
         longStep = (maxLong - minLong) / nCols
  
         grid = Grid(maxLat,minLat,maxLong,minLong,nRows,nCols,latStep,longStep)
-        depotLocationsGrid = findDepotLocations(grid,nRequests)
-        depotCoordinates = [(l.lat,l.long) for l in values(depotLocationsGrid)]
+        depotLocationsGrid, depotCoordinates = findDepotLocations(grid,nRequests)
         nDepots = length(depotLocationsGrid)
     end
 

@@ -156,8 +156,7 @@ function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicle
         longStep = (maxLong - minLong) / nCols
  
         grid = Grid(maxLat,minLat,maxLong,minLong,nRows,nCols,latStep,longStep)
-        depotLocationsGrid = findDepotLocations(grid,nRequests)
-        depotCoordinates = [(l.lat,l.long) for l in values(depotLocationsGrid)]
+        depotLocationsGrid, depotCoordinates = findDepotLocations(grid,nRequests)
         nDepots = length(depotLocationsGrid)
     end
     
@@ -443,7 +442,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
     nRequests = 0
 
     # Create different scenarios and solve problem with known offline requests and predicted online requests 
-    for i in 1:2 #TODO change
+    for i in 1:1 #TODO change
         println("==========================================")
         println("Run: ", i)
 
@@ -451,7 +450,6 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         if useAnticipationOnlineRequests
             scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile,useAnticipationOnlineRequests=true)
         else 
-
             scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile)
         end
         time = scenario.time

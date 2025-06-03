@@ -706,6 +706,7 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         nNotServicedExpectedRequests = 0 # Dummy
     else
         solution, requestBank, resultsAnticipation, scenario,_,_,_,ALNSIterations = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,length(scenario.offlineRequests),displayPlots=displayPlots,keepExpectedRequests=keepExpectedRequests,useAnticipationOnlineRequests=useAnticipationOnlineRequests)
+        println(requestBank)
         nRequestBankTemp = length(requestBank)
         requestBank = requestBank[requestBank .<= scenario.nFixed]
         nNotServicedExpectedRequests = nRequestBankTemp - length(requestBank) 
@@ -796,7 +797,11 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
     averageNotServicedExpectedRequestsRelevant = zeros(Float64,totalEvents)
 
     for (itr,event) in enumerate(events)
-        
+
+        if itr == 1
+            throw("No simulation")
+        end
+
         startTimeEvent = time()
         println("------------------------------------------------------------------------------------------------------------------------------------------------")
         println("Event: id: ", itr, ", time: ", event.callTime, " request id: ", event.id, " pick up time: ",event.request.pickUpActivity.timeWindow)

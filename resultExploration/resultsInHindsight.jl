@@ -18,12 +18,12 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
     alnsParameters = "tests/resources/ALNSParameters_InHindsight.json"
     outPutFolder = string("resultExploration/results/",date,"/",resultType,"/",n,"/",run)
     outputFiles = Vector{String}()
-    gridFile = string("Data/Konsentra/grid.json")
+    gridFile = string("Data/Konsentra/grid_10.json")
 
     #for i in 1:10
         requestFile = string("Data/Konsentra/",dataset,"/",n,"/GeneratedRequests_",n,"_",i,".csv")
-        distanceMatrixFile = string("Data/Matrices/",dataset,"/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
-        timeMatrixFile =  string("Data/Matrices/",dataset,"/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
+        distanceMatrixFile = string("Data/Matrices/",dataset,"/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+        timeMatrixFile =  string("Data/Matrices/",dataset,"/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
         scenarioName = string("Gen_Data_",n,"_",i)
         push!(outputFiles, outPutFolder*"/Simulation_KPI_"*string(scenarioName)*"_false.json")
 
@@ -66,7 +66,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
 
 end
 
-#main(50,0.5,0.5,"2025-05-23","","BaseCase",1)
+main(300,0.5,0.5,"2025-06-01_test","","InHindsight",1)
 
 if abspath(PROGRAM_FILE) == @__FILE__
     n = parse(Int, ARGS[1])
