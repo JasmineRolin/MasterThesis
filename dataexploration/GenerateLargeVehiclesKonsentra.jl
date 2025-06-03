@@ -4,6 +4,7 @@ using CSV
 using DataFrames
 using Plots
 using Random
+using domain 
 
 
 # ------
@@ -165,11 +166,22 @@ function findGridCenters(max_lat, min_lat, max_long, min_long, nRows, nCols)
     # Compute grid spacing
     lat_step = (max_lat - min_lat) / nRows
     long_step = (max_long - min_long) / nCols
+    gridSize = nRows * nCols
 
     # Generate grid cell centers
     grid_centers_lat = [min_lat + (i + 0.5) * lat_step for i in 0:nRows-1]
     grid_centers_long = [min_long + (j + 0.5) * long_step for j in 0:nCols-1]
-    grid_centers = [(lat, lon) for lat in grid_centers_lat, lon in grid_centers_long]
+    grid_centers = [(0.0, 0.0) for _ in 1:gridSize]
+
+    for lat in grid_centers_lat
+        for lon in grid_centers_long
+            gridCell = determineGridCell(lat, lon, min_lat, min_long, nRows, nCols, lat_step, long_step)
+
+            depotIndex = findDepotIdFromGridCell(nCols, gridCell)
+
+            grid_centers[depotIndex] = (lat, lon)
+        end
+    end
 
     return lat_step, long_step, grid_centers
 end

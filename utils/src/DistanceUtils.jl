@@ -25,6 +25,12 @@ function getDistanceAndTimeMatrix(distanceMatrixFile=""::String,timeMatrixFile="
         time = [parse.(Int, split(line)) for line in lines]
         time = convert(Matrix{Int}, hcat(time...)')
 
+        distance_temp, time_temp = getDistanceAndTimeMatrixFromDataFrame(CSV.read(requestFile, DataFrame),depotLocations)
+        if sum(time .!= time_temp) > 0 || sum(distance .!= distance_temp) > 0
+            error("Error: Distance and time matrices do not match the request file.")
+        end
+        println("Distance")
+
         return distance, time
     end 
 

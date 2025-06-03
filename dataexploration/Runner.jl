@@ -14,8 +14,8 @@ include("GenerateLargeDataSets.jl")
 
 
 global GENERATE_SIMULATION_DATA = true
-global GENERATE_DATA_AND_VEHICLES = false
-global GENERATE_VEHICLES = true
+global GENERATE_DATA_AND_VEHICLES = true
+global GENERATE_VEHICLES = false
 
 #==
 # Constants for data generation 
@@ -132,15 +132,15 @@ if GENERATE_DATA_AND_VEHICLES
             average_demand_per_hour = generateVehicles(shifts,df_list, base_probabilities_location, base_x_range, base_y_range,gamma,vehicleCapacity,nRequest,MAX_LAT,MIN_LAT,MAX_LONG,MIN_LONG,NUM_ROWS,NUM_COLS)
 
             # Plot demand and shifts
-            #plotDemandAndShifts(average_demand_per_hour,shifts,gamma)
+            plotDemandAndShifts(average_demand_per_hour,shifts,gamma)
 
             # Plot request and vehicle locations 
-            #plotRequestsAndVehicles(nRequest,nData,gamma,MAX_LAT,MIN_LAT,MAX_LONG,MIN_LONG,NUM_ROWS,NUM_COLS,grid_centers,lat_step,long_step)
+            plotRequestsAndVehicles(nRequest,nData,gamma,MAX_LAT,MIN_LAT,MAX_LONG,MIN_LONG,NUM_ROWS,NUM_COLS,grid_centers,lat_step,long_step)
         end
 
         # Generate time and distance matrices  
-        depotLocations = Vector{Tuple{Float64,Float64}}()
-        [push!(depotLocations,(loc[1],loc[2])) for loc in grid_centers]
+        depotLocations = findDepotLocations(NUM_ROWS, NUM_COLS, MIN_LAT, MIN_LONG, lat_step, long_step, nRequest)[2]
+
         for gamma in GammaList
             for i in 1:nData
                 println("n = ",nRequest," i = ",i)
@@ -155,9 +155,9 @@ if GENERATE_DATA_AND_VEHICLES
         #================================================#
         # Plot new data
         #================================================#
-       # createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,density_grid,location_matrix,requestTime,probabilities_time, probabilities_offline,probabilities_online,serviceWindow,distanceDriven)
+        createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,density_grid,location_matrix,requestTime,probabilities_time, probabilities_offline,probabilities_online,serviceWindow,distanceDriven)
         for gamma in GammaList
-           # plotAndSaveGantChart(nRequest,nData,gamma)
+            plotAndSaveGantChart(nRequest,nData,gamma)
         end
     end
 
@@ -205,8 +205,9 @@ if GENERATE_VEHICLES
         end
 
         # Generate time and distance matrices  
-        depotLocations = Vector{Tuple{Float64,Float64}}()
-        [push!(depotLocations,(loc[1],loc[2])) for loc in grid_centers]
+        depotLocations = findDepotLocations(NUM_ROWS, NUM_COLS, MIN_LAT, MIN_LONG, lat_step, long_step, nRequest)[2]
+        println(depotLocations)
+
         for gamma in GammaList
             for i in 1:nData
                 println("n = ",nRequest," i = ",i)
