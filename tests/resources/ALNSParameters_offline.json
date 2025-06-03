@@ -1,6 +1,6 @@
 {
     "timeLimit": 1200.0,
-    "printSegmentSize":500,
+    "printSegmentSize":1000,
     "segmentSize": 10,
     "reactionFactor": 0.1,
     "scoreAccepted": 13.0,

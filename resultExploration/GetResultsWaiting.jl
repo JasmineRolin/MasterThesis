@@ -1,10 +1,10 @@
 using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures
 
-nRequestList = [20,100, 300, 500]
+nRequestList = [500]
 nRuns = 3
-relocateVehiclesList =  [("true","false"),("true","true"),("false","false"),("inhindsight","")]
-gamma = 0.5
+relocateVehiclesList =   [("true","false"),("true","true"),("false","false"),("inhindsight","")]
+gamma = 0.7
 baseFolder = "runfiles/output/Waiting/Base/"
 
 #===============================#
@@ -102,11 +102,11 @@ for n in nRequestList
     ylimMax = tickSpace * ceil((maxnTaxi + 2) / tickSpace)
     xtickLabel = ["Scenario $(i)" for i in 1:nRows]
     xticks!((1:nRows,xtickLabel),rotation=90)
-    if n == 500 
-        yticks!((ylimMin:10:ylimMax,string.(Int.(ylimMin:10:ylimMax))))
-    else 
+    # if n == 500 
+    #     yticks!((ylimMin:10:ylimMax,string.(Int.(ylimMin:10:ylimMax))))
+    # else 
         yticks!((ylimMin:tickSpace:ylimMax,string.(Int.(ylimMin:tickSpace:ylimMax))))
-    end
+   # end
     ylims!(ylimMin, ylimMax)
 
     savefig(p, "plots/Waiting/results_$(n).png")
