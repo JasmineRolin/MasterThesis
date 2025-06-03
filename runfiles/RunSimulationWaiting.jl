@@ -63,17 +63,17 @@ function main()
     else
         historicRequestFiles = Vector{String}()
         for j in 1:nHistoricRequestFiles
-            push!(historicRequestFiles,"Data/Konsentra/DoD 40/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
+            push!(historicRequestFiles,"Data/Konsentra/OriginalInstance/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
         end
 
         # File names 
-        vehiclesFile = string("Data/Konsentra/DoD 40/",n,"/Vehicles_",n,"_",gamma,".csv")
+        vehiclesFile = string("Data/Konsentra/OriginalInstance/",n,"/Vehicles_",n,"_",gamma,".csv")
         parametersFile = "tests/resources/Parameters.csv"
         gridFile = "Data/Konsentra/grid_$(gridSize).json"
-        requestFile = "Data/Konsentra/DoD 40/$(n)/GeneratedRequests_$(n)_$(i).csv"
-        distanceMatrixFile = string("Data/Matrices/DoD 40/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+        requestFile = "Data/Konsentra/OriginalInstance/$(n)/GeneratedRequests_$(n)_$(i).csv"
+        distanceMatrixFile = string("Data/Matrices/OriginalInstance/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
         outPutFolder = "runfiles/output/Waiting/Base/"*string(n)*"/Run"*string(run)
-        timeMatrixFile =  string("Data/Matrices/DoD 40/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
+        timeMatrixFile =  string("Data/Matrices/OriginalInstance/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
         alnsParameters = "tests/resources/ALNSParameters_offlineWaiting.json"
 
         # vehiclesFile = string("Data/Konsentra/Original_v2/",n,"/Vehicles_",n,"_",gamma,".csv")
