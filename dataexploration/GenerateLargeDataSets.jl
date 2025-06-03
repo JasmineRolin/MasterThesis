@@ -62,7 +62,7 @@ end
 #==
 # Generate data sets and vehicles
 ==#
-function generateDataSets(nRequest,DoD,nData,time_range,max_lat, min_lat, max_long, min_long,only_pickup)
+function generateDataSets(nRequest,DoD,nData,time_range,max_lat, min_lat, max_long, min_long,only_pickup,limitEarlyCallTime,earliestBuffer)
     # Load simulation data
     probabilities_time,
     probabilities_offline,
@@ -80,7 +80,7 @@ function generateDataSets(nRequest,DoD,nData,time_range,max_lat, min_lat, max_lo
         distanceDriven= load_simulation_data("Data/Simulation data/")
 
     # Generate request data 
-    newDataList, df_list = generateData(nRequest,DoD,nData, probabilities_offline, probabilities_online, probabilities_location, time_range, x_range, y_range,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long,only_pickup)
+    newDataList, df_list = generateData(nRequest,DoD,nData, probabilities_offline, probabilities_online, probabilities_location, time_range, x_range, y_range,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long,only_pickup,limitEarlyCallTime,earliestBuffer)
 
     return location_matrix, requestTime, newDataList, df_list, probabilities_time,probabilities_offline,probabilities_online,probabilities_location, density_grid, x_range, y_range, requests, distanceDriven
 end
@@ -89,7 +89,7 @@ end
 #==
 # Generate data sets
 ==#
-function generateData(nRequest,DoD,nData,probabilities_offline, probabilities_online, probabilities_location, time_range, x_range, y_range,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long,only_pickup)
+function generateData(nRequest,DoD,nData,probabilities_offline, probabilities_online, probabilities_location, time_range, x_range, y_range,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long,only_pickup,limitEarlyCallTime,earliestBuffer)
     df_list = []
     newDataList = Vector{String}()  
     for i in 1:nData
@@ -101,7 +101,7 @@ function generateData(nRequest,DoD,nData,probabilities_offline, probabilities_on
         while retry_count < 5
             try
                 # Call the function that may throw the error
-                results = makeRequests(nRequest,DoD, probabilities_offline, probabilities_online, probabilities_location, time_range, x_range, y_range, output_file,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long,only_pickup)
+                results = makeRequests(nRequest,DoD, probabilities_offline, probabilities_online, probabilities_location, time_range, x_range, y_range, output_file,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long,only_pickup,limitEarlyCallTime,earliestBuffer)
                 
                 println("Request generation succeeded!")
                 push!(df_list,results)
@@ -130,7 +130,7 @@ end
 #==
 # Make request
 ==#
-function makeRequests(nSample::Int, DoD::Float64, probabilities_offline::Vector{Float64}, probabilities_online::Vector{Float64}, probabilities_location::Vector{Float64}, time_range::Vector{Int}, x_range::Vector{Float64}, y_range::Vector{Float64}, output_file::String,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long,only_pickup)
+function makeRequests(nSample::Int, DoD::Float64, probabilities_offline::Vector{Float64}, probabilities_online::Vector{Float64}, probabilities_location::Vector{Float64}, time_range::Vector{Int}, x_range::Vector{Float64}, y_range::Vector{Float64}, output_file::String,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long,only_pickup,limitEarlyCallTime,earliestBuffer)
     results = DataFrame(
         id = Int[],
         pickup_latitude = Float64[],
@@ -222,8 +222,13 @@ function makeRequests(nSample::Int, DoD::Float64, probabilities_offline::Vector{
     end
 
     # Determine call time
-    callTime(results, serviceWindow, callBuffer, preKnown)
-    #earlyCallTime(results, serviceWindow, earliestBuffer, callBuffer, preKnown)
+    if limitEarlyCallTime
+        earlyCallTime(results, serviceWindow, earliestBuffer, callBuffer, preKnown)
+    else 
+        callTime(results, serviceWindow, callBuffer, preKnown)
+    end
+    
+
 
     # Write results to CSV
     mkpath(dirname(output_file))
@@ -551,19 +556,25 @@ function createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,de
     end
 end
 
-function plotAndSaveGantChart(nRequest::Int,nData::Int,gamma::Float64)
+function plotAndSaveGantChart(nRequest::Int,nData::Int,gamma::Float64,limitEarlyCallTime::Bool,gridSize::Int)
     for idx in 1:nData
         # Plot gant chart 
         requestFile = string("Data/Konsentra/",nRequest,"/GeneratedRequests_",nRequest,"_",idx,".csv")
         vehiclesFile = string("Data/Konsentra/",nRequest,"/Vehicles_",nRequest,"_",gamma,".csv")
-        parametersFile = "tests/resources/ParametersShort.csv"
-        #parametersFile = "tests/resources/ParametersShortCallTime.csv"
+
+        if limitEarlyCallTime
+            parametersFile = "tests/resources/ParametersShortCallTime.csv"
+        else
+            parametersFile = "tests/resources/Parameters.csv"
+        end
+   
         distanceMatrixFile = string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",gamma,"_",idx,"_distance.txt")
         timeMatrixFile =  string("Data/Matrices/",nRequest,"/GeneratedRequests_",nRequest,"_",gamma,"_",idx,"_time.txt")
         scenarioName = "No. requests = " * string(nRequest)
+        gridFile = "Data/Konsentra/grid_$(gridSize).json"
 
         # Read instance 
-        scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
+        scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile,gridFile)
 
         p2 = createGantChartOfRequestsAndVehicles(scenario.vehicles, scenario.requests, [],scenarioName)
         display(p2)

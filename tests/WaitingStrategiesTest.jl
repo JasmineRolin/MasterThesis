@@ -14,7 +14,7 @@ using Plots.PlotMeasures
 print("\033c")
 
 # Parameters 
-n = 500
+n = 300
 i = 1
 gridSize = 10
 displayPlots = true
@@ -25,16 +25,18 @@ maximumTime = 24*60
 periodLength = Int(maximumTime / nPeriods)
 nHistoricRequestFiles = 20
 
+alnsParameters = "tests/resources/ALNSParameters_offline.json"
+
 # Retrieve historic request files 
 # historicRequestFiles = Vector{String}()
 # for j in 1:nHistoricRequestFiles
 #     push!(historicRequestFiles,"Data/DataWaitingStrategies/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
 # end
 
-# historicRequestFiles = Vector{String}()
-# for j in 1:nHistoricRequestFiles
-#     push!(historicRequestFiles,"Data/Konsentra/DoD 40/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
-# end
+historicRequestFiles = Vector{String}()
+for j in 1:nHistoricRequestFiles
+    push!(historicRequestFiles,"Data/Konsentra/OriginalInstance/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
+end
 
 
 # File names 
@@ -49,13 +51,13 @@ nHistoricRequestFiles = 20
 # maxDelay = 15
 # maxEarlyArrival = 5
 
-vehiclesFile = string("Data/Konsentra/DoD 40/",n,"/Vehicles_",n,"_",gamma,".csv")
+vehiclesFile = string("Data/Konsentra/OriginalInstance/",n,"/Vehicles_",n,"_",gamma,".csv")
 parametersFile = "tests/resources/Parameters.csv"
 gridFile = "Data/Konsentra/grid_$(gridSize).json"
-requestFile = "Data/Konsentra/DoD 40/$(n)/GeneratedRequests_$(n)_$(i).csv"
-distanceMatrixFile = string("Data/Matrices/DoD 40/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+requestFile = "Data/Konsentra/OriginalInstance/$(n)/GeneratedRequests_$(n)_$(i).csv"
+distanceMatrixFile = string("Data/Matrices/OriginalInstance/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
 outPutFolder = "runfiles/output/Waiting/"*string(n)
-timeMatrixFile =  string("Data/Matrices/DoD 40/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
+timeMatrixFile =  string("Data/Matrices/OriginalInstance/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
 scenarioName = string("Gen_Data_",n,"_",gamma,"_",i)
 maxDelay = 45 
 maxEarlyArrival = 15
@@ -76,7 +78,7 @@ scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,dis
 
 # Read instance 
 # for histRequests in historicRequestFiles
-#     scenarioName = replace(histRequests, "Data/Konsentra/DoD 40/HistoricData/$(n)/GeneratedRequests_$(n)_" => "")
+#     scenarioName = replace(histRequests, "Data/Konsentra/OriginalInstance/HistoricData/$(n)/GeneratedRequests_$(n)_" => "")
 #     histScen = readInstance(histRequests,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile,gridFile,maxDelay=maxDelay,maxEarlyArrival=maxEarlyArrival)
 
 #     pScen = plotRequestsAndVehiclesWait(histScen,histScen.grid)
@@ -105,7 +107,7 @@ println("\t nOfflineRequests: ",length(scenario.offlineRequests))
 # end
 
 # # Simulate scenario 
-# solutionTrue, requestBankTrue = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
+# solutionTrue, requestBankTrue = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
 
 # state = State(solutionTrue,scenario.onlineRequests[end],0)
 # feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
@@ -127,7 +129,7 @@ println("\t nOfflineRequests: ",length(scenario.offlineRequests))
 # end
 
 # # Simulate scenario 
-# solutionTrueDemand, requestBankTrueDemand = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = true);
+# solutionTrueDemand, requestBankTrueDemand = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = true);
 
 # state = State(solutionTrueDemand,scenario.onlineRequests[end],0)
 # feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
@@ -139,41 +141,41 @@ println("\t nOfflineRequests: ",length(scenario.offlineRequests))
 #============================================================================#
 # Solve without relocation
 #============================================================================#
-# if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/false_false")
-#     mkpath("tests/WaitingPlots/true_true")
-# end
-# if displayPlots && isdir("tests/WaitingPlots/false_false")
-#     for file in readdir("tests/WaitingPlots/true_true"; join=true)
-#         rm(file; force=true, recursive=true)
-#     end
-# end
+if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/false_false")
+    mkpath("tests/WaitingPlots/true_true")
+end
+if displayPlots && isdir("tests/WaitingPlots/false_false")
+    for file in readdir("tests/WaitingPlots/true_true"; join=true)
+        rm(file; force=true, recursive=true)
+    end
+end
 
-# # Simulate scenario 
-# solutionFalse, requestBankFalse = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=false,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
+# Simulate scenario 
+solutionFalse, requestBankFalse = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=false,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
 
-# state = State(solutionFalse,scenario.onlineRequests[end],0)
-# feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-# @test msg == ""
-# @test feasible == true
-# println(msg)
+state = State(solutionFalse,scenario.onlineRequests[end],0)
+feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+@test msg == ""
+@test feasible == true
+println(msg)
 
 #============================================================================#
 # Solve in-hindsigth
 #============================================================================#
-# alnsParameters = "tests/resources/ALNSParameters_offline.json"
+alnsParameters = "tests/resources/ALNSParameters_offline.json"
 
-# destroyMethods = Vector{GenericMethod}()
-# addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
-# addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
-# addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
+destroyMethods = Vector{GenericMethod}()
+addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
+addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
+addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
 
-# # Choose repair methods
-# repairMethods = Vector{GenericMethod}()
-# addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
-# addMethod!(repairMethods,"regretInsertion",regretInsertion)
+# Choose repair methods
+repairMethods = Vector{GenericMethod}()
+addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
+addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
-# initialSolution, requestBankALNS = simpleConstruction(scenario,scenario.requests)
-# finalSolution,requestBankALNS,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBankALNS,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=true,stage="Offline")
+initialSolution, requestBankALNS = simpleConstruction(scenario,scenario.requests)
+finalSolution,requestBankALNS,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBankALNS,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=true,stage="Offline")
 
 
 
@@ -216,13 +218,13 @@ println("\t nOfflineRequests: ",length(scenario.offlineRequests))
 #  Plot time windows for pick up for original problem 
 # ==#
 # i = 5
-# vehiclesFileBase = string("Data/Konsentra/DoD 40/",n,"/Vehicles_",n,"_",gamma,".csv")
+# vehiclesFileBase = string("Data/Konsentra/OriginalInstance/",n,"/Vehicles_",n,"_",gamma,".csv")
 # parametersFileBase = "tests/resources/Parameters.csv"
 # gridFileBase = "Data/Konsentra/grid_$(gridSize).json"
-# requestFileBase = "Data/Konsentra/DoD 40/$(n)/GeneratedRequests_$(n)_$(i).csv"
-# distanceMatrixFileBase = string("Data/Matrices/DoD 40/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+# requestFileBase = "Data/Konsentra/OriginalInstance/$(n)/GeneratedRequests_$(n)_$(i).csv"
+# distanceMatrixFileBase = string("Data/Matrices/OriginalInstance/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
 
-# timeMatrixFileBase =  string("Data/Matrices/DoD 40/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
+# timeMatrixFileBase =  string("Data/Matrices/OriginalInstance/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
 # scenarioNameBase = string("Gen_Data_",n,"_",gamma,"_",i)
 # scenarioNameBase = string("Gen_Data_",n,"_",gamma,"_",i)
 
