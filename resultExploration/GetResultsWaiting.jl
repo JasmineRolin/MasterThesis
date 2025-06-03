@@ -1,12 +1,12 @@
 using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures
 
-nRequestList = [20,100,300,500]
+nRequestList = [100]
 nRuns = 3
-relocateVehiclesList =    [("true","true"),("false","false"),("inhindsight","")] #[("true","true"),("true","false"),("false","false"),("inhindsight","")]
+relocateVehiclesList =    [("true","true"),("true","false"),("false","false"),("inhindsight","")] # [("true","true"),("false","false"),("inhindsight","")]
 gamma = 0.7
 baseFolder = "runfiles/output/Waiting/Base/"
-plotName = "Base_M1"
+plotName = ""
 
 #===============================#
 # Retrieve CSV files 
