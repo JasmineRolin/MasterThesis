@@ -12,5 +12,5 @@
     "shawRemovalPhi": 9.0,
     "shawRemovalXi": 3.0,
     "maxNumberOfIterationsWithoutImprovement": 1000,
-    "maxNumberOfIterationsWithoutNewBest": 10000  
+    "maxNumberOfIterationsWithoutNewBest": 2000  
 }

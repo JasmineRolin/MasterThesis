@@ -14,7 +14,7 @@ using Plots.PlotMeasures
 print("\033c")
 
 # Parameters 
-n = 300
+n = 100
 i = 1
 gridSize = 10
 displayPlots = true
@@ -25,7 +25,7 @@ maximumTime = 24*60
 periodLength = Int(maximumTime / nPeriods)
 nHistoricRequestFiles = 20
 
-alnsParameters = "tests/resources/ALNSParameters_offline.json"
+alnsParameters = "tests/resources/ALNSParameters_offlineWaiting.json"
 
 # Retrieve historic request files 
 # historicRequestFiles = Vector{String}()
@@ -162,20 +162,20 @@ println(msg)
 #============================================================================#
 # Solve in-hindsigth
 #============================================================================#
-alnsParameters = "tests/resources/ALNSParameters_offline.json"
+# alnsParameters = "tests/resources/ALNSParameters_offline.json"
 
-destroyMethods = Vector{GenericMethod}()
-addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
-addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
-addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
+# destroyMethods = Vector{GenericMethod}()
+# addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
+# addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
+# addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
 
-# Choose repair methods
-repairMethods = Vector{GenericMethod}()
-addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
-addMethod!(repairMethods,"regretInsertion",regretInsertion)
+# # Choose repair methods
+# repairMethods = Vector{GenericMethod}()
+# addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
+# addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
-initialSolution, requestBankALNS = simpleConstruction(scenario,scenario.requests)
-finalSolution,requestBankALNS,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBankALNS,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=true,stage="Offline")
+# initialSolution, requestBankALNS = simpleConstruction(scenario,scenario.requests)
+# finalSolution,requestBankALNS,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBankALNS,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=true,stage="Offline")
 
 
 
