@@ -39,6 +39,12 @@ function main()
     maximumTime = 24*60 
     periodLength = Int(maximumTime / nPeriods)
 
+
+    alnsParameters = "tests/resources/ALNSParameters_offlineWaiting.json"
+    gridFile = "Data/Konsentra/grid_$(gridSize).json"
+    scenarioName = string("Gen_Data_",n,"_",gamma,"_",i,"_Run",run)
+
+
     # Retrieve historic request files 
     if !baseScenario 
         historicRequestFiles = Vector{String}()
@@ -46,17 +52,13 @@ function main()
             push!(historicRequestFiles,"Data/DataWaitingStrategies/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
         end
 
-
         # File names 
         vehiclesFile = string("Data/DataWaitingStrategies/",n,"/Vehicles_",n,"_",gamma,".csv")
         parametersFile = "tests/resources/ParametersShortCallTime.csv"
         outPutFolder = "runfiles/output/Waiting/Dynamic/"*string(n)*"/Run"*string(run)
-        gridFile = "Data/Konsentra/grid_$(gridSize).json"
-        alnsParameters = "tests/resources/ALNSParameters_offlineWaiting.json"
         requestFile = string("Data/DataWaitingStrategies/",n,"/GeneratedRequests_",n,"_",i,".csv")
         distanceMatrixFile = string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
         timeMatrixFile =  string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
-        scenarioName = string("Gen_Data_",n,"_",gamma,"_",i,"_Run",run)
         
         maxDelay = 15 
         maxEarlyArrival = 5
@@ -69,23 +71,11 @@ function main()
         # File names 
         vehiclesFile = string("Data/Konsentra/OriginalInstance/",n,"/Vehicles_",n,"_",gamma,".csv")
         parametersFile = "tests/resources/Parameters.csv"
-        gridFile = "Data/Konsentra/grid_$(gridSize).json"
         requestFile = "Data/Konsentra/OriginalInstance/$(n)/GeneratedRequests_$(n)_$(i).csv"
         distanceMatrixFile = string("Data/Matrices/OriginalInstance/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
         outPutFolder = "runfiles/output/Waiting/Base/"*string(n)*"/Run"*string(run)
         timeMatrixFile =  string("Data/Matrices/OriginalInstance/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
-        alnsParameters = "tests/resources/ALNSParameters_offlineWaiting.json"
 
-        # vehiclesFile = string("Data/Konsentra/Original_v2/",n,"/Vehicles_",n,"_",gamma,".csv")
-        # parametersFile = "tests/resources/Parameters.csv"
-        # gridFile = "Data/Konsentra/grid_$(gridSize).json"
-        # requestFile = "Data/Konsentra/Original_v2/$(n)/GeneratedRequests_$(n)_$(i).csv"
-        # distanceMatrixFile = string("Data/Matrices/Original_v2/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
-        # outPutFolder = "runfiles/output/Waiting/Base/"*string(n)*"/Run"*string(run)
-        # timeMatrixFile =  string("Data/Matrices/Original_v2/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
-
-        scenarioName = string("Gen_Data_",n,"_",gamma,"_",i,"_Run",run)
-        
         maxDelay = 45 
         maxEarlyArrival = 15
     end
@@ -102,7 +92,7 @@ function main()
     println("\t nOfflineRequests: ",length(scenario.offlineRequests))
 
     # Simulate scenario 
-    solution, requestBank = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand=relocateWithDemand);
+    solution, requestBank = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = true,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=relocateVehicles,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand=relocateWithDemand);
 
     state = State(solution,scenario.onlineRequests[end],0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)

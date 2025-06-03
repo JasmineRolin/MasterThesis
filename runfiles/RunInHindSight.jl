@@ -18,17 +18,19 @@ function main()
     
     displayPlots = false
 
+    gridFile = "Data/Konsentra/grid_$(gridSize).json"
+    alnsParameters = "tests/resources/ALNSParameters_offline.json"
+    scenarioName = string("Gen_Data_",n,"_",gamma,"_",i,"_Run",run)  
+
+
     # File names 
     if !baseScenario
         vehiclesFile = string("Data/DataWaitingStrategies/",n,"/Vehicles_",n,"_",gamma,".csv")
         parametersFile = "tests/resources/ParametersShortCallTime.csv"
         outPutFolder = "runfiles/output/Waiting/Dynamic/"*string(n)*"/Run"*string(run)
-        gridFile = "Data/Konsentra/grid_$(gridSize).json"
         requestFile = "Data/DataWaitingStrategies/$(n)/GeneratedRequests_$(n)_$(i).csv"
         distanceMatrixFile = string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
         timeMatrixFile =  string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
-        alnsParameters = "tests/resources/ALNSParameters_offline.json"
-        scenarioName = string("Gen_Data_",n,"_",gamma,"_",i,"_Run",run)  
        
         maxDelay = 15 
         maxEarlyArrival = 5  
@@ -36,22 +38,9 @@ function main()
         vehiclesFile = string("Data/Konsentra/OriginalInstance/",n,"/Vehicles_",n,"_",gamma,".csv")
         parametersFile = "tests/resources/Parameters.csv"
         outPutFolder = "runfiles/output/Waiting/Base/"*string(n)*"/Run"*string(run)
-        gridFile = "Data/Konsentra/grid_$(gridSize).json"
         requestFile = "Data/Konsentra/OriginalInstance/$(n)/GeneratedRequests_$(n)_$(i).csv"
         distanceMatrixFile = string("Data/Matrices/OriginalInstance/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
         timeMatrixFile =  string("Data/Matrices/OriginalInstance/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
-        alnsParameters = "tests/resources/ALNSParameters_offline.json"
-        scenarioName = string("Gen_Data_",n,"_",gamma,"_",i,"_Run",run) 
-
-        # vehiclesFile = string("Data/Konsentra/Original_v2/",n,"/Vehicles_",n,"_",gamma,".csv")
-        # parametersFile = "tests/resources/Parameters.csv"
-        # outPutFolder = "runfiles/output/Waiting/Base/"*string(n)*"/Run"*string(run)
-        # gridFile = "Data/Konsentra/grid_$(gridSize).json"
-        # requestFile = "Data/Konsentra/Original_v2/$(n)/GeneratedRequests_$(n)_$(i).csv"
-        # distanceMatrixFile = string("Data/Matrices/Original_v2/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
-        # timeMatrixFile =  string("Data/Matrices/Original_v2/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
-        # alnsParameters = "tests/resources/ALNSParameters_offline.json"
-        # scenarioName = string("Gen_Data_",n,"_",gamma,"_",i,"_Run",run) 
          
         maxDelay = 45 
         maxEarlyArrival = 15
