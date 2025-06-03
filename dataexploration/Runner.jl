@@ -198,10 +198,10 @@ if GENERATE_VEHICLES
             # Generate vehicles
             average_demand_per_hour = generateVehicles(shifts,df_list, probabilities_location, x_range, y_range,gamma,vehicleCapacity,nRequest,MAX_LAT,MIN_LAT,MAX_LONG,MIN_LONG,NUM_ROWS,NUM_COLS)
 
-           # plotDemandAndShifts(average_demand_per_hour,shifts,gamma)
+            plotDemandAndShifts(average_demand_per_hour,shifts,gamma)
 
             # Plot request and vehicle locations 
-           # plotRequestsAndVehicles(nRequest,nData,gamma,MAX_LAT,MIN_LAT,MAX_LONG,MIN_LONG,NUM_ROWS,NUM_COLS,grid_centers,lat_step,long_step)
+            plotRequestsAndVehicles(nRequest,nData,gamma,MAX_LAT,MIN_LAT,MAX_LONG,MIN_LONG,NUM_ROWS,NUM_COLS,grid_centers,lat_step,long_step)
         end
 
         # Generate time and distance matrices  

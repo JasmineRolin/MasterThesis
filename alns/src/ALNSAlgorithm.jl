@@ -54,7 +54,7 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
 
 
     # Run ALNS loop
-    while !(termination(startTime, timeLimit)) #|| numberOfIterationsSinceLastImprovement > maxNumberOfIterationsWithoutImprovement || numberOfIterationsSinceLastBest > maxNumberOfIterationsWithoutNewBest)
+    while !(termination(startTime, timeLimit)) 
         isAccepted, isImproved, isNewBest = false, false, false
 
         trialState = copyALNSState(currentState)

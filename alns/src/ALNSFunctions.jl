@@ -140,15 +140,12 @@ end
 #==
  Method to set start temperature to use in simulated annealing 
 ==#
-function findStartTemperature(w::Float64, solution::Solution,taxiParameter::Float64,percent::Float64)::Float64 
+function findStartTemperature(w::Float64, solution::Solution,taxiParameter::Float64)::Float64 
     # Cost of solution without request bank 
     cost = solution.totalCost - solution.nTaxi*taxiParameter 
     
     # Find start temperature 
-    #return (w*cost)/0.6931
-
-    # TODO: jas
-    return -(w*cost)/log(percent)
+    return (w*cost)/0.6931
 end
 
 #==
