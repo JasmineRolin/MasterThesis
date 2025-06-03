@@ -18,12 +18,13 @@ global countFeasible = Ref(0)
 ==#
 function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(),TO::TimerOutput=TimerOutput())
     # Fixed 
-    requestBankFixed = state.requestBank[state.requestBank .<= scenario.nFixed]
+    #requestBankFixed = state.requestBank[state.requestBank .<= scenario.nFixed]
+    requestBankFixed = state.requestBank
     regretInsertionWithRequestBank(state,scenario,requestBankFixed,visitedRoute=visitedRoute)
 
     # Expected
-    requestBankExpected = state.requestBank[state.requestBank .> scenario.nFixed]
-    regretInsertionWithRequestBank(state,scenario,requestBankExpected,visitedRoute=visitedRoute)
+    #requestBankExpected = state.requestBank[state.requestBank .> scenario.nFixed]
+    #regretInsertionWithRequestBank(state,scenario,requestBankExpected,visitedRoute=visitedRoute)
 
     state.requestBank = vcat(requestBankFixed, requestBankExpected)
 
@@ -177,11 +178,11 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
     end
 
     # Shuffle request bank
-    fixedRequestBank = requestBank[requestBank .<= scenario.nFixed]
-    expectedRequestBank = requestBank[requestBank .> scenario.nFixed]
-    shuffle!(fixedRequestBank)
-    shuffle!(expectedRequestBank)
-    requestBank = vcat(fixedRequestBank, expectedRequestBank)
+    #fixedRequestBank = requestBank[requestBank .<= scenario.nFixed]
+    #expectedRequestBank = requestBank[requestBank .> scenario.nFixed]
+    #shuffle!(fixedRequestBank)
+    #shuffle!(expectedRequestBank)
+    #requestBank = vcat(fixedRequestBank, expectedRequestBank)
     
     
     # Define insertion matrix
