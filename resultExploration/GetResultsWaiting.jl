@@ -1,11 +1,12 @@
 using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures
 
-nRequestList = [500]
+nRequestList = [20,100,300,500]
 nRuns = 3
-relocateVehiclesList =   [("true","false"),("true","true"),("false","false"),("inhindsight","")]
+relocateVehiclesList =    [("true","true"),("false","false"),("inhindsight","")] #[("true","true"),("true","false"),("false","false"),("inhindsight","")]
 gamma = 0.7
 baseFolder = "runfiles/output/Waiting/Base/"
+plotName = "Base_M1"
 
 #===============================#
 # Retrieve CSV files 
@@ -81,10 +82,10 @@ for n in nRequestList
         # Plot 
         if relocateVehiclesOption[1] == "true" && relocateVehiclesOption[2] == "true"
             color = :green
-            label = "Relocation, method 1"
+            label = "Relocation Strategy 1"
         elseif relocateVehiclesOption[1] == "true" && relocateVehiclesOption[2] == "false"
             color = :blue
-            label = "Relocation, method 2"
+            label = "Relocation Strategy 2"
         elseif relocateVehiclesOption[1] == "false" && relocateVehiclesOption[2] == "false"
             color = :red
             label = "Without Relocation"
@@ -109,6 +110,6 @@ for n in nRequestList
    # end
     ylims!(ylimMin, ylimMax)
 
-    savefig(p, "plots/Waiting/results_$(n).png")
-    println("saved plot at: ", "plots/Waiting/results_$(n).png")
+    savefig(p, "plots/Waiting/results_$(plotName)_$(n).png")
+    println("saved plot at: ", "plots/Waiting/results_$(plotName)_$(n).png")
 end
