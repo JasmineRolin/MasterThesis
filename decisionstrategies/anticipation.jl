@@ -114,7 +114,7 @@ function getDistanceAndTimeMatrixFromDataFrame(requestsDf::DataFrame,expectedReq
 end
 
 
-function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicleFile::String, parametersFile::String,scenarioName=""::String,gridFile::String = "";useAnticipationOnlineRequests::Bool=false)
+function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicleFile::String, parametersFile::String,scenarioName=""::String,gridFile::String = "";useAnticipationOnlineRequests::Bool=false,maxDelay::Int=45,maxEarlyArrival::Int=15)
 
     # Check that files exist 
     if !isfile(requestFile)
@@ -189,8 +189,8 @@ function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicle
     distance, time = getDistanceAndTimeMatrixFromDataFrame(requestsDf,newExpectedRequestsDf,depotCoordinates)
 
     # Get requests 
-    requests = readRequests(requestsDf,nRequests+nNewExpected,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time)
-    expectedRequests = readRequests(newExpectedRequestsDf,nNewExpected,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time,extraN=nRequests)
+    requests = readRequests(requestsDf,nRequests+nNewExpected,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time,maxDelay,maxEarlyArrival)
+    expectedRequests = readRequests(newExpectedRequestsDf,nNewExpected,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time,maxDelay,maxEarlyArrival,extraN=nRequests,useAnticipationOnlineRequests=useAnticipationOnlineRequests)
     
     allRequests = vcat(requests, expectedRequests)
 
@@ -442,7 +442,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
     nRequests = 0
 
     # Create different scenarios and solve problem with known offline requests and predicted online requests 
-    for i in 1:1 #TODO change
+    for i in 1:5 #TODO change
         println("==========================================")
         println("Run: ", i)
 

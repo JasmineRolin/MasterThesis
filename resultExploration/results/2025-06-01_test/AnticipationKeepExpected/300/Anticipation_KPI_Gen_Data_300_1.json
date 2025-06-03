@@ -1,1 +1,1 @@
-{"slackAfterALNS":0,"nInitialNotServicedExpectedRequests":[14],"averageObj":[28976.18074738689],"slackBeforeALNS":0,"nInitialNotServicedFixedRequests":[0],"averageNotServicedExpectedRequests":[26.0],"ALNSIterations":[4133],"runId":["Run 1"]}
+{"slackAfterALNS":0,"nInitialNotServicedExpectedRequests":[2],"averageObj":[24016.835478414327],"slackBeforeALNS":0,"nInitialNotServicedFixedRequests":[1],"averageNotServicedExpectedRequests":[19.0],"ALNSIterations":[3328],"runId":["Run 1"]}

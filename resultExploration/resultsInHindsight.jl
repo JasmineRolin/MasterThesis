@@ -12,7 +12,7 @@ using CSV
 
 function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, run::String, resultType::String, i::Int)
     saveResults = true
-    dataset = "Original_v2"
+    dataset = "OriginalInstance"
     vehiclesFile = string("Data/Konsentra/",dataset,"/",n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters_InHindsight.json"
@@ -44,12 +44,13 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
 
         # Get solution
         solution, requestBank, ALNSIterations = inHindsightSolution(scenario,repairMethods,destroyMethods,parametersFile,alnsParameters,scenarioName,displayPlots=true)
-        
+        println(requestBank)
+
         if saveResults
             mkpath(outPutFolder)  # ensure folder exists
             fileName = outPutFolder * "/Simulation_KPI_" * string(scenario.name) * "_false.txt"
         
-            open(fileName, "a") do io
+            open(fileName, "w") do io
                 println(io, "Dataset: $i, TotalCost: $(solution.totalCost), UnservedRequests: $(length(requestBank)), ALNSIterations: $(ALNSIterations)")
             end
         end
@@ -66,7 +67,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
 
 end
 
-main(300,0.5,0.5,"2025-06-01_test","","InHindsight",1)
+#main(300,0.5,0.5,"2025-06-01_test","","InHindsight",1)
 
 if abspath(PROGRAM_FILE) == @__FILE__
     n = parse(Int, ARGS[1])

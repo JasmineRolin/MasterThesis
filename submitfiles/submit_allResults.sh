@@ -3,11 +3,11 @@
 ################
 #    change inputs here
 ################
-n_requests_list=("100")
+n_requests_list=("20" "100" "300" "500")
 anticipation_levels=("0.4")
 run_tags=("run1" "run2" "run3" "run4" "run5")
 gamma="0.5"
-date="2025-05-31_original_v2_0.5_long"
+date="2025-06-03_original_0.5"
 ####################
 
 mkdir -p submitfiles/generated_jobs

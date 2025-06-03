@@ -18,6 +18,7 @@ global countFeasible = Ref(0)
 ==#
 function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(),TO::TimerOutput=TimerOutput())
     # Fixed 
+    #requestBankFixed = state.requestBank
     requestBankFixed = state.requestBank[state.requestBank .<= scenario.nFixed]
     regretInsertionWithRequestBank(state,scenario,requestBankFixed,visitedRoute=visitedRoute)
 
@@ -26,6 +27,7 @@ function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{
     regretInsertionWithRequestBank(state,scenario,requestBankExpected,visitedRoute=visitedRoute)
 
     state.requestBank = vcat(requestBankFixed, requestBankExpected)
+    #state.requestBank = requestBankFixed
 
 end
 
@@ -182,7 +184,7 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
     shuffle!(fixedRequestBank)
     shuffle!(expectedRequestBank)
     requestBank = vcat(fixedRequestBank, expectedRequestBank)
-    
+    #shuffle!(requestBank) TODO only when same request bank is wanted
     
     # Define insertion matrix
     insertionCosts = zeros(Float64, nRequests, nVehicles)

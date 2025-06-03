@@ -12,7 +12,7 @@ using CSV
  
 function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, run::String, resultType::String, i::Int)
 
-    dataset = "DoD 40"
+    dataset = "OriginalInstance"
     vehiclesFile = string("Data/Konsentra/",dataset,"/",n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters_offlineAnticipation.json"
@@ -40,7 +40,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
 
 end
 
-main(300,0.4,0.5,"2025-06-01_test","","AnticipationKeepExpected",1)
+#main(300,0.4,0.5,"2025-06-01_test","","AnticipationKeepExpected",1)
 
 if abspath(PROGRAM_FILE) == @__FILE__
     n = parse(Int, ARGS[1])

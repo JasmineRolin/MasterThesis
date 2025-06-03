@@ -12,18 +12,18 @@ using CSV
 
 function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, run::String, resultType::String, i::Int)
 
-    dataset = "Original_v2"
+    dataset = "OriginalInstance"
     vehiclesFile = string("Data/Konsentra/",dataset,"/",n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters_offline.json"
     outPutFolder = string("resultExploration/results/",date,"/",resultType,"/",n,"/",run)
     outputFiles = Vector{String}()
-    gridFile = string("Data/Konsentra/grid.json")
+    gridFile = string("Data/Konsentra/grid_10.json")
 
     #for i in 1:10
         requestFile = string("Data/Konsentra/",dataset,"/",n,"/GeneratedRequests_",n,"_",i,".csv")
-        distanceMatrixFile = string("Data/Matrices/",dataset,"/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
-        timeMatrixFile =  string("Data/Matrices/",dataset,"/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
+        distanceMatrixFile = string("Data/Matrices/",dataset,"/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+        timeMatrixFile =  string("Data/Matrices/",dataset,"/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
         scenarioName = string("Gen_Data_",n,"_",i)
         push!(outputFiles, outPutFolder*"/Simulation_KPI_"*string(scenarioName)*"_false.json")
 
