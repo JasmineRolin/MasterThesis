@@ -23,17 +23,18 @@ global GENERATE_VEHICLES = false
 global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 2*60 # 2 hours buffer
-global nData = 10
-global nRequestList = [20]#,50,100,300,500]
-global MAX_DELAY = 45 # TODO Astrid I just put something
-global earliestBuffer = 15
-global ONLY_PICKUP = false
+global nData = 20
+global nRequestList = [20,100,300,500]
+global MAX_DELAY = 45 
+global EARLIEST_BUFFER = 15
+global LIMIT_EARLY_CALL_TIME = false # Do we want a limit on the earliest call time 
+global ONLY_PICKUP = true
 
 #==
 # Constant for vehicle generation  
 ==#
 global vehicleCapacity = 4
-global GammaList = [0.5]
+global GammaList = [0.5,0.7]
 
 global shifts = Dict(
     "Morning"    => Dict("TimeWindow" => [6*60, 12*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
@@ -122,7 +123,7 @@ if GENERATE_DATA_AND_VEHICLES
     _= load_simulation_data("Data/Simulation data/")
 
     for nRequest in nRequestList
-        location_matrix, requestTime, newDataList, df_list,probabilities_time,probabilities_offline,probabilities_online, probabilities_location, density_grid, x_range, y_range,requests, distanceDriven = generateDataSets(nRequest,DoD,nData,time_range,MAX_LAT, MIN_LAT, MAX_LONG, MIN_LONG,ONLY_PICKUP)
+        location_matrix, requestTime, newDataList, df_list,probabilities_time,probabilities_offline,probabilities_online, probabilities_location, density_grid, x_range, y_range,requests, distanceDriven = generateDataSets(nRequest,DoD,nData,time_range,MAX_LAT, MIN_LAT, MAX_LONG, MIN_LONG,ONLY_PICKUP,LIMIT_EARLY_CALL_TIME,EARLIEST_BUFFER)
 
         # Generate vehicles 
         for gamma in GammaList
@@ -157,7 +158,7 @@ if GENERATE_DATA_AND_VEHICLES
         #================================================#
         createAndSavePlotsGeneratedData(newDataList,nRequest,x_range,y_range,density_grid,location_matrix,requestTime,probabilities_time, probabilities_offline,probabilities_online,serviceWindow,distanceDriven)
         for gamma in GammaList
-            plotAndSaveGantChart(nRequest,nData,gamma)
+            plotAndSaveGantChart(nRequest,nData,gamma,LIMIT_EARLY_CALL_TIME,NUM_COLS)
         end
     end
 
