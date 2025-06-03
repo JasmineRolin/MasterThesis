@@ -206,7 +206,6 @@ if GENERATE_VEHICLES
 
         # Generate time and distance matrices  
         depotLocations = findDepotLocations(NUM_ROWS, NUM_COLS, MIN_LAT, MIN_LONG, lat_step, long_step, nRequest)[2]
-        println(depotLocations)
 
         for gamma in GammaList
             for i in 1:nData
