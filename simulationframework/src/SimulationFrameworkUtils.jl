@@ -680,6 +680,7 @@ function simulateScenario(scenario::Scenario;printResults::Bool = false,saveResu
     if anticipation == true
         throw("Wrong function call for anticipation!")
     end
+    
     simulateScenario(scenario,"","","","","","",scenarioName;printResults=printResults,saveResults=saveResults,displayPlots=displayPlots,outPutFileFolder=outPutFileFolder,saveALNSResults=saveALNSResults,displayALNSPlots=displayALNSPlots,historicRequestFiles = historicRequestFiles,gamma = gamma,relocateVehicles=relocateVehicles, anticipation=false, nExpected=nExpected, gridFile= gridFile, nTimePeriods = nTimePeriods,periodLength = periodLength,relocateWithDemand = relocateWithDemand)
    
 end
@@ -729,6 +730,7 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
     currentState = State(scenario,Request(),0)
 
     if anticipation == false
+        alnsParameters = "tests/resources/ALNSParameters_offline.json"
         solution, requestBank = offlineSolution(scenario,repairMethods,destroyMethods,parametersFile,alnsParameters,scenarioName)
         nNotServicedExpectedRequests = 0 # Dummy
     elseif anticipation == true && keepExpectedRequests == false

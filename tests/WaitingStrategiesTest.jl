@@ -31,10 +31,10 @@ nHistoricRequestFiles = 20
 #     push!(historicRequestFiles,"Data/DataWaitingStrategies/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
 # end
 
-# historicRequestFiles = Vector{String}()
-# for j in 1:nHistoricRequestFiles
-#     push!(historicRequestFiles,"Data/Konsentra/OriginalInstance/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
-# end
+historicRequestFiles = Vector{String}()
+for j in 1:nHistoricRequestFiles
+    push!(historicRequestFiles,"Data/Konsentra/OriginalInstance/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
+end
 
 
 # File names 
@@ -139,23 +139,23 @@ println("\t nOfflineRequests: ",length(scenario.offlineRequests))
 #============================================================================#
 # Solve without relocation
 #============================================================================#
-# if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/false_false")
-#     mkpath("tests/WaitingPlots/true_true")
-# end
-# if displayPlots && isdir("tests/WaitingPlots/false_false")
-#     for file in readdir("tests/WaitingPlots/true_true"; join=true)
-#         rm(file; force=true, recursive=true)
-#     end
-# end
+if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/false_false")
+    mkpath("tests/WaitingPlots/true_true")
+end
+if displayPlots && isdir("tests/WaitingPlots/false_false")
+    for file in readdir("tests/WaitingPlots/true_true"; join=true)
+        rm(file; force=true, recursive=true)
+    end
+end
 
-# # Simulate scenario 
-# solutionFalse, requestBankFalse = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=false,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
+# Simulate scenario 
+solutionFalse, requestBankFalse = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=false,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
 
-# state = State(solutionFalse,scenario.onlineRequests[end],0)
-# feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-# @test msg == ""
-# @test feasible == true
-# println(msg)
+state = State(solutionFalse,scenario.onlineRequests[end],0)
+feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+@test msg == ""
+@test feasible == true
+println(msg)
 
 #============================================================================#
 # Solve in-hindsigth
