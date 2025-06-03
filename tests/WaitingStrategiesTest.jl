@@ -14,8 +14,8 @@ using Plots.PlotMeasures
 print("\033c")
 
 # Parameters 
-n = 100
-i = 9
+n = 500
+i = 1
 gridSize = 10
 displayPlots = true
 
@@ -38,27 +38,27 @@ nHistoricRequestFiles = 20
 
 
 # File names 
-vehiclesFile = string("Data/DataWaitingStrategies/",n,"/Vehicles_",n,"_",gamma,".csv")
-parametersFile = "tests/resources/ParametersShortCallTime.csv"
-outPutFolder = "runfiles/output/Waiting/"*string(n)
-gridFile = "Data/Konsentra/grid_$(gridSize).json"
-requestFile = "Data/DataWaitingStrategies/$(n)/GeneratedRequests_$(n)_$(i).csv"
-distanceMatrixFile = string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
-timeMatrixFile =  string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
-scenarioName = string("Gen_Data_",n,"_",gamma,"_",i)
-maxDelay = 15
-maxEarlyArrival = 5
-
-# vehiclesFile = string("Data/Konsentra/DoD 40/",n,"/Vehicles_",n,"_",gamma,".csv")
-# parametersFile = "tests/resources/Parameters.csv"
-# gridFile = "Data/Konsentra/grid_$(gridSize).json"
-# requestFile = "Data/Konsentra/DoD 40/$(n)/GeneratedRequests_$(n)_$(i).csv"
-# distanceMatrixFile = string("Data/Matrices/DoD 40/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+# vehiclesFile = string("Data/DataWaitingStrategies/",n,"/Vehicles_",n,"_",gamma,".csv")
+# parametersFile = "tests/resources/ParametersShortCallTime.csv"
 # outPutFolder = "runfiles/output/Waiting/"*string(n)
-# timeMatrixFile =  string("Data/Matrices/DoD 40/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
+# gridFile = "Data/Konsentra/grid_$(gridSize).json"
+# requestFile = "Data/DataWaitingStrategies/$(n)/GeneratedRequests_$(n)_$(i).csv"
+# distanceMatrixFile = string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+# timeMatrixFile =  string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
 # scenarioName = string("Gen_Data_",n,"_",gamma,"_",i)
-# maxDelay = 45 
-# maxEarlyArrival = 15
+# maxDelay = 15
+# maxEarlyArrival = 5
+
+vehiclesFile = string("Data/Konsentra/DoD 40/",n,"/Vehicles_",n,"_",gamma,".csv")
+parametersFile = "tests/resources/Parameters.csv"
+gridFile = "Data/Konsentra/grid_$(gridSize).json"
+requestFile = "Data/Konsentra/DoD 40/$(n)/GeneratedRequests_$(n)_$(i).csv"
+distanceMatrixFile = string("Data/Matrices/DoD 40/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+outPutFolder = "runfiles/output/Waiting/"*string(n)
+timeMatrixFile =  string("Data/Matrices/DoD 40/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
+scenarioName = string("Gen_Data_",n,"_",gamma,"_",i)
+maxDelay = 45 
+maxEarlyArrival = 15
 
 # vehiclesFile = string("Data/Konsentra/Original_v2/",n,"/Vehicles_",n,"_",gamma,".csv")
 # parametersFile = "tests/resources/Parameters.csv"
@@ -160,20 +160,20 @@ println("\t nOfflineRequests: ",length(scenario.offlineRequests))
 #============================================================================#
 # Solve in-hindsigth
 #============================================================================#
-alnsParameters = "tests/resources/ALNSParameters_offline.json"
+# alnsParameters = "tests/resources/ALNSParameters_offline.json"
 
-destroyMethods = Vector{GenericMethod}()
-addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
-addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
-addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
+# destroyMethods = Vector{GenericMethod}()
+# addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
+# addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
+# addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
 
-# Choose repair methods
-repairMethods = Vector{GenericMethod}()
-addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
-addMethod!(repairMethods,"regretInsertion",regretInsertion)
+# # Choose repair methods
+# repairMethods = Vector{GenericMethod}()
+# addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
+# addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
-initialSolution, requestBankALNS = simpleConstruction(scenario,scenario.requests)
-finalSolution,requestBankALNS,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBankALNS,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=true,stage="Offline")
+# initialSolution, requestBankALNS = simpleConstruction(scenario,scenario.requests)
+# finalSolution,requestBankALNS,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBankALNS,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=true,stage="Offline")
 
 
 
@@ -183,7 +183,7 @@ finalSolution,requestBankALNS,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNew
 #println("Relocation vehicles TRUE: ", solutionTrue.nTaxi)
 #println("Relocation vehicles TRUE DEMAND: ", solutionTrueDemand.nTaxi)
 #println("Relocation vehicles FALSE: ", solutionFalse.nTaxi)
-println("ALNS solution: ", finalSolution.nTaxi)
+#println("ALNS solution: ", finalSolution.nTaxi)
 
 
 # #============================================================================#
