@@ -14,8 +14,8 @@ include("GenerateLargeDataSets.jl")
 
 
 global GENERATE_SIMULATION_DATA = true
-global GENERATE_DATA_AND_VEHICLES = true
-global GENERATE_VEHICLES = false
+global GENERATE_DATA_AND_VEHICLES = false
+global GENERATE_VEHICLES = true
 
 #==
 # Constants for data generation 
@@ -23,8 +23,8 @@ global GENERATE_VEHICLES = false
 global DoD = 0.4 # Degree of dynamism
 global serviceWindow = [minutesSinceMidnight("06:00"), minutesSinceMidnight("23:00")]
 global callBuffer = 2*60 # 2 hours buffer
-global nData = 20
-global nRequestList = [20,100,300,500]#,50,100,300,500]
+global nData = 10
+global nRequestList = [20]#,50,100,300,500]
 global MAX_DELAY = 45 # TODO Astrid I just put something
 global earliestBuffer = 15
 global ONLY_PICKUP = false
@@ -33,7 +33,7 @@ global ONLY_PICKUP = false
 # Constant for vehicle generation  
 ==#
 global vehicleCapacity = 4
-global GammaList = [0.7]#,0.7] 
+global GammaList = [0.5]
 
 global shifts = Dict(
     "Morning"    => Dict("TimeWindow" => [6*60, 12*60], "cost" => 1.0, "nVehicles" => 0, "y" => []),
@@ -173,10 +173,9 @@ if GENERATE_VEHICLES
 
     for nRequest in nRequestList
         # Load simulation data
-        probabilities_pickUpTime,
-        probabilities_dropOffTime,
-        density_pickUp,
-        density_dropOff,
+        probabilities_time,
+        probabilities_offline,
+        probabilities_online,
         probabilities_location,
         density_grid,
         x_range,
@@ -185,10 +184,9 @@ if GENERATE_VEHICLES
         density_distance,
         distance_range,
         location_matrix,
-        requestTimePickUp,
-        requestTimeDropOff,
+        requestTime,
         requests,
-        distanceDriven= load_simulation_data("Data/Simulation data/")
+        distanceDriven = load_simulation_data("Data/Simulation data/")
 
         # Read data
         df_list = load_request_data(nRequest,nData)

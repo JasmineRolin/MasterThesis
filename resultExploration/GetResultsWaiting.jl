@@ -1,10 +1,10 @@
 using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures
 
-nRequestList = [20,100, 300, 500]
+nRequestList = [500]
 nRuns = 3
-relocateVehiclesList = [("true","false"),("true","true"),("false","false"),("inhindsight","")]
-gamma = 0.7 
+relocateVehiclesList =   [("true","false"),("true","true"),("false","false"),("inhindsight","")]
+gamma = 0.7
 baseFolder = "runfiles/output/Waiting/Base/"
 
 #===============================#
@@ -65,7 +65,7 @@ end
 #===============================#
 for n in nRequestList
     println("n requests: ",n)
-    p = plot(size = (1000,1000),title = "Results for n = $n", xlabel = "", ylabel = "No. taxis",leftmargin=5mm,topmargin=5mm,legend = :topright)
+    p = plot(size = (1000,1000),title = "Results for n = $n", xlabel = "", ylabel = "No. unserviced requests",leftmargin=5mm,topmargin=5mm,legend = :topright)
 
     nRows = 0
     maxnTaxi = 0
@@ -102,11 +102,11 @@ for n in nRequestList
     ylimMax = tickSpace * ceil((maxnTaxi + 2) / tickSpace)
     xtickLabel = ["Scenario $(i)" for i in 1:nRows]
     xticks!((1:nRows,xtickLabel),rotation=90)
-    if n == 500 
-        yticks!((ylimMin:10:ylimMax,string.(Int.(ylimMin:10:ylimMax))))
-    else 
+    # if n == 500 
+    #     yticks!((ylimMin:10:ylimMax,string.(Int.(ylimMin:10:ylimMax))))
+    # else 
         yticks!((ylimMin:tickSpace:ylimMax,string.(Int.(ylimMin:tickSpace:ylimMax))))
-    end
+   # end
     ylims!(ylimMin, ylimMax)
 
     savefig(p, "plots/Waiting/results_$(n).png")

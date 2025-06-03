@@ -1,7 +1,11 @@
 #!/bin/bash
 
 # Constants
+
+# OBS OBS OBS
 gamma=0.7
+# OBS OBS OBS
+
 nPeriods=48
 gridSize=10
 

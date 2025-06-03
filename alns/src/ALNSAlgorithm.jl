@@ -1,7 +1,7 @@
 module ALNSAlgorithm
 
 using UnPack, domain, utils, ..ALNSDomain, ..ALNSFunctions
-using TimerOutputs
+using TimerOutputs, Plots
 
 export ALNS
 
@@ -34,6 +34,9 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
     printSegmentSize, maxNumberOfIterationsWithoutImprovement,
     maxNumberOfIterationsWithoutNewBest = parameters
 
+    println("max iterations without improvement: ", maxNumberOfIterationsWithoutImprovement)
+    println("max iterations without new best: ", maxNumberOfIterationsWithoutNewBest)
+
     currentState = ALNSState(initialSolution, nDestroy, nRepair, requestBank)
     initialCost = initialSolution.totalCost
 
@@ -49,7 +52,9 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
 
     reset_timer!(TO)  # Reset timer for this ALNS run
 
-    while !(termination(startTime, timeLimit) || numberOfIterationsSinceLastImprovement > maxNumberOfIterationsWithoutImprovement || numberOfIterationsSinceLastBest > maxNumberOfIterationsWithoutNewBest)
+
+    # Run ALNS loop
+    while !(termination(startTime, timeLimit)) 
         isAccepted, isImproved, isNewBest = false, false, false
 
         trialState = copyALNSState(currentState)
@@ -80,7 +85,8 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
             true
         end
 
-        acceptBool, p, delta = accept(parameters.timeLimit, startTime, trialState.currentSolution.totalCost, currentState.bestSolution.totalCost)
+        acceptBool,p, delta = accept(parameters.timeLimit, startTime, trialState.currentSolution.totalCost, currentState.bestSolution.totalCost)
+    
         push!(pVals, p)
         push!(deltaVals, delta)
 
@@ -155,6 +161,7 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
             numberOfIterationsSinceLastBest += 1
         end
 
+
         push!(isImprovedVec, isImproved)
         push!(isNewBestVec, isNewBest)
         push!(isAcceptedVec, isAccepted)
@@ -174,7 +181,7 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
     # TODO: remove 
     println("Total number of iterations: ", iteration)
     println("Termination: max since last improvement: ", numberOfIterationsSinceLastImprovement > maxNumberOfIterationsWithoutImprovement,
-        ", max since last best: ", numberOfIterationsSinceLastBest > maxNumberOfIterationsWithoutNewBest)
+        ", max since last best: ", numberOfIterationsSinceLastBest > maxNumberOfIterationsWithoutNewBest, ", number since last best: ", numberOfIterationsSinceLastBest)
     # println("\n Timing Breakdown:")
     
     # show(TO)

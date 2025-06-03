@@ -44,7 +44,9 @@ function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::
     ALNSOutputFileName = string(outputFileFolderWithDate,"ALNSOutput.csv")
 
     # Call ALNS 
+    startTime = time()
     solution, requestBank,pVals,deltaVals,isImprovedVec,isAcceptedVec,isNewBestVec = ALNS(scenario,initialSolution, requestBank,configuration,parameters, ALNSOutputFileName, alreadyRejected = alreadyRejected,event = event, visitedRoute=visitedRoute, saveOutPut = saveResults,stage=stage, nNotServicedExpectedRequests=nNotServicedExpectedRequests)
+    endTime = time()
 
     # Create results 
     specificationsFileName = string(outputFileFolderWithDate,"ALNSSpecifications.json")
@@ -52,6 +54,8 @@ function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::
     plotFolder = outputFileFolderWithDate
 
     ALNSResult(specificationsFileName,KPIFileName,ALNSOutputFileName,scenario,configuration,solution,requests,requestBank,parameters,saveResults=saveResults,displayPlots=displayPlots,plotFolder=plotFolder)
+
+    println("Total time taken for ALNS: ", round(endTime - startTime, digits=2), " seconds")
 
     return solution, requestBank,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec # TODO: remove
 end
