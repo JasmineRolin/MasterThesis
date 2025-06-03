@@ -25,6 +25,8 @@ maximumTime = 24*60
 periodLength = Int(maximumTime / nPeriods)
 nHistoricRequestFiles = 20
 
+alnsParameters = "tests/resources/ALNSParameters_offline.json"
+
 # Retrieve historic request files 
 # historicRequestFiles = Vector{String}()
 # for j in 1:nHistoricRequestFiles
@@ -105,7 +107,7 @@ println("\t nOfflineRequests: ",length(scenario.offlineRequests))
 # end
 
 # # Simulate scenario 
-# solutionTrue, requestBankTrue = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
+# solutionTrue, requestBankTrue = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
 
 # state = State(solutionTrue,scenario.onlineRequests[end],0)
 # feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
@@ -127,7 +129,7 @@ println("\t nOfflineRequests: ",length(scenario.offlineRequests))
 # end
 
 # # Simulate scenario 
-# solutionTrueDemand, requestBankTrueDemand = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = true);
+# solutionTrueDemand, requestBankTrueDemand = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = true);
 
 # state = State(solutionTrueDemand,scenario.onlineRequests[end],0)
 # feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
@@ -149,7 +151,7 @@ if displayPlots && isdir("tests/WaitingPlots/false_false")
 end
 
 # Simulate scenario 
-solutionFalse, requestBankFalse = simulateScenario(scenario,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=false,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
+solutionFalse, requestBankFalse = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=false,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
 
 state = State(solutionFalse,scenario.onlineRequests[end],0)
 feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
