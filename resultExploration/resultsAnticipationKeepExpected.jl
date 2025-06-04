@@ -21,7 +21,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
     gridFile = string("Data/Konsentra/grid_10.json")
 
     nExpected = Int(floor(n*nExpectedPercentage))
-    useAnticipationOnlineRequests = true
+    useAnticipationOnlineRequests = false
 
     #for i in 1:10
         requestFile = string("Data/Konsentra/",dataset,"/",n,"/GeneratedRequests_",n,"_",i,".csv")
@@ -40,7 +40,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
 
 end
 
-#main(300,0.4,0.5,"2025-06-01_test","","AnticipationKeepExpected",1)
+main(20,0.4,0.5,"2025-06-03_test","","AnticipationKeepExpected",1)
 
 if abspath(PROGRAM_FILE) == @__FILE__
     n = parse(Int, ARGS[1])

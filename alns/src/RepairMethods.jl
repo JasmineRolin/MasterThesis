@@ -18,16 +18,16 @@ global countFeasible = Ref(0)
 ==#
 function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(),TO::TimerOutput=TimerOutput())
     # Fixed 
-    #requestBankFixed = state.requestBank
-    requestBankFixed = state.requestBank[state.requestBank .<= scenario.nFixed]
+    requestBankFixed = state.requestBank
+    #requestBankFixed = state.requestBank[state.requestBank .<= scenario.nFixed]
     regretInsertionWithRequestBank(state,scenario,requestBankFixed,visitedRoute=visitedRoute)
 
     # Expected
-    requestBankExpected = state.requestBank[state.requestBank .> scenario.nFixed]
-    regretInsertionWithRequestBank(state,scenario,requestBankExpected,visitedRoute=visitedRoute)
+    #requestBankExpected = state.requestBank[state.requestBank .> scenario.nFixed]
+    #regretInsertionWithRequestBank(state,scenario,requestBankExpected,visitedRoute=visitedRoute)
 
-    state.requestBank = vcat(requestBankFixed, requestBankExpected)
-    #state.requestBank = requestBankFixed
+    #state.requestBank = vcat(requestBankFixed, requestBankExpected)
+    state.requestBank = requestBankFixed
 
 end
 
@@ -179,12 +179,12 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
     end
 
     # Shuffle request bank
-    fixedRequestBank = requestBank[requestBank .<= scenario.nFixed]
-    expectedRequestBank = requestBank[requestBank .> scenario.nFixed]
-    shuffle!(fixedRequestBank)
-    shuffle!(expectedRequestBank)
-    requestBank = vcat(fixedRequestBank, expectedRequestBank)
-    #shuffle!(requestBank) TODO only when same request bank is wanted
+    #fixedRequestBank = requestBank[requestBank .<= scenario.nFixed]
+    #expectedRequestBank = requestBank[requestBank .> scenario.nFixed]
+    #shuffle!(fixedRequestBank)
+    #shuffle!(expectedRequestBank)
+    #requestBank = vcat(fixedRequestBank, expectedRequestBank)
+    shuffle!(requestBank) #TODO only when same request bank is wanted
     
     # Define insertion matrix
     insertionCosts = zeros(Float64, nRequests, nVehicles)
