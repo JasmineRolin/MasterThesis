@@ -15,7 +15,7 @@ function offlineSolution(scenario::Scenario,repairMethods::Vector{GenericMethod}
     initialSolution, initialRequestBank = simpleConstruction(scenario,scenario.offlineRequests) 
         
     # Run ALNS for offline solution 
-    solution,requestBank,_,_,_,_, noIterations = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution =  initialSolution, requestBank = initialRequestBank, displayPlots = displayALNSPlots, saveResults = saveALNSResults,outPutFileFolder=outputFileFolder)
+    solution,requestBank,_,_,_,_,_, noIterations = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution =  initialSolution, requestBank = initialRequestBank, displayPlots = displayALNSPlots, saveResults = saveALNSResults,outPutFileFolder=outputFileFolder)
 
     return solution, requestBank,noIterations
 

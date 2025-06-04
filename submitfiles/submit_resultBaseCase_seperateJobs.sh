@@ -1,9 +1,9 @@
 #!/bin/bash
 
-n_requests_list=("20" "100" "300" "500")
-run_tags=("run1" "run2" "run3")
+n_requests_list=("20")
+run_tags=("run1")
 gamma="0.5"
-date="2025-05-22_expCost100"
+date="2025-06-03_original_0.5"
 
 mkdir -p submitfiles/generated_jobs
 
