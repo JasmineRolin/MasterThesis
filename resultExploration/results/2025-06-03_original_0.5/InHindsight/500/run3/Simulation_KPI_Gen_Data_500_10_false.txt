@@ -1,0 +1,1 @@
+Dataset: 10, TotalCost: 9800.82060408067, UnservedRequests: 4, ALNSIterations: 2049
