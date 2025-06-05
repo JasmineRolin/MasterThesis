@@ -603,27 +603,6 @@ function plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,veh
     demand_max = max(maximum(predictedDemand),maximum(realisedDemand))
     
     # Plot for chosen period 
-    p0 = heatmap(realisedDemand[period,:,:], 
-    c=:viridis,         # color map
-    clim=(demand_min, demand_max),
-    xlabel="Longitude (grid cols)", 
-    ylabel="Latitude (grid rows)", 
-    title="Realised Demand",
-    colorbar_title="Requests")
-    scatter!(p0,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="New waiting location", color=:green)
-    scatter!(p0,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Previous waiting location", color=:red)
-
-    p1 = heatmap(predictedDemand[period,:,:], 
-    c=:viridis,         # color map
-    clim=(demand_min, demand_max),
-    xlabel="Longitude (grid cols)", 
-    ylabel="Latitude (grid rows)", 
-    title="Predicted Demand",
-    colorbar_title="Avg Requests")
-    scatter!(p1,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="New waiting location", color=:green)
-    scatter!(p1,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Previous waiting location", color=:red)
-
-
     p2 = heatmap(activeVehiclesPerCell[period,:,:], 
     clim=(avg_min, avg_max),
     c=:viridis,         # color map
@@ -673,10 +652,10 @@ function plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,veh
     scatter!(p5,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Previous waiting location", color=:red)
 
 
-    super_title = plot(title = "Vehicle Demand Overview - period start $((period-1)*periodLength), vehicle $(vehicle)", grid=false, framestyle=:none)
+    super_title = plot(title = "Vehicle relocation: period start: $((period-1)*periodLength), vehicle:  $(vehicle.id)", grid=false, framestyle=:none)
 
     # Combine all into a vertical layout: super title + 3 plots
-    p = plot(super_title, plot(p0,p1, p2, p3,p4,p5, layout=(3,2)), layout = @layout([a{0.01h}; b{0.99h}]), size=(1500,1100))
+    p = plot(super_title, plot(p2, p3,p4,p5, layout=(2,2)), layout = @layout([a{0.01h}; b{0.99h}]), size=(1500,1100))
 
     return p
 end

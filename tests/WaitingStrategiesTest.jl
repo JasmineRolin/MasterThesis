@@ -14,8 +14,8 @@ using Plots.PlotMeasures
 print("\033c")
 
 # Parameters 
-n = 100
-i = 4
+n = 20
+i = 2
 gridSize = 10
 displayPlots = true
 dynamicProblem = false 

@@ -908,15 +908,6 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
             printSolution(currentState.solution,printRouteHorizontal)
         end
 
-        # if displayPlots && event.id in requestBank
-        #     p1 = createGantChartOfSolutionAndEventOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event.request,nFixed = scenario.nFixed)
-        #     p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime))
-        #     display(p1)
-        #     display(p2)
-        #     savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*".png")
-        #     savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
-
-        # else
         if displayPlots
             inRequestBank = event.id in requestBank    
             p1 = createGantChartOfSolutionOnline(solution,"Current Solution, Request: "*string(event.id)*", time: "*string(event.callTime),nRequests,eventId = event.id,eventTime = event.callTime,nFixed = scenario.nFixed,inRequestBank=inRequestBank,event=event.request)
