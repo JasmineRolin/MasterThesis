@@ -693,6 +693,7 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
 
     # Copy scenario so that we don't modify actual scenario
     scenario = copyScenario(scenarioInput)
+    nRequests = length(scenario.requests)
 
     # Retrieve info 
     if relocateVehicles
@@ -803,12 +804,12 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         printSolution(solution,printRouteHorizontal)
     end
     if displayPlots
-        p1 = createGantChartOfSolutionOnline(solution,"Initial Solution after ALNS",nFixed=scenario.nFixed)
+        p1 = createGantChartOfSolutionOnline(solution,"Initial Solution after ALNS",nRequests,nFixed=scenario.nFixed)
         p2 = plotRoutes(solution,scenario,requestBank,"Initial Solution after ALNS")
         display(p1)
         display(p2)
-        # savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/InitialSolutionAfterALNS.png")
-        # savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/InitialSolutionAfterALNSRoutes.png")
+        savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/InitialSolutionAfterALNS.png")
+        savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/InitialSolutionAfterALNSRoutes.png")
     end
 
     # Initialize visited routes 
@@ -907,21 +908,23 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
             printSolution(currentState.solution,printRouteHorizontal)
         end
 
-        if displayPlots && event.id in requestBank
-            p1 = createGantChartOfSolutionAndEventOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event.request,nFixed = scenario.nFixed)
+        # if displayPlots && event.id in requestBank
+        #     p1 = createGantChartOfSolutionAndEventOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event.request,nFixed = scenario.nFixed)
+        #     p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime))
+        #     display(p1)
+        #     display(p2)
+        #     savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*".png")
+        #     savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
+
+        # else
+        if displayPlots
+            inRequestBank = event.id in requestBank    
+            p1 = createGantChartOfSolutionOnline(solution,"Current Solution, Request: "*string(event.id)*", time: "*string(event.callTime),nRequests,eventId = event.id,eventTime = event.callTime,nFixed = scenario.nFixed,inRequestBank=inRequestBank,event=event.request)
             p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime))
             display(p1)
             display(p2)
-            # savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*".png")
-            # savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
-
-        elseif displayPlots
-           p1 = createGantChartOfSolutionOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime,nFixed = scenario.nFixed)
-           p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime))
-           display(p1)
-           display(p2)
-           # savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*".png")
-           # savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
+            savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*".png")
+            savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
         end
     end
 
@@ -948,12 +951,12 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         println("Request bank: ", requestBank)
     end
     if displayPlots
-        p1 = createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge",nFixed=scenario.nFixed)
+        p1 = createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge",nRequests,nFixed=scenario.nFixed)
         p2  = plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge")
         display(p1)
         display(p2)
-        # savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/FinalSolution.png")
-        # savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/FinalSolutionRoutes.png")
+        savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/FinalSolution.png")
+        savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/FinalSolutionRoutes.png")
     end
 
     # Print summary 

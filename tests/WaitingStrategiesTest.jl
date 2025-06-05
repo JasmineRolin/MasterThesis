@@ -14,10 +14,11 @@ using Plots.PlotMeasures
 print("\033c")
 
 # Parameters 
-n = 20
-i = 1
+n = 100
+i = 4
 gridSize = 10
 displayPlots = true
+dynamicProblem = false 
 
 gamma = 0.7
 nPeriods = 48
@@ -28,39 +29,41 @@ nHistoricRequestFiles = 20
 alnsParameters = "tests/resources/ALNSParameters_offlineWaiting.json"
 
 # Retrieve historic request files 
-historicRequestFiles = Vector{String}()
-for j in 1:nHistoricRequestFiles
-    push!(historicRequestFiles,"Data/DataWaitingStrategies/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
+if dynamicProblem
+    historicRequestFiles = Vector{String}()
+    for j in 1:nHistoricRequestFiles
+        push!(historicRequestFiles,"Data/DataWaitingStrategies/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
+    end
+
+    # File names 
+    vehiclesFile = string("Data/DataWaitingStrategies/",n,"/Vehicles_",n,"_",gamma,".csv")
+    parametersFile = "tests/resources/ParametersShortCallTime.csv"
+    outPutFolder = "runfiles/output/Waiting/"*string(n)
+    gridFile = "Data/Konsentra/grid_$(gridSize).json"
+    requestFile = "Data/DataWaitingStrategies/$(n)/GeneratedRequests_$(n)_$(i).csv"
+    distanceMatrixFile = string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+    timeMatrixFile =  string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
+    scenarioName = string("Gen_Data_",n,"_",gamma,"_",i)
+    maxDelay = 15
+    maxEarlyArrival = 5
+
+else 
+    historicRequestFiles = Vector{String}()
+    for j in 1:nHistoricRequestFiles
+        push!(historicRequestFiles,"Data/Konsentra/OriginalInstance/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
+    end
+
+    vehiclesFile = string("Data/Konsentra/OriginalInstance/",n,"/Vehicles_",n,"_",gamma,".csv")
+    parametersFile = "tests/resources/Parameters.csv"
+    gridFile = "Data/Konsentra/grid_$(gridSize).json"
+    requestFile = "Data/Konsentra/OriginalInstance/$(n)/GeneratedRequests_$(n)_$(i).csv"
+    distanceMatrixFile = string("Data/Matrices/OriginalInstance/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+    outPutFolder = "runfiles/output/Waiting/"*string(n)
+    timeMatrixFile =  string("Data/Matrices/OriginalInstance/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
+    scenarioName = string("Gen_Data_",n,"_",gamma,"_",i)
+    maxDelay = 45 
+    maxEarlyArrival = 15
 end
-
-# historicRequestFiles = Vector{String}()
-# for j in 1:nHistoricRequestFiles
-#     push!(historicRequestFiles,"Data/Konsentra/OriginalInstance/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
-# end
-
-
-# File names 
-vehiclesFile = string("Data/DataWaitingStrategies/",n,"/Vehicles_",n,"_",gamma,".csv")
-parametersFile = "tests/resources/ParametersShortCallTime.csv"
-outPutFolder = "runfiles/output/Waiting/"*string(n)
-gridFile = "Data/Konsentra/grid_$(gridSize).json"
-requestFile = "Data/DataWaitingStrategies/$(n)/GeneratedRequests_$(n)_$(i).csv"
-distanceMatrixFile = string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
-timeMatrixFile =  string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
-scenarioName = string("Gen_Data_",n,"_",gamma,"_",i)
-maxDelay = 15
-maxEarlyArrival = 5
-
-# vehiclesFile = string("Data/Konsentra/OriginalInstance/",n,"/Vehicles_",n,"_",gamma,".csv")
-# parametersFile = "tests/resources/Parameters.csv"
-# gridFile = "Data/Konsentra/grid_$(gridSize).json"
-# requestFile = "Data/Konsentra/OriginalInstance/$(n)/GeneratedRequests_$(n)_$(i).csv"
-# distanceMatrixFile = string("Data/Matrices/OriginalInstance/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
-# outPutFolder = "runfiles/output/Waiting/"*string(n)
-# timeMatrixFile =  string("Data/Matrices/OriginalInstance/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
-# scenarioName = string("Gen_Data_",n,"_",gamma,"_",i)
-# maxDelay = 45 
-# maxEarlyArrival = 15
 
 
 scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile,gridFile,maxDelay=maxDelay,maxEarlyArrival=maxEarlyArrival)
@@ -86,67 +89,67 @@ println("\t nOfflineRequests: ",length(scenario.offlineRequests))
 # #============================================================================#
 # # Solve with relocation using common request location probability grid
 # #============================================================================#
-# if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/true_false")
-#     mkpath("tests/WaitingPlots/true_true")
-# end
-# if displayPlots && isdir("tests/WaitingPlots/true_false")
-#     for file in readdir("tests/WaitingPlots/true_false"; join=true)
-#         rm(file; force=true, recursive=true)
-#     end
-# end
+if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/true_false")
+    mkpath("tests/WaitingPlots/true_true")
+end
+if displayPlots && isdir("tests/WaitingPlots/true_false")
+    for file in readdir("tests/WaitingPlots/true_false"; join=true)
+        rm(file; force=true, recursive=true)
+    end
+end
 
-# # Simulate scenario 
-# solutionTrue, requestBankTrue = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
+# Simulate scenario 
+solutionTrue, requestBankTrue = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
 
-# state = State(solutionTrue,scenario.onlineRequests[end],0)
-# feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-# @test msg == ""
-# @test feasible == true
-# println(msg)
+state = State(solutionTrue,scenario.onlineRequests[end],0)
+feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+@test msg == ""
+@test feasible == true
+println(msg)
 
 
 # #============================================================================#
 # # Solve with relocation using request demand discretized in grid and time 
 # #============================================================================#
-# if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/true_true")
-#     mkpath("tests/WaitingPlots/true_true")
-# end
-# if displayPlots && isdir("tests/WaitingPlots/true_true")
-#     for file in readdir("tests/WaitingPlots/true_true"; join=true)
-#         rm(file; force=true, recursive=true)
-#     end
-# end
+if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/true_true")
+    mkpath("tests/WaitingPlots/true_true")
+end
+if displayPlots && isdir("tests/WaitingPlots/true_true")
+    for file in readdir("tests/WaitingPlots/true_true"; join=true)
+        rm(file; force=true, recursive=true)
+    end
+end
 
-# # Simulate scenario 
-# solutionTrueDemand, requestBankTrueDemand = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = true);
+# Simulate scenario 
+solutionTrueDemand, requestBankTrueDemand = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = true);
 
-# state = State(solutionTrueDemand,scenario.onlineRequests[end],0)
-# feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-# @test msg == ""
-# @test feasible == true
-# println(msg)
+state = State(solutionTrueDemand,scenario.onlineRequests[end],0)
+feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+@test msg == ""
+@test feasible == true
+println(msg)
 
 
 #============================================================================#
 # Solve without relocation
 #============================================================================#
-# if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/false_false")
-#     mkpath("tests/WaitingPlots/true_true")
-# end
-# if displayPlots && isdir("tests/WaitingPlots/false_false")
-#     for file in readdir("tests/WaitingPlots/true_true"; join=true)
-#         rm(file; force=true, recursive=true)
-#     end
-# end
+if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/false_false")
+    mkpath("tests/WaitingPlots/true_true")
+end
+if displayPlots && isdir("tests/WaitingPlots/false_false")
+    for file in readdir("tests/WaitingPlots/true_true"; join=true)
+        rm(file; force=true, recursive=true)
+    end
+end
 
-# # Simulate scenario 
-# solutionFalse, requestBankFalse = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=false,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
+# Simulate scenario 
+solutionFalse, requestBankFalse = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=false,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
 
-# state = State(solutionFalse,scenario.onlineRequests[end],0)
-# feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-# @test msg == ""
-# @test feasible == true
-# println(msg)
+state = State(solutionFalse,scenario.onlineRequests[end],0)
+feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+@test msg == ""
+@test feasible == true
+println(msg)
 
 #============================================================================#
 # Solve in-hindsigth
@@ -171,9 +174,9 @@ println("\t nOfflineRequests: ",length(scenario.offlineRequests))
 #============================================================================#
 # Result
 #============================================================================#
-#println("Relocation vehicles TRUE: ", solutionTrue.nTaxi)
-#println("Relocation vehicles TRUE DEMAND: ", solutionTrueDemand.nTaxi)
-#println("Relocation vehicles FALSE: ", solutionFalse.nTaxi)
+println("Relocation vehicles TRUE: ", solutionTrue.nTaxi)
+println("Relocation vehicles TRUE DEMAND: ", solutionTrueDemand.nTaxi)
+println("Relocation vehicles FALSE: ", solutionFalse.nTaxi)
 #println("ALNS solution: ", finalSolution.nTaxi)
 
 

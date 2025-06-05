@@ -9,18 +9,89 @@ export plotRelocation,createGantChartOfSolutionAnticipation,plotRelocation2
 
 # Plot vehicle schedules 
 # Define a function to plot activity assignments for each vehicle
-function createGantChartOfSolutionOnline(solution::Solution,title::String;eventId::Int=-10,eventTime::Int=-10,nFixed::Int=0)
+function createGantChartOfSolutionOnline(solution::Solution,title::String,nRequests::Int;eventId::Int=-10,eventTime::Int=-10,nFixed::Int=0,inRequestBank::Bool=false,event::Request= Request())
     yPositions = []
     yLabels = []
     yPos = 1
 
-    xPositions = []
-    xLabels = []
     
-    p = plot(size=(1500,1500))
+    p = plot(size=(2000,1000))
+    minimumTime = typemax(Int)
+
+    nVehicles = length(solution.vehicleSchedules)
+    if nVehicles < 10 
+        lineWidthActivity = 25.5
+        markersize = 20
+        markersizeWaiting = 20
+        lineWidthWaiting = 39.5
+        lineOffSet = 0.5
+    else
+        lineWidthActivity = 11.5
+        markersize = 15
+        markersizeWaiting = 15
+        lineWidthWaiting = 29.5
+        lineOffSet = 1
+    end
+
+    annotateOffSet = 0
     
+
+    # Go through waiting activities and plot them (to place behind others )
     for schedule in solution.vehicleSchedules
         for assignment in schedule.route
+            if assignment.startOfServiceTime < minimumTime
+                minimumTime = assignment.startOfServiceTime
+            end
+            
+            if assignment.activity.activityType == WAITING
+                activityId = assignment.activity.id 
+
+                if activityId <= nRequests
+                    l = "p"*string(activityId)
+                elseif activityId <= 2*nRequests
+                    l = "d"*string(activityId)
+                else
+                    l = "D"*string(activityId)
+                end
+
+                color = :gray67
+                annotatePlacement = assignment.startOfServiceTime + (assignment.endOfServiceTime - assignment.startOfServiceTime)/2.0
+                plot!(p, [assignment.startOfServiceTime, assignment.endOfServiceTime], [yPos, yPos], linewidth=lineWidthWaiting, label="", color=color, marker=:none,markerstrokewidth=0,markersize=markersizeWaiting,alpha=0.5)
+                annotate!(p,annotatePlacement, yPos, text(l, :black, 8))
+            end
+        end
+
+        if nVehicles < 10 
+            yPos += 1
+        else
+            yPos += 2
+        end
+    end
+
+
+    # Plot remaining activities
+    yPos = 1
+    for schedule in solution.vehicleSchedules
+        if schedule.route[end].endOfServiceTime < eventTime
+            hline!([yPos - lineOffSet], linewidth=1, color=:gray, label="")
+
+            push!(yPositions, yPos)
+            push!(yLabels, "Vehicle $(schedule.vehicle.id)")
+
+            if nVehicles < 10 
+                yPos += 1
+            else
+                yPos += 2
+            end
+
+            continue 
+        end
+
+        for assignment in schedule.route
+            if assignment.startOfServiceTime < minimumTime
+                minimumTime = assignment.startOfServiceTime
+            end
+
             offset = 0 # TO offset waiting activities visually 
             isExpected = nFixed < assignment.activity.requestId 
             if assignment.activity.activityType == PICKUP
@@ -29,9 +100,9 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String;eventI
                 else
                     color = assignment.activity.requestId == eventId ? :lightblue1 : :lightgreen 
                 end 
-                markersize = 15
-                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
-                annotate!(p, assignment.startOfServiceTime, yPos, text("PU"*string(assignment.activity.requestId), :black, 8))
+
+                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=lineWidthActivity, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
+                annotate!(p, assignment.startOfServiceTime, yPos+annotateOffSet, text("p"*string(assignment.activity.requestId), :black, 8))
 
             elseif assignment.activity.activityType == DROPOFF
                 if isExpected
@@ -40,46 +111,71 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String;eventI
                     color = assignment.activity.requestId == eventId ? :blue : :tomato 
                 end 
                 
-                markersize = 15
-
-                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
-                annotate!(p, assignment.startOfServiceTime, yPos, text("DO"*string(assignment.activity.requestId), :black, 8))
+                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=lineWidthActivity, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
+                annotate!(p, assignment.startOfServiceTime, yPos+annotateOffSet, text("d"*string(assignment.activity.requestId), :black, 8))
 
             elseif assignment.activity.activityType == DEPOT
                 color = :black
-                markersize = 15
 
-                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
+                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=lineWidthActivity, label="", color=color, marker=:rect,markerstrokewidth=0,markersize=markersize)
                 annotate!(p, assignment.startOfServiceTime, yPos, text("D"*string(schedule.vehicle.depotId), :white, 8))
-            else
-                offset = 0
-                color = :gray67
-                markersize = 15
-
-                plot!(p, [assignment.startOfServiceTime, assignment.endOfServiceTime], [yPos, yPos], linewidth=29.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
-                annotate!(p, assignment.startOfServiceTime, yPos, text("W"*string(assignment.activity.location.name), :black, 8))
 
             end
-
-            push!(xPositions, assignment.startOfServiceTime)
-            push!(xLabels, string(round(assignment.startOfServiceTime/60.0,digits = 1)))
-
         end
-        hline!([yPos - 1], linewidth=1, color=:gray, label="")
+        hline!([yPos - lineOffSet], linewidth=1, color=:gray, label="")
 
         push!(yPositions, yPos)
         push!(yLabels, "Vehicle $(schedule.vehicle.id)")
-        yPos += 2
+
+        if nVehicles < 10 
+            yPos += 1
+        else
+            yPos += 2
+        end
     end
     
     if eventTime != -10 
         vline!([eventTime],lineWidth=1, color=:red, label="")
     end
 
+    # Plot event if it is in request bank 
+    if inRequestBank
+        hline!([yPos - lineOffSet], linewidth=1, color=:gray, label="")
+
+        # Plot the event
+        offset = 0
+        plot!(p, [event.pickUpActivity.timeWindow.startTime, event.pickUpActivity.timeWindow.endTime], [yPos, yPos], linewidth=lineWidthWaiting, label="Pick up", color = :green, marker=:none,markerstrokewidth=0,markersize=markersize,alpha=0.5)
+        annotatePlacement = event.pickUpActivity.timeWindow.startTime + (event.pickUpActivity.timeWindow.endTime-event.pickUpActivity.timeWindow.startTime)/2.0
+        annotate!(p,annotatePlacement, yPos, text("p"*string(event.id), :whblackite, 8))
+
+        plot!(p, [event.dropOffActivity.timeWindow.startTime, event.dropOffActivity.timeWindow.endTime], [yPos+offset, yPos+offset], linewidth=lineWidthWaiting, label="Drop off", color = :red, marker=:none,markerstrokewidth=0,markersize=markersize,alpha=0.5)
+        annotatePlacement = event.dropOffActivity.timeWindow.startTime + (event.dropOffActivity.timeWindow.endTime-event.dropOffActivity.timeWindow.startTime)/2.0
+        annotate!(p, annotatePlacement, yPos, text("d"*string(event.id), :black, 8))
+
+        push!(yPositions, yPos)
+        push!(yLabels, "Request $(event.id)")
+    end
+
+    # x labels 
+    xPositions = []
+    xLabels = []
+    startMinute= Int(Int(floor(minimumTime/60.0,digits = 0))*60)
+    xlims!(startMinute, 1440)
+    for i in startMinute:60:1440
+        h = Int(round(i/60.0,digits = 0))
+        if h < 10
+            label = string("0", h, ":00")
+        else
+            label = string(h, ":00")
+        end
+        push!(xLabels, label)
+        push!(xPositions, i)
+    end
+
     plot!(p, yticks=(yPositions, yLabels))
     plot!(p, xticks=(xPositions, xLabels), xrotation=90)
     xlabel!("Time (Hour)")
-    title!(string(title," - Activity Assignments for Vehicles"))
+    title!(title)
     
     return p
 end
@@ -307,87 +403,7 @@ function plotRoutesOnline(solution::Solution,scenario::Scenario,requestBank::Vec
     return p 
 end
 
-function createGantChartOfSolutionAndEventOnline(solution::Solution,title::String;eventId::Int=-10,eventTime::Int=-10,event::Request= Request(),nFixed::Int = 0)
-    yPositions = []
-    yLabels = []
-    yPos = 1
 
-    xPositions = []
-    xLabels = []
-    
-    p = plot(size=(1500,1500))
-    
-    for schedule in solution.vehicleSchedules
-        for assignment in schedule.route
-            offset = 0 # TO offset waiting activities visually 
-            isExpected = nFixed < assignment.activity.requestId 
-            if assignment.activity.activityType == PICKUP
-                if isExpected
-                    color = :gold
-                else
-                    color = assignment.activity.requestId == eventId ? :lightblue1 : :lightgreen 
-                end 
-                markersize = 15
-                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
-                annotate!(p, assignment.startOfServiceTime, yPos, text("PU"*string(assignment.activity.requestId), :black, 8))
-            elseif assignment.activity.activityType == DROPOFF
-                if isExpected
-                    color = :gold
-                else
-                    color = assignment.activity.requestId == eventId ? :blue : :tomato
-                end
-                markersize = 15
-                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
-                annotate!(p, assignment.startOfServiceTime, yPos, text("DO"*string(assignment.activity.requestId), :black, 8))
-            elseif assignment.activity.activityType == DEPOT
-                color = :black
-                markersize = 15
-
-                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
-                annotate!(p, assignment.startOfServiceTime, yPos, text("D"*string(schedule.vehicle.depotId), :white, 8))
-                scatter!(p, [assignment.activity.timeWindow.startTime], [yPos], linewidth=11.5, label="", color=:darkgray, marker=:circle,markerstrokewidth=0,markersize=7)
-                scatter!(p, [assignment.activity.timeWindow.endTime], [yPos], linewidth=11.5, label="", color=:darkgray, marker=:circle,markerstrokewidth=0,markersize=7)
-            else
-                offset = 0
-                color = :gray67
-                markersize = 15
-
-                plot!(p, [assignment.startOfServiceTime, assignment.endOfServiceTime], [yPos, yPos], linewidth=29.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
-                annotate!(p, assignment.startOfServiceTime, yPos, text("W"*string(assignment.activity.location.name), :black, 8))
-
-            end
-
-            push!(xPositions, assignment.startOfServiceTime)
-            push!(xLabels, string(round(assignment.startOfServiceTime/60.0,digits = 1)))
-
-        end
-        hline!([yPos - 1], linewidth=1, color=:gray, label="")
-
-        push!(yPositions, yPos)
-        push!(yLabels, "Vehicle $(schedule.vehicle.id)")
-        yPos += 2
-    end
-    
-    if eventTime != -10 
-        vline!([eventTime],lineWidth=1, color=:red, label="")
-    end
-
-    # Plot the event
-    offset = 0
-    markersize = 10
-    plot!(p, [event.pickUpActivity.timeWindow.startTime, event.pickUpActivity.timeWindow.endTime], [yPos, yPos], linewidth=19.5, label="Pick up", color = :green, marker=:square,markerstrokewidth=0,markersize=markersize)
-    plot!(p, [event.dropOffActivity.timeWindow.startTime, event.dropOffActivity.timeWindow.endTime], [yPos, yPos], linewidth=19.5, label="Drop off", color = :red, marker=:square,markerstrokewidth=0,markersize=markersize)
-    scatter!(p, [event.callTime], [yPos], linewidth=11.5, label="Call time", color=:blue, marker=:circle,markerstrokewidth=0,markersize=markersize)
-    push!(yPositions, yPos)
-    push!(yLabels, "Event $(event.id)")
-
-    plot!(p, yticks=(yPositions, yLabels))
-    plot!(p, xticks=(xPositions, xLabels), xrotation=90)
-    xlabel!("Time (Hour)")
-    title!(string(title," - Activity Assignments for Vehicles"))
-    
-    return p
-end
 
 function createGantChartOfSolutionAndEventOnlineComparison(newSolution::Solution, oldSolution::Solution, title::String;
     eventId::Int = -10, eventTime::Int = -10, event::Request = Request())
@@ -594,8 +610,8 @@ function plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,veh
     ylabel="Latitude (grid rows)", 
     title="Realised Demand",
     colorbar_title="Requests")
-    scatter!(p0,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:green)
-    scatter!(p0,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
+    scatter!(p0,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="New waiting location", color=:green)
+    scatter!(p0,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Previous waiting location", color=:red)
 
     p1 = heatmap(predictedDemand[period,:,:], 
     c=:viridis,         # color map
@@ -604,8 +620,8 @@ function plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,veh
     ylabel="Latitude (grid rows)", 
     title="Predicted Demand",
     colorbar_title="Avg Requests")
-    scatter!(p1,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:green)
-    scatter!(p1,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
+    scatter!(p1,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="New waiting location", color=:green)
+    scatter!(p1,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Previous waiting location", color=:red)
 
 
     p2 = heatmap(activeVehiclesPerCell[period,:,:], 
@@ -615,8 +631,8 @@ function plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,veh
     ylabel="Latitude (grid rows)", 
     title="Vehicles per Grid Cell in solution",
     colorbar_title="Vehicle Demand")
-    scatter!(p2,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:green)
-    scatter!(p2,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
+    scatter!(p2,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="New waiting location", color=:green)
+    scatter!(p2,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Previous waiting location", color=:red)
 
 
     p3 = heatmap(vehicleBalance[period,:,:], 
@@ -626,8 +642,8 @@ function plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,veh
     ylabel="Latitude (grid rows)", 
     title="Vehicle balance",
     colorbar_title="Vehicle Demand")
-    scatter!(p3,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:green)
-    scatter!(p3,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
+    scatter!(p3,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="New waiting location", color=:green)
+    scatter!(p3,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Previous waiting location", color=:red)
 
     p4 = heatmap(vehicleDemand[period,:,:], 
     c=:viridis,         # color map
@@ -636,8 +652,8 @@ function plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,veh
     ylabel="Latitude (grid rows)", 
     title="Vehicle demand",
     colorbar_title="Vehicle Demand")
-    scatter!(p4,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:green)
-    scatter!(p4,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
+    scatter!(p4,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="New waiting location", color=:green)
+    scatter!(p4,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Previous waiting location", color=:red)
 
     # Find predicted vehicle demand for each hour 
     planningHorizon = 4
@@ -653,8 +669,8 @@ function plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,veh
     ylabel="Latitude (grid rows)", 
     title="Demand over horizon",
     colorbar_title="Requests")
-    scatter!(p5,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="Waiting location", color=:green)
-    scatter!(p5,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Depot location", color=:red)
+    scatter!(p5,[gridCell[2]],[gridCell[1]], marker = (:circle, 5), label="New waiting location", color=:green)
+    scatter!(p5,[depotGridCell[2]],[depotGridCell[1]], marker = (:circle, 5), label="Previous waiting location", color=:red)
 
 
     super_title = plot(title = "Vehicle Demand Overview - period start $((period-1)*periodLength), vehicle $(vehicle)", grid=false, framestyle=:none)
