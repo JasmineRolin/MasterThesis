@@ -1,12 +1,32 @@
 using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures
 
-methodListBase = ["InHindsight" "BaseCase" "AnticipationKeepExpected"]
+methodListBase = ["InHindsight" "BaseCase" "AnticipationKeepExpected" "AnticipationKeepExpected_online"]
 nRequestList = [20,100,300,500]
 runList = [1,2,3,4,5]
 gamma = 0.5
 anticipationDegrees = [0.4]
 date = "2025-06-04_original_0.5_online"
+
+# Define display names
+legend_names = Dict(
+    "InHindsight" => "In Hindsight",
+    "BaseCase" => "Base method",
+    "AnticipationKeepExpected_0.4" => "Anticipation method",
+    "AnticipationKeepExpected_long" => "Anticipation method I",
+    "AnticipationKeepExpected_online" => "Anticipation method II",
+)
+
+# Define display names
+colors = Dict(
+    "InHindsight" => :gray20,
+    "BaseCase" => :steelblue,
+    "AnticipationKeepExpected_0.4" => :forestgreen,
+    "AnticipationKeepExpected_long" => :darkorange,
+    "AnticipationKeepExpected_online" => :mediumvioletred,
+)
+
+
 
 #==============================#
 # Create method list 
@@ -146,9 +166,9 @@ for n in nRequestList
             minVals[3] = min(minVals[3], minimum(df.UnservicedOnlineRequests_mean))
 
             # Plot each metric
-            plot!(plots[1], df.nTaxi_mean; linestyle=:dash, marker=:circle, label=method, linewidth=2, markersize=5, markerstrokewidth=0)
-            plot!(plots[2], df.UnservicedOfflineRequest_mean; linestyle=:solid, marker=:diamond, label=method, linewidth=2, markersize=5, markerstrokewidth=0)
-            plot!(plots[3], df.UnservicedOnlineRequests_mean; linestyle=:dot, marker=:star5, label=method, linewidth=2, markersize=5, markerstrokewidth=0)
+            plot!(plots[1], df.nTaxi_mean; linestyle=:dash, marker=:diamond, label=legend_names[method], linewidth=2, markersize=5, markerstrokewidth=0, color=colors[method])
+            plot!(plots[2], df.UnservicedOfflineRequest_mean; linestyle=:dash, marker=:diamond, label=legend_names[method], linewidth=2, markersize=5, markerstrokewidth=0, color=colors[method])
+            plot!(plots[3], df.UnservicedOnlineRequests_mean; linestyle=:dash, marker=:diamond, label=legend_names[method], linewidth=2, markersize=5, markerstrokewidth=0, color=colors[method])
         else
             # Handle InHindsight separately
             resultFile = "resultExploration/results/" * date * "/" * method * "/" * string(n) * "/results_avgOverRuns.csv"
@@ -162,7 +182,7 @@ for n in nRequestList
             minVals[1] = min(minVals[1], minimum(df.nTaxi_mean))
 
             # Plot each metric
-            plot!(plots[1], df.nTaxi_mean; linestyle=:dash, marker=:circle, label=method, linewidth=2, markersize=5, markerstrokewidth=0)
+            plot!(plots[1], df.nTaxi_mean; linestyle=:dash, marker=:diamond, label=legend_names[method], linewidth=2, markersize=5, markerstrokewidth=0, color=colors[method])
         end
     end
 
@@ -180,7 +200,7 @@ for n in nRequestList
         mkpath("plots/Anticipation/"*date*"/")
     end
 
-    finalPlot = plot(plots[1], plots[2], plots[3]; layout=(3,1), size=(1000,1200),leftmargin=5mm,bottommargin=5mm,topmargin=5mm)
+    finalPlot = plot(plots[2], plots[3]; layout=(2,1), size=(1000,1200),leftmargin=5mm,bottommargin=5mm,topmargin=5mm)
     savefig(finalPlot, "plots/Anticipation/"*date*"/results_$(n).png")
     singlePlot = plot(plots[1]; title = "No. Requests: $(n), Gamma: $(gamma)")
     savefig(singlePlot, "plots/Anticipation/$(date)/results_$(n)_single.png")
