@@ -81,7 +81,7 @@ function main()
 
     mkpath(outPutFolder)  # ensure folder exists
     fileName = outPutFolder*"/Simulation_KPI_"*string(scenario.name)*"_inhindsight_.json"
-    KPIDict = writeOnlineKPIsToFile(fileName,scenario,solution,Vector{Int}(),requestBank,totalElapsedTime,averageResponseTime,eventsInsertedByALNS)
+    KPIDict = writeOnlineKPIsToFile(fileName,scenario,solution,requestBank,requestBank,totalElapsedTime,averageResponseTime,eventsInsertedByALNS)
 end
 
 main()
