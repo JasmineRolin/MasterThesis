@@ -100,8 +100,8 @@ function plotScenario(requests::Vector{Request}, title::String)
     durationsCallTimeStart = start_times .- call_times
 
     # Plotting
-    p = plot(size = (1800,1200),legend=true, xlabel="Minutes after midnight", 
-        yticks=(1:n, labels), title=title,leftmargin=5mm,topmargin=5mm,rightmargin=5mm,bottommargin=5mm,
+    p = plot(size = (1800,1200),legend=true, xlabel="Hour", 
+        yticks=(1:n, labels), title=title,leftmargin=5mm,topmargin=5mm,rightmargin=5mm,bottommargin=7mm,
         legendfontsize = 17,
         ytickfont = font(14),
         xtickfont = font(14),
@@ -109,7 +109,6 @@ function plotScenario(requests::Vector{Request}, title::String)
         titlefont = font(18))
 
     # Add bars for time windows
-
     for i in 1:n
         y = i # reverse order to show first request at the top
         if i == 1
@@ -133,6 +132,24 @@ function plotScenario(requests::Vector{Request}, title::String)
         end
         plot!([call_times[i], call_times[i]], [y-0.3, y+0.3], color=:red, linestyle=:solid,label=label,linewidth=5)
     end
+
+    # xticks 
+    xlims!(p, 0, 1440) # 24 hours in minutes
+
+    xPositions = []
+    xLabels = []
+    for i in 0:60:1440
+        h = Int(round(i/60.0,digits = 0))
+        if h < 10
+            label = string("0", h, ":00")
+        else
+            label = string(h, ":00")
+        end
+        push!(xLabels, label)
+        push!(xPositions, i)
+    end
+
+    plot!(p, xticks = (xPositions, xLabels), xrotation = 90)
 
     return p 
 end
