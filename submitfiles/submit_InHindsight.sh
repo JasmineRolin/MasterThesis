@@ -11,7 +11,7 @@ gridSize=10
 nRequestsList=(20 100 300 500) 
 numRuns=3  
 numData=10  
-baseScenario="true"
+baseScenario="false"
 
 mkdir -p submitfiles/generated_jobs
 for nRequests in "${nRequestsList[@]}"; do
