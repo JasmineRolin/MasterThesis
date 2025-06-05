@@ -3,10 +3,12 @@ using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures
 
 nRequestList = [20,100,300,500]
 nRuns = 3
-relocateVehiclesList = [("true","true"),("true","false"),("false","false"),("inhindsight","")]
+relocateVehiclesList = [("true","true"),("false","false"),("inhindsight","")]# [("true","true"),("true","false"),("false","false"),("inhindsight","")]
 gamma = 0.7
-baseFolder = "runfiles/output/Waiting/Base/"
-plotName = "Base"
+baseFolder = "runfiles/output/Waiting/Dynamic/"
+plotName = "Dynamic_M1"
+
+plotResults = false
 
 
 #===============================#
@@ -65,52 +67,57 @@ end
 #===============================#
 # Plot results 
 #===============================#
-for n in nRequestList
-    println("n requests: ",n)
-    p = plot(size = (1000,1000),title = "Results for n = $n", xlabel = "", ylabel = "No. unserviced requests",leftmargin=5mm,topmargin=5mm,legend = :topright)
+if plotResults
+    for n in nRequestList
+        println("n requests: ",n)
+        p = plot(size = (1000,1000),title = "Results for n = $n", xlabel = "", ylabel = "No. unserviced requests",leftmargin=5mm,topmargin=5mm,legend = :topright)
 
-    nRows = 0
-    maxnTaxi = 0
-    minnTaxi = typemax(Int)
-    for relocateVehiclesOption in relocateVehiclesList
-        outPutFolder = baseFolder*string(n)
-        resultFile = string(outPutFolder, "/results_avgOverRuns_",relocateVehiclesOption[1],"_",relocateVehiclesOption[2],".csv")
-        df = CSV.read(resultFile, DataFrame)
-        nRows = nrow(df)
-        maxnTaxi = max(maxnTaxi,maximum(df.nTaxi_mean))
-        minnTaxi = min(minnTaxi,minimum(df.nTaxi_mean))
+        nRows = 0
+        maxnTaxi = 0
+        minnTaxi = typemax(Int)
+        for relocateVehiclesOption in relocateVehiclesList
+            outPutFolder = baseFolder*string(n)
+            resultFile = string(outPutFolder, "/results_avgOverRuns_",relocateVehiclesOption[1],"_",relocateVehiclesOption[2],".csv")
+            df = CSV.read(resultFile, DataFrame)
+            nRows = nrow(df)
+            maxnTaxi = max(maxnTaxi,maximum(df.nTaxi_mean))
+            minnTaxi = min(minnTaxi,minimum(df.nTaxi_mean))
 
-        # Plot 
-        if relocateVehiclesOption[1] == "true" && relocateVehiclesOption[2] == "true"
-            color = :green
-            label = "Relocation strategy 1"
-        elseif relocateVehiclesOption[1] == "true" && relocateVehiclesOption[2] == "false"
-            color = :blue
-            label = "Relocation strategy 2"
-        elseif relocateVehiclesOption[1] == "false" && relocateVehiclesOption[2] == "false"
-            color = :red
-            label = "Base method"
-        else
-            color = :black 
-            label = "In Hindsight"
+            # Plot 
+            if relocateVehiclesOption[1] == "true" && relocateVehiclesOption[2] == "true"
+                color = :forestgreen
+                label = "Relocation strategy 1"
+            elseif relocateVehiclesOption[1] == "true" && relocateVehiclesOption[2] == "false"
+                color = :darkorange
+                label = "Relocation strategy 2"
+            elseif relocateVehiclesOption[1] == "false" && relocateVehiclesOption[2] == "false"
+                color = :steelblue
+                label = "Base method"
+            else
+                color = :gray20 
+                label = "In Hindsight"
+            end
+
+            plot!(df.nTaxi_mean; linestyle = :dash, marker = :circle, color = color, label = label,markerstrokewidth=0,linewidth=2,markersize=5)
         end
 
-        plot!(df.nTaxi_mean; linestyle = :dash, marker = :circle, color = color, label = label,markerstrokewidth=0,linewidth=2,markersize=5)
-    end
+        tickSpace = 2 
 
-    tickSpace = 2 
-
-    ylimMin = tickSpace * floor((minnTaxi - 2) / tickSpace)
-    ylimMax = tickSpace * ceil((maxnTaxi + 2) / tickSpace)
-    xtickLabel = ["Scenario $(i)" for i in 1:nRows]
-    xticks!((1:nRows,xtickLabel),rotation=90)
-    # if n == 500 
-    #     yticks!((ylimMin:10:ylimMax,string.(Int.(ylimMin:10:ylimMax))))
-    # else 
+        ylimMin = tickSpace * floor((minnTaxi - 2) / tickSpace)
+        ylimMax = tickSpace * ceil((maxnTaxi + 2) / tickSpace)
+        xtickLabel = ["Scenario $(i)" for i in 1:nRows]
+        xticks!((1:nRows,xtickLabel),rotation=90)
         yticks!((ylimMin:tickSpace:ylimMax,string.(Int.(ylimMin:tickSpace:ylimMax))))
-   # end
-    ylims!(ylimMin, ylimMax)
+        ylims!(ylimMin, ylimMax)
 
-    savefig(p, "plots/Waiting/results_$(plotName)_$(n).png")
-    println("saved plot at: ", "plots/Waiting/results_$(plotName)_$(n).png")
+        savefig(p, "plots/Waiting/results_$(plotName)_$(n).png")
+        println("saved plot at: ", "plots/Waiting/results_$(plotName)_$(n).png")
+    end
 end
+
+
+
+
+#===============================#
+# Result table 
+#===============================#
