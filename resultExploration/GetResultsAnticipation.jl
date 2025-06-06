@@ -1,12 +1,12 @@
 using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures
 
-methodListBase = ["InHindsight" "BaseCase" "AnticipationKeepExpected" "AnticipationKeepExpected_online"]
-nRequestList = [20,100,300,500]
-runList = [1,2,3,4,5]
+methodListBase = ["InHindsight" "BaseCase" "AnticipationKeepExpected" "AnticipationKeepExpected_online" "AnticipationKeepExpected_long_online" "AnticipationKeepExpected_long_long_online" "AnticipationKeepExpected_long_long_two_online"]
+nRequestList = [300]
+runList = [3,4,5]
 gamma = 0.5
 anticipationDegrees = [0.4]
-date = "2025-06-04_original_0.5_online"
+date = "Final_anticiaption"
 
 # Define display names
 legend_names = Dict(
@@ -17,15 +17,28 @@ legend_names = Dict(
     "AnticipationKeepExpected_online" => "Anticipation method II",
 )
 
-# Define display names
+legend_names = Dict(
+    "InHindsight" => "In Hindsight",
+    "BaseCase" => "Base method",
+    "AnticipationKeepExpected_0.4" => "Anticipation method",
+    "AnticipationKeepExpected_long" => "Anticipation method Ia",
+    "AnticipationKeepExpected_online" => "Anticipation method IIa",
+    "AnticipationKeepExpected_long_online" => "Anticipation method IIIa",
+    "AnticipationKeepExpected_long_long_online" => "Anticipation method IVa",
+    "AnticipationKeepExpected_long_long_two_online" => "Anticipation method IVb",
+)
+
+
 colors = Dict(
-    "InHindsight" => :gray20,
+    "InHindsight" => :gray30,
     "BaseCase" => :steelblue,
     "AnticipationKeepExpected_0.4" => :forestgreen,
     "AnticipationKeepExpected_long" => :darkorange,
     "AnticipationKeepExpected_online" => :mediumvioletred,
+    "AnticipationKeepExpected_long_online" => :darkorange,
+    "AnticipationKeepExpected_long_long_online" => :goldenrod,
+    "AnticipationKeepExpected_long_long_two_online" => :teal
 )
-
 
 
 #==============================#
@@ -134,6 +147,7 @@ for method in methodList
 end
 
 
+
 #===============================#
 # Plot results 
 #===============================#
@@ -152,7 +166,6 @@ for n in nRequestList
 
         if method != "InHindsight"
             resultFile = "resultExploration/results/" * date * "/" * method * "/" * string(n) * "/results_avgOverRuns.csv"
-            println(resultFile)
             df = CSV.read(resultFile, DataFrame)
 
             nRows = nrow(df)
