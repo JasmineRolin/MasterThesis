@@ -25,8 +25,8 @@ for n in nRequestList
     # Compute KPI differences
     diffIdleTimeMean = df1.TotalIdleTime_mean .- df2.TotalIdleTime_mean
     diffIdleTimeMeanWithCustomer = df1.TotalIdleTimeWithCustomer_mean .- df2.TotalIdleTimeWithCustomer_mean
-    diffExcessRideTimeMean = (df1.TotalActualRideTime_mean .- df1.TotalDirectRideTime_mean) .-
-                             (df2.TotalActualRideTime_mean .- df2.TotalDirectRideTime_mean)
+    diffExcessRideTimeMean = (df1.TotalActualRideTime_mean .- df1.TotalDirectRideTime_mean)./(nRequestList[1].-df1.nTaxi_mean) .-
+                             (df2.TotalActualRideTime_mean .- df2.TotalDirectRideTime_mean)./(nRequestList[1].-df2.nTaxi_mean)
     diffAveragePercentRideSharing_mean = df1.AveragePercentRideSharing_mean .- df2.AveragePercentRideSharing_mean
 
     # Print mean differences

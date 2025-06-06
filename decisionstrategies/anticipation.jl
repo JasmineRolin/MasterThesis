@@ -7,6 +7,7 @@ using alns
 using Test
 using TimerOutputs
 using JSON
+using Plots.PlotMeasures
 
 
 #==
@@ -586,6 +587,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         onlineRequests = bestScenario.onlineRequests
         matches = match_similar_requests(expectedRequests, onlineRequests)
         p = plot_matched_request_gantts(expectedRequests,onlineRequests, matches)
+        #savefig(p, string("resultExploration/results/_matched_requests.png"))
         display(p)
     end
 
@@ -692,8 +694,8 @@ end
 
 
 function match_similar_requests(reqs1::Vector{Request}, reqs2::Vector{Request};
-                                max_time_diff=15,
-                                max_dist_km=2.0)
+                                max_time_diff=10,
+                                max_dist_km=1.5)
 
     matches = Tuple{Int, Int, Float64}[]
     used = Set{Int}()
@@ -763,9 +765,13 @@ function plot_matched_request_gantts(reqs1::Vector{Request}, reqs2::Vector{Reque
     matched_ids2 = Set(map(x -> x[2], matches))
 
     # First Gantt chart (left)
-    p1 = plot(title="Expected Requests", size=(1000, 600), xlabel="Time (min after midnight)", ylabel="Requests", legend=false)
+    p1 = plot(title="Expected Requests", size=(1000, 600), xlabel="Time (min after midnight)", ylabel="Requests", legend=false,     left_margin = 10mm,
+    right_margin = 5mm,
+    top_margin = 5mm,
+    bottom_margin = 10mm)
     y1_labels, y1_ticks = String[], Int[]
-    for (i, req) in enumerate(reqs1)
+    sorted_requests = sort(reqs1; by = r -> r.pickUpActivity.timeWindow.startTime)
+    for (i, req) in enumerate(sorted_requests)
         y = length(reqs1) - i + 1
         color_pickup = in(req.id, matched_ids1) ? :green : :red
         color_dropoff = in(req.id, matched_ids1) ? :lightgreen : :orange
@@ -773,8 +779,8 @@ function plot_matched_request_gantts(reqs1::Vector{Request}, reqs2::Vector{Reque
         pickup_tw = req.pickUpActivity.timeWindow
         dropoff_tw = req.dropOffActivity.timeWindow
     
-        plot!(p1, [pickup_tw.startTime, pickup_tw.endTime], [y, y], linewidth=6, color=color_pickup, label=false)
-        plot!(p1, [dropoff_tw.startTime, dropoff_tw.endTime], [y, y], linewidth=6, color=color_dropoff, label=false)
+        plot!(p1, [pickup_tw.startTime, pickup_tw.endTime], [y, y], alpha=0.65,linewidth=6, color=color_pickup, label=false)
+        plot!(p1, [dropoff_tw.startTime, dropoff_tw.endTime], [y, y], alpha=0.65, linewidth=6, color=color_dropoff, label=false)
     
         push!(y1_labels, "Req $(req.id)")
         push!(y1_ticks, y)
@@ -783,9 +789,13 @@ function plot_matched_request_gantts(reqs1::Vector{Request}, reqs2::Vector{Reque
     yticks!(p1, y1_ticks, y1_labels)
 
     # Second Gantt chart (right)
-    p2 = plot(title="Online Requests", size=(1000, 600), xlabel="Time (min after midnight)", ylabel="Requests", legend=false)
+    p2 = plot(title="Online Requests", size=(1500, 1000), xlabel="Time (min after midnight)", ylabel="Requests", legend=false,    left_margin = 10mm,
+    right_margin = 5mm,
+    top_margin = 5mm,
+    bottom_margin = 10mm)
     y2_labels, y2_ticks = String[], Int[]
-    for (i, req) in enumerate(reqs2)
+    sorted_requests2 = sort(reqs2; by = r -> r.pickUpActivity.timeWindow.startTime)
+    for (i, req) in enumerate(sorted_requests2)
         y = length(reqs1) - i + 1
         color_pickup = in(req.id, matched_ids2) ? :green : :red
         color_dropoff = in(req.id, matched_ids2) ? :lightgreen : :orange
@@ -793,8 +803,8 @@ function plot_matched_request_gantts(reqs1::Vector{Request}, reqs2::Vector{Reque
         pickup_tw = req.pickUpActivity.timeWindow
         dropoff_tw = req.dropOffActivity.timeWindow
     
-        plot!(p2, [pickup_tw.startTime, pickup_tw.endTime], [y, y], linewidth=6, color=color_pickup, label=false)
-        plot!(p2, [dropoff_tw.startTime, dropoff_tw.endTime], [y, y], linewidth=6, color=color_dropoff, label=false)
+        plot!(p2, [pickup_tw.startTime, pickup_tw.endTime], [y, y],alpha=0.65, linewidth=6, color=color_pickup, label=false)
+        plot!(p2, [dropoff_tw.startTime, dropoff_tw.endTime], [y, y],alpha=0.65, linewidth=6, color=color_dropoff, label=false)
     
         push!(y2_labels, "Req $(req.id)")
         push!(y2_ticks, y)
