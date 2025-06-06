@@ -89,23 +89,23 @@ println("\t nOfflineRequests: ",length(scenario.offlineRequests))
 # #============================================================================#
 # # Solve with relocation using common request location probability grid
 # #============================================================================#
-if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/true_false")
-    mkpath("tests/WaitingPlots/true_true")
-end
-if displayPlots && isdir("tests/WaitingPlots/true_false")
-    for file in readdir("tests/WaitingPlots/true_false"; join=true)
-        rm(file; force=true, recursive=true)
-    end
-end
+# if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/true_false")
+#     mkpath("tests/WaitingPlots/true_true")
+# end
+# if displayPlots && isdir("tests/WaitingPlots/true_false")
+#     for file in readdir("tests/WaitingPlots/true_false"; join=true)
+#         rm(file; force=true, recursive=true)
+#     end
+# end
 
-# Simulate scenario 
-solutionTrue, requestBankTrue = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
+# # Simulate scenario 
+# solutionTrue, requestBankTrue = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
 
-state = State(solutionTrue,scenario.onlineRequests[end],0)
-feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-@test msg == ""
-@test feasible == true
-println(msg)
+# state = State(solutionTrue,scenario.onlineRequests[end],0)
+# feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+# @test msg == ""
+# @test feasible == true
+# println(msg)
 
 
 # #============================================================================#

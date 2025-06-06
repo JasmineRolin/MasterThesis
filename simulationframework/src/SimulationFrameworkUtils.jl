@@ -341,7 +341,7 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
             if relocateWithDemand 
                 p = plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,vehicleBalance,gridCell,previousGridCell,period,periodLength,vehicle,vehicleDemand)
                 display(p)
-                savefig(p,"tests/WaitingPlots/"*scenarioName*"/true_true/CurrentSolutionTime"*string(currentTime)*"RELOCATION.png")
+                savefig(p,"tests/WaitingPlots/"*scenarioName*"/true_true/CurrentSolutionTime"*string(currentTime)*"_vehicle"*string(vehicle.id)*".png")
             else
                 p = plotRelocation2(probabilityGrid,score,predictedDemand,activeVehiclesPerCell,realisedDemand,vehicleBalance,gridCell,previousGridCell,period,periodLength,vehicle.id,vehicleDemand)
                 display(p)
@@ -909,9 +909,15 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         end
 
         if displayPlots
-            inRequestBank = event.id in requestBank    
-            p1 = createGantChartOfSolutionOnline(solution,"Current Solution, Request: "*string(event.id)*", time: "*string(event.callTime),nRequests,eventId = event.id,eventTime = event.callTime,nFixed = scenario.nFixed,inRequestBank=inRequestBank,event=event.request)
-            p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime))
+            inRequestBank = event.id in requestBank  
+            if event.id == 0 
+                title = "Current Solution, Relocation event, time: "*string(event.callTime)
+            else
+                title = "Current Solution, Request: "*string(event.id)*", time: "*string(event.callTime)
+            end  
+
+            p1 = createGantChartOfSolutionOnline(solution,title,nRequests,eventId = event.id,eventTime = event.callTime,nFixed = scenario.nFixed,inRequestBank=inRequestBank,event=event.request)
+            p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,title)
             display(p1)
             display(p2)
             savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*".png")
@@ -942,8 +948,8 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         println("Request bank: ", requestBank)
     end
     if displayPlots
-        p1 = createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge",nRequests,nFixed=scenario.nFixed)
-        p2  = plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge")
+        p1 = createGantChartOfSolutionOnline(finalSolution,"Final Solution",nRequests,nFixed=scenario.nFixed)
+        p2  = plotRoutes(finalSolution,scenario,requestBank,"Final solution")
         display(p1)
         display(p2)
         savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/FinalSolution.png")

@@ -15,7 +15,14 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String,nReque
     yPos = 1
 
     
-    p = plot(size=(2000,1000))
+    p = plot(size=(2000,1000),
+    leftmargin=5mm,topmargin=7mm,rightmargin=5mm,bottommargin=20mm,
+    legendfontsize = 17,
+    ytickfont = font(14),
+    xtickfont = font(14),
+    xguidefont = font(16),
+    titlefont = font(18))
+
     minimumTime = typemax(Int)
 
     nVehicles = length(solution.vehicleSchedules)
@@ -160,8 +167,8 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String,nReque
     xPositions = []
     xLabels = []
     startMinute= Int(Int(floor(minimumTime/60.0,digits = 0))*60)
-    xlims!(startMinute, 1440)
-    for i in startMinute:60:1440
+    endMinutes = 1440 
+    for i in startMinute:60:endMinutes
         h = Int(round(i/60.0,digits = 0))
         if h < 10
             label = string("0", h, ":00")
@@ -175,6 +182,7 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String,nReque
     plot!(p, yticks=(yPositions, yLabels))
     plot!(p, xticks=(xPositions, xLabels), xrotation=90)
     xlabel!("Time (Hour)")
+    xlims!(startMinute, endMinutes+10)
     title!(title)
     
     return p
