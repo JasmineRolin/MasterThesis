@@ -15,10 +15,10 @@ print("\033c")
 
 # Parameters 
 n = 20
-i = 2
+i = 5
 gridSize = 10
 displayPlots = true
-dynamicProblem = false 
+dynamicProblem = true 
 
 gamma = 0.7
 nPeriods = 48

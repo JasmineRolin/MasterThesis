@@ -1,0 +1,12 @@
+Scenario,BaseValue,RS1,DifferenceRS1,PercentDifferenceRS1,RS2,DifferenceRS2,PercentDifferenceRS2
+Scenario 1,1.4,2.2,0.8,57.14,1.4,0.0,0.0
+Scenario 2,0.4,1.6,1.2,300.0,0.4,0.0,0.0
+Scenario 3,1.2,2.2,1.0,83.33,2.0,0.8,66.67
+Scenario 4,0.0,0.2,0.2,Inf,0.2,0.2,Inf
+Scenario 5,2.0,2.6,0.6,30.0,3.2,1.2,60.0
+Scenario 6,1.4,1.4,0.0,0.0,1.0,-0.4,-28.57
+Scenario 7,2.2,8.6,6.4,290.91,4.6,2.4,109.09
+Scenario 8,0.0,1.8,1.8,Inf,1.8,1.8,Inf
+Scenario 9,0.0,0.0,0.0,0.0,0.4,0.4,Inf
+Scenario 10,4.0,6.0,2.0,50.0,5.0,1.0,25.0
+Average,1.26,2.66,1.4,101.42,2.0,0.74,33.17
