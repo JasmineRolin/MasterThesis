@@ -2,11 +2,11 @@ using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures, PrettyTables, JSON
 
 nRequestList = [20,100,300,500]
-nRuns = 3
+nRuns = 5
 relocateVehiclesList = [("true","true"),("true","false"),("false","false"),("inhindsight","")]
 gamma = 0.7
-baseFolder = "runfiles/output/Waiting/Final_Dynamic_0.7/"
-plotName = "Dynamic"
+baseFolder = "runfiles/output/Waiting/Base/"
+plotName = "Base"
 
 plotResults = true
 generateTables = false
@@ -160,7 +160,6 @@ if plotResults
             # Percent excess ride time
             excessRideTime = df.TotalActualRideTime_mean - df.TotalDirectRideTime_mean
             percentExcessRideTime = round.((excessRideTime ./ df.TotalDirectRideTime_mean) * 100, digits=2)
-            println("Percent excess ride time: ", percentExcessRideTime)
 
             plot!(percentExcessRideTime; linestyle = :dash, marker = :circle, color = color, label = label,markerstrokewidth=0,linewidth=2,markersize=5)
         end
