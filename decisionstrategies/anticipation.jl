@@ -485,7 +485,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
 
         if displayPlots
             #display(createGantChartOfSolutionAnticipation(scenario,originalSolution,"SOLUTION AFTER ALNS, run: "*string(i),nFixed,originalRequestBankWithAllRequests))
-            display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and before removing expected requests",nFixed = scenario.nFixed))
+            #display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and before removing expected requests",nFixed = scenario.nFixed))
             #display(plotRoutes(originalSolution,scenario,requestBank,"Initial Solution "*string(i)*" before ALNS and before removing expected requests"))
         end
 
@@ -505,7 +505,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,originalSolution,nExpected,nFixed,nNotServicedExpectedRequests,originalRequestBank,taxiParameter,taxiParameterExpected)
 
         if displayPlots
-            display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and after removing expected requests",nFixed = scenario.nFixed))
+            #display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and after removing expected requests",nFixed = scenario.nFixed))
             #display(plotRoutes(originalSolution,scenario,originalRequestBank,"Initial Solution "*string(i)*" before ALNS and after removing expected requests"))
         end
 

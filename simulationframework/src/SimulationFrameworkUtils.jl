@@ -728,6 +728,7 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
     initialVehicleSchedules = [VehicleSchedule(vehicle,true) for vehicle in scenario.vehicles] 
     finalSolution = Solution(initialVehicleSchedules, 0.0, 0, 0, 0.0, 0) 
     currentState = State(scenario,Request(),0)
+    nRequests = length(scenario.requests)
 
     if anticipation == false
         solution, requestBank, ALNSIterations = offlineSolution(scenario,repairMethods,destroyMethods,parametersFile,alnsParameters,scenarioName)
@@ -803,13 +804,17 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         printSolution(solution,printRouteHorizontal)
     end
     if displayPlots
-        p = createGantChartOfSolutionOnline(solution, "Initial Solution after ALNS", nFixed = scenario.nFixed)
-        display(p)
-        if !isdir(outPutFileFolder)
-            mkpath(outPutFileFolder)
+        p1 = createGantChartOfSolutionOnline(solution,"Initial Solution after ALNS",nRequests,nFixed=scenario.nFixed)
+        p2 = plotRoutes(solution,scenario,requestBank,"Initial Solution after ALNS")
+        display(p1)
+        display(p2)
+
+        if !isdir("tests/Anticipation/"*scenarioName)
+            mkpath("tests/Anticipation/"*scenarioName)
         end
-        savefig(p, outPutFileFolder*"/initial_solution_gantt.png")
-        #display(plotRoutes(solution,scenario,requestBank,"Initial Solution after ALNS"))
+
+        savefig(p1,"tests/Anticipation/"*scenarioName*"/InitialSolutionAfterALNS.png")
+        savefig(p2,"tests/Anticipation/"*scenarioName*"/InitialSolutionAfterALNSRoutes.png")
     end
 
     # Initialize visited routes 
@@ -837,6 +842,7 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
     nOnline = 0
     averageNotServicedExpectedRequests = zeros(Float64,totalEvents)
     averageNotServicedExpectedRequestsRelevant = zeros(Float64,totalEvents)
+
 
     for (itr,event) in enumerate(events)
 
@@ -907,21 +913,20 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
             printSolution(currentState.solution,printRouteHorizontal)
         end
 
-        if displayPlots && event.id in requestBank
-            p1 = createGantChartOfSolutionAndEventOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event.request,nFixed = scenario.nFixed)
-            p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime))
+        if displayPlots
+            inRequestBank = event.id in requestBank  
+            if event.id == 0 
+                title = "Current Solution, Relocation event, time: "*string(event.callTime)
+            else
+                title = "Current Solution, Request: "*string(event.id)*", time: "*string(event.callTime)
+            end  
+
+            p1 = createGantChartOfSolutionOnline(solution,title,nRequests,eventId = event.id,eventTime = event.callTime,nFixed = scenario.nFixed,inRequestBank=inRequestBank,event=event.request)
+            p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,title)
             display(p1)
             display(p2)
-            # savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*".png")
-            # savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
-
-        elseif displayPlots
-           p1 = createGantChartOfSolutionOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime,nFixed = scenario.nFixed)
-           p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime))
-           display(p1)
-           display(p2)
-           # savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*".png")
-           # savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
+            savefig(p1,"tests/Anticipation/"*scenarioName*"/CurrentSolutionTime"*string(event.callTime)*".png")
+            savefig(p2,"tests/Anticipation/"*scenarioName*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
         end
     end
 

@@ -1,9 +1,9 @@
 using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures
 
-methodListBase = ["InHindsight" "BaseCase" "AnticipationKeepExpected" "AnticipationKeepExpected_online" "AnticipationKeepExpected_long_online" "AnticipationKeepExpected_long_long_online" "AnticipationKeepExpected_long_long_two_online"]
+methodListBase = ["InHindsight" "BaseCase" "AnticipationKeepExpected" "AnticipationKeepExpected_long" "AnticipationKeepExpected_long_long" "AnticipationKeepExpected_long_long_two"]
 nRequestList = [300]
-runList = [3,4,5]
+runList = [1,2,3,4,5]
 gamma = 0.5
 anticipationDegrees = [0.4]
 date = "Final_anticiaption"
@@ -13,19 +13,13 @@ legend_names = Dict(
     "InHindsight" => "In Hindsight",
     "BaseCase" => "Base method",
     "AnticipationKeepExpected_0.4" => "Anticipation method",
-    "AnticipationKeepExpected_long" => "Anticipation method I",
-    "AnticipationKeepExpected_online" => "Anticipation method II",
-)
-
-legend_names = Dict(
-    "InHindsight" => "In Hindsight",
-    "BaseCase" => "Base method",
-    "AnticipationKeepExpected_0.4" => "Anticipation method",
-    "AnticipationKeepExpected_long" => "Anticipation method Ia",
-    "AnticipationKeepExpected_online" => "Anticipation method IIa",
-    "AnticipationKeepExpected_long_online" => "Anticipation method IIIa",
-    "AnticipationKeepExpected_long_long_online" => "Anticipation method IVa",
+    "AnticipationKeepExpected_long" => "Anticipation method IIa",
+    "AnticipationKeepExpected_online" => "Anticipation method Ib",
+    "AnticipationKeepExpected_long_online" => "Anticipation method IIb",
+    "AnticipationKeepExpected_long_long_online" => "Anticipation method IIIb",
     "AnticipationKeepExpected_long_long_two_online" => "Anticipation method IVb",
+    "AnticipationKeepExpected_long_long" => "Anticipation method IIIa",
+    "AnticipationKeepExpected_long_long_two" => "Anticipation method IVa",
 )
 
 
@@ -37,7 +31,9 @@ colors = Dict(
     "AnticipationKeepExpected_online" => :mediumvioletred,
     "AnticipationKeepExpected_long_online" => :darkorange,
     "AnticipationKeepExpected_long_long_online" => :goldenrod,
-    "AnticipationKeepExpected_long_long_two_online" => :teal
+    "AnticipationKeepExpected_long_long_two_online" => :teal,
+    "AnticipationKeepExpected_long_long" => :goldenrod,
+    "AnticipationKeepExpected_long_long_two" => :teal
 )
 
 
@@ -209,13 +205,13 @@ for n in nRequestList
     end
 
     # Compose the final plot
-    if !isdir("plots/Anticipation/"*date*"/")
-        mkpath("plots/Anticipation/"*date*"/")
+    if !isdir("plots/Anticipation/"*date*"_noOnline/")
+        mkpath("plots/Anticipation/"*date*"_noOnline/")
     end
 
     finalPlot = plot(plots[2], plots[3]; layout=(2,1), size=(1000,1200),leftmargin=5mm,bottommargin=5mm,topmargin=5mm)
-    savefig(finalPlot, "plots/Anticipation/"*date*"/results_$(n).png")
+    savefig(finalPlot, "plots/Anticipation/"*date*"_noOnline/results_$(n).png")
     singlePlot = plot(plots[1]; title = "No. Requests: $(n), Gamma: $(gamma)")
-    savefig(singlePlot, "plots/Anticipation/$(date)/results_$(n)_single.png")
+    savefig(singlePlot, "plots/Anticipation/$(date)_noOnline/results_$(n)_single.png")
 end
 

@@ -18,14 +18,14 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
     alnsParameters = "tests/resources/ALNSParameters_offlineAnticipation.json"
     outPutFolder = string("resultExploration/results/",date,"/",resultType,"/",n,"/",run)
     outputFiles = Vector{String}()
-    gridFile = string("Data/Konsentra/grid.json")
+    gridFile = string("Data/Konsentra/grid_10.json")
 
     nExpected = Int(floor(n*nExpectedPercentage))
 
     #for i in 1:10
-        requestFile = string("Data/Konsentra/",n,"/GeneratedRequests_",n,"_",i,".csv")
-        distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
-        timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",i,"_time.txt")
+        requestFile = string("Data/Konsentra/",dataset,"/",n,"/GeneratedRequests_",n,"_",i,".csv")
+        distanceMatrixFile = string("Data/Matrices/",dataset,"/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+        timeMatrixFile =  string("Data/Matrices/",dataset,"/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
         scenarioName = string("Gen_Data_",n,"_",i)
         push!(outputFiles, outPutFolder*"/Simulation_KPI_"*string(scenarioName)*"_false.json")
 
@@ -34,9 +34,9 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
         scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,"","",gridFile)
        
         ALNS = true
-        displayPlot = false
-        keepExpectedRequests = true
-        solution, requestBank = simulateScenario(scenario,requestFile,distanceMatrixFile,timeMatrixFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,anticipation = true,nExpected=nExpected,printResults = false, saveResults = true,gridFile = gridFile, outPutFileFolder = outPutFolder, displayPlots = displayPlot,ALNS=ALNS,keepExpectedRequests= keepExpectedRequests)
+        displayPlot = true
+        keepExpectedRequests = false
+        solution, requestBank = simulateScenario(scenario,requestFile,distanceMatrixFile,timeMatrixFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,anticipation = true,nExpected=nExpected,printResults = false, saveResults = false,gridFile = gridFile, outPutFileFolder = outPutFolder, displayPlots = displayPlot,ALNS=ALNS,keepExpectedRequests= keepExpectedRequests)
         
 
         dfResults = processResults(outputFiles)
@@ -63,7 +63,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
 end
 
 
-#main(20,0.4,0.5,"2025-05-18","","BasicAnticipation",1)
+main(100,0.4,0.5,"2025-06-08","","BasicAnticipation",1)
 
 if abspath(PROGRAM_FILE) == @__FILE__
     n = parse(Int, ARGS[1])

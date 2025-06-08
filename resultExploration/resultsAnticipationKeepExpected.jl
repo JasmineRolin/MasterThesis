@@ -40,7 +40,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
 
 end
 
-#main(100,0.4,0.5,"2025-06-01_test","","AnticipationKeepExpected",1)
+#main(100,0.4,0.5,"2025-06-08_test","","Anticipation",1)
 
 if abspath(PROGRAM_FILE) == @__FILE__
     n = parse(Int, ARGS[1])
