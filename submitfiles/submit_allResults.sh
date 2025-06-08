@@ -7,7 +7,7 @@ n_requests_list=("300")
 anticipation_levels=("0.4")
 run_tags=("run1" "run2" "run3" "run4" "run5")
 gamma="0.5"
-date="2025-06-04_original_0.5_long_long_two_online"
+date="2025-06-06_original_0.5_long_long_two"
 ####################
 
 mkdir -p submitfiles/generated_jobs
