@@ -809,12 +809,12 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         display(p1)
         display(p2)
 
-        if !isdir("tests/Anticipation/"*scenarioName)
-            mkpath("tests/Anticipation/"*scenarioName)
-        end
+        #if !isdir("tests/Anticipation/"*scenarioName)
+        #    mkpath("tests/Anticipation/"*scenarioName)
+        #end
 
-        savefig(p1,"tests/Anticipation/"*scenarioName*"/InitialSolutionAfterALNS.png")
-        savefig(p2,"tests/Anticipation/"*scenarioName*"/InitialSolutionAfterALNSRoutes.png")
+        #savefig(p1,"tests/Anticipation/"*scenarioName*"/InitialSolutionAfterALNS.png")
+        #savefig(p2,"tests/Anticipation/"*scenarioName*"/InitialSolutionAfterALNSRoutes.png")
     end
 
     # Initialize visited routes 
@@ -925,8 +925,8 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
             p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,title)
             display(p1)
             display(p2)
-            savefig(p1,"tests/Anticipation/"*scenarioName*"/CurrentSolutionTime"*string(event.callTime)*".png")
-            savefig(p2,"tests/Anticipation/"*scenarioName*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
+            #savefig(p1,"tests/Anticipation/"*scenarioName*"/CurrentSolutionTime"*string(event.callTime)*".png")
+            #savefig(p2,"tests/Anticipation/"*scenarioName*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
         end
     end
 
@@ -955,7 +955,7 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
     if displayPlots
         p = createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge",nFixed=scenario.nFixed)
         display(p)
-        savefig(p, outPutFileFolder*"/final_solution_gantt.png")
+        #savefig(p, outPutFileFolder*"/final_solution_gantt.png")
         display(plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge"))
         display(createGantChartOfSolutionOnlineComparison(finalSolution, initialSolution,"Comparison between initial and final solution"))
     end
