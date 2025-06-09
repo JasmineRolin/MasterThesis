@@ -6,7 +6,7 @@ nRequestList = [300]
 runList = [1,2,3,4,5]
 gamma = 0.5
 anticipationDegrees = [0.4]
-date = "Final_anticiaption"
+date = "Final_anticiaption - v2"
 
 # Define display names
 legend_names = Dict(
