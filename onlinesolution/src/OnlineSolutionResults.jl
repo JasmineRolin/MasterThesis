@@ -18,10 +18,10 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String,nReque
     p = plot(size=(2000,1000),
     leftmargin=5mm,topmargin=7mm,rightmargin=5mm,bottommargin=20mm,
     legendfontsize = 17,
-    ytickfont = font(14),
-    xtickfont = font(14),
-    xguidefont = font(16),
-    titlefont = font(18))
+    ytickfont = font(16),
+    xtickfont = font(16),
+    xguidefont = font(18),
+    titlefont = font(20))
 
     minimumTime = typemax(Int)
 

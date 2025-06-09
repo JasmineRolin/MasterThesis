@@ -301,7 +301,7 @@ if generateTables
             end
 
             push!(summary_table, (
-                Scenario = "Scenario $(i)",
+                Scenario = "Instance $(i)",
                 BaseValue = base_values[i],
 
                 RS1 = new_values1[i],

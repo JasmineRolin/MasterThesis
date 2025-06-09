@@ -910,10 +910,27 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
 
         if displayPlots
             inRequestBank = event.id in requestBank  
+            # Find time string 
+            hours = div(event.callTime, 60)
+            if hours < 10 
+                hours = string("0",hours)
+            else 
+                hours = string(hours)
+            end
+
+            minutes = mod(event.callTime, 60)
+            if minutes < 10 
+                minutes = string("0",minutes)
+            else 
+                minutes = string(minutes)
+            end
+
+            timeString = hours*":"*minutes
+
             if event.id == 0 
-                title = "Current Solution, Relocation event, time: "*string(event.callTime)
+                title = "Current Solution, Relocation event, time: "*timeString
             else
-                title = "Current Solution, Request: "*string(event.id)*", time: "*string(event.callTime)
+                title = "Current Solution, Request: "*string(event.id)*", time: "*timeString
             end  
 
             p1 = createGantChartOfSolutionOnline(solution,title,nRequests,eventId = event.id,eventTime = event.callTime,nFixed = scenario.nFixed,inRequestBank=inRequestBank,event=event.request)
