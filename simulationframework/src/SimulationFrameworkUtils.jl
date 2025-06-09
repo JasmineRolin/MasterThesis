@@ -675,13 +675,13 @@ end
 # ------
 # Function to simulate a scenario
 # ------
-function simulateScenario(scenario::Scenario;alnsParameters::String = "tests/resources/ALNSParameters_offline.json",printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json",nTimePeriods::Int=24,periodLength::Int=60,scenarioName::String="",relocateWithDemand::Bool=false)
+function simulateScenario(scenario::Scenario;alnsParameters::String = "tests/resources/ALNSParameters_offline.json",printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json",nTimePeriods::Int=24,periodLength::Int=60,scenarioName::String="",relocateWithDemand::Bool=false,ALNS::Bool=true)
     
     if anticipation == true
         throw("Wrong function call for anticipation!")
     end
 
-    simulateScenario(scenario,"","","","","",alnsParameters,scenarioName;printResults=printResults,saveResults=saveResults,displayPlots=displayPlots,outPutFileFolder=outPutFileFolder,saveALNSResults=saveALNSResults,displayALNSPlots=displayALNSPlots,historicRequestFiles = historicRequestFiles,gamma = gamma,relocateVehicles=relocateVehicles, anticipation=false, nExpected=nExpected, gridFile= gridFile, nTimePeriods = nTimePeriods,periodLength = periodLength,relocateWithDemand = relocateWithDemand)
+    simulateScenario(scenario,"","","","","",alnsParameters,scenarioName;printResults=printResults,saveResults=saveResults,displayPlots=displayPlots,outPutFileFolder=outPutFileFolder,saveALNSResults=saveALNSResults,displayALNSPlots=displayALNSPlots,historicRequestFiles = historicRequestFiles,gamma = gamma,relocateVehicles=relocateVehicles, anticipation=false, nExpected=nExpected, gridFile= gridFile, nTimePeriods = nTimePeriods,periodLength = periodLength,relocateWithDemand = relocateWithDemand,ALNS=ALNS)
    
 end
 

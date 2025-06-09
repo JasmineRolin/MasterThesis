@@ -5,7 +5,7 @@ nRequestList = [20,100,300,500]
 nRuns = 5
 relocateVehiclesList = [("true","true"),("false","false"),("inhindsight","")]
 gamma = 0.7
-baseFolder = "runfiles/output/Waiting/Dynamic/"
+baseFolder = "runfiles/output/Waiting/Results_09062025/Dynamic/"
 plotName = "Dynamic_M1"
 
 plotResults = true
@@ -34,7 +34,6 @@ for n in nRequestList
             CSV.write(result_file, dfResults; append=append_mode)
         end
     end
-
 end
 
 #===============================#
@@ -71,12 +70,13 @@ end
 if plotResults
     for n in nRequestList
         println("n requests: ",n)
-        p = plot(size = (1000,1000),title = "Results for n = $n", xlabel = "", ylabel = "No. unserviced requests",leftmargin=5mm,topmargin=5mm,legend = :topright,
+        p = plot(size = (1000,1000),title = "Results for n = $n", xlabel = "", ylabel = "No. unserviced requests",leftmargin=5mm,topmargin=5mm,legend=:right,legend_background_color = RGBA(1,1,1,0.6),legend_position = (3, 0.5),
         legendfontsize = 15,
-        ytickfont = font(10),
+        ytickfont = font(13),
         xtickfont = font(12),
         xguidefont = font(16),
-        titlefont = font(18))
+        titlefont = font(18),
+        bottommargin=15mm)
 
         nRows = 0
         maxnTaxi = 0
@@ -107,8 +107,11 @@ if plotResults
             plot!(df.nTaxi_mean; linestyle = :dash, marker = :circle, color = color, label = label,markerstrokewidth=0,linewidth=2,markersize=5)
         end
 
-        tickSpace = 2 
-
+        if n >= 300 
+            tickSpace = 5
+        else
+            tickSpace = 2 
+        end 
         ylimMin = tickSpace * floor((minnTaxi - 2) / tickSpace)
         ylimMax = tickSpace * ceil((maxnTaxi + 2) / tickSpace)
         xtickLabel = ["Instance $(i)" for i in 1:nRows]
@@ -122,14 +125,15 @@ if plotResults
 
 
 
-    # Plot excess ride time 
+    # Plot excess ride time pr. serviced request
     for n in nRequestList
         println("n requests: ",n)
-        p = plot(size = (1000,1000),title = "Results for n = $n", xlabel = "", ylabel = "Excess ride time %",leftmargin=5mm,topmargin=5mm,legend = :topright,
+        p = plot(size = (1000,1000),title = "Results for n = $n", xlabel = "", ylabel = "Excess ride time pr. serviced request (min)",leftmargin=5mm,topmargin=5mm,legend = :topright,legend_background_color = RGBA(1,1,1,0.6),
         legendfontsize = 15,
-        ytickfont = font(10),
+        ytickfont = font(13),
         xtickfont = font(12),
         xguidefont = font(16),
+        yguidefont = font(16),
         titlefont = font(18))
 
         nRows = 0
@@ -157,11 +161,7 @@ if plotResults
                 label = "In Hindsight"
             end
 
-            # Percent excess ride time
-            excessRideTime = df.TotalActualRideTime_mean - df.TotalDirectRideTime_mean
-            percentExcessRideTime = round.((excessRideTime ./ df.TotalDirectRideTime_mean) * 100, digits=2)
-
-            plot!(percentExcessRideTime; linestyle = :dash, marker = :circle, color = color, label = label,markerstrokewidth=0,linewidth=2,markersize=5)
+            plot!(df.ExcessRideTimePrServicedRequest_mean; linestyle = :dash, marker = :circle, color = color, label = label,markerstrokewidth=0,linewidth=2,markersize=5)
         end
 
         tickSpace = 2 
@@ -178,7 +178,7 @@ if plotResults
      # Plot ride sharing 
      for n in nRequestList
         println("n requests: ",n)
-        p = plot(size = (1000,1000),title = "Results for n = $n", xlabel = "", ylabel = "% ride sharing",leftmargin=5mm,topmargin=5mm,legend = :topright,
+        p = plot(size = (1000,1000),title = "Results for n = $n", xlabel = "", ylabel = "% ride sharing",leftmargin=5mm,topmargin=5mm,legend = :topright,legend_background_color = RGBA(1,1,1,0.6),
         legendfontsize = 15,
         ytickfont = font(10),
         xtickfont = font(12),

@@ -79,7 +79,7 @@ function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario
     if ALNS
         finalSolution,finalOnlineRequestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters_online.json",initialSolution =  currentSolution, requestBank = newRequestBankOnline, event = event, alreadyRejected =  totalNTaxi, visitedRoute = currentState.visitedRoute,stage = "Online", nNotServicedExpectedRequests=nNotServicedExpectedRequests)
     else
-        return currentSolution, newRequestBankOnline, 0
+        return currentSolution, vcat(requestBank,newRequestBankOnline), 0
     end
     
     if length(newRequestBankOnline) == 1 && length(finalOnlineRequestBank) == 0

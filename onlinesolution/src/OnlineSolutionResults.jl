@@ -808,7 +808,8 @@ function processResults(files::Vector{String})
         UnservicedOfflineRequest= Int[],
         nOnlineRequests= Int[],
         UnservicedOnlineRequests= Int[],
-        AveragePercentRideSharing = Float64[]
+        AveragePercentRideSharing = Float64[],
+        ExcessRideTimePrServicedRequest = Float64[]
     )
 
     # Assuming you have multiple JSON files, you can read them like this
@@ -856,6 +857,9 @@ function parse_json(file_path)
     nOfflineRequests = data["nOfflineRequests"]
     totalActualRideTime = data["TotalActualRideTime"]
     averagePercentRideSharing = data["AveragePercentRideSharing"]
+
+    excessRideTime = totalActualRideTime- totalDirectRideTime
+    excessRideTimePrServicedRequest = excessRideTime / (nOnlineRequests + nOfflineRequests)
     
     return [
        scenarioName,
@@ -874,7 +878,8 @@ function parse_json(file_path)
         unservicedOfflineRequests,
         nOnlineRequests,
         unservicedOnlineRequests, 
-        averagePercentRideSharing
+        averagePercentRideSharing,
+        excessRideTimePrServicedRequest
     ]
 end
 

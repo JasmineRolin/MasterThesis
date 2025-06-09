@@ -14,11 +14,12 @@ using Plots.PlotMeasures
 print("\033c")
 
 # Parameters 
-n = 20
-i = 2
+n = 100
+i = 1
 gridSize = 10
-displayPlots = true
+displayPlots = false
 dynamicProblem = true 
+ALNS = true
 
 gamma = 0.7
 nPeriods = 48
@@ -99,7 +100,7 @@ if displayPlots && isdir("tests/WaitingPlots/true_false")
 end
 
 # Simulate scenario 
-solutionTrue, requestBankTrue = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
+solutionTrue, requestBankTrue = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = false,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false,ALNS=ALNS);
 
 state = State(solutionTrue,scenario.onlineRequests[end],0)
 feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
@@ -174,8 +175,8 @@ println(msg)
 #============================================================================#
 # Result
 #============================================================================#
-#println("Relocation vehicles TRUE: ", solutionTrue.nTaxi)
-println("Relocation vehicles TRUE DEMAND: ", solutionTrueDemand.nTaxi)
+println("Relocation vehicles TRUE: ", solutionTrue.nTaxi)
+#println("Relocation vehicles TRUE DEMAND: ", solutionTrueDemand.nTaxi)
 println("Relocation vehicles FALSE: ", solutionFalse.nTaxi)
 #println("ALNS solution: ", finalSolution.nTaxi)
 
