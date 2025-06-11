@@ -1,0 +1,24 @@
+{
+    "TotalIdleTime": 2122,
+    "TotalEmptyRelocationTime": 779,
+    "EventsInsertedByALNS": 4,
+    "Scenario": {
+        "name": "Gen_Data_100_0.7_1"
+    },
+    "TotalElapsedTime": 216.69,
+    "UnservicedOnlineRequests": 36,
+    "TotalRideTime": 6187,
+    "nTaxi": 36,
+    "TotalNumberOfRequestsOverlapIdleVehicle": 93,
+    "UnservicedOfflineRequests": 0,
+    "AverageResponseTime": 2.17,
+    "AveragePercentRideSharing": 5.226,
+    "TotalIdleTimeWithCustomer": 0,
+    "TotalDirectRideTime": 1569,
+    "TotalDriveTimeToNearestIdleVehicle": 2474,
+    "nOnlineRequests": 100,
+    "TotalCost": 36692.73170731707,
+    "TotalDistance": 3715.749190249131,
+    "nOfflineRequests": 0,
+    "TotalActualRideTime": 1680
+}
