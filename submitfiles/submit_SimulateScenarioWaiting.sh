@@ -9,12 +9,12 @@ gamma=0.7
 nPeriods=48
 gridSize=10
 
-nRequestsList=(20) 
+nRequestsList=(20 100 300 500) 
 relocateOptions=("true false" "true true" "false false")  # Pair values as strings
 numRuns=5  
 numHistoricRequestFiles=20   
 numData=10   
-baseScenario="true"
+baseScenario="false"
 
 mkdir -p submitfiles/generated_jobs
 for nRequests in "${nRequestsList[@]}"; do
