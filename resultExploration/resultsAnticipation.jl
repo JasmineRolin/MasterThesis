@@ -13,7 +13,8 @@ using CSV
 
 
 function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String, run::String, resultType::String, i::Int)
-    vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
+    dataset = "OriginalInstance"
+    vehiclesFile = string("Data/Konsentra/",dataset,"/",n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters_offlineAnticipation.json"
     outPutFolder = string("resultExploration/results/",date,"/",resultType,"/",n,"/",run)
@@ -21,6 +22,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
     gridFile = string("Data/Konsentra/grid_10.json")
 
     nExpected = Int(floor(n*nExpectedPercentage))
+    useAnticipationOnlineRequests = false
 
     #for i in 1:10
         requestFile = string("Data/Konsentra/",dataset,"/",n,"/GeneratedRequests_",n,"_",i,".csv")

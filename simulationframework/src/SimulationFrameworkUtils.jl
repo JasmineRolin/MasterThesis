@@ -751,6 +751,8 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
     else
         solution, requestBank, resultsAnticipation, scenario,_,_,_,ALNSIterations = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,length(scenario.offlineRequests),displayPlots=displayPlots,keepExpectedRequests=keepExpectedRequests,useAnticipationOnlineRequests=useAnticipationOnlineRequests)
         nRequestBankTemp = length(requestBank)
+        expectedRequestBank = requestBank[requestBank .> scenario.nFixed]
+        whatHappensToExpected = zeros(Int,6)
         requestBank = requestBank[requestBank .<= scenario.nFixed]
         nNotServicedExpectedRequests = nRequestBankTemp - length(requestBank) 
         solution.nTaxiExpected = 0
@@ -886,7 +888,38 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         # Get solution for online problem
         if event.id != 0
             nOnline += 1
+
             solution, requestBank,insertedByALNS = onlineAlgorithm(currentState, requestBank, scenario, destroyMethods, repairMethods, ALNS = ALNS, nNotServicedExpectedRequests=nNotServicedExpectedRequests) 
+            
+            if keepExpectedRequests
+                # Check if event has been changed with its matching request
+                #println("~~~~~~~~")
+                #println("Event requestId: ", event.request.id)
+                matchingId = event.request.id - length(scenario.offlineRequests) + length(scenario.requests)
+                #println("Matching id: ",matchingId)
+                if event.request.id in requestBank && matchingId in expectedRequestBank
+                    #println("Event was not inserted and matching request was not in solution")
+                    whatHappensToExpected[1] += 1
+                elseif event.request.id in requestBank && !(matchingId in expectedRequestBank)
+                    #println("Event was not inserted but matching request was in solution")
+                    whatHappensToExpected[2] += 1
+                elseif !(event.request.id in requestBank) && !(matchingId in expectedRequestBank) && !(matchingId in requestBank)
+                    #println("Event was inserted and matching request is still in solution")
+                    whatHappensToExpected[3] += 1
+                elseif !(event.request.id in requestBank) && (matchingId in requestBank)
+                    #println("Event was inserted and matching request was exchanged")
+                    whatHappensToExpected[4] += 1
+                elseif !(event.request.id in requestBank) && (matchingId in expectedRequestBank)
+                    #println("Event was inserted and matching request was not in solution")
+                    whatHappensToExpected[5] += 1
+                else
+                    whatHappensToExpected[6] += 1
+                end
+
+                append!(expectedRequestBank, requestBank[requestBank .> scenario.nFixed])
+            end
+
+            # Update kpis and requestbank
             eventsInsertedByALNS += insertedByALNS 
             notServicedExpected = length(requestBank[requestBank .> scenario.nFixed])
             requestBank = requestBank[requestBank .<= scenario.nFixed]
@@ -953,11 +986,11 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         println("Request bank: ", requestBank)
     end
     if displayPlots
-        p = createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge",nFixed=scenario.nFixed)
-        display(p)
+        #p = createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge",nFixed=scenario.nFixed)
+        #display(p)
         #savefig(p, outPutFileFolder*"/final_solution_gantt.png")
-        display(plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge"))
-        display(createGantChartOfSolutionOnlineComparison(finalSolution, initialSolution,"Comparison between initial and final solution"))
+        #display(plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge"))
+        #display(createGantChartOfSolutionOnlineComparison(finalSolution, initialSolution,"Comparison between initial and final solution"))
     end
 
     if ALNS == false
@@ -1010,6 +1043,13 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
                 averageNotServicedExpectedRequestsRelevant = averageNotServicedExpectedRequestsRelevant
             )
             CSV.write(fileName, testSolutionResults)
+        end
+
+        if keepExpectedRequests
+            fileName = outPutFileFolder*"/whatHappensToExpectedRequests_"*string(scenario.name)*".json"
+            file = open(fileName, "w") 
+            write(file, JSON.json(whatHappensToExpected))
+            close(file)
         end
 
     end

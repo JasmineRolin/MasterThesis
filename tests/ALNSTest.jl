@@ -186,16 +186,18 @@ end
 
 # #@testset "Run all generated data sets " begin
     print("\033c")
-    n = 300 # Number of requests in scenario - 20, 100, 300 or 500 
+    n = 100 # Number of requests in scenario - 20, 100, 300 or 500 
     i = 3 # Scenario number - 1:10 
-    gamma = 0.7 # Vehicles 
+    gamma = 0.5 # Vehicles 
 
 
     # Data files 
-    folder = "DoD 40/"
+    folder = "OriginalInstance/"
     vehiclesFile = string("Data/Konsentra/",folder,n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"
     alnsParameters = "tests/resources/ALNSParameters_Article.json"
+    gridFile = string("Data/Konsentra/grid_10.json")
+
 
     # Set both true to see plots 
     displayPlots = true
@@ -203,12 +205,12 @@ end
 
     #for i in 1:10
         requestFile = string("Data/Konsentra/",folder,n,"/GeneratedRequests_",n,"_",i,".csv")
-        distanceMatrixFile = string("Data/Matrices/",folder,n,"/GeneratedRequests_",n,"_",i,"_distance.txt")
-        timeMatrixFile =  string("Data/Matrices/",folder,n,"/GeneratedRequests_",n,"_",i,"_time.txt")
+        distanceMatrixFile = string("Data/Matrices/",folder,n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+        timeMatrixFile =  string("Data/Matrices/",folder,n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
         scenarioName = string("Generated_Data_",n,"_",i)
         
         # Read instance 
-        scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile)
+        scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile,gridFile)
         
         # Choose destroy methods
         destroyMethods = Vector{GenericMethod}()
