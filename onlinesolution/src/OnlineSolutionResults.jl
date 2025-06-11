@@ -669,9 +669,9 @@ function plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,veh
 end
 
 
-function plotRelocation2(probabilityGrid,score,predictedDemand,activeVehiclesPerCell,realisedDemand,vehicleBalance,gridCell,depotGridCell,period,periodLength,vehicle,vehicleDemand)
-    avg_min = min(minimum(vehicleBalance),minimum(activeVehiclesPerCell))
-    avg_max = max(maximum(activeVehiclesPerCell),maximum(vehicleBalance))
+function plotRelocation2(probabilityGrid,score,activeVehiclesPerCell,gridCell,depotGridCell,period,periodLength,vehicle)
+    avg_min = minimum(activeVehiclesPerCell)
+    avg_max = maximum(activeVehiclesPerCell)
 
     activeVehiclesInPeriod = activeVehiclesPerCell[period, :, :]
 
@@ -715,7 +715,7 @@ end
 #==
  Write KPIs to file  
 ==#
-function writeOnlineKPIsToFile(fileName::String, scenario::Scenario,solution::Solution,requestBank::Vector{Int}, requestBankOffline::Vector{Int},totalElapsedTime::Float64,averageResponseTime::Float64,eventsInsertedByALNS::Int)
+function writeOnlineKPIsToFile(fileName::String, scenario::Scenario,solution::Solution,requestBank::Vector{Int}, requestBankOffline::Vector{Int},totalElapsedTime::Float64,averageResponseTime::Float64,eventsInsertedByALNS::Int,numberOfRequestsOverlapIdleVehicle::Int,driveTimeToNearestIdleVehicle::Int)
     # Find drive times for customers
     totalDirectRideTime = length(requestBank) == length(scenario.requests) ? 0 : sum(r.directDriveTime for r in scenario.requests if !(r.id in requestBank)) 
     totalActualRideTime = 0
@@ -758,6 +758,26 @@ function writeOnlineKPIsToFile(fileName::String, scenario::Scenario,solution::So
     end
     averagePercentRideSharing = (averagePercentRideSharing/length(solution.vehicleSchedules))*100.0
 
+    # Find total duration of empty drive time to/from waiting locations 
+    totalEmptyRelocationTime = 0
+    for schedule in solution.vehicleSchedules
+        for (idx,assignment) in enumerate(schedule.route)
+            if assignment.activity.activityType == WAITING && schedule.numberOfWalking[idx] == 0
+                currentActivity = assignment.activity.id 
+
+                # Drive time from activity before 
+                activityBefore = schedule.route[idx-1].activity.id
+                totalEmptyRelocationTime += scenario.time[activityBefore, currentActivity]
+
+                # If next activity is not waiting (otherwise time is counted twice) or depot (since this is unavoidable)
+                if schedule.route[idx+1].activity.activityType != WAITING && schedule.route[idx+1].activity.activityType != DEPOT
+                    nextActivity = schedule.route[idx+1].activity.id
+                    totalEmptyRelocationTime += scenario.time[currentActivity, nextActivity]
+                end
+            end
+        end
+    end
+
     # Create a dictionary for the entire KPIs
     KPIDict = Dict(
         "Scenario" => Dict("name" => scenario.name),
@@ -776,7 +796,10 @@ function writeOnlineKPIsToFile(fileName::String, scenario::Scenario,solution::So
         "TotalElapsedTime" => round(totalElapsedTime,digits=2),
         "AverageResponseTime" => round(averageResponseTime,digits=2), 
         "EventsInsertedByALNS" => eventsInsertedByALNS,
-        "AveragePercentRideSharing" => round(averagePercentRideSharing,digits=3)
+        "AveragePercentRideSharing" => round(averagePercentRideSharing,digits=3), 
+        "TotalEmptyRelocationTime" => totalEmptyRelocationTime. 
+        "TotalNumberOfRequestsOverlapIdleVehicle" => numberOfRequestsOverlapIdleVehicle, 
+        "TotalDriveTimeToNearestIdleVehicle" => driveTimeToNearestIdleVehicle
     )
 
     # Write the dictionary to a JSON file
@@ -809,7 +832,10 @@ function processResults(files::Vector{String})
         nOnlineRequests= Int[],
         UnservicedOnlineRequests= Int[],
         AveragePercentRideSharing = Float64[],
-        ExcessRideTimePrServicedRequest = Float64[]
+        ExcessRideTimePrServicedRequest = Float64[], 
+        TotalEmptyRelocationTime = Int[], 
+        TotalNumberOfRequestsOverlapIdleVehicle = Int[], 
+        TotalDriveTimeToNearestIdleVehicle = Int[]
     )
 
     # Assuming you have multiple JSON files, you can read them like this
@@ -857,6 +883,9 @@ function parse_json(file_path)
     nOfflineRequests = data["nOfflineRequests"]
     totalActualRideTime = data["TotalActualRideTime"]
     averagePercentRideSharing = data["AveragePercentRideSharing"]
+    totalEmptyRelocationTime = data["TotalEmptyRelocationTime"]
+    totalNumberOfRequestsOverlapIdleVehicle = data["TotalDriveTimeToNearestIdleVehicle"]
+    totalDriveTimeToNearestIdleVehicle = data["TotalDriveTimeToNearestIdleVehicle"]
 
     excessRideTime = totalActualRideTime- totalDirectRideTime
     excessRideTimePrServicedRequest = excessRideTime / (nOnlineRequests + nOfflineRequests)
@@ -879,7 +908,10 @@ function parse_json(file_path)
         nOnlineRequests,
         unservicedOnlineRequests, 
         averagePercentRideSharing,
-        excessRideTimePrServicedRequest
+        excessRideTimePrServicedRequest,
+        totalEmptyRelocationTime, 
+        totalNumberOfRequestsOverlapIdleVehicle. 
+        totalDriveTimeToNearestIdleVehicle
     ]
 end
 
