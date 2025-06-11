@@ -208,7 +208,7 @@ function updateCurrentScheduleAvailableKeepEntireRoute(schedule::VehicleSchedule
 
     # If the activity we are currently servicing is a waiting activity we need to split it into 2 waiting activities 
     if schedule.route[1].activity.activityType == WAITING
-        printRouteHorizontal(schedule)
+        #printRouteHorizontal(schedule)
 
         currentSchedule = currentState.solution.vehicleSchedules[vehicle]
 
@@ -249,9 +249,9 @@ function updateCurrentScheduleAvailableKeepEntireRoute(schedule::VehicleSchedule
         currentState.solution.totalIdleTime += currentSchedule.totalIdleTime
 
         # TODO: jas 
-        printRouteHorizontal(schedule)
+        # printRouteHorizontal(schedule)
 
-        printRouteHorizontal(currentState.solution.vehicleSchedules[vehicle])
+        # printRouteHorizontal(currentState.solution.vehicleSchedules[vehicle])
 
         return 1, currentTime
     else
@@ -706,7 +706,7 @@ function determineCurrentState(solution::Solution,event::Event,finalSolution::So
         else
             # Determine index to split
             didSplit = false
-            for (split,assignment) in enumerate(schedule.route)
+            for (split,assignment) in enumerate(schedule.route[1:(end-1)])
                if assignment.endOfServiceTime <= currentTime && schedule.route[split + 1].endOfServiceTime > currentTime
                     idx, splitTime  = updateCurrentScheduleAtSplit!(scenario,schedule,vehicle,currentState,split)
                     didSplit = true
