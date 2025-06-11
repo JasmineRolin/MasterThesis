@@ -797,7 +797,7 @@ function writeOnlineKPIsToFile(fileName::String, scenario::Scenario,solution::So
         "AverageResponseTime" => round(averageResponseTime,digits=2), 
         "EventsInsertedByALNS" => eventsInsertedByALNS,
         "AveragePercentRideSharing" => round(averagePercentRideSharing,digits=3), 
-        "TotalEmptyRelocationTime" => totalEmptyRelocationTime. 
+        "TotalEmptyRelocationTime" => totalEmptyRelocationTime,
         "TotalNumberOfRequestsOverlapIdleVehicle" => numberOfRequestsOverlapIdleVehicle, 
         "TotalDriveTimeToNearestIdleVehicle" => driveTimeToNearestIdleVehicle
     )
