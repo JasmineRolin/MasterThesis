@@ -204,11 +204,60 @@ end
 # ------
 # Function to update current state if vehicle is still available but all customers are still being serviced
 # ------
-function updateCurrentScheduleAvailableKeepEntireRoute(schedule::VehicleSchedule,currentState::State,vehicle::Int)
-    # Update current schedule 
-    currentState.solution.vehicleSchedules[vehicle] = schedule
+function updateCurrentScheduleAvailableKeepEntireRoute(schedule::VehicleSchedule,currentState::State,vehicle::Int,currentTime::Int,scenario::Scenario)
 
-    return 0, 0
+    # If the activity we are currently servicing is a waiting activity we need to split it into 2 waiting activities 
+    if schedule.route[1].activity.activityType == WAITING
+        currentSchedule = currentState.solution.vehicleSchedules[vehicle]
+
+        currentState.solution.totalDistance -= currentSchedule.totalDistance
+        currentState.solution.totalRideTime -= currentSchedule.totalTime
+        currentState.solution.totalCost -= currentSchedule.totalCost
+        currentState.solution.totalIdleTime -= currentSchedule.totalIdleTime
+
+        waitingActivity = schedule.route[1]
+
+        # Create new waiting activity 
+        waitingActivityNew = ActivityAssignment(Activity(schedule.vehicle.depotId,-1,WAITING, waitingActivity.activity.location,TimeWindow(waitingActivity.startOfServiceTime,currentTime)), schedule.vehicle,waitingActivity.startOfServiceTime,currentTime)
+
+        # Update existing waiting activity 
+        waitingActivity.startOfServiceTime = currentTime
+        waitingActivity.activity.timeWindow.startTime = currentTime
+
+        # Update route of schedule 
+        schedule.route = vcat([waitingActivityNew],schedule.route)
+
+        # Update current schedule
+        currentSchedule.route = schedule.route[2:end]
+
+        # Update active time window
+        currentSchedule.activeTimeWindow.startTime = currentTime
+        currentSchedule.activeTimeWindow.endTime = currentSchedule.route[end].endOfServiceTime
+        currentSchedule.totalDistance = getTotalDistanceRoute(currentSchedule.route,scenario)
+        currentSchedule.totalTime = getTotalTimeRoute(currentSchedule)
+        currentSchedule.totalCost = getTotalCostRouteOnline(scenario.time,currentSchedule.route,currentState.visitedRoute,scenario.serviceTimes)
+        
+            
+        currentSchedule.totalIdleTime = getTotalIdleTimeRoute(currentSchedule.route)    
+        currentSchedule.numberOfWalking = schedule.numberOfWalking
+
+        currentState.solution.totalDistance += currentSchedule.totalDistance
+        currentState.solution.totalRideTime += currentSchedule.totalTime
+        currentState.solution.totalCost += currentSchedule.totalCost
+        currentState.solution.totalIdleTime += currentSchedule.totalIdleTime
+
+        # TODO: jas 
+        printRouteHorizontal(schedule)
+
+        printRouteHorizontal(currentState.solution.vehicleSchedules[vehicle])
+
+        return 1, currentTime
+    else
+        # Update current schedule 
+        currentState.solution.vehicleSchedules[vehicle] = schedule
+
+        return 0, 0
+    end
     
 end
 
@@ -611,24 +660,25 @@ function determineCurrentState(solution::Solution,event::Event,finalSolution::So
 
     # Update vehicle schedule
     for (vehicle,schedule) in enumerate(solution.vehicleSchedules)
+        println("vehicle : ", vehicle )
 
         # Check if vehicle is not available yet or has not started service yet
         if schedule.vehicle.availableTimeWindow.startTime > currentTime || schedule.route[1].startOfServiceTime > currentTime
             idx, splitTime = updateCurrentScheduleNotAvailableYet(schedule,currentState,vehicle)
-           # print(" - not available yet or not started service yet \n")
+            print(" - not available yet or not started service yet \n")
         # Check if entire route has been served and vehicle is not available anymore
         elseif schedule.vehicle.availableTimeWindow.endTime < currentTime || length(schedule.route) == 1|| (schedule.route[end-1].endOfServiceTime < currentTime && schedule.route[end].startOfServiceTime == schedule.vehicle.availableTimeWindow.endTime && schedule.route[1].activity.activityType != DEPOT)
             idx, splitTime = updateCurrentScheduleNotAvailableAnymore!(currentState,schedule,vehicle)
-          #  print(" - not available anymore \n")
+           print(" - not available anymore \n")
         # Check if vehicle has not been assigned yet
         elseif length(schedule.route) == 2 && schedule.route[1].activity.activityType == DEPOT
             idx, splitTime = updateCurrentScheduleNoAssignement!(vehicle,currentTime,currentState)
-            #print(" - no assignments \n")
+            print(" - no assignments \n")
 
         # We have completed the last activity and the vehicle is on-route to the depot but still available 
         elseif length(schedule.route) > 1 && schedule.route[end-1].endOfServiceTime < currentTime 
             idx,splitTime = updateCurrentScheduleRouteCompleted!(currentState,schedule,vehicle)
-          # print("- completed route but still available \n")
+           print("- completed route but still available \n")
         else
             # Determine index to split
             didSplit = false
@@ -636,14 +686,14 @@ function determineCurrentState(solution::Solution,event::Event,finalSolution::So
                if assignment.endOfServiceTime < currentTime && schedule.route[split + 1].endOfServiceTime > currentTime
                     idx, splitTime  = updateCurrentScheduleAtSplit!(scenario,schedule,vehicle,currentState,split)
                     didSplit = true
-                  # print(" - still available, split at ",split, ", \n")
+                   print(" - still available, split at ",split, ", \n")
                     break
                 end
             end
 
             if didSplit == false
-                idx, splitTime = updateCurrentScheduleAvailableKeepEntireRoute(schedule,currentState,vehicle)
-              # print(" - still available, keep entire route, \n")
+                idx, splitTime = updateCurrentScheduleAvailableKeepEntireRoute(schedule,currentState,vehicle,currentTime,scenario)
+               print(" - still available, keep entire route, \n")
             end
         end
 
@@ -892,12 +942,13 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
 
             for schedule in currentState.solution.vehicleSchedules
                 # vehicle has to be idle in pick-up time window 
-                if length(schedule.route) == 1 || (schedule.vehicle.availableTimeWindow.startTime > callTime && schedule.vehicle.availableTimeWindow.endTime < callTime)
+                if length(schedule.route) == 1 || schedule.vehicle.availableTimeWindow.startTime > callTime || schedule.vehicle.availableTimeWindow.endTime < callTime
                     continue
                 end
 
                 # Check if vehicle is idle in pick-up time window 
-                if schedule.route[end-1].activity.activityType == WAITING && (schedule.route[end-1].endOfServiceTime >= callTime && schedule.route[end-1].startOfServiceTime <= callTime)
+                lastActivity = schedule.route[end - 1]
+                if lastActivity.activity.activityType == WAITING && lastActivity.startOfServiceTime <= event.request.pickUpActivity.timeWindow.endTime && event.request.pickUpActivity.timeWindow.startTime <= lastActivity.endOfServiceTime
                     # Get drive time to pick-up location 
                     driveTime = scenario.time[schedule.route[end-1].activity.id,event.request.pickUpActivity.id]
 
