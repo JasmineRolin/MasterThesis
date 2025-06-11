@@ -208,6 +208,8 @@ function updateCurrentScheduleAvailableKeepEntireRoute(schedule::VehicleSchedule
 
     # If the activity we are currently servicing is a waiting activity we need to split it into 2 waiting activities 
     if schedule.route[1].activity.activityType == WAITING
+        printRouteHorizontal(schedule)
+        
         currentSchedule = currentState.solution.vehicleSchedules[vehicle]
 
         currentState.solution.totalDistance -= currentSchedule.totalDistance
@@ -218,7 +220,7 @@ function updateCurrentScheduleAvailableKeepEntireRoute(schedule::VehicleSchedule
         waitingActivity = schedule.route[1]
 
         # Create new waiting activity 
-        waitingActivityNew = ActivityAssignment(Activity(schedule.vehicle.depotId,-1,WAITING, waitingActivity.activity.location,TimeWindow(waitingActivity.startOfServiceTime,currentTime)), schedule.vehicle,waitingActivity.startOfServiceTime,currentTime)
+        waitingActivityNew = ActivityAssignment(Activity(waitingActivity.activity.id,-1,WAITING, waitingActivity.activity.location,TimeWindow(waitingActivity.startOfServiceTime,currentTime)), schedule.vehicle,waitingActivity.startOfServiceTime,currentTime)
 
         # Update existing waiting activity 
         waitingActivity.startOfServiceTime = currentTime
@@ -597,6 +599,7 @@ end
 function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,solution::Solution,scenario::Scenario)
     
     finalSolution.totalRideTime = 0 # Only because no delta calculation
+    
 
     # Loop through all schedules and add to final solution 
     for (vehicle,schedule) in enumerate(solution.vehicleSchedules)
@@ -636,6 +639,27 @@ function mergeCurrentStateIntoFinalSolution!(finalSolution::Solution,solution::S
     finalSolution.nTaxi += solution.nTaxi
     finalSolution.totalCost += scenario.taxiParameter*finalSolution.nTaxi
 
+    # TODO: jas 
+    # Calculate KPIs of final solution
+    finalSolution.totalRideTime = 0
+    finalSolution.totalDistance = 0
+    finalSolution.totalIdleTime = 0
+    finalSolution.totalCost = 0
+
+    for (vehicle,schedule) in enumerate(finalSolution.vehicleSchedules)
+        schedule.totalTime = getTotalTimeRoute(schedule)
+        schedule.totalDistance = getTotalDistanceRoute(schedule.route,scenario)
+        schedule.totalCost = getTotalCostRoute(scenario,schedule.route)
+        schedule.totalIdleTime = getTotalIdleTimeRoute(schedule.route)
+        
+
+        finalSolution.totalRideTime += duration(schedule.activeTimeWindow)
+        finalSolution.totalDistance += getTotalDistanceRoute(schedule.route,scenario)
+        finalSolution.totalIdleTime += getTotalIdleTimeRoute(schedule.route)
+        finalSolution.totalCost += getTotalCostRoute(scenario,schedule.route)
+    end
+    # TODO: jas: skal expectedd request med her? 
+    finalSolution.totalCost += scenario.taxiParameter*finalSolution.nTaxi
 end
 
 
