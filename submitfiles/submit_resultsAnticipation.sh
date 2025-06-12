@@ -1,10 +1,10 @@
 #!/bin/bash
 
-n_requests_list=("300" "500")
+n_requests_list=("300")
 anticipation_levels=("0.4")
-run_tags=("run1" "run2")
+run_tags=("run1")
 gamma="0.5"
-date="2025-05-20"
+date="2025-06-11_Expected_long"
 
 mkdir -p submitfiles/generated_jobs
 
@@ -22,8 +22,8 @@ for n_requests in "${n_requests_list[@]}"; do
 #BSUB -n 8
 #BSUB -R "rusage[mem=2GB]"
 #BSUB -R "span[hosts=1]"
-#BSUB -W 5:00
-#BSUB -u s194321@student.dtu.dk
+#BSUB -W 7:00
+#BSUB -u s194351@student.dtu.dk
 #BSUB -N 
 
 module load julia/1.10.2
@@ -44,7 +44,7 @@ Pkg.resolve();
 '
 
 for seed in {1..10}; do
-  julia --project=. resultExploration/resultsAnticipation.jl "$n_requests" "$anticipation" "$gamma" "$date" "$run_tag" "Anticipation_${anticipation}" "\$seed" &
+  julia --project=. resultExploration/resultsAnticipationKeepExpected.jl "$n_requests" "$anticipation" "$gamma" "$date" "$run_tag" "$label" "\$seed" &
 done
 
 wait
