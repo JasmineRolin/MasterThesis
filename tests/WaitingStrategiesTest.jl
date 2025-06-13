@@ -15,7 +15,7 @@ print("\033c")
 
 # Parameters 
 n = 20
-i = 4
+i = 8
 gridSize = 10
 displayPlots = true
 dynamicProblem = true 

@@ -195,6 +195,7 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
 
         # Update route of schedule 
         schedule.route = vcat(schedule.route[1:idx],[waitingActivityNew],schedule.route[(idx+1):end])
+        schedule.numberOfWalking = vcat(schedule.numberOfWalking[1:idx],[schedule.numberOfWalking[idx]],schedule.numberOfWalking[(idx+2):end])
 
         # Update current schedule
         currentSchedule.route = schedule.route[(idx+2):end]
@@ -208,7 +209,7 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
         
             
         currentSchedule.totalIdleTime = getTotalIdleTimeRoute(currentSchedule.route)    
-        currentSchedule.numberOfWalking = schedule.numberOfWalking
+        currentSchedule.numberOfWalking = schedule.numberOfWalking[(idx+2):end]
 
         currentState.solution.totalDistance += currentSchedule.totalDistance
         currentState.solution.totalRideTime += currentSchedule.totalTime
