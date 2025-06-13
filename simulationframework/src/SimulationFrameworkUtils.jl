@@ -357,8 +357,10 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
     end
 
     # Determine previous activity 
-    if currentRouteLength == 2 # If only waiting and depot left in current schedule 
+    if currentRouteLength == 2 && currentSchedule.route[1].activity.activityType != DEPOT # If only waiting and depot left in current schedule 
         activityBeforeWaiting = finalSchedule.route[end]
+    # elseif currentRouteLength == 2 && currentSchedule.route[1].activity.activityType == DEPOT
+    #     activityBeforeWaiting = currentSchedule.route[waitingIdx]
     else
         activityBeforeWaiting = currentSchedule.route[waitingIdx-1]
     end
@@ -473,13 +475,34 @@ function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nReques
         # Check if vehicle should be relocated 
         # Either the route is completed or the route is "full" and there is no room for waiting activity or the route is empty
         if  routeLength == 1 || endOfAvailableTimeWindow <= currentTime || # Completed route 
-            (routeLength > 2 && (route[end-1].activity.activityType != WAITING) && route[end].startOfServiceTime == endOfAvailableTimeWindow) || # Full route 
-            (routeLength == 2 && route[1].activity.activityType == DEPOT && route[end].activity.activityType == DEPOT) # Empty route 
+            (routeLength > 2 && (route[end-1].activity.activityType != WAITING) && route[end].startOfServiceTime == endOfAvailableTimeWindow) # Full route 
+            # || (routeLength == 2 && route[1].activity.activityType == DEPOT && route[end].activity.activityType == DEPOT) # Empty route 
             continue
         end
 
         # Add waiting activity at end of route if not already there
-        if route[end-1].activity.activityType != WAITING
+        if (routeLength == 2 && route[1].activity.activityType == DEPOT && route[end].activity.activityType == DEPOT) # Empty route 
+            println("Adding waiting activity at end of route for empty vehicle ",vehicle.id)
+
+            endOfAvailableTimeWindow = currentSchedule.vehicle.availableTimeWindow.endTime
+            startOfAvailableTimeWindow = currentSchedule.vehicle.availableTimeWindow.startTime
+        
+            # Create waiting activity at depot activity 
+            waitingActivity = ActivityAssignment(Activity(vehicle.depotId,-1,WAITING, vehicle.depotLocation,TimeWindow(startOfAvailableTimeWindow,endOfAvailableTimeWindow)), vehicle,startOfAvailableTimeWindow,endOfAvailableTimeWindow)
+            currentSchedule.route = [route[1],waitingActivity,route[end]]
+
+            # Update route with waiting activity 
+            currentSchedule.route[end].startOfServiceTime = endOfAvailableTimeWindow
+            currentSchedule.route[end].endOfServiceTime = endOfAvailableTimeWindow
+            currentSchedule.activeTimeWindow.endTime = endOfAvailableTimeWindow
+            currentSchedule.totalTime += endOfAvailableTimeWindow - startOfAvailableTimeWindow
+            currentSchedule.totalIdleTime += endOfAvailableTimeWindow - startOfAvailableTimeWindow
+            currentSchedule.numberOfWalking = vcat(currentSchedule.numberOfWalking,[0])
+
+            currentSolution.totalRideTime += endOfAvailableTimeWindow - startOfAvailableTimeWindow
+            currentSolution.totalIdleTime += endOfAvailableTimeWindow - startOfAvailableTimeWindow
+
+        elseif route[end-1].activity.activityType != WAITING
             println("Adding waiting activity at end of route for vehicle ",vehicle.id)
 
             arrivalAtDepot = currentSchedule.route[end].startOfServiceTime
