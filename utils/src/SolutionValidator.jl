@@ -222,6 +222,7 @@ function checkRouteFeasibilityOnline(scenario::Scenario,vehicleSchedule::Vehicle
 
         # Check that time windows are respected
         if startOfServiceTime < activity.timeWindow.startTime || startOfServiceTime > activity.timeWindow.endTime
+            printRouteHorizontal(vehicleSchedule)
             msg = "ROUTE INFEASIBLE: Time window not respected for activity $(activity.id) on vehicle $(vehicle.id), Start/End of Service: ($startOfServiceTime, $endOfServiceTime), Time Window: ($(activity.timeWindow.startTime), $(activity.timeWindow.endTime))"
             return false, msg, Set{Int}(), Set{Int}()
         end

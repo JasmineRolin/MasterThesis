@@ -172,6 +172,8 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
     # Split waiting activity if it is next activity 
     # TODO: jas
     if schedule.route[idx+1].activity.activityType == WAITING && schedule.route[idx+1].startOfServiceTime < currentTime
+        println("Split at waiting activity")
+
         currentSchedule = currentState.solution.vehicleSchedules[vehicle]
 
         # println("Split")
@@ -221,8 +223,13 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
 
         return idx+1, currentTime
     else
+   
         # Retrieve empty schedule to update it
         currentSchedule = currentState.solution.vehicleSchedules[vehicle]
+
+        println("not split at waiting activity")
+        printRouteHorizontal(schedule)
+        printRouteHorizontal(currentSchedule)
 
         # Update route 
         currentSchedule.route = schedule.route[idx+1:end]
@@ -251,6 +258,9 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
         currentState.solution.totalRideTime += currentSchedule.totalTime
         currentState.solution.totalCost += currentSchedule.totalCost
         currentState.solution.totalIdleTime += currentSchedule.totalIdleTime
+
+        printRouteHorizontal(schedule)
+        printRouteHorizontal(currentSchedule)
 
         return idx, currentSchedule.activeTimeWindow.startTime
 
@@ -590,7 +600,7 @@ function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nReques
         # If we are driving to the waiting location we have to arrive at the waiting location before we can relocate again 
         # The waiting duration has to be longer than the period length
         # We add another waiting activity, where we can relocate the vehicle again
-        elseif length(route) == 2 && (route[end-1].endOfServiceTime - route[end-1].startOfServiceTime) > periodLength 
+        elseif length(route) == 2 #&& (route[end-1].endOfServiceTime - route[end-1].startOfServiceTime) > periodLength 
             println("Adding extra waiting activity for vehicle ",vehicle.id," at end of route")
 
             # End current waiting activity after one period length
@@ -598,7 +608,7 @@ function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nReques
 
             # Update end of service time for waiting activity
             oldEndOfServiceTime = waitingActivity.endOfServiceTime
-            newEndOfServiceTime = waitingActivity.startOfServiceTime + periodLength
+            newEndOfServiceTime =waitingActivity.startOfServiceTime  #min(waitingActivity.startOfServiceTime + periodLength,oldEndOfServiceTime) # TODO: jas
             waitingActivity.endOfServiceTime = newEndOfServiceTime
 
             # Add waiting activity 
@@ -607,6 +617,8 @@ function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nReques
             # Update route 
             currentSchedule.numberOfWalking = vcat(currentSchedule.numberOfWalking,[0])
             currentSchedule.route = vcat(currentSchedule.route[1:(end-1)],[newWaitingActivity],[route[end]])
+
+            printRouteHorizontal(currentSchedule)
 
         # If we are driving to the waiting location and we cannot relocate, continue 
         elseif length(route) == 2 && (route[end-1].endOfServiceTime - route[end-1].startOfServiceTime) <= periodLength 
@@ -772,7 +784,7 @@ function determineCurrentState(solution::Solution,event::Event,finalSolution::So
             idx, splitTime = updateCurrentScheduleNotAvailableYet(schedule,currentState,vehicle)
             print(" - not available yet or not started service yet \n")
         # Check if entire route has been served and vehicle is not available anymore
-        elseif schedule.vehicle.availableTimeWindow.endTime < currentTime || length(schedule.route) == 1|| (schedule.route[end-1].endOfServiceTime < currentTime && schedule.route[end].startOfServiceTime == schedule.vehicle.availableTimeWindow.endTime && schedule.route[1].activity.activityType != DEPOT)
+        elseif schedule.vehicle.availableTimeWindow.endTime <= currentTime || length(schedule.route) == 1|| (schedule.route[end-1].endOfServiceTime < currentTime && schedule.route[end].startOfServiceTime == schedule.vehicle.availableTimeWindow.endTime && schedule.route[1].activity.activityType != DEPOT)
             idx, splitTime = updateCurrentScheduleNotAvailableAnymore!(currentState,schedule,vehicle)
            print(" - not available anymore \n")
         # Check if vehicle has not been assigned yet
