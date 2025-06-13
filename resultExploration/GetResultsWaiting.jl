@@ -1,7 +1,7 @@
 using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures, PrettyTables, JSON
 
-nRequestList = [20,100]#,100,300,500]
+nRequestList = [100]#,100,300,500]
 nRuns = 5
 relocateVehiclesList = [("true","true"),("true","false"),("false","false")]
 gamma = 0.7
