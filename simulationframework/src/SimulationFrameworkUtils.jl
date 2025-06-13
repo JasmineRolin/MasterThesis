@@ -74,6 +74,8 @@ function updateCurrentScheduleRouteCompleted!(currentState::State,schedule::Vehi
         end
     end
 
+    # TODO: jas add two waiting activities ? 
+
    
     # Retrieve empty schedule and update it 
     currentSchedule = currentState.solution.vehicleSchedules[vehicle]
@@ -155,7 +157,7 @@ end
 # ------
 # Function to update current state if vehicle has visited some customers 
 # ------
-function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSchedule,vehicle::Int,currentState::State,idx::Int)
+function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSchedule,vehicle::Int,currentState::State,idx::Int,currentTime::Int)
     
     # Update visited route
     for i in 1:idx
@@ -166,38 +168,93 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
         end
     end
 
-    # Retrieve empty schedule to update it
-    currentSchedule = currentState.solution.vehicleSchedules[vehicle]
 
-    # Update route 
-    currentSchedule.route = schedule.route[idx+1:end]
+    # Split waiting activity if it is next activity 
+    # TODO: jas
+    if schedule.route[idx+1].activity.activityType == WAITING && schedule.route[idx+1].startOfServiceTime < currentTime
+        currentSchedule = currentState.solution.vehicleSchedules[vehicle]
 
-    # Update active time window
-    currentSchedule.activeTimeWindow.startTime = schedule.route[idx+1].startOfServiceTime 
-    currentSchedule.activeTimeWindow.endTime = currentSchedule.route[end].endOfServiceTime
+        # println("Split")
+        # printRouteHorizontal(schedule)
+        # printRouteHorizontal(currentSchedule)
 
-    # Update current state pre
-    currentState.solution.totalDistance -= currentSchedule.totalDistance
-    currentState.solution.totalRideTime -= currentSchedule.totalTime
-    currentState.solution.totalCost -= currentSchedule.totalCost
-    currentState.solution.totalIdleTime -= currentSchedule.totalIdleTime
 
-    # Update KPIs
-    currentSchedule.totalDistance = getTotalDistanceRoute(currentSchedule.route,scenario)
-    currentSchedule.totalTime = getTotalTimeRoute(currentSchedule)
-    currentSchedule.totalCost = getTotalCostRouteOnline(scenario.time,currentSchedule.route,currentState.visitedRoute,scenario.serviceTimes)
-    
+        currentState.solution.totalDistance -= currentSchedule.totalDistance
+        currentState.solution.totalRideTime -= currentSchedule.totalTime
+        currentState.solution.totalCost -= currentSchedule.totalCost
+        currentState.solution.totalIdleTime -= currentSchedule.totalIdleTime
+
+        waitingActivity = schedule.route[idx+1]
+
+        # Create new waiting activity 
+        waitingActivityNew = ActivityAssignment(Activity(waitingActivity.activity.id,-1,WAITING, waitingActivity.activity.location,TimeWindow(waitingActivity.startOfServiceTime,currentTime)), schedule.vehicle,waitingActivity.startOfServiceTime,currentTime)
+
+        # Update existing waiting activity 
+        waitingActivity.startOfServiceTime = currentTime
+        waitingActivity.activity.timeWindow.startTime = currentTime
+
+        # Update route of schedule 
+        schedule.route = vcat(schedule.route[1:idx],[waitingActivityNew],schedule.route[(idx+1):end])
+
+        # Update current schedule
+        currentSchedule.route = schedule.route[(idx+2):end]
+
+        # Update active time window
+        currentSchedule.activeTimeWindow.startTime = currentTime
+        currentSchedule.activeTimeWindow.endTime = currentSchedule.route[end].endOfServiceTime
+        currentSchedule.totalDistance = getTotalDistanceRoute(currentSchedule.route,scenario)
+        currentSchedule.totalTime = getTotalTimeRoute(currentSchedule)
+        currentSchedule.totalCost = getTotalCostRouteOnline(scenario.time,currentSchedule.route,currentState.visitedRoute,scenario.serviceTimes)
         
-    currentSchedule.totalIdleTime = getTotalIdleTimeRoute(currentSchedule.route)    
-    currentSchedule.numberOfWalking = schedule.numberOfWalking[idx+1:end]
+            
+        currentSchedule.totalIdleTime = getTotalIdleTimeRoute(currentSchedule.route)    
+        currentSchedule.numberOfWalking = schedule.numberOfWalking
 
-    # Update current state pro
-    currentState.solution.totalDistance += currentSchedule.totalDistance
-    currentState.solution.totalRideTime += currentSchedule.totalTime
-    currentState.solution.totalCost += currentSchedule.totalCost
-    currentState.solution.totalIdleTime += currentSchedule.totalIdleTime
+        currentState.solution.totalDistance += currentSchedule.totalDistance
+        currentState.solution.totalRideTime += currentSchedule.totalTime
+        currentState.solution.totalCost += currentSchedule.totalCost
+        currentState.solution.totalIdleTime += currentSchedule.totalIdleTime
 
-    return idx, currentSchedule.activeTimeWindow.startTime
+        printRouteHorizontal(schedule)
+        printRouteHorizontal(currentSchedule)
+
+        return idx+1, currentTime
+    else
+        # Retrieve empty schedule to update it
+        currentSchedule = currentState.solution.vehicleSchedules[vehicle]
+
+        # Update route 
+        currentSchedule.route = schedule.route[idx+1:end]
+
+        # Update active time window
+        currentSchedule.activeTimeWindow.startTime = schedule.route[idx+1].startOfServiceTime 
+        currentSchedule.activeTimeWindow.endTime = currentSchedule.route[end].endOfServiceTime
+
+        # Update current state pre
+        currentState.solution.totalDistance -= currentSchedule.totalDistance
+        currentState.solution.totalRideTime -= currentSchedule.totalTime
+        currentState.solution.totalCost -= currentSchedule.totalCost
+        currentState.solution.totalIdleTime -= currentSchedule.totalIdleTime
+
+        # Update KPIs
+        currentSchedule.totalDistance = getTotalDistanceRoute(currentSchedule.route,scenario)
+        currentSchedule.totalTime = getTotalTimeRoute(currentSchedule)
+        currentSchedule.totalCost = getTotalCostRouteOnline(scenario.time,currentSchedule.route,currentState.visitedRoute,scenario.serviceTimes)
+        
+            
+        currentSchedule.totalIdleTime = getTotalIdleTimeRoute(currentSchedule.route)    
+        currentSchedule.numberOfWalking = schedule.numberOfWalking[idx+1:end]
+
+        # Update current state pro
+        currentState.solution.totalDistance += currentSchedule.totalDistance
+        currentState.solution.totalRideTime += currentSchedule.totalTime
+        currentState.solution.totalCost += currentSchedule.totalCost
+        currentState.solution.totalIdleTime += currentSchedule.totalIdleTime
+
+        return idx, currentSchedule.activeTimeWindow.startTime
+
+    end
+
 end
 
 
@@ -707,40 +764,40 @@ function determineCurrentState(solution::Solution,event::Event,finalSolution::So
 
     # Update vehicle schedule
     for (vehicle,schedule) in enumerate(solution.vehicleSchedules)
-       # println("vehicle : ", vehicle )
+       print("vehicle : ", vehicle )
 
         # Check if vehicle is not available yet or has not started service yet
         if schedule.vehicle.availableTimeWindow.startTime > currentTime || schedule.route[1].startOfServiceTime > currentTime
             idx, splitTime = updateCurrentScheduleNotAvailableYet(schedule,currentState,vehicle)
-           # print(" - not available yet or not started service yet \n")
+            print(" - not available yet or not started service yet \n")
         # Check if entire route has been served and vehicle is not available anymore
         elseif schedule.vehicle.availableTimeWindow.endTime < currentTime || length(schedule.route) == 1|| (schedule.route[end-1].endOfServiceTime < currentTime && schedule.route[end].startOfServiceTime == schedule.vehicle.availableTimeWindow.endTime && schedule.route[1].activity.activityType != DEPOT)
             idx, splitTime = updateCurrentScheduleNotAvailableAnymore!(currentState,schedule,vehicle)
-          # print(" - not available anymore \n")
+           print(" - not available anymore \n")
         # Check if vehicle has not been assigned yet
         elseif length(schedule.route) == 2 && schedule.route[1].activity.activityType == DEPOT
             idx, splitTime = updateCurrentScheduleNoAssignement!(vehicle,currentTime,currentState)
-          # print(" - no assignments \n")
+           print(" - no assignments \n")
 
         # We have completed the last activity and the vehicle is on-route to the depot but still available 
         elseif length(schedule.route) > 1 && schedule.route[end-1].endOfServiceTime < currentTime 
             idx,splitTime = updateCurrentScheduleRouteCompleted!(currentState,schedule,vehicle)
-          # print("- completed route but still available \n")
+           print("- completed route but still available \n")
         else
             # Determine index to split
             didSplit = false
             for (split,assignment) in enumerate(schedule.route[1:(end-1)])
                if assignment.endOfServiceTime <= currentTime && schedule.route[split + 1].endOfServiceTime > currentTime
-                    idx, splitTime  = updateCurrentScheduleAtSplit!(scenario,schedule,vehicle,currentState,split)
+                    idx, splitTime  = updateCurrentScheduleAtSplit!(scenario,schedule,vehicle,currentState,split,currentTime)
                     didSplit = true
-                 #  print(" - still available, split at ",split, ", \n")
+                   print(" - still available, split at ",split, ", \n")
                     break
                 end
             end
 
             if didSplit == false
                 idx, splitTime = updateCurrentScheduleAvailableKeepEntireRoute(schedule,currentState,vehicle,currentTime,scenario)
-              # print(" - still available, keep entire route, \n")
+               print(" - still available, keep entire route, \n")
             end
         end
 
@@ -898,6 +955,31 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
     # Update time windows 
     updateTimeWindowsOnline!(solution,scenario)
 
+    # Add waiting activity to empty routes 
+    # TODO: jas 
+    for schedule in solution.vehicleSchedules
+        if length(schedule.route) == 2 && schedule.route[1].activity.activityType == DEPOT && schedule.route[2].activity.activityType == DEPOT
+            # Create waiting activity at depot activity 
+            endOfAvailableTimeWindow = schedule.vehicle.availableTimeWindow.endTime
+            startOfAvailableTimeWindow = schedule.vehicle.availableTimeWindow.startTime
+        
+            # Create waiting activity at depot activity 
+            waitingActivity = ActivityAssignment(Activity(schedule.vehicle.depotId,-1,WAITING, schedule.vehicle.depotLocation,TimeWindow(startOfAvailableTimeWindow,endOfAvailableTimeWindow)), schedule.vehicle,startOfAvailableTimeWindow,endOfAvailableTimeWindow)
+            schedule.route = [schedule.route[1],waitingActivity,schedule.route[end]]
+
+            # Update route with waiting activity 
+            schedule.route[end].startOfServiceTime = endOfAvailableTimeWindow
+            schedule.route[end].endOfServiceTime = endOfAvailableTimeWindow
+            schedule.activeTimeWindow.endTime = endOfAvailableTimeWindow
+            schedule.totalTime += endOfAvailableTimeWindow - startOfAvailableTimeWindow
+            schedule.totalIdleTime += endOfAvailableTimeWindow - startOfAvailableTimeWindow
+            schedule.numberOfWalking = vcat(schedule.numberOfWalking,[0])
+
+            solution.totalRideTime += endOfAvailableTimeWindow - startOfAvailableTimeWindow
+            solution.totalIdleTime += endOfAvailableTimeWindow - startOfAvailableTimeWindow
+        end
+    end
+
     # Print routes
     if printResults
         println("------------------------------------------------------------------------------------------------------------------------------------------------")
@@ -1043,7 +1125,9 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
 
         # TODO: jas 
         # ALNS removes waiting activity at end of route, so we have to add it again
-        if relocateVehicles && event.id != 0 && !(event.id in requestBank)
+        if event.id != 0 && !(event.id in requestBank)
+            println("EVENT: ",event.id," inserted in solution, relocating vehicles...")
+            println("Request bank: ", requestBank)
             scheduleToUpdate = -1 
 
             # Find vehicle schedule where request is inserted 
@@ -1057,11 +1141,38 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
             end
 
             println("Event inserted in vehicle: ", scheduleToUpdate)
-            schedule = solution.vehicleSchedules[scheduleToUpdate]
 
-            relocateVehicles!(scenario.time,scenario.distance,nRequests,scenario.grid,scenario.depotLocations,predictedDemand,probabilityGrid,solution,[schedule],finalSolution,event.callTime,nTimePeriods,periodLength,displayPlots,scenarioName,relocateWithDemand,gamma)
+            # Relocate waiting activity after inserted request 
+            if relocateVehicles && scheduleToUpdate != -1
+                schedule = solution.vehicleSchedules[scheduleToUpdate]
+                relocateVehicles!(scenario.time,scenario.distance,nRequests,scenario.grid,scenario.depotLocations,predictedDemand,probabilityGrid,solution,[schedule],finalSolution,event.callTime,nTimePeriods,periodLength,displayPlots,scenarioName,relocateWithDemand,gamma)
+            elseif scheduleToUpdate != -1  
+                # Add waiting activity at depot at end of route 
+                # Retrieve schedule and update it 
+                schedule = solution.vehicleSchedules[scheduleToUpdate]
+
+                arrivalAtDepot = schedule.route[end].startOfServiceTime
+                endOfAvailableTimeWindow = schedule.vehicle.availableTimeWindow.endTime
+            
+                # Create waiting activity 
+                waitingActivity = ActivityAssignment(Activity(schedule.vehicle.depotId,-1,WAITING, schedule.vehicle.depotLocation,TimeWindow(arrivalAtDepot,endOfAvailableTimeWindow)), schedule.vehicle,arrivalAtDepot,endOfAvailableTimeWindow)
+            
+                # Update route 
+                solution.totalIdleTime -= schedule.totalIdleTime
+                solution.totalRideTime -= schedule.totalTime
+
+                schedule.route = vcat(schedule.route[1:(end-1)],[waitingActivity],[schedule.route[end]])
+                schedule.route[end].startOfServiceTime = endOfAvailableTimeWindow
+                schedule.route[end].endOfServiceTime = endOfAvailableTimeWindow
+                schedule.activeTimeWindow.endTime = endOfAvailableTimeWindow
+                schedule.totalIdleTime += endOfAvailableTimeWindow - arrivalAtDepot
+                schedule.totalTime = getTotalTimeRoute(schedule)
+                schedule.numberOfWalking = vcat(schedule.numberOfWalking,[0])
+
+                solution.totalIdleTime += schedule.totalIdleTime
+                solution.totalRideTime += schedule.totalTime
+            end
         end
-
     
         # Test solution using anticipation
         if testALNS
