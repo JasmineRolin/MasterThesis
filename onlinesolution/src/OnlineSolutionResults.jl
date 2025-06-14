@@ -276,6 +276,8 @@ end
  Plot routes 
 ==#
 function plotRoutesOnline(solution::Solution,scenario::Scenario,requestBank::Vector{Int},event::Request,title::String)
+    onlyPlotActiveVehicles = true
+
     nRequests = length(scenario.requests)
 
     p = plot(size = (2000, 1500),bottom_margin=12mm, left_margin=12mm,
@@ -325,6 +327,10 @@ function plotRoutesOnline(solution::Solution,scenario::Scenario,requestBank::Vec
 
     arrow_scale = 0.8 
     for (i, vehicleSchedule) in enumerate(solution.vehicleSchedules)
+        if onlyPlotActiveVehicles && (vehicleSchedule.vehicle.availableTimeWindow.startTime > event.callTime || vehicleSchedule.vehicle.availableTimeWindow.endTime < event.callTime)
+            continue
+        end
+
         routeLats = [v.activity.location.lat for v in vehicleSchedule.route]
         routeLongs = [v.activity.location.long for v in vehicleSchedule.route]
 
@@ -343,6 +349,10 @@ function plotRoutesOnline(solution::Solution,scenario::Scenario,requestBank::Vec
     end
 
     for schedule in solution.vehicleSchedules
+        if onlyPlotActiveVehicles && (schedule.vehicle.availableTimeWindow.startTime > event.callTime || schedule.vehicle.availableTimeWindow.endTime < event.callTime)
+            continue
+        end
+
         for assignment in schedule.route
             if assignment.activity.activityType == PICKUP
                 push!(assignedRequests, assignment.activity.requestId)
@@ -397,10 +407,10 @@ function plotRoutesOnline(solution::Solution,scenario::Scenario,requestBank::Vec
 
                 if firstWaiting
                     firstWaiting = false
-                    scatter!([assignment.activity.location.long], [assignment.activity.location.lat], label = "Waiting", color = :grey, markersize = 10, marker = :diamond,markerstrokewidth=0)
+                    scatter!([assignment.activity.location.long], [assignment.activity.location.lat], label = "Waiting", color = :grey, markersize = 12, marker = :diamond,markerstrokewidth=0)
                     annotate!(assignment.activity.location.long, assignment.activity.location.lat+offset, text("W$(wId)", :center, 8, color = :grey))
                 else 
-                    scatter!([assignment.activity.location.long], [assignment.activity.location.lat], label = "", color = :grey, markersize = 10, marker = :diamond,markerstrokewidth=0)
+                    scatter!([assignment.activity.location.long], [assignment.activity.location.lat], label = "", color = :grey, markersize = 12, marker = :diamond,markerstrokewidth=0)
                     annotate!(assignment.activity.location.long,assignment.activity.location.lat+offset, text("W$(wId)", :center, 8, color = :grey))
                 end
             end
