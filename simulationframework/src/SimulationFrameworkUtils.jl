@@ -606,10 +606,34 @@ function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nReques
             # End current waiting activity after one period length
             waitingActivity = currentSchedule.route[end-1]
 
-            # Update end of service time for waiting activity
+            # how long have we been at the waiting node 
+            startTimeAtWaitingActivity = 0
+            finalRoute = finalSolution.vehicleSchedules[vehicle.id].route
+            for i in length(finalRoute):-1:1
+                if finalRoute[i].activity.activityType == WAITING && finalRoute[i].activity.id == waitingActivity.activity.id
+                    startTimeAtWaitingActivity = finalRoute[i].startOfServiceTime
+                else
+                    # As soon as we find a different location, stop
+                    break
+                end
+            end
+
+            # We need to stay at least the period length at the waiting activity 
+            if startTimeAtWaitingActivity == 0
+                extraDuration = periodLength
+            else
+                extraDuration = periodLength - (waitingActivity.startOfServiceTime - startTimeAtWaitingActivity)
+            end 
+
+            # Update the end of service time of the waiting activity
             oldEndOfServiceTime = waitingActivity.endOfServiceTime
-            newEndOfServiceTime =waitingActivity.startOfServiceTime  #min(waitingActivity.startOfServiceTime + periodLength,oldEndOfServiceTime) # TODO: jas
+            if extraDuration <= 0
+               newEndOfServiceTime = waitingActivity.startOfServiceTime # If we have been waiting long enough, we can change location immediately
+            else
+                newEndOfServiceTime = min(waitingActivity.startOfServiceTime + extraDuration,oldEndOfServiceTime) # continue waiting at activity 
+            end
             waitingActivity.endOfServiceTime = newEndOfServiceTime
+            waitingActivity.activity.timeWindow.endTime = newEndOfServiceTime
 
             # Add waiting activity 
             newWaitingActivity = ActivityAssignment(Activity(waitingActivity.activity.id,-1,WAITING, waitingActivity.activity.location,TimeWindow(newEndOfServiceTime,oldEndOfServiceTime)), vehicle,newEndOfServiceTime,oldEndOfServiceTime)
@@ -618,11 +642,7 @@ function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nReques
             currentSchedule.numberOfWalking = vcat(currentSchedule.numberOfWalking,[0])
             currentSchedule.route = vcat(currentSchedule.route[1:(end-1)],[newWaitingActivity],[route[end]])
 
-           # printRouteHorizontal(currentSchedule)
-
-        # If we are driving to the waiting location and we cannot relocate, continue 
-        elseif length(route) == 2 && (route[end-1].endOfServiceTime - route[end-1].startOfServiceTime) <= periodLength 
-            continue
+           # printRouteHorizontal(currentSchedule)   
         end
 
         # Determine active vehicles per cell 
@@ -1156,7 +1176,32 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
             println("Event inserted in vehicle: ", scheduleToUpdate)
 
             # Relocate waiting activity after inserted request 
-            if relocateVehicles && scheduleToUpdate != -1 && solution.vehicleSchedules[scheduleToUpdate].route[end-1].activity.activityType != WAITING
+            if scheduleToUpdate != -1 && solution.vehicleSchedules[scheduleToUpdate].route[end-1].activity.activityType == WAITING && solution.vehicleSchedules[scheduleToUpdate].route[end].startOfServiceTime != solution.vehicleSchedules[scheduleToUpdate].vehicle.availableTimeWindow.endTime
+                # Extend waiting activity at depot at end of route
+                # Retrieve schedule and update it 
+                schedule = solution.vehicleSchedules[scheduleToUpdate]
+
+                endOfAvailableTimeWindow = schedule.vehicle.availableTimeWindow.endTime
+                newEndOfWaiting = endOfAvailableTimeWindow - scenario.time[schedule.route[end-1].activity.id,schedule.route[end].activity.id]
+                oldEndOfWaiting = schedule.route[end-1].endOfServiceTime
+
+                # Update route 
+                solution.totalIdleTime -= schedule.totalIdleTime
+                solution.totalRideTime -= schedule.totalTime
+
+                schedule.route[end-1].endOfServiceTime = newEndOfWaiting
+                schedule.route[end-1].activity.timeWindow.endTime = newEndOfWaiting
+                schedule.route[end].startOfServiceTime = endOfAvailableTimeWindow
+                schedule.route[end].endOfServiceTime = endOfAvailableTimeWindow
+
+                schedule.activeTimeWindow.endTime = endOfAvailableTimeWindow
+                schedule.totalIdleTime += newEndOfWaiting - oldEndOfWaiting
+                schedule.totalTime = getTotalTimeRoute(schedule)
+
+                solution.totalIdleTime += schedule.totalIdleTime
+                solution.totalRideTime += schedule.totalTime
+
+            elseif relocateVehicles && scheduleToUpdate != -1 && solution.vehicleSchedules[scheduleToUpdate].route[end-1].activity.activityType != WAITING
                 schedule = solution.vehicleSchedules[scheduleToUpdate]
                 relocateVehicles!(scenario.time,scenario.distance,nRequests,scenario.grid,scenario.depotLocations,predictedDemand,probabilityGrid,solution,[schedule],finalSolution,event.callTime,nTimePeriods,periodLength,displayPlots,scenarioName,relocateWithDemand,gamma)
             elseif scheduleToUpdate != -1 && solution.vehicleSchedules[scheduleToUpdate].route[end-1].activity.activityType != WAITING
