@@ -443,7 +443,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
     nRequests = 0
 
     # Create different scenarios and solve problem with known offline requests and predicted online requests 
-    for i in 1:1 #TODO change
+    for i in 1:5 #TODO change
         println("==========================================")
         println("Run: ", i)
 

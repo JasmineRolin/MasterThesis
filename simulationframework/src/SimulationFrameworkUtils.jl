@@ -811,11 +811,11 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         display(p1)
         display(p2)
 
-        #if !isdir("tests/Anticipation/"*scenarioName)
-        #    mkpath("tests/Anticipation/"*scenarioName)
-        #end
+        if !isdir("tests/Anticipation/"*scenarioName)
+            mkpath("tests/Anticipation/"*scenarioName)
+        end
 
-        #savefig(p1,"tests/Anticipation/"*scenarioName*"/InitialSolutionAfterALNS.png")
+        savefig(p1,"tests/Anticipation/"*scenarioName*"/InitialSolutionAfterALNS.png")
         #savefig(p2,"tests/Anticipation/"*scenarioName*"/InitialSolutionAfterALNSRoutes.png")
     end
 
@@ -898,19 +898,19 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
                 matchingId = event.request.id - length(scenario.offlineRequests) + length(scenario.requests)
                 #println("Matching id: ",matchingId)
                 if event.request.id in requestBank && matchingId in expectedRequestBank
-                    #println("Event was not inserted and matching request was not in solution")
+                    println("Event was not inserted and matching request was not in solution")
                     whatHappensToExpected[1] += 1
                 elseif event.request.id in requestBank && !(matchingId in expectedRequestBank)
-                    #println("Event was not inserted but matching request was in solution")
+                    println("Event was not inserted but matching request was in solution")
                     whatHappensToExpected[2] += 1
                 elseif !(event.request.id in requestBank) && !(matchingId in expectedRequestBank) && !(matchingId in requestBank)
-                    #println("Event was inserted and matching request is still in solution")
+                    println("Event was inserted and matching request is still in solution")
                     whatHappensToExpected[3] += 1
                 elseif !(event.request.id in requestBank) && (matchingId in requestBank)
-                    #println("Event was inserted and matching request was exchanged")
+                    println("Event was inserted and matching request was exchanged")
                     whatHappensToExpected[4] += 1
                 elseif !(event.request.id in requestBank) && (matchingId in expectedRequestBank)
-                    #println("Event was inserted and matching request was not in solution")
+                    println("Event was inserted and matching request was not in solution")
                     whatHappensToExpected[5] += 1
                 else
                     whatHappensToExpected[6] += 1
@@ -947,11 +947,29 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         end
 
         if displayPlots
-            inRequestBank = event.id in requestBank  
+            inRequestBank = event.id in requestBank 
+            
+            # Find time string 
+            hours = div(event.callTime, 60)
+            if hours < 10 
+                hours = string("0",hours)
+            else 
+                hours = string(hours)
+            end
+
+            minutes = mod(event.callTime, 60)
+            if minutes < 10 
+                minutes = string("0",minutes)
+            else 
+                minutes = string(minutes)
+            end
+
+            timeString = hours*":"*minutes
+
             if event.id == 0 
                 title = "Current Solution, Relocation event, time: "*string(event.callTime)
             else
-                title = "Current Solution, Request: "*string(event.id)*", time: "*string(event.callTime)
+                title = "Current Solution, Request: "*string(event.id)*", time: "*timeString
             end  
 
             p1 = createGantChartOfSolutionOnline(solution,title,nRequests,eventId = event.id,eventTime = event.callTime,nFixed = scenario.nFixed,inRequestBank=inRequestBank,event=event.request)
