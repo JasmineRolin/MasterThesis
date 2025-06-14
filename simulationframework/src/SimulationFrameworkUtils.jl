@@ -176,9 +176,9 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
 
         currentSchedule = currentState.solution.vehicleSchedules[vehicle]
 
-        # println("Split")
-        printRouteHorizontal(schedule)
-        printRouteHorizontal(currentSchedule)
+        # # println("Split")
+        # printRouteHorizontal(schedule)
+        # printRouteHorizontal(currentSchedule)
 
 
         currentState.solution.totalDistance -= currentSchedule.totalDistance
@@ -227,9 +227,9 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
         # Retrieve empty schedule to update it
         currentSchedule = currentState.solution.vehicleSchedules[vehicle]
 
-        println("not split at waiting activity")
-        printRouteHorizontal(schedule)
-        printRouteHorizontal(currentSchedule)
+         println("not split at waiting activity")
+        # printRouteHorizontal(schedule)
+        # printRouteHorizontal(currentSchedule)
 
         # Update route 
         currentSchedule.route = schedule.route[idx+1:end]
@@ -259,8 +259,8 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
         currentState.solution.totalCost += currentSchedule.totalCost
         currentState.solution.totalIdleTime += currentSchedule.totalIdleTime
 
-        printRouteHorizontal(schedule)
-        printRouteHorizontal(currentSchedule)
+        # printRouteHorizontal(schedule)
+        # printRouteHorizontal(currentSchedule)
 
         return idx, currentSchedule.activeTimeWindow.startTime
 
@@ -618,7 +618,7 @@ function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nReques
             currentSchedule.numberOfWalking = vcat(currentSchedule.numberOfWalking,[0])
             currentSchedule.route = vcat(currentSchedule.route[1:(end-1)],[newWaitingActivity],[route[end]])
 
-            printRouteHorizontal(currentSchedule)
+           # printRouteHorizontal(currentSchedule)
 
         # If we are driving to the waiting location and we cannot relocate, continue 
         elseif length(route) == 2 && (route[end-1].endOfServiceTime - route[end-1].startOfServiceTime) <= periodLength 
@@ -1156,10 +1156,10 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
             println("Event inserted in vehicle: ", scheduleToUpdate)
 
             # Relocate waiting activity after inserted request 
-            if relocateVehicles && scheduleToUpdate != -1
+            if relocateVehicles && scheduleToUpdate != -1 && solution.vehicleSchedules[scheduleToUpdate].route[end-1].activity.activityType != WAITING
                 schedule = solution.vehicleSchedules[scheduleToUpdate]
                 relocateVehicles!(scenario.time,scenario.distance,nRequests,scenario.grid,scenario.depotLocations,predictedDemand,probabilityGrid,solution,[schedule],finalSolution,event.callTime,nTimePeriods,periodLength,displayPlots,scenarioName,relocateWithDemand,gamma)
-            elseif scheduleToUpdate != -1  
+            elseif scheduleToUpdate != -1 && solution.vehicleSchedules[scheduleToUpdate].route[end-1].activity.activityType != WAITING
                 # Add waiting activity at depot at end of route 
                 # Retrieve schedule and update it 
                 schedule = solution.vehicleSchedules[scheduleToUpdate]
