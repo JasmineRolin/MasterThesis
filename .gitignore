@@ -4,3 +4,6 @@ tests/output
 submitfiles/output
 submitfiles/generated_jobs
 tests/WaitingPlots
+.DS_Store
+Data/.DS_Store
+.DS_Store
