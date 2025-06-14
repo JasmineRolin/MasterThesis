@@ -884,7 +884,7 @@ function parse_json(file_path)
     totalActualRideTime = data["TotalActualRideTime"]
     averagePercentRideSharing = data["AveragePercentRideSharing"]
     totalEmptyRelocationTime = data["TotalEmptyRelocationTime"]
-    totalNumberOfRequestsOverlapIdleVehicle = data["TotalDriveTimeToNearestIdleVehicle"]
+    totalNumberOfRequestsOverlapIdleVehicle = data["TotalNumberOfRequestsOverlapIdleVehicle"]
     totalDriveTimeToNearestIdleVehicle = data["TotalDriveTimeToNearestIdleVehicle"]
 
     excessRideTime = totalActualRideTime- totalDirectRideTime
@@ -910,7 +910,7 @@ function parse_json(file_path)
         averagePercentRideSharing,
         excessRideTimePrServicedRequest,
         totalEmptyRelocationTime, 
-        totalNumberOfRequestsOverlapIdleVehicle. 
+        totalNumberOfRequestsOverlapIdleVehicle,
         totalDriveTimeToNearestIdleVehicle
     ]
 end

@@ -14,13 +14,13 @@ using Plots.PlotMeasures
 print("\033c")
 
 # Parameters 
-n = 100
-i = 8
+n = 500
+i = 9
 gridSize = 10
-displayPlots = true
+displayPlots = false
 dynamicProblem = true 
 ALNS = true
-saveResults = true
+saveResults = false
 
 gamma = 0.7
 nPeriods = 48
