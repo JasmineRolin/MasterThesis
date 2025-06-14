@@ -56,7 +56,7 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String,nReque
                 if activityId <= nRequests
                     l = "p"*string(activityId)
                 elseif activityId <= 2*nRequests
-                    l = "d"*string(activityId)
+                    l = "d"*string(assignment.activity.requestId)
                 else
                     l = "D"*string(activityId)
                 end
@@ -276,6 +276,7 @@ end
  Plot routes 
 ==#
 function plotRoutesOnline(solution::Solution,scenario::Scenario,requestBank::Vector{Int},event::Request,title::String)
+    nRequests = length(scenario.requests)
 
     p = plot(size = (2000, 1500),bottom_margin=12mm, left_margin=12mm,
     top_margin=5mm, right_margin=5mm)
@@ -375,21 +376,32 @@ function plotRoutesOnline(solution::Solution,scenario::Scenario,requestBank::Vec
                 if firstDepot
                     firstDepot = false
                     v = schedule.vehicle
+                    depotId = assignment.activity.id
                     scatter!([v.depotLocation.long], [v.depotLocation.lat], label = "Depot", color = :black, markersize = 12, marker = :star,markerstrokewidth=0)
-                    annotate!(v.depotLocation.long, v.depotLocation.lat+offset, text("D$(v.id)", :center, 8, color = :black))
+                    annotate!(v.depotLocation.long, v.depotLocation.lat+offset, text("D$(depotId)", :center, 8, color = :black))
                 else
                     v = schedule.vehicle
+                    depotId = assignment.activity.id
                     scatter!([v.depotLocation.long], [v.depotLocation.lat], label = "", color = :black, markersize = 12, marker = :star,markerstrokewidth=0)
-                    annotate!(v.depotLocation.long, v.depotLocation.lat+offset, text("D$(v.id)", :center, 8, color = :black))
+                    annotate!(v.depotLocation.long, v.depotLocation.lat+offset, text("D$(depotId)", :center, 8, color = :black))
                 end
             else
+                activityId  = assignment.activity.id
+                if activityId <= nRequests
+                    wId = "p"*string(assignment.activity.requestId)
+                elseif activityId <= 2*nRequests
+                    wId = "d"*string(assignment.activity.requestId)
+                else
+                    wId = "D"*string(activityId)
+                end
+
                 if firstWaiting
                     firstWaiting = false
                     scatter!([assignment.activity.location.long], [assignment.activity.location.lat], label = "Waiting", color = :grey, markersize = 10, marker = :diamond,markerstrokewidth=0)
-                    annotate!(assignment.activity.location.long, assignment.activity.location.lat+offset, text("W$(assignment.activity.id)", :center, 8, color = :grey))
+                    annotate!(assignment.activity.location.long, assignment.activity.location.lat+offset, text("W$(wId)", :center, 8, color = :grey))
                 else 
                     scatter!([assignment.activity.location.long], [assignment.activity.location.lat], label = "", color = :grey, markersize = 10, marker = :diamond,markerstrokewidth=0)
-                    annotate!(assignment.activity.location.long,assignment.activity.location.lat+offset, text("W$(assignment.activity.id)", :center, 8, color = :grey))
+                    annotate!(assignment.activity.location.long,assignment.activity.location.lat+offset, text("W$(wId)", :center, 8, color = :grey))
                 end
             end
         end
