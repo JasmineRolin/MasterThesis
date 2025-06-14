@@ -15,7 +15,7 @@ print("\033c")
 
 # Parameters 
 n = 100
-i = 2
+i = 8
 gridSize = 10
 displayPlots = true
 dynamicProblem = true 
@@ -29,6 +29,12 @@ periodLength = Int(maximumTime / nPeriods)
 nHistoricRequestFiles = 20
 
 alnsParameters = "tests/resources/ALNSParameters_offlineWaiting.json"
+
+
+true_false = false 
+true_true = false
+false_false = true
+
 
 # Retrieve historic request files 
 if dynamicProblem
@@ -91,67 +97,73 @@ println("\t nOfflineRequests: ",length(scenario.offlineRequests))
 #============================================================================#
 # Solve with relocation using common request location probability grid
 #============================================================================#
-# if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/true_false")
-#     mkpath("tests/WaitingPlots/"*scenarioName*"/true_false")
-# end
-# if displayPlots && isdir("tests/WaitingPlots/"*scenarioName*"/true_false")
-#     for file in readdir("tests/WaitingPlots/"*scenarioName*"/true_false"; join=true)
-#         rm(file; force=true, recursive=true)
-#     end
-# end
+if true_false
+    if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/true_false")
+        mkpath("tests/WaitingPlots/"*scenarioName*"/true_false")
+    end
+    if displayPlots && isdir("tests/WaitingPlots/"*scenarioName*"/true_false")
+        for file in readdir("tests/WaitingPlots/"*scenarioName*"/true_false"; join=true)
+            rm(file; force=true, recursive=true)
+        end
+    end
 
-# # Simulate scenario 
-# solutionTrue, requestBankTrue = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = saveResults,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false,ALNS=ALNS);
+    # Simulate scenario 
+    solutionTrue, requestBankTrue = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = saveResults,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false,ALNS=ALNS);
 
-# state = State(solutionTrue,scenario.onlineRequests[end],0)
-# feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-# @test msg == ""
-# @test feasible == true
-# println(msg)
+    state = State(solutionTrue,scenario.onlineRequests[end],0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+    @test msg == ""
+    @test feasible == true
+    println(msg)
+end
 
 
 #============================================================================#
 # Solve with relocation using request demand discretized in grid and time 
 #============================================================================#
-# if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/true_true")
-#     mkpath("tests/WaitingPlots/"*scenarioName*"/true_true")
-# end
-# if displayPlots && isdir("tests/WaitingPlots/"*scenarioName*"/true_true")
-#     for file in readdir("tests/WaitingPlots/"*scenarioName*"/true_true"; join=true)
-#         rm(file; force=true, recursive=true)
-#     end
-# end
+if true_true 
+    if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/true_true")
+        mkpath("tests/WaitingPlots/"*scenarioName*"/true_true")
+    end
+    if displayPlots && isdir("tests/WaitingPlots/"*scenarioName*"/true_true")
+        for file in readdir("tests/WaitingPlots/"*scenarioName*"/true_true"; join=true)
+            rm(file; force=true, recursive=true)
+        end
+    end
 
-# # Simulate scenario 
-# solutionTrueDemand, requestBankTrueDemand = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = saveResults,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = true);
+    # Simulate scenario 
+    solutionTrueDemand, requestBankTrueDemand = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = saveResults,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = true);
 
-# state = State(solutionTrueDemand,scenario.onlineRequests[end],0)
-# feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-# @test msg == ""
-# @test feasible == true
-# println(msg)
+    state = State(solutionTrueDemand,scenario.onlineRequests[end],0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+    @test msg == ""
+    @test feasible == true
+    println(msg)
+end
 
 
 #============================================================================#
 # Solve without relocation
 #============================================================================#
-if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/false_false")
-    mkpath("tests/WaitingPlots/"*scenarioName*"/false_false")
-end
-if displayPlots && isdir("tests/WaitingPlots/"*scenarioName*"/false_false")
-    for file in readdir("tests/WaitingPlots/"*scenarioName*"/false_false"; join=true)
-        rm(file; force=true, recursive=true)
+if false_false
+    if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/false_false")
+        mkpath("tests/WaitingPlots/"*scenarioName*"/false_false")
     end
+    if displayPlots && isdir("tests/WaitingPlots/"*scenarioName*"/false_false")
+        for file in readdir("tests/WaitingPlots/"*scenarioName*"/false_false"; join=true)
+            rm(file; force=true, recursive=true)
+        end
+    end
+
+    # Simulate scenario 
+    solutionFalse, requestBankFalse = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = saveResults,saveALNSResults = saveResults, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=false,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
+
+    state = State(solutionFalse,scenario.onlineRequests[end],0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+    @test msg == ""
+    @test feasible == true
+    println(msg)
 end
-
-# Simulate scenario 
-solutionFalse, requestBankFalse = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = saveResults,saveALNSResults = saveResults, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=false,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
-
-state = State(solutionFalse,scenario.onlineRequests[end],0)
-feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
-@test msg == ""
-@test feasible == true
-println(msg)
 
 #============================================================================#
 # Solve in-hindsigth

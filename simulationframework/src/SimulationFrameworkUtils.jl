@@ -172,13 +172,13 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
     # Split waiting activity if it is next activity 
     # TODO: jas
     if schedule.route[idx+1].activity.activityType == WAITING && schedule.route[idx+1].startOfServiceTime < currentTime
-        println("Split at waiting activity")
+       # println("Split at waiting activity")
 
         currentSchedule = currentState.solution.vehicleSchedules[vehicle]
 
         # println("Split")
-        printRouteHorizontal(schedule)
-        printRouteHorizontal(currentSchedule)
+        # printRouteHorizontal(schedule)
+        # printRouteHorizontal(currentSchedule)
 
 
         currentState.solution.totalDistance -= currentSchedule.totalDistance
@@ -218,8 +218,8 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
         currentState.solution.totalCost += currentSchedule.totalCost
         currentState.solution.totalIdleTime += currentSchedule.totalIdleTime
 
-        printRouteHorizontal(schedule)
-        printRouteHorizontal(currentSchedule)
+        # printRouteHorizontal(schedule)
+        # printRouteHorizontal(currentSchedule)
 
         return idx+1, currentTime
     else
@@ -227,9 +227,9 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
         # Retrieve empty schedule to update it
         currentSchedule = currentState.solution.vehicleSchedules[vehicle]
 
-        println("not split at waiting activity")
-        printRouteHorizontal(schedule)
-        printRouteHorizontal(currentSchedule)
+        # println("not split at waiting activity")
+        # printRouteHorizontal(schedule)
+        # printRouteHorizontal(currentSchedule)
 
         # Update route 
         currentSchedule.route = schedule.route[idx+1:end]
@@ -259,8 +259,8 @@ function updateCurrentScheduleAtSplit!(scenario::Scenario,schedule::VehicleSched
         currentState.solution.totalCost += currentSchedule.totalCost
         currentState.solution.totalIdleTime += currentSchedule.totalIdleTime
 
-        printRouteHorizontal(schedule)
-        printRouteHorizontal(currentSchedule)
+        # printRouteHorizontal(schedule)
+        # printRouteHorizontal(currentSchedule)
 
         return idx, currentSchedule.activeTimeWindow.startTime
 
