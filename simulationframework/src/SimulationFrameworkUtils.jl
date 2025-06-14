@@ -898,19 +898,19 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
                 matchingId = event.request.id - length(scenario.offlineRequests) + length(scenario.requests)
                 #println("Matching id: ",matchingId)
                 if event.request.id in requestBank && matchingId in expectedRequestBank
-                    println("Event was not inserted and matching request was not in solution")
+                    #println("Event was not inserted and matching request was not in solution")
                     whatHappensToExpected[1] += 1
                 elseif event.request.id in requestBank && !(matchingId in expectedRequestBank)
-                    println("Event was not inserted but matching request was in solution")
+                    #println("Event was not inserted but matching request was in solution")
                     whatHappensToExpected[2] += 1
                 elseif !(event.request.id in requestBank) && !(matchingId in expectedRequestBank) && !(matchingId in requestBank)
-                    println("Event was inserted and matching request is still in solution")
+                    #println("Event was inserted and matching request is still in solution")
                     whatHappensToExpected[3] += 1
                 elseif !(event.request.id in requestBank) && (matchingId in requestBank)
-                    println("Event was inserted and matching request was exchanged")
+                    #println("Event was inserted and matching request was exchanged")
                     whatHappensToExpected[4] += 1
                 elseif !(event.request.id in requestBank) && (matchingId in expectedRequestBank)
-                    println("Event was inserted and matching request was not in solution")
+                    #println("Event was inserted and matching request was not in solution")
                     whatHappensToExpected[5] += 1
                 else
                     whatHappensToExpected[6] += 1
