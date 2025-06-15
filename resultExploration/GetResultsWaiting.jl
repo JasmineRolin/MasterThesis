@@ -1,15 +1,15 @@
 using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures, PrettyTables, JSON
 
-nRequestList = [20,100,300,500]
+nRequestList = [20,100]
 nRuns = 5
 relocateVehiclesList = [("true","true"),("true","false"),("false","false"),("inhindsight","")]
-gamma = 0.5
-baseFolder = "runfiles/output/Waiting/Base/"
-plotName = "Base"
+gamma = 0.7
+baseFolder = "runfiles/output/Waiting/Dynamic/"
+plotName = "Dynamic"
 
 plotResults = true
-generateTables = false
+generateTables = true
 
 
 #===============================#
@@ -328,6 +328,7 @@ end
 # Result table 
 #===============================#
 if generateTables
+    # No. unserviced requests 
     for n in nRequestList
         outPutFolder = baseFolder * string(n)
 
@@ -442,7 +443,7 @@ if generateTables
 
 
         # Save latex table 
-        output_file = baseFolder*"comparison_summary_$(n)_$(plotName)"
+        output_file = baseFolder*"comparison_nTaxi_summary_$(n)_$(plotName)"
 
         if plotName == "Base"
             instanceType = "I"
@@ -463,8 +464,154 @@ if generateTables
                 alignment = :c
             )
         
-            println(io, "\\caption{Comparison of Relocation Strategies for instance type $(instanceType) and instance size n = $(n)}")
-            println(io, "\\label{tab:wait:resrelocation-comparison_$(instanceType)_$(n)}")
+            println(io, "\\caption{Comparison of number of unserviced requests for instance type $(instanceType) and instance size n = $(n)}")
+            println(io, "\\label{tab:wait:resrelocation-nTaxi-comparison_$(instanceType)_$(n)}")
+            println(io, "\\end{table}")
+        end
+
+        # Save table for this n
+        CSV.write(output_file*".csv", summary_table)
+        println("✅ Saved summary table for n=$n → $output_file")
+    end
+
+    # Total time spent wmpty relocation 
+    for n in nRequestList
+        outPutFolder = baseFolder * string(n)
+
+        # Read base method result
+        resultFileBase = string(outPutFolder, "/results_avgOverRuns_false_false.csv")
+        dfBase = CSV.read(resultFileBase, DataFrame)
+
+    
+
+        summary_table = DataFrame(Scenario = String[],
+        BaseValue = Float64[], 
+        RS1 = Float64[], DifferenceRS1 = Float64[],PercentDifferenceRS1 = Float64[],
+        RS2 = Float64[], DifferenceRS2 = Float64[],PercentDifferenceRS2 = Float64[])
+
+        
+        # Relocation strategy 1 
+        resultFile1 = string(outPutFolder, "/results_avgOverRuns_true_true.csv")
+        if !isfile(resultFile1)
+            @warn "Missing file: $resultFile"
+            continue
+        end
+        df1 = CSV.read(resultFile1, DataFrame)
+
+
+        # Relocation strategy 2
+        resultFile2 = string(outPutFolder, "/results_avgOverRuns_true_false.csv")
+        if !isfile(resultFile2)
+            @warn "Missing file: $resultFile"
+            continue
+        end
+        df2 = CSV.read(resultFile2, DataFrame)
+
+
+        base_values = Float64[]
+        new_values1 = Float64[]
+        differences1 = Float64[]
+        percentDifferences1 = Float64[]
+
+        new_values2 = Float64[]
+        differences2 = Float64[]
+        percentDifferences2 = Float64[]
+
+        # Collect values for each scenario 
+        for (i,row) in enumerate(eachrow(df1))
+            baseRow = filter(r -> r.BaseScenario == row.BaseScenario, dfBase)
+            RS2Row = filter(r -> r.BaseScenario == row.BaseScenario, df2)
+
+
+            if nrow(baseRow) == 1 && nrow(RS2Row) == 1
+                push!(base_values, round(baseRow[1, :TotalEmptyRelocationTime_mean],digits=2))
+
+                push!(new_values1, round(row.TotalEmptyRelocationTime_mean,digits=2))
+                push!(differences1, round(new_values1[i]-base_values[i],digits=2))
+                if isapprox(differences1[i],0)
+                    push!(percentDifferences1,0.0)
+                else
+                    push!(percentDifferences1,round((differences1[i]/base_values[i]) * 100, digits=2))
+                end
+
+                push!(new_values2, round(RS2Row[1, :TotalEmptyRelocationTime_mean],digits=2))
+                push!(differences2, round(new_values2[i]-base_values[i],digits=2))
+                if isapprox(differences2[i],0)
+                    push!(percentDifferences2,0.0)
+                else
+                    push!(percentDifferences2,round((differences2[i]/base_values[i]) * 100, digits=2))
+                end
+            else
+                @warn "Scenario mismatch or duplicate in base data: $(row.BaseScenario)"
+            end
+
+            push!(summary_table, (
+                Scenario = "Instance $(i)",
+                BaseValue = base_values[i],
+
+                RS1 = new_values1[i],
+                DifferenceRS1 = differences1[i], 
+                PercentDifferenceRS1 = percentDifferences1[i],
+
+                RS2 = new_values2[i],
+                DifferenceRS2 = differences2[i], 
+                PercentDifferenceRS2 = percentDifferences2[i]
+            ))
+
+        end
+
+
+        # Compute mean 
+        if !isempty(base_values)
+            mean_base = round(mean(base_values),digits=2)
+
+            mean_new1 = round(mean(new_values1),digits=2)
+            diff1 = round(mean(differences1),digits=2)
+            percentDiff1 = round(mean(filter(x -> isfinite(x), percentDifferences1)),digits=2)
+
+            mean_new2 = round(mean(new_values2),digits=2)
+            diff2 = round(mean(differences2),digits=2)
+            percentDiff2 = round(mean(filter(x -> isfinite(x), percentDifferences2)),digits=2)
+
+            push!(summary_table, (
+                Scenario = "Average",
+                BaseValue = mean_base,
+
+                RS1 = mean_new1,
+                DifferenceRS1 = diff1, 
+                PercentDifferenceRS1 = percentDiff1,
+
+                RS2 = mean_new2,
+                DifferenceRS2 = diff2, 
+                PercentDifferenceRS2 = percentDiff2
+            ))
+        end 
+
+
+        # Save latex table 
+        output_file = baseFolder*"comparison_TotalEmptyRelocationTime_mean_summary_$(n)_$(plotName)"
+
+        if plotName == "Base"
+            instanceType = "I"
+        else
+            instanceType = "II"
+        end
+
+
+        open(output_file*".tex", "w") do io
+            # Manually write the LaTeX table environment
+            println(io, "\\begin{table}[H]")
+            println(io, "\\centering")
+        
+            pretty_table(io, summary_table;
+                backend = Val(:latex),
+                tf = tf_latex_default,  # or tf_latex_grid for more lines
+                header = ["Instance", "Base", "RS1", "\$\\Delta\$  RS1", "% \$\\Delta\$  RS1","RS2", "\$\\Delta\$  RS2", "% \$\\Delta\$  RS2"],
+                alignment = :c
+            )
+        
+            println(io, "\\caption{Comparison of total duration of empty relocation time for instance type $(instanceType) and instance size n = $(n)}")
+            println(io, "\\label{tab:wait:resrelocation-empty-relocation-comparison_$(instanceType)_$(n)}")
             println(io, "\\end{table}")
         end
 

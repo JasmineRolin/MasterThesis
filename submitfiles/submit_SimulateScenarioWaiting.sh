@@ -3,18 +3,18 @@
 # Constants
 
 # OBS OBS OBS
-gamma=0.7
+gamma=0.5
 # OBS OBS OBS
 
 nPeriods=48
 gridSize=10
 
-nRequestsList=(20 100 300 500) 
+nRequestsList=(300 500) 
 relocateOptions=("true false" "true true" "false false")  # Pair values as strings
 numRuns=5  
 numHistoricRequestFiles=20   
 numData=10   
-baseScenario="false"
+baseScenario="true"
 
 mkdir -p submitfiles/generated_jobs
 for nRequests in "${nRequestsList[@]}"; do

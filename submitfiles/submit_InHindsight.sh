@@ -8,7 +8,7 @@ gamma=0.5
 
 gridSize=10
 
-nRequestsList=(20 100 300 500) 
+nRequestsList=(300 500) 
 numRuns=5
 numData=10  
 baseScenario="true"
