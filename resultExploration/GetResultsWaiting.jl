@@ -1,9 +1,9 @@
 using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures, PrettyTables, JSON
 
-nRequestList = [100]
+nRequestList = [20,100,300,500]
 nRuns = 5
-relocateVehiclesList = [("true","true"),("true","false"),("false","false")]#,("inhindsight","")]
+relocateVehiclesList = [("true","true"),("true","false"),("false","false"),("inhindsight","")]
 gamma = 0.5
 baseFolder = "runfiles/output/Waiting/Base/"
 plotName = "Base"
