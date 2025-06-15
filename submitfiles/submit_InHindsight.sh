@@ -3,7 +3,7 @@
 # Constants
 
 # OBS OBS OBS 
-gamma=0.5
+gamma=0.7
 # OBS OBS OBS 
 
 gridSize=10
@@ -11,7 +11,7 @@ gridSize=10
 nRequestsList=(300 500) 
 numRuns=5
 numData=10  
-baseScenario="true"
+baseScenario="false"
 
 mkdir -p submitfiles/generated_jobs
 for nRequests in "${nRequestsList[@]}"; do

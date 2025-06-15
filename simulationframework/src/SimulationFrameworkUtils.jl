@@ -1208,6 +1208,28 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
 
                     solution.totalIdleTime += schedule.totalIdleTime
                     solution.totalRideTime += schedule.totalTime
+                elseif length(schedule.route) == 2 && schedule.route[1].activity.activityType == DEPOT && schedule.route[2].activity.activityType == DEPOT
+                    # Create waiting activity at depot activity 
+                    endOfAvailableTimeWindow = schedule.vehicle.availableTimeWindow.endTime
+                    startOfAvailableTimeWindow = schedule.vehicle.availableTimeWindow.startTime
+
+                    solution.totalIdleTime -= schedule.totalIdleTime
+                    solution.totalRideTime -= schedule.totalTime
+                
+                    # Create waiting activity at depot activity 
+                    waitingActivity = ActivityAssignment(Activity(schedule.vehicle.depotId,-1,WAITING, schedule.vehicle.depotLocation,TimeWindow(startOfAvailableTimeWindow,endOfAvailableTimeWindow)), schedule.vehicle,startOfAvailableTimeWindow,endOfAvailableTimeWindow)
+                    schedule.route = [schedule.route[1],waitingActivity,schedule.route[end]]
+
+                    # Update route with waiting activity 
+                    schedule.route[end].startOfServiceTime = endOfAvailableTimeWindow
+                    schedule.route[end].endOfServiceTime = endOfAvailableTimeWindow
+                    schedule.activeTimeWindow.endTime = endOfAvailableTimeWindow
+                    schedule.totalTime += endOfAvailableTimeWindow - startOfAvailableTimeWindow
+                    schedule.totalIdleTime += endOfAvailableTimeWindow - startOfAvailableTimeWindow
+                    schedule.numberOfWalking = vcat(schedule.numberOfWalking,[0])
+
+                    solution.totalRideTime += endOfAvailableTimeWindow - startOfAvailableTimeWindow
+                    solution.totalIdleTime += endOfAvailableTimeWindow - startOfAvailableTimeWindow
 
                 elseif schedule.route[end-1].activity.activityType == WAITING && schedule.route[end].startOfServiceTime != schedule.vehicle.availableTimeWindow.endTime
                     # Extend waiting activity at depot at end of route
