@@ -4,9 +4,9 @@ using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures, PrettyTables, JSON
 nRequestList = [20,100,300,500]
 nRuns = 5
 relocateVehiclesList = [("true","true"),("true","false"),("false","false"),("inhindsight","")]
-gamma = 0.5
-baseFolder = "runfiles/output/Waiting/Base/"
-plotName = "Base"
+gamma = 0.7
+baseFolder = "runfiles/output/Waiting/Dynamic/"
+plotName = "Dynamic"
 
 plotResults = true
 generateTables = true
@@ -359,6 +359,59 @@ if plotResults
 
         savefig(p, "plots/Waiting/$(plotName)/results_DriveTimeToIdle_$(plotName)_$(n).pdf")
         println("saved plot at: ", "plots/Waiting/$(plotName)/results_DriveTimeToIdle_$(plotName)_$(n).pdf")
+    end
+
+
+
+    for n in nRequestList
+        println("n requests: ",n)
+        p = plot(size = (1000,1000),title = "Results for n = $n", xlabel = "", ylabel = "No. requests with pick-up time window overlapping with idle vehicle",leftmargin=5mm,topmargin=5mm,legend=:topright,legend_background_color = RGBA(1,1,1,0.6),legend_position = (3, 0.5),
+        legendfontsize = legendfontsize,
+        ytickfont = ytickfont,
+        xtickfont = xtickfont,
+        xguidefont = xguidefont,
+        yguidefont = yguidefont,
+        titlefont = titlefont,
+        xrotation = 90)
+
+        nRows = 0
+        maxnTaxi = 0
+        minnTaxi = typemax(Int)
+        for relocateVehiclesOption in relocateVehiclesList
+            outPutFolder = baseFolder*string(n)
+            resultFile = string(outPutFolder, "/results_avgOverRuns_",relocateVehiclesOption[1],"_",relocateVehiclesOption[2],".csv")
+            df = CSV.read(resultFile, DataFrame)
+            nRows = nrow(df)
+            maxnTaxi = max(maxnTaxi,maximum(df.nTaxi_mean))
+            minnTaxi = min(minnTaxi,minimum(df.nTaxi_mean))
+
+            # Plot 
+            if relocateVehiclesOption[1] == "true" && relocateVehiclesOption[2] == "true"
+                color = :forestgreen
+                linestyle = :dot
+                label = "Relocation strategy 1"
+            elseif relocateVehiclesOption[1] == "true" && relocateVehiclesOption[2] == "false"
+                color = :darkorange
+                linestyle = :dot
+                label = "Relocation strategy 2"
+            elseif relocateVehiclesOption[1] == "false" && relocateVehiclesOption[2] == "false"
+                color = :steelblue
+                linestyle = :dash
+                label = "Base method"
+            else
+                color = :gray20 
+                linestyle = :dash
+                label = "In Hindsight"
+            end
+
+            plot!(df.TotalNumberOfRequestsOverlapIdleVehicle_mean; linestyle = linestyle, marker = :circle, color = color, label = label,markerstrokewidth=0,linewidth=2,markersize=5)
+        end
+
+        xtickLabel = ["Inst. $(i)" for i in 1:nRows]
+        xticks!((1:nRows,xtickLabel))
+
+        savefig(p, "plots/Waiting/$(plotName)/results_TotalNumberOfRequestsOverlapIdleVehicle_$(plotName)_$(n).pdf")
+        println("saved plot at: ", "plots/Waiting/$(plotName)/results_TotalNumberOfRequestsOverlapIdleVehicle_$(plotName)_$(n).pdf")
     end
 end
 

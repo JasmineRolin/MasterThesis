@@ -56,7 +56,7 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String,nReque
                 if activityId <= nRequests
                     l = "p"*string(activityId)
                 elseif activityId <= 2*nRequests
-                    l = "d"*string(assignment.activity.requestId)
+                    l = "d"*string(activityId-nRequests)
                 else
                     l = "D"*string(activityId)
                 end
@@ -398,9 +398,9 @@ function plotRoutesOnline(solution::Solution,scenario::Scenario,requestBank::Vec
             else
                 activityId  = assignment.activity.id
                 if activityId <= nRequests
-                    wId = "p"*string(assignment.activity.requestId)
+                    wId = "p"*string(activityId)
                 elseif activityId <= 2*nRequests
-                    wId = "d"*string(assignment.activity.requestId)
+                    wId = "d"*string(activityId-nRequests)
                 else
                     wId = "D"*string(activityId)
                 end

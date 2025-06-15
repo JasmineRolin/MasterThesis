@@ -15,14 +15,14 @@ print("\033c")
 
 # Parameters 
 n = 20
-i = 2
+i = 1
 gridSize = 10
 displayPlots = true
 dynamicProblem = true 
 ALNS = true
 saveResults = false
 
-gamma = 0.7
+gamma = 0.5
 nPeriods = 48
 maximumTime = 24*60 
 periodLength = Int(maximumTime / nPeriods)
@@ -31,9 +31,9 @@ nHistoricRequestFiles = 20
 alnsParameters = "tests/resources/ALNSParameters_offlineWaiting.json"
 
 
-true_false = false 
-true_true = true
-false_false = true
+true_false = true 
+true_true = false
+false_false = false
 
 
 # Retrieve historic request files 
@@ -188,7 +188,7 @@ end
 #============================================================================#
 # Result
 #============================================================================#
-println("Relocation vehicles TRUE: ", solutionTrue.nTaxi)
+#println("Relocation vehicles TRUE: ", solutionTrue.nTaxi)
 println("Relocation vehicles TRUE DEMAND: ", solutionTrueDemand.nTaxi)
 println("Relocation vehicles FALSE: ", solutionFalse.nTaxi)
 #println("ALNS solution: ", finalSolution.nTaxi)
