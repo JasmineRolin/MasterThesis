@@ -1187,13 +1187,12 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
                     
                     newStartOfWaiting = startOfAvailableTimeWindow + scenario.time[schedule.route[1].activity.id,schedule.route[end-1].activity.id]
                     newEndOfWaiting = endOfAvailableTimeWindow - scenario.time[schedule.route[end-1].activity.id,schedule.route[end].activity.id]
-                    oldEndOfWaiting = schedule.route[end-1].endOfServiceTime
 
                     # Update route 
                     solution.totalIdleTime -= schedule.totalIdleTime
                     solution.totalRideTime -= schedule.totalTime
 
-                    schedule.route[end-1].endOfServiceTime = newEndOfWaiting
+                    schedule.route[end-1].startOfServiceTime = newStartOfWaiting
                     schedule.route[end-1].endOfServiceTime = newEndOfWaiting
                     schedule.route[end-1].activity.timeWindow.startTime = newStartOfWaiting
                     schedule.route[end-1].activity.timeWindow.endTime = newEndOfWaiting
