@@ -3,7 +3,7 @@ using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures, PrettyTables, JSON
 
 nRequestList = [20,100,300,500]
 nRuns = 5
-relocateVehiclesList = [("true","true"),("true","false"),("false","false"),("inhindsight","")]
+relocateVehiclesList = [("true","true"),("true","false"),("false","false")]#,("inhindsight","")]
 gamma = 0.7
 baseFolder = "runfiles/output/Waiting/Dynamic/"
 plotName = "Dynamic"
@@ -134,8 +134,8 @@ if plotResults
         yticks!((ylimMin:tickSpace:ylimMax,string.(Int.(ylimMin:tickSpace:ylimMax))))
         ylims!(ylimMin, ylimMax)
 
-        savefig(p, "plots/Waiting/$(plotName)/results_$(plotName)_$(n).png")
-        println("saved plot at: ", "plots/Waiting/$(plotName)/results_$(plotName)_$(n).png")
+        savefig(p, "plots/Waiting/$(plotName)/results_$(plotName)_$(n).pdf")
+        println("saved plot at: ", "plots/Waiting/$(plotName)/results_$(plotName)_$(n).pdf")
     end
 
 
@@ -190,8 +190,8 @@ if plotResults
         xtickLabel = ["Inst. $(i)" for i in 1:nRows]
         xticks!((1:nRows,xtickLabel))
 
-        savefig(p, "plots/Waiting/$(plotName)/results_RideTime_$(plotName)_$(n).png")
-        println("saved plot at: ", "plots/Waiting/$(plotName)/results_RideTime_$(plotName)_$(n).png")
+        savefig(p, "plots/Waiting/$(plotName)/results_RideTime_$(plotName)_$(n).pdf")
+        println("saved plot at: ", "plots/Waiting/$(plotName)/results_RideTime_$(plotName)_$(n).pdf")
     end
 
 
@@ -246,8 +246,8 @@ if plotResults
         xtickLabel = ["Inst. $(i)" for i in 1:nRows]
         xticks!((1:nRows,xtickLabel))
 
-        savefig(p, "plots/Waiting/$(plotName)/results_RideSharing_$(plotName)_$(n).png")
-        println("saved plot at: ", "plots/Waiting/$(plotName)/results_RideSharing_$(plotName)_$(n).png")
+        savefig(p, "plots/Waiting/$(plotName)/results_RideSharing_$(plotName)_$(n).pdf")
+        println("saved plot at: ", "plots/Waiting/$(plotName)/results_RideSharing_$(plotName)_$(n).pdf")
     end
 
 
@@ -300,8 +300,8 @@ if plotResults
         xtickLabel = ["Inst. $(i)" for i in 1:nRows]
         xticks!((1:nRows,xtickLabel))
 
-        savefig(p, "plots/Waiting/$(plotName)/results_EmptyRelocationTime_$(plotName)_$(n).png")
-        println("saved plot at: ", "plots/Waiting/$(plotName)/results_EmptyRelocationTime_$(plotName)_$(n).png")
+        savefig(p, "plots/Waiting/$(plotName)/results_EmptyRelocationTime_$(plotName)_$(n).pdf")
+        println("saved plot at: ", "plots/Waiting/$(plotName)/results_EmptyRelocationTime_$(plotName)_$(n).pdf")
     end
 
 
@@ -357,8 +357,8 @@ if plotResults
         xtickLabel = ["Inst. $(i)" for i in 1:nRows]
         xticks!((1:nRows,xtickLabel))
 
-        savefig(p, "plots/Waiting/$(plotName)/results_DriveTimeToIdle_$(plotName)_$(n).png")
-        println("saved plot at: ", "plots/Waiting/$(plotName)/results_DriveTimeToIdle_$(plotName)_$(n).png")
+        savefig(p, "plots/Waiting/$(plotName)/results_DriveTimeToIdle_$(plotName)_$(n).pdf")
+        println("saved plot at: ", "plots/Waiting/$(plotName)/results_DriveTimeToIdle_$(plotName)_$(n).pdf")
     end
 end
 
