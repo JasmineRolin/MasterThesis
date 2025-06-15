@@ -14,10 +14,10 @@ using Plots.PlotMeasures
 print("\033c")
 
 # Parameters 
-n = 20
-i = 8
+n = 300
+i = 6
 gridSize = 10
-displayPlots = true
+displayPlots = false
 dynamicProblem = true 
 ALNS = true
 saveResults = false

@@ -1179,7 +1179,38 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
                 end
 
                 # Relocate waiting activity after inserted request 
-                if  schedule.route[end-1].activity.activityType == WAITING && schedule.route[end].startOfServiceTime != schedule.vehicle.availableTimeWindow.endTime
+                # Empty route with waiting activity 
+                if length(schedule.route) == 3 && schedule.route[1].activity.activityType == DEPOT && schedule.route[2].activity.activityType == DEPOT
+                    # Extend waiting activity at depot at end of route
+                    startOfAvailableTimeWindow = schedule.vehicle.availableTimeWindow.startTime
+                    endOfAvailableTimeWindow = schedule.vehicle.availableTimeWindow.endTime
+                    
+                    newStartOfWaiting = startOfAvailableTimeWindow + scenario.time[schedule.route[1].activity.id,schedule.route[end-1].activity.id]
+                    newEndOfWaiting = endOfAvailableTimeWindow - scenario.time[schedule.route[end-1].activity.id,schedule.route[end].activity.id]
+                    oldEndOfWaiting = schedule.route[end-1].endOfServiceTime
+
+                    # Update route 
+                    solution.totalIdleTime -= schedule.totalIdleTime
+                    solution.totalRideTime -= schedule.totalTime
+
+                    schedule.route[end-1].endOfServiceTime = newEndOfWaiting
+                    schedule.route[end-1].endOfServiceTime = newEndOfWaiting
+                    schedule.route[end-1].activity.timeWindow.startTime = newStartOfWaiting
+                    schedule.route[end-1].activity.timeWindow.endTime = newEndOfWaiting
+                    schedule.route[1].startOfServiceTime = startOfAvailableTimeWindow
+                    schedule.route[1].endOfServiceTime = startOfAvailableTimeWindow
+                    schedule.route[end].startOfServiceTime = endOfAvailableTimeWindow
+                    schedule.route[end].endOfServiceTime = endOfAvailableTimeWindow
+
+                    schedule.activeTimeWindow.startTime = startOfAvailableTimeWindow
+                    schedule.activeTimeWindow.endTime = endOfAvailableTimeWindow
+                    schedule.totalIdleTime = newEndOfWaiting - newStartOfWaiting
+                    schedule.totalTime = getTotalTimeRoute(schedule)
+
+                    solution.totalIdleTime += schedule.totalIdleTime
+                    solution.totalRideTime += schedule.totalTime
+
+                elseif schedule.route[end-1].activity.activityType == WAITING && schedule.route[end].startOfServiceTime != schedule.vehicle.availableTimeWindow.endTime
                     # Extend waiting activity at depot at end of route
                     endOfAvailableTimeWindow = schedule.vehicle.availableTimeWindow.endTime
                     newEndOfWaiting = endOfAvailableTimeWindow - scenario.time[schedule.route[end-1].activity.id,schedule.route[end].activity.id]
