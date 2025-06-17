@@ -14,7 +14,7 @@ using Plots.PlotMeasures
 print("\033c")
 
 # Parameters 
-n = 20
+n = 100
 i = 1
 gridSize = 10
 displayPlots = true
@@ -22,7 +22,7 @@ dynamicProblem = true
 ALNS = true
 saveResults = false
 
-gamma = 0.5
+gamma = 0.7
 nPeriods = 48
 maximumTime = 24*60 
 periodLength = Int(maximumTime / nPeriods)
@@ -31,8 +31,8 @@ nHistoricRequestFiles = 20
 alnsParameters = "tests/resources/ALNSParameters_offlineWaiting.json"
 
 
-true_false = true 
-true_true = false
+true_false = false 
+true_true = true
 false_false = false
 
 

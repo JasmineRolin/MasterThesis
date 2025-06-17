@@ -9,7 +9,7 @@ baseFolder = "runfiles/output/Waiting/Dynamic/"
 plotName = "Dynamic"
 
 plotResults = true
-generateTables = true
+generateTables = false
 
 if !isdir("plots/Waiting/$(plotName)/")
     mkdir("plots/Waiting/$(plotName)/")
@@ -80,7 +80,7 @@ if plotResults
 
     for n in nRequestList
         println("n requests: ",n)
-        p = plot(size = (1000,1000),title = "Results for n = $n", xlabel = "", ylabel = "No. unserviced requests",leftmargin=5mm,topmargin=5mm,legend=:topright,legend_background_color = RGBA(1,1,1,0.6),legend_position = (3, 0.5),
+        p = plot(size = (1000,1000),title = "", xlabel = "", ylabel = "No. unserviced requests",leftmargin=5mm,topmargin=5mm,legend=:topright,legend_background_color = RGBA(1,1,1,0.6),legend_position = (3, 0.5),
         legendfontsize = legendfontsize,
         ytickfont = ytickfont,
         xtickfont = xtickfont,

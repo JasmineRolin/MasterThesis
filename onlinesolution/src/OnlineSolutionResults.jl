@@ -15,7 +15,7 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String,nReque
     yPos = 1
 
     
-    p = plot(size=(2000,1000),
+    p = plot(size=(2500,1500),
     leftmargin=5mm,topmargin=7mm,rightmargin=5mm,bottommargin=20mm,
     legendfontsize = 17,
     ytickfont = font(16),
@@ -71,7 +71,7 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String,nReque
         if nVehicles < 10 
             yPos += 1
         else
-            yPos += 2
+            yPos += 3
         end
     end
 
@@ -88,7 +88,7 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String,nReque
             if nVehicles < 10 
                 yPos += 1
             else
-                yPos += 2
+                yPos += 3
             end
 
             continue 
@@ -137,7 +137,7 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String,nReque
         if nVehicles < 10 
             yPos += 1
         else
-            yPos += 2
+            yPos += 3
         end
     end
     

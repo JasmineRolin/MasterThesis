@@ -797,25 +797,25 @@ function determineCurrentState(solution::Solution,event::Event,finalSolution::So
 
     # Update vehicle schedule
     for (vehicle,schedule) in enumerate(solution.vehicleSchedules)
-       print("vehicle : ", vehicle )
+      # print("vehicle : ", vehicle )
 
         # Check if vehicle is not available yet or has not started service yet
         if schedule.vehicle.availableTimeWindow.startTime > currentTime || schedule.route[1].startOfServiceTime > currentTime
             idx, splitTime = updateCurrentScheduleNotAvailableYet(schedule,currentState,vehicle)
-            print(" - not available yet or not started service yet \n")
+           # print(" - not available yet or not started service yet \n")
         # Check if entire route has been served and vehicle is not available anymore
         elseif schedule.vehicle.availableTimeWindow.endTime <= currentTime || length(schedule.route) == 1|| (schedule.route[end-1].endOfServiceTime < currentTime && schedule.route[end].startOfServiceTime == schedule.vehicle.availableTimeWindow.endTime && schedule.route[1].activity.activityType != DEPOT)
             idx, splitTime = updateCurrentScheduleNotAvailableAnymore!(currentState,schedule,vehicle)
-           print(" - not available anymore \n")
+          # print(" - not available anymore \n")
         # Check if vehicle has not been assigned yet
         elseif length(schedule.route) == 2 && schedule.route[1].activity.activityType == DEPOT
-            idx, splitTime = updateCurrentScheduleNoAssignement!(vehicle,currentTime,currentState)
+         #   idx, splitTime = updateCurrentScheduleNoAssignement!(vehicle,currentTime,currentState)
            print(" - no assignments \n")
 
         # We have completed the last activity and the vehicle is on-route to the depot but still available 
         elseif length(schedule.route) > 1 && schedule.route[end-1].endOfServiceTime < currentTime 
             idx,splitTime = updateCurrentScheduleRouteCompleted!(currentState,schedule,vehicle)
-           print("- completed route but still available \n")
+         #  print("- completed route but still available \n")
         else
             # Determine index to split
             didSplit = false
@@ -823,14 +823,14 @@ function determineCurrentState(solution::Solution,event::Event,finalSolution::So
                if assignment.endOfServiceTime <= currentTime && schedule.route[split + 1].endOfServiceTime > currentTime
                     idx, splitTime  = updateCurrentScheduleAtSplit!(scenario,schedule,vehicle,currentState,split,currentTime)
                     didSplit = true
-                   print(" - still available, split at ",split, ", \n")
+                 #  print(" - still available, split at ",split, ", \n")
                     break
                 end
             end
 
             if didSplit == false
                 idx, splitTime = updateCurrentScheduleAvailableKeepEntireRoute(schedule,currentState,vehicle,currentTime,scenario)
-               print(" - still available, keep entire route, \n")
+              # print(" - still available, keep entire route, \n")
             end
         end
 
@@ -1135,7 +1135,7 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
                 driveTimeToNearestIdleVehicle += closestDriveTime
             end
 
-            println("CLOSEST DRIVE TIME: ",closestDriveTime, " activity id: ",closestActivityId)
+            #println("CLOSEST DRIVE TIME: ",closestDriveTime, " activity id: ",closestActivityId)
         end
 
   
@@ -1159,8 +1159,8 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         # TODO: jas 
         # ALNS removes waiting activity at end of route, so we have to add it again
         if event.id != 0 #&& !(event.id in requestBank)
-            println("EVENT: ",event.id," inserted in solution, relocating vehicles...")
-            println("Request bank: ", requestBank)
+            #println("EVENT: ",event.id," inserted in solution, relocating vehicles...")
+           # println("Request bank: ", requestBank)
             scheduleToUpdate = -1 
 
             # Find vehicle schedule where request is inserted 
