@@ -1,5 +1,5 @@
 {
-    "timeLimit": 10.0,
+    "timeLimit": 1.0,
     "printSegmentSize":10000,
     "segmentSize": 10,
     "reactionFactor": 0.1,

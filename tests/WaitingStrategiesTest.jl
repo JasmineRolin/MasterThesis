@@ -15,8 +15,9 @@ print("\033c")
 # ==========================#
 # Parameters (do change)
 # ==========================#
+for i = 1:10
 n = 300 # Instance size 
-i = 1 # Instance number
+#i = 1 # Instance number
 gamma = 0.7 # Vehicle ratio 
 displayPlots = false # Display and save plots
 dynamicProblem = true # Run Instance type II 
@@ -183,7 +184,7 @@ end
 # Result
 #============================================================================#
 println("Relocation vehicles TRUE: ", solutionTrue.nTaxi)
-println("Relocation vehicles TRUE DEMAND: ", solutionTrueDemand.nTaxi)
+#println("Relocation vehicles TRUE DEMAND: ", solutionTrueDemand.nTaxi)
 println("Relocation vehicles FALSE: ", solutionFalse.nTaxi)
 #println("ALNS solution: ", finalSolution.nTaxi)
 
@@ -247,3 +248,4 @@ println("Relocation vehicles FALSE: ", solutionFalse.nTaxi)
 #     println("\t pick up time window: ($(r.pickUpActivity.timeWindow.startTime) , $(r.pickUpActivity.timeWindow.endTime))")
 #     println("\t drop off time window: ($(r.dropOffActivity.timeWindow.startTime) , $(r.dropOffActivity.timeWindow.endTime))")
 # end
+end
