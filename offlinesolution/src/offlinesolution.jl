@@ -9,6 +9,6 @@ export findFeasibleInsertionInSchedule
 
 include("OfflineSolutionBasic.jl")
 using .OfflineSolutionBasic
-export offlineSolution
+export offlineSolution, inHindsightSolution, createGantChartOfSolutionOffline
 
 end 

@@ -1,0 +1,2 @@
+Dataset: 1, TotalCost: 5242.350381727858, UnservedRequests: 2
+Dataset: 1, TotalCost: 6194.41907987115, UnservedRequests: 3

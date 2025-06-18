@@ -1,0 +1,1 @@
+{"runId":["Run 1","Run 2","Run 3","Run 4","Run 5"],"averageObj":[25379.79235657289,19778.87101421225,17907.932331519914,13499.43640507031,19170.544211457887],"averageNotServicedExpectedRequests":[22.5,27.1,28.2,23.8,20.3],"nInitialNotServicedFixedRequests":[10,7,6,4,7],"nInitialNotServicedExpectedRequests":[12,10,9,4,6],"ALNSIterations":[227,219,239,241,243]}

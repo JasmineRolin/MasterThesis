@@ -9,7 +9,7 @@ export plotRelocation,createGantChartOfSolutionAnticipation,plotRelocation2
 
 # Plot vehicle schedules 
 # Define a function to plot activity assignments for each vehicle
-function createGantChartOfSolutionOnline(solution::Solution,title::String;eventId::Int=-10,eventTime::Int=-10,nFixed::Int=0)
+function createGantChartOfSolutionOnline(solution::Solution,title::String,nRequests::Int;eventId::Int=-10,eventTime::Int=-10,nFixed::Int=0,inRequestBank::Bool=false,event::Request= Request())
     yPositions = []
     yLabels = []
     yPos = 1
@@ -17,10 +17,89 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String;eventI
     xPositions = []
     xLabels = []
     
-    p = plot(size=(1500,1500))
+    p = plot(size=(2000,1000),
+    leftmargin=5mm,topmargin=7mm,rightmargin=5mm,bottommargin=20mm,
+    legendfontsize = 19,
+    ytickfont = font(18),
+    xtickfont = font(18),
+    xguidefont = font(20),
+    titlefont = font(22))
+
+    minimumTime = typemax(Int)
+
+    nVehicles = length(solution.vehicleSchedules)
+    if nVehicles < 10 
+        lineWidthActivity = 25.5
+        markersize = 20
+        markersizeWaiting = 20
+        lineWidthWaiting = 39.5
+        lineOffSet = 0.5
+    else
+        lineWidthActivity = 11.5
+        markersize = 15
+        markersizeWaiting = 15
+        lineWidthWaiting = 29.5
+        lineOffSet = 1
+    end
+
+    annotateOffSet = 0
     
+    # Go through waiting activities and plot them (to place behind others )
     for schedule in solution.vehicleSchedules
         for assignment in schedule.route
+            if assignment.startOfServiceTime < minimumTime
+                minimumTime = assignment.startOfServiceTime
+            end
+            
+            if assignment.activity.activityType == WAITING
+                activityId = assignment.activity.id 
+
+                if activityId <= nRequests
+                    l = "p"*string(activityId)
+                elseif activityId <= 2*nRequests
+                    l = "d"*string(activityId)
+                else
+                    l = "D"*string(activityId)
+                end
+
+                color = :gray67
+                annotatePlacement = assignment.startOfServiceTime + (assignment.endOfServiceTime - assignment.startOfServiceTime)/2.0
+                plot!(p, [assignment.startOfServiceTime, assignment.endOfServiceTime], [yPos, yPos], linewidth=lineWidthWaiting, label="", color=color, marker=:none,markerstrokewidth=0,markersize=markersizeWaiting,alpha=0.5)
+                annotate!(p,annotatePlacement, yPos, text(l, :black, 8))
+            end
+        end
+
+        if nVehicles < 10 
+            yPos += 1
+        else
+            yPos += 2
+        end
+    end
+
+
+    # Plot remaining activities
+    yPos = 1
+    for schedule in solution.vehicleSchedules
+        if schedule.route[end].endOfServiceTime < eventTime
+            hline!([yPos - lineOffSet], linewidth=1, color=:gray, label="")
+
+            push!(yPositions, yPos)
+            push!(yLabels, "Vehicle $(schedule.vehicle.id)")
+
+            if nVehicles < 10 
+                yPos += 1
+            else
+                yPos += 2
+            end
+
+            continue 
+        end
+
+        for assignment in schedule.route
+            if assignment.startOfServiceTime < minimumTime
+                minimumTime = assignment.startOfServiceTime
+            end
+
             offset = 0 # TO offset waiting activities visually 
             isExpected = nFixed < assignment.activity.requestId 
             if assignment.activity.activityType == PICKUP
@@ -29,9 +108,9 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String;eventI
                 else
                     color = assignment.activity.requestId == eventId ? :lightblue1 : :lightgreen 
                 end 
-                markersize = 15
-                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
-                annotate!(p, assignment.startOfServiceTime, yPos, text("PU"*string(assignment.activity.requestId), :black, 8))
+
+                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=lineWidthActivity, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
+                annotate!(p, assignment.startOfServiceTime, yPos+annotateOffSet, text("p"*string(assignment.activity.requestId), :black, 8))
 
             elseif assignment.activity.activityType == DROPOFF
                 if isExpected
@@ -40,46 +119,72 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String;eventI
                     color = assignment.activity.requestId == eventId ? :blue : :tomato 
                 end 
                 
-                markersize = 15
-
-                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
-                annotate!(p, assignment.startOfServiceTime, yPos, text("DO"*string(assignment.activity.requestId), :black, 8))
+                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=lineWidthActivity, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
+                annotate!(p, assignment.startOfServiceTime, yPos+annotateOffSet, text("d"*string(assignment.activity.requestId), :black, 8))
 
             elseif assignment.activity.activityType == DEPOT
                 color = :black
-                markersize = 15
 
-                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=11.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
+                scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=lineWidthActivity, label="", color=color, marker=:rect,markerstrokewidth=0,markersize=markersize)
                 annotate!(p, assignment.startOfServiceTime, yPos, text("D"*string(schedule.vehicle.depotId), :white, 8))
-            else
-                offset = 0
-                color = :gray67
-                markersize = 15
-
-                plot!(p, [assignment.startOfServiceTime, assignment.endOfServiceTime], [yPos, yPos], linewidth=29.5, label="", color=color, marker=:square,markerstrokewidth=0,markersize=markersize)
-                annotate!(p, assignment.startOfServiceTime, yPos, text("W"*string(assignment.activity.location.name), :black, 8))
 
             end
-
-            push!(xPositions, assignment.startOfServiceTime)
-            push!(xLabels, string(round(assignment.startOfServiceTime/60.0,digits = 1)))
-
         end
-        hline!([yPos - 1], linewidth=1, color=:gray, label="")
+        hline!([yPos - lineOffSet], linewidth=1, color=:gray, label="")
 
         push!(yPositions, yPos)
         push!(yLabels, "Vehicle $(schedule.vehicle.id)")
-        yPos += 2
+
+        if nVehicles < 10 
+            yPos += 1
+        else
+            yPos += 2
+        end
     end
     
     if eventTime != -10 
         vline!([eventTime],lineWidth=1, color=:red, label="")
     end
 
+    # Plot event if it is in request bank 
+    if inRequestBank
+        hline!([yPos - lineOffSet], linewidth=1, color=:gray, label="")
+
+        # Plot the event
+        offset = 0
+        plot!(p, [event.pickUpActivity.timeWindow.startTime, event.pickUpActivity.timeWindow.endTime], [yPos, yPos], linewidth=lineWidthWaiting, label="Pick up", color = :green, marker=:none,markerstrokewidth=0,markersize=markersize,alpha=0.5)
+        annotatePlacement = event.pickUpActivity.timeWindow.startTime + (event.pickUpActivity.timeWindow.endTime-event.pickUpActivity.timeWindow.startTime)/2.0
+        annotate!(p,annotatePlacement, yPos, text("p"*string(event.id), :whblackite, 8))
+
+        plot!(p, [event.dropOffActivity.timeWindow.startTime, event.dropOffActivity.timeWindow.endTime], [yPos+offset, yPos+offset], linewidth=lineWidthWaiting, label="Drop off", color = :red, marker=:none,markerstrokewidth=0,markersize=markersize,alpha=0.5)
+        annotatePlacement = event.dropOffActivity.timeWindow.startTime + (event.dropOffActivity.timeWindow.endTime-event.dropOffActivity.timeWindow.startTime)/2.0
+        annotate!(p, annotatePlacement, yPos, text("d"*string(event.id), :black, 8))
+
+        push!(yPositions, yPos)
+        push!(yLabels, "Request $(event.id)")
+    end
+
+    # x labels 
+    xPositions = []
+    xLabels = []
+    startMinute= Int(Int(floor(minimumTime/60.0,digits = 0))*60)
+    endMinutes = 1440 
+    for i in startMinute:60:endMinutes
+        h = Int(round(i/60.0,digits = 0))
+        if h < 10
+            label = string("0", h, ":00")
+        else
+            label = string(h, ":00")
+        end
+        push!(xLabels, label)
+        push!(xPositions, i)
+    end
+
     plot!(p, yticks=(yPositions, yLabels))
     plot!(p, xticks=(xPositions, xLabels), xrotation=90)
     xlabel!("Time (Hour)")
-    title!(string(title," - Activity Assignments for Vehicles"))
+    xlims!(startMinute, endMinutes+10)
+    title!(title)
     
     return p
 end
@@ -712,7 +817,7 @@ end
 #==
  Write KPIs to file  
 ==#
-function writeOnlineKPIsToFile(fileName::String, scenario::Scenario,solution::Solution,requestBank::Vector{Int}, requestBankOffline::Vector{Int},totalElapsedTime::Float64,averageResponseTime::Float64,eventsInsertedByALNS::Int)
+function writeOnlineKPIsToFile(fileName::String, scenario::Scenario,solution::Solution,requestBank::Vector{Int}, requestBankOffline::Vector{Int},totalElapsedTime::Float64,averageResponseTime::Float64,eventsInsertedByALNS::Int,ALNSIterations::Int)
     # Find drive times for customers
     totalDirectRideTime = length(requestBank) == length(scenario.requests) ? 0 : sum(r.directDriveTime for r in scenario.requests if !(r.id in requestBank)) 
     totalActualRideTime = 0
@@ -773,7 +878,8 @@ function writeOnlineKPIsToFile(fileName::String, scenario::Scenario,solution::So
         "TotalElapsedTime" => round(totalElapsedTime,digits=2),
         "AverageResponseTime" => round(averageResponseTime,digits=2), 
         "EventsInsertedByALNS" => eventsInsertedByALNS,
-        "AveragePercentRideSharing" => round(averagePercentRideSharing,digits=3)
+        "AveragePercentRideSharing" => round(averagePercentRideSharing,digits=3),
+        "ALNSIterations" => ALNSIterations
     )
 
     # Write the dictionary to a JSON file

@@ -7,6 +7,7 @@ using alns
 using Test
 using TimerOutputs
 using JSON
+using Plots.PlotMeasures
 
 
 #==
@@ -64,7 +65,7 @@ function createExpectedRequests(N::Int,nFixedRequests::Int)
         dropoff_longitude, dropoff_latitude = sampled_location[2]
 
         # Determine type of request
-        if rand() < 0.5
+        if rand() <= 1 #TODO change 
             requestType = 0  # pick-up request
 
             sampled_indices = sample(1:length(probabilities_online), Weights(probabilities_online), 1)
@@ -114,7 +115,7 @@ function getDistanceAndTimeMatrixFromDataFrame(requestsDf::DataFrame,expectedReq
 end
 
 
-function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicleFile::String, parametersFile::String,scenarioName=""::String,gridFile::String = "")
+function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicleFile::String, parametersFile::String,scenarioName=""::String,gridFile::String = "";useAnticipationOnlineRequests::Bool=false,maxDelay::Int=45,maxEarlyArrival::Int=15)
 
     # Check that files exist 
     if !isfile(requestFile)
@@ -179,14 +180,19 @@ function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicle
     end
 
     # Generate expected requests
-    newExpectedRequestsDf = createExpectedRequests(nNewExpected,nRequests)
+    if useAnticipationOnlineRequests
+        newExpectedRequestsDf = makeAnticipationOnlineRequests(requestsDf, nRequests)
+    else
+        newExpectedRequestsDf = createExpectedRequests(nNewExpected,nRequests)
+    end
 
     # Read time and distance matrices from input or initialize empty matrices
     distance, time = getDistanceAndTimeMatrixFromDataFrame(requestsDf,newExpectedRequestsDf,depotCoordinates)
 
     # Get requests 
-    requests = readRequests(requestsDf,nRequests+nNewExpected,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time)
-    expectedRequests = readRequests(newExpectedRequestsDf,nNewExpected,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time,extraN=nRequests)
+    requests = readRequests(requestsDf,nRequests+nNewExpected,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time,maxDelay,maxEarlyArrival)
+    expectedRequests = readRequests(newExpectedRequestsDf,nNewExpected,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time,maxDelay,maxEarlyArrival,extraN=nRequests,useAnticipationOnlineRequests=useAnticipationOnlineRequests)
+    
     allRequests = vcat(requests, expectedRequests)
 
     # Split into offline and online requests
@@ -199,6 +205,31 @@ function readInstanceAnticipation(requestFile::String,nNewExpected::Int, vehicle
     end
 
 end
+
+
+function makeAnticipationOnlineRequests(requestDF::DataFrame, nRequests::Int)
+
+    # Filter requests where call_time > 0
+    filteredDF = requestDF[requestDF.call_time .> 0, :]
+
+    # Create modified copy with updated values
+    newIds = collect(1:nrow(filteredDF)) #.+ nRequests
+    newDF = DataFrame(
+        id = newIds,
+        pickup_latitude = filteredDF.pickup_latitude,
+        pickup_longitude = filteredDF.pickup_longitude,
+        dropoff_latitude = filteredDF.dropoff_latitude,
+        dropoff_longitude = filteredDF.dropoff_longitude,
+        request_type = filteredDF.request_type,
+        request_time = filteredDF.request_time,
+        mobility_type = filteredDF.mobility_type,
+        call_time = fill(0, nrow(filteredDF)),  # reset call_time
+        direct_drive_time = filteredDF.direct_drive_time,
+    )
+
+    return newDF
+end
+
 
 
 function removeExpectedRequestsFromSolution!(time::Array{Int,2},distance::Array{Float64,2},serviceTimes::Int,requests::Vector{Request},solution::Solution,nExpected::Int,nFixed::Int,nNotServicedExpectedRequests::Int,requestBank::Vector{Int},taxiParameter::Float64,taxiParameterExpected::Float64;TO::TimerOutput=TimerOutput())
@@ -255,7 +286,6 @@ function removeRequestsFromScheduleAnticipation!(time::Array{Int,2},distance::Ar
     #schedule.totalCost = getTotalCostRouteOnline(time,schedule.route,visitedRoute,serviceTimes)
 
 end
-
 
 function removeExpectedActivityFromRouteWF!(time::Array{Int,2}, schedule::VehicleSchedule, idx::Int)
     route = schedule.route
@@ -395,7 +425,7 @@ end
 #==
  Create offline solution with anticipation
 ==#
-function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},destroyMethods::Vector{GenericMethod},requestFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String,nExpected::Int,gridFile::String,nOfflineOriginal::Int;displayPlots::Bool=false,keepExpectedRequests::Bool=false)
+function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},destroyMethods::Vector{GenericMethod},requestFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String,nExpected::Int,gridFile::String,nOfflineOriginal::Int;displayPlots::Bool=false,keepExpectedRequests::Bool=false,useAnticipationOnlineRequests::Bool=false)
 
     # Variables to determine best solution
     bestRunId = -1
@@ -404,20 +434,25 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
     bestRequestBank::Union{Nothing, Vector{Int}} = nothing
     bestScenario::Union{Nothing, Scenario} = nothing
     bestNotServicedExpectedRequests = typemax(Int)
+    bestALNSIterations = typemax(Int)
     results = DataFrame(runId = String[],
                         averageObj = Float64[],
                         averageNotServicedExpectedRequests = Float64[],
                         nInitialNotServicedFixedRequests = Int[],
-                        nInitialNotServicedExpectedRequests = Int[])
+                        nInitialNotServicedExpectedRequests = Int[], ALNSIterations = Int[])
     nRequests = 0
 
     # Create different scenarios and solve problem with known offline requests and predicted online requests 
-    for i in 1:10
+    for i in 1:5 #TODO change
         println("==========================================")
         println("Run: ", i)
 
         # Make scenario
-        scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile)
+        if useAnticipationOnlineRequests
+            scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile,useAnticipationOnlineRequests=true)
+        else 
+            scenario = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile)
+        end
         time = scenario.time
         distance = scenario.distance
         serviceTimes = scenario.serviceTimes
@@ -438,7 +473,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
             throw(msg)
            end
 
-        originalSolution, originalRequestBank,_,_, _,_,_ = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
+        originalSolution, originalRequestBank,_,_, _,_,_,ALNSIterations = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
         
         # Save solution with requests
         if keepExpectedRequests
@@ -449,8 +484,8 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
      
 
         if displayPlots
-            display(createGantChartOfSolutionAnticipation(scenario,originalSolution,"SOLUTION AFTER ALNS, run: "*string(i),nFixed,originalRequestBankWithAllRequests))
-            display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and before removing expected requests",nFixed = scenario.nFixed))
+            #display(createGantChartOfSolutionAnticipation(scenario,originalSolution,"SOLUTION AFTER ALNS, run: "*string(i),nFixed,originalRequestBankWithAllRequests))
+            #display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and before removing expected requests",nFixed = scenario.nFixed))
             #display(plotRoutes(originalSolution,scenario,requestBank,"Initial Solution "*string(i)*" before ALNS and before removing expected requests"))
         end
 
@@ -470,7 +505,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,originalSolution,nExpected,nFixed,nNotServicedExpectedRequests,originalRequestBank,taxiParameter,taxiParameterExpected)
 
         if displayPlots
-            display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and after removing expected requests",nFixed = scenario.nFixed))
+            #display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and after removing expected requests",nFixed = scenario.nFixed))
             #display(plotRoutes(originalSolution,scenario,originalRequestBank,"Initial Solution "*string(i)*" before ALNS and after removing expected requests"))
         end
 
@@ -491,7 +526,11 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
             solution = copySolution(originalSolution)
             
             # Generate new scenario
-            scenario2 = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile)
+            if useAnticipationOnlineRequests
+                scenario2 = scenario
+            else
+                scenario2 = readInstanceAnticipation(requestFile, nExpected, vehiclesFile, parametersFile,scenarioName,gridFile)
+            end
 
             # Insert expected requests randomly into solution using regret insertion
             expectedRequestsIds = collect(nFixed+1:nFixed+nExpected)
@@ -513,7 +552,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
             averageNotServicedExpectedRequests += length(stateALNS.requestBank)
 
             println("\t Sub run: ", j)
-            println("\t\t Number of not serviced fixed requests: ",  length(stateALNS.requestBank),"/",nExpected)
+            println("\t\t Number of not serviced expected requests: ",  length(stateALNS.requestBank),"/",nExpected)
         end
 
         averageObj /= 10
@@ -523,6 +562,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         if averageObj < bestAverageObj 
             bestAverageObj = averageObj
             bestNotServicedExpectedRequests = averageNotServicedExpectedRequests
+            bestALNSIterations = ALNSIterations
             if keepExpectedRequests
                 bestSolution = originalSolutionWithAllRequests
                 bestRequestBank = originalRequestBankWithAllRequests
@@ -535,7 +575,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
 
         # Save results
         push!(results, (runId = "Run $i", averageObj = averageObj, averageNotServicedExpectedRequests = averageNotServicedExpectedRequests, 
-                        nInitialNotServicedFixedRequests = nNotServicedFixedRequests, nInitialNotServicedExpectedRequests = nNotServicedExpectedRequests))
+                        nInitialNotServicedFixedRequests = nNotServicedFixedRequests, nInitialNotServicedExpectedRequests = nNotServicedExpectedRequests, ALNSIterations = ALNSIterations))
         
         println("BEST RUN: ", bestRunId)
 
@@ -543,9 +583,18 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
     end
 
     if keepExpectedRequests
-        return bestSolution, bestRequestBank, results, bestScenario, Scenario(), true, ""
+        expectedRequests = bestScenario.requests[bestScenario.nFixed+1:end]
+        onlineRequests = bestScenario.onlineRequests
+        matches = match_similar_requests(expectedRequests, onlineRequests)
+        p = plot_matched_request_gantts(expectedRequests,onlineRequests, matches)
+        #savefig(p, string("resultExploration/results/_matched_requests.png"))
+        display(p)
+    end
+
+    if keepExpectedRequests
+        return bestSolution, bestRequestBank, results, bestScenario, Scenario(), true, "", bestALNSIterations
     else
-        return bestSolution, bestRequestBank, results, Scenario(), Scenario(), true, ""
+        return bestSolution, bestRequestBank, results, Scenario(), Scenario(), true, "", bestALNSIterations
     end
     
 
@@ -641,4 +690,128 @@ function measureSlackInSolution(solution::Solution,finalSolution::Solution, scen
 
     return slack
 
+end
+
+
+function match_similar_requests(reqs1::Vector{Request}, reqs2::Vector{Request};
+                                max_time_diff=10,
+                                max_dist_km=1.5)
+
+    matches = Tuple{Int, Int, Float64}[]
+    used = Set{Int}()
+
+    for r1 in reqs1
+        best_score = Inf
+        best_match = nothing
+        best_index = 0
+
+        for (i, r2) in enumerate(reqs2)
+            if i in used
+                continue
+            end
+
+            score = request_similarity(r1, r2; max_time_diff=max_time_diff, max_dist_km=max_dist_km)
+            if score < best_score
+                best_score = score
+                best_match = r2
+                best_index = i
+            end
+        end
+
+        if best_match !== nothing && best_score < Inf
+            push!(matches, (r1.id, best_match.id, best_score))
+            push!(used, best_index)
+        end
+    end
+
+    return matches
+end
+
+
+function request_similarity(r1::Request, r2::Request;
+    max_time_diff=30,   # max time difference in minutes
+    max_dist_km=2.0,    # max distance in kilometers
+    time_weight=1.0,
+    space_weight=1.0)
+
+    # Pickup time window start difference
+    pickup_time_diff = abs(r1.pickUpActivity.timeWindow.startTime - r2.pickUpActivity.timeWindow.startTime)
+    dropoff_time_diff = abs(r1.dropOffActivity.timeWindow.startTime - r2.dropOffActivity.timeWindow.startTime)
+
+    # Skip if time difference too large
+    if pickup_time_diff > max_time_diff || dropoff_time_diff > max_time_diff
+        return Inf
+    end
+
+    # Pickup spatial distance
+    pickup_dist = haversine_distance(r1.pickUpActivity.location.lat, r1.pickUpActivity.location.long,
+                r2.pickUpActivity.location.lat, r2.pickUpActivity.location.long)[1] / 1000
+
+    # Dropoff spatial distance
+    dropoff_dist = haversine_distance(r1.dropOffActivity.location.lat, r1.dropOffActivity.location.long,
+                r2.dropOffActivity.location.lat, r2.dropOffActivity.location.long)[1] / 1000
+
+    # Skip if spatial distance too large
+    if pickup_dist > max_dist_km || dropoff_dist > max_dist_km
+        return Inf
+    end
+
+    return time_weight * (pickup_time_diff + dropoff_time_diff) + space_weight * (pickup_dist + dropoff_dist)
+end
+
+function plot_matched_request_gantts(reqs1::Vector{Request}, reqs2::Vector{Request}, matches::Vector{Tuple{Int, Int, Float64}})
+
+    matched_ids1 = Set(map(x -> x[1], matches))
+    matched_ids2 = Set(map(x -> x[2], matches))
+
+    # First Gantt chart (left)
+    p1 = plot(title="Expected Requests", size=(1000, 600), xlabel="Time (min after midnight)", ylabel="Requests", legend=false,     left_margin = 10mm,
+    right_margin = 5mm,
+    top_margin = 5mm,
+    bottom_margin = 10mm)
+    y1_labels, y1_ticks = String[], Int[]
+    sorted_requests = sort(reqs1; by = r -> r.pickUpActivity.timeWindow.startTime)
+    for (i, req) in enumerate(sorted_requests)
+        y = length(reqs1) - i + 1
+        color_pickup = in(req.id, matched_ids1) ? :green : :red
+        color_dropoff = in(req.id, matched_ids1) ? :lightgreen : :orange
+    
+        pickup_tw = req.pickUpActivity.timeWindow
+        dropoff_tw = req.dropOffActivity.timeWindow
+    
+        plot!(p1, [pickup_tw.startTime, pickup_tw.endTime], [y, y], alpha=0.65,linewidth=6, color=color_pickup, label=false)
+        plot!(p1, [dropoff_tw.startTime, dropoff_tw.endTime], [y, y], alpha=0.65, linewidth=6, color=color_dropoff, label=false)
+    
+        push!(y1_labels, "Req $(req.id)")
+        push!(y1_ticks, y)
+    end
+    
+    yticks!(p1, y1_ticks, y1_labels)
+
+    # Second Gantt chart (right)
+    p2 = plot(title="Online Requests", size=(1500, 1000), xlabel="Time (min after midnight)", ylabel="Requests", legend=false,    left_margin = 10mm,
+    right_margin = 5mm,
+    top_margin = 5mm,
+    bottom_margin = 10mm)
+    y2_labels, y2_ticks = String[], Int[]
+    sorted_requests2 = sort(reqs2; by = r -> r.pickUpActivity.timeWindow.startTime)
+    for (i, req) in enumerate(sorted_requests2)
+        y = length(reqs1) - i + 1
+        color_pickup = in(req.id, matched_ids2) ? :green : :red
+        color_dropoff = in(req.id, matched_ids2) ? :lightgreen : :orange
+    
+        pickup_tw = req.pickUpActivity.timeWindow
+        dropoff_tw = req.dropOffActivity.timeWindow
+    
+        plot!(p2, [pickup_tw.startTime, pickup_tw.endTime], [y, y],alpha=0.65, linewidth=6, color=color_pickup, label=false)
+        plot!(p2, [dropoff_tw.startTime, dropoff_tw.endTime], [y, y],alpha=0.65, linewidth=6, color=color_dropoff, label=false)
+    
+        push!(y2_labels, "Req $(req.id)")
+        push!(y2_ticks, y)
+    end
+    
+    yticks!(p2, y2_ticks, y2_labels)
+
+    # Combine and return
+    return plot(p1, p2, layout=(1, 2))
 end

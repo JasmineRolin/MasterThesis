@@ -56,7 +56,6 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
         longStep = (maxLong - minLong) / nCols
  
         grid = Grid(maxLat,minLat,maxLong,minLong,nRows,nCols,latStep,longStep)
-        
         depotLocationsGrid, depotCoordinates = findDepotLocations(grid,nRequests)
         nDepots = length(depotLocationsGrid)
     end
@@ -173,7 +172,7 @@ end
 #==
  Function to read requests 
 ==#
-function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maximumRideTimePercent::Int, minimumMaximumRideTime::Int,time::Array{Int,2},maxDelay::Int,maxEarlyArrival::Int;extraN::Int=0)
+function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maximumRideTimePercent::Int, minimumMaximumRideTime::Int,time::Array{Int,2},maxDelay::Int,maxEarlyArrival::Int;extraN::Int=0,useAnticipationOnlineRequests::Bool=false)
     requests = Vector{Request}()
 
     for row in eachrow(requestDf)
@@ -188,7 +187,11 @@ function readRequests(requestDf::DataFrame,nRequests::Int, bufferTime::Int,maxim
         requestType = row.request_type == 0 ? PICKUP_REQUEST : DROPOFF_REQUEST
 
         # Read call time 
-        callTime = Int(floor(row.call_time))
+        if useAnticipationOnlineRequests
+            callTime = 0
+        else
+            callTime = Int(floor(row.call_time))
+        end
 
         # Read request time 
         requestTime = row.request_time 

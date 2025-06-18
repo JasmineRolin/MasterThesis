@@ -1,11 +1,11 @@
 using XLSX, CSV, DataFrames
 
 # Parameters
-methods = ["Anticipation"]#, "BaseCase"]
+methods = ["AnticipationKeepExpected", "BaseCase"]
 run_tags = ["run1"]
 anticipation_Degrees = [0.4]
 n_requests_list = [300]#[20, 100, 300, 500]
-date = "2025-05-20"
+date = "2025-05-26"
 base_dir = joinpath(@__DIR__, "results")
 nRuns = length(run_tags)
 nameOfExcel = "Result_20052025_long.xlsx"

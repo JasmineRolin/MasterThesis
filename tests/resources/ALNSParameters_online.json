@@ -1,6 +1,6 @@
 {
-    "timeLimit": 60.0,
-    "printSegmentSize":1000,
+    "timeLimit": 20.0,
+    "printSegmentSize":5000,
     "segmentSize": 10,
     "reactionFactor": 0.1,
     "scoreAccepted": 13.0,
@@ -11,6 +11,6 @@
     "p": 6,
     "shawRemovalPhi": 9.0,
     "shawRemovalXi": 3.0,
-    "maxNumberOfIterationsWithoutImprovement": 1000,
+    "maxNumberOfIterationsWithoutImprovement": 2000,
     "maxNumberOfIterationsWithoutNewBest": 5000  
 }

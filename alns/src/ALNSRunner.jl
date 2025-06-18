@@ -45,7 +45,7 @@ function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::
 
     # Call ALNS 
     startTime = time()
-    solution, requestBank,pVals,deltaVals,isImprovedVec,isAcceptedVec,isNewBestVec = ALNS(scenario,initialSolution, requestBank,configuration,parameters, ALNSOutputFileName, alreadyRejected = alreadyRejected,event = event, visitedRoute=visitedRoute, saveOutPut = saveResults,stage=stage, nNotServicedExpectedRequests=nNotServicedExpectedRequests)
+    solution, requestBank,pVals,deltaVals,isImprovedVec,isAcceptedVec,isNewBestVec, noIterations = ALNS(scenario,initialSolution, requestBank,configuration,parameters, ALNSOutputFileName, alreadyRejected = alreadyRejected,event = event, visitedRoute=visitedRoute, saveOutPut = saveResults,stage=stage, nNotServicedExpectedRequests=nNotServicedExpectedRequests)
     endTime = time()
 
     # Create results 
@@ -57,7 +57,7 @@ function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::
 
     println("Total time taken for ALNS: ", round(endTime - startTime, digits=2), " seconds")
 
-    return solution, requestBank,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec # TODO: remove
+    return solution, requestBank,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec, noIterations # TODO: remove
 end
 
 

@@ -120,14 +120,18 @@ function createCostPlot(df::DataFrame, scenarioName::String)
 
     # First plot: Total Cost
     p1 = plot(iterations, total_cost,
-              label="Total Cost",
-              linewidth=1,
-              linestyle=:dash,
-              color=:darkgray,
-              xlabel="Iteration",
-              ylabel="Total Cost",
-              title=string(scenarioName, " - ALNS Total Cost Over Iterations"),
-              legend=:topright)
+          label="Total Cost",
+          linewidth=1,
+          linestyle=:dash,
+          color=:darkgray,
+          xlabel="Iteration",
+          ylabel="Total Cost",
+          title=string(scenarioName, " - ALNS Total Cost Over Iterations"),
+          legend=:topright,
+          guidefontsize=22,     # Axis label size
+          tickfontsize=20,      # Axis tick size
+          legendfontsize=22,
+          titlefontsize=26)    # Legend text size
 
     scatter!(p1, iterations[onlyAccepted], total_cost[onlyAccepted],
              markershape=:circle, color=:yellow, label="Accepted",markerstrokewidth=0)
@@ -140,15 +144,19 @@ function createCostPlot(df::DataFrame, scenarioName::String)
 
     # Second plot: Number of Requests in the Bank
     p2 = plot(iterations, nRequestBank,
-              label="Request Bank Size",
-              linewidth=2,
-              color=:blue,
-              xlabel="Iteration",
-              ylabel="# Requests in Bank",
-              title="Request Bank Over Iterations")
+          label="Request Bank Size",
+          linewidth=2,
+          color=:blue,
+          xlabel="Iteration",
+          ylabel="# Requests in Bank",
+          title="Request Bank Over Iterations",
+          guidefontsize=22,
+          tickfontsize=20,
+          legendfontsize=22,
+          titlefontsize=26)
 
     # Combine plots into a subplot layout
-    finalPlot = plot(p1, p2, layout=l, size=(2500, 2500),
+    finalPlot = plot(p1, layout=l, size=(2500, 1250),
                      bottom_margin=12mm, left_margin=12mm,
                      top_margin=5mm, right_margin=5mm)
 
@@ -169,7 +177,11 @@ function createRepairWeightPlot(df::DataFrame,configuration::ALNSConfiguration,s
     rw_columns = filter(col -> startswith(string(col), "RW"), names(df))
 
     # Create a plot
-    p = plot(title=string(scenarioName," - Repair Weights Over Iterations"), xlabel="Iteration", ylabel="RW",size=(2000,1000))
+    p = plot(title=string(scenarioName," - Repair Weights Over Iterations"), xlabel="Iteration", ylabel="RW",size=(2000,1000),
+    tickfontsize=36,
+    guidefontsize=38,
+    legendfontsize=38,
+    titlefontsize=40)
 
     # Plot each RW column
     for (idx,col) in enumerate(rw_columns)
@@ -195,7 +207,11 @@ function createDestroyWeightPlot(df::DataFrame,configuration::ALNSConfiguration,
     rw_columns = filter(col -> startswith(string(col), "DW"), names(df))
 
     # Create a plot
-    p = plot(title=string(scenarioName," - Destroy Weights Over Iterations"), xlabel="Iteration", ylabel="DW",size=(2000,1000))
+    p = plot(title=string(scenarioName," - Destroy Weights Over Iterations"), xlabel="Iteration", ylabel="DW",size=(2000,1000),
+    tickfontsize=36,
+    guidefontsize=38,
+    legendfontsize=38,
+    titlefontsize=40)
 
     # Plot each RW column
     for (idx,col) in enumerate(rw_columns)

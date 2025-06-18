@@ -685,7 +685,7 @@ function simulateScenario(scenario::Scenario;alnsParameters::String = "tests/res
    
 end
 
-function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMatrixFile::String,timeMatrixFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json", ALNS::Bool=true, nTimePeriods::Int=24,periodLength::Int=60,testALNS::Bool=false, keepExpectedRequests::Bool=false,measureSlack::Bool=false,relocateWithDemand::Bool=false)
+function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMatrixFile::String,timeMatrixFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json", ALNS::Bool=true, nTimePeriods::Int=24,periodLength::Int=60,testALNS::Bool=false, keepExpectedRequests::Bool=false,measureSlack::Bool=false,relocateWithDemand::Bool=false,useAnticipationOnlineRequests::Bool=false)
 
     if !isdir("tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand))
         mkpath("tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand))
@@ -728,12 +728,13 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
     initialVehicleSchedules = [VehicleSchedule(vehicle,true) for vehicle in scenario.vehicles] 
     finalSolution = Solution(initialVehicleSchedules, 0.0, 0, 0, 0.0, 0) 
     currentState = State(scenario,Request(),0)
+    nRequests = length(scenario.requests)
 
     if anticipation == false
-        solution, requestBank = offlineSolution(scenario,repairMethods,destroyMethods,parametersFile,alnsParameters,scenarioName)
+        solution, requestBank, ALNSIterations = offlineSolution(scenario,repairMethods,destroyMethods,parametersFile,alnsParameters,scenarioName)
         nNotServicedExpectedRequests = 0 # Dummy
     elseif anticipation == true && keepExpectedRequests == false
-        solution, requestBank, resultsAnticipation = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,length(scenario.offlineRequests),displayPlots=displayPlots)
+        solution, requestBank, resultsAnticipation,_,_,_,_,ALNSIterations = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,length(scenario.offlineRequests),displayPlots=displayPlots)
         updateIds!(solution,length(scenario.requests),nExpected)
         requestBank = requestBank[requestBank .<= scenario.nFixed]
 
@@ -748,8 +749,10 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         end
         nNotServicedExpectedRequests = 0 # Dummy
     else
-        solution, requestBank, resultsAnticipation, scenario = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,length(scenario.offlineRequests),displayPlots=displayPlots,keepExpectedRequests=keepExpectedRequests)
+        solution, requestBank, resultsAnticipation, scenario,_,_,_,ALNSIterations = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,length(scenario.offlineRequests),displayPlots=displayPlots,keepExpectedRequests=keepExpectedRequests,useAnticipationOnlineRequests=useAnticipationOnlineRequests)
         nRequestBankTemp = length(requestBank)
+        expectedRequestBank = requestBank[requestBank .> scenario.nFixed]
+        whatHappensToExpected = zeros(Int,6)
         requestBank = requestBank[requestBank .<= scenario.nFixed]
         nNotServicedExpectedRequests = nRequestBankTemp - length(requestBank) 
         solution.nTaxiExpected = 0
@@ -803,12 +806,17 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         printSolution(solution,printRouteHorizontal)
     end
     if displayPlots
-        p1 = createGantChartOfSolutionOnline(solution,"Initial Solution after ALNS",nFixed=scenario.nFixed)
+        p1 = createGantChartOfSolutionOnline(solution,"Initial Solution after ALNS",nRequests,nFixed=scenario.nFixed)
         p2 = plotRoutes(solution,scenario,requestBank,"Initial Solution after ALNS")
         display(p1)
         display(p2)
-        # savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/InitialSolutionAfterALNS.png")
-        # savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/InitialSolutionAfterALNSRoutes.png")
+
+        if !isdir("tests/Anticipation/"*scenarioName)
+            mkpath("tests/Anticipation/"*scenarioName)
+        end
+
+        savefig(p1,"tests/Anticipation/"*scenarioName*"/InitialSolutionAfterALNS.png")
+        #savefig(p2,"tests/Anticipation/"*scenarioName*"/InitialSolutionAfterALNSRoutes.png")
     end
 
     # Initialize visited routes 
@@ -839,6 +847,8 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
 
 
     for (itr,event) in enumerate(events)
+
+
 
         startTimeEvent = time()
         println("------------------------------------------------------------------------------------------------------------------------------------------------")
@@ -880,7 +890,30 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         # Get solution for online problem
         if event.id != 0
             nOnline += 1
+
             solution, requestBank,insertedByALNS = onlineAlgorithm(currentState, requestBank, scenario, destroyMethods, repairMethods, ALNS = ALNS, nNotServicedExpectedRequests=nNotServicedExpectedRequests) 
+            
+            if keepExpectedRequests
+                # Check if event has been changed with its matching request
+                matchingId = event.request.id - length(scenario.offlineRequests) + length(scenario.requests)
+                if event.request.id in requestBank && matchingId in expectedRequestBank
+                    whatHappensToExpected[1] += 1
+                elseif event.request.id in requestBank && !(matchingId in expectedRequestBank)
+                    whatHappensToExpected[2] += 1
+                elseif !(event.request.id in requestBank) && !(matchingId in expectedRequestBank) && !(matchingId in requestBank)
+                    whatHappensToExpected[3] += 1
+                elseif !(event.request.id in requestBank) && (matchingId in requestBank)
+                    whatHappensToExpected[4] += 1
+                elseif !(event.request.id in requestBank) && (matchingId in expectedRequestBank)
+                    whatHappensToExpected[5] += 1
+                else
+                    whatHappensToExpected[6] += 1
+                end
+
+                append!(expectedRequestBank, requestBank[requestBank .> scenario.nFixed])
+            end
+
+            # Update kpis and requestbank
             eventsInsertedByALNS += insertedByALNS 
             notServicedExpected = length(requestBank[requestBank .> scenario.nFixed])
             requestBank = requestBank[requestBank .<= scenario.nFixed]
@@ -890,6 +923,19 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
             solution = copySolution(currentState.solution)
         end
 
+        ## Check that first activity in route does not end before event time
+        for (vehicle, schedule) in enumerate(solution.vehicleSchedules)
+            if length(schedule.route) > 0 && schedule.route[1].endOfServiceTime < event.callTime
+                println("First activity of vehicle ",vehicle," ends before event time: ",schedule.route[1].endOfServiceTime," < ",event.callTime)
+                printRouteHorizontal(schedule)
+                println("First activity of vehicle ends before event time")
+            end
+        end
+
+        if event.request.id == 195
+            println(requestBank)
+            throw("Event 195 is reached")
+        end
 
         endTimeEvent = time()
         averageResponseTime += endTimeEvent - startTimeEvent
@@ -907,21 +953,38 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
             printSolution(currentState.solution,printRouteHorizontal)
         end
 
-        if displayPlots && event.id in requestBank
-            p1 = createGantChartOfSolutionAndEventOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime, event=event.request,nFixed = scenario.nFixed)
-            p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime))
+        if displayPlots
+            inRequestBank = event.id in requestBank 
+            
+            # Find time string 
+            hours = div(event.callTime, 60)
+            if hours < 10 
+                hours = string("0",hours)
+            else 
+                hours = string(hours)
+            end
+
+            minutes = mod(event.callTime, 60)
+            if minutes < 10 
+                minutes = string("0",minutes)
+            else 
+                minutes = string(minutes)
+            end
+
+            timeString = hours*":"*minutes
+
+            if event.id == 0 
+                title = "Current Solution, Relocation event, time: "*string(event.callTime)
+            else
+                title = "Current Solution, Request: "*string(event.id)*", time: "*timeString
+            end  
+
+            p1 = createGantChartOfSolutionOnline(solution,title,nRequests,eventId = event.id,eventTime = event.callTime,nFixed = scenario.nFixed,inRequestBank=inRequestBank,event=event.request)
+            p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,title)
             display(p1)
             display(p2)
-            # savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*".png")
-            # savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
-
-        elseif displayPlots
-           p1 = createGantChartOfSolutionOnline(solution,"Current Solution, event: "*string(event.id)*", time: "*string(event.callTime),eventId = event.id,eventTime = event.callTime,nFixed = scenario.nFixed)
-           p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,"Current Solution: event id:"*string(event.id)*" event: "*string(itr)*"/"*string(totalEvents)*", time: "*string(event.callTime))
-           display(p1)
-           display(p2)
-           # savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*".png")
-           # savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
+            savefig(p1,"tests/Anticipation/"*scenarioName*"/CurrentSolutionTime"*string(event.callTime)*".pdf")
+            #savefig(p2,"tests/Anticipation/"*scenarioName*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
         end
     end
 
@@ -948,12 +1011,24 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         println("Request bank: ", requestBank)
     end
     if displayPlots
-        p1 = createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge",nFixed=scenario.nFixed)
-        p2  = plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge")
-        display(p1)
-        display(p2)
-        # savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/FinalSolution.png")
-        # savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/FinalSolutionRoutes.png")
+        #p = createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge",nFixed=scenario.nFixed)
+        #display(p)
+        #savefig(p, outPutFileFolder*"/final_solution_gantt.png")
+        #display(plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge"))
+        #display(createGantChartOfSolutionOnlineComparison(finalSolution, initialSolution,"Comparison between initial and final solution"))
+    end
+
+    if ALNS == false
+        servicedRequests = []
+        for(vehicle, schedule) in enumerate(finalSolution.vehicleSchedules)
+            for activity in schedule.route
+                if activity.activity.activityType == PICKUP
+                    push!(servicedRequests,activity.activity.id)
+                end
+            end
+        end
+        ids = [req.id for req in scenario.requests]
+        requestBank = setdiff(ids,servicedRequests)
     end
 
     # Print summary 
@@ -977,8 +1052,8 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         if !isdir(outPutFileFolder)
             mkpath(outPutFileFolder)
         end
-        fileName = outPutFileFolder*"/Simulation_KPI_"*string(scenario.name)*"_"*string(relocateVehicles)*"_"*string(relocateWithDemand)*".json"
-        KPIDict = writeOnlineKPIsToFile(fileName,scenario,finalSolution,requestBank,requestBankOffline,totalElapsedTime,averageResponseTime,eventsInsertedByALNS)
+        fileName = outPutFileFolder*"/Simulation_KPI_"*string(scenario.name)*"_"*string(relocateVehicles)*".json"
+        KPIDict = writeOnlineKPIsToFile(fileName,scenario,finalSolution,requestBank,requestBankOffline,totalElapsedTime,averageResponseTime,eventsInsertedByALNS,ALNSIterations)
         println("=== KPI Summary ===")
         for (key, value) in KPIDict
             println(rpad(key, 30), ": ", value)
@@ -995,6 +1070,13 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
             CSV.write(fileName, testSolutionResults)
         end
 
+        if keepExpectedRequests
+            fileName = outPutFileFolder*"/whatHappensToExpectedRequests_"*string(scenario.name)*".json"
+            file = open(fileName, "w") 
+            write(file, JSON.json(whatHappensToExpected))
+            close(file)
+        end
+
     end
     
     if keepExpectedRequests
@@ -1008,6 +1090,8 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         @test msg == ""
         @test feasible == true
     end
+
+    updateIds!(finalSolution,scenario.nFixed,scenario.nExpected)
 
     return finalSolution, requestBank
 

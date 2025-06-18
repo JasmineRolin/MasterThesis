@@ -3,17 +3,17 @@
 ################
 #    change inputs here
 ################
-n_requests_list=("300" "500")
-anticipation_levels=("0.3" "0.5")
+n_requests_list=("20")
+anticipation_levels=("0.4")
 run_tags=("run1" "run2" "run3" "run4" "run5")
 gamma="0.5"
-date="2025-05-15_long"
+date="2025-06-15_tables"
 ####################
 
 mkdir -p submitfiles/generated_jobs
 
 # Define case types
-case_types=("Anticipation")
+case_types=("AnticipationKeepExpected")
 
 for case_type in "${case_types[@]}"; do
   for n_requests in "${n_requests_list[@]}"; do
@@ -38,6 +38,9 @@ for case_type in "${case_types[@]}"; do
         elif [[ "$case_type" == "AnticipationKeepExpected" ]]; then
           jl_file="resultExploration/resultsAnticipationKeepExpected.jl"
           label="${case_type}_${anticipation}"
+        elif [[ "$case_type" == "InHindsight" ]]; then
+          jl_file="resultExploration/resultsInHindsight.jl"
+          label="${case_type}"
         else
           jl_file="resultExploration/resultsAnticipationNoALNS.jl"
           label="${case_type}_${anticipation}"
@@ -47,6 +50,7 @@ for case_type in "${case_types[@]}"; do
 #!/bin/sh
 #BSUB -J "${job_name}"
 #BSUB -o submitfiles/output/output_%J.out
+#BSUB -e submitfiles/error/error_%J.err
 #BSUB -q hpc
 #BSUB -n 8
 #BSUB -R "rusage[mem=2GB] span[hosts=1]"
