@@ -16,18 +16,26 @@ global countFeasible = Ref(0)
 #== 
     Method that performs regret insertion of requests
 ==#
-function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(),TO::TimerOutput=TimerOutput())
-    # Fixed 
-    requestBankFixed = state.requestBank
-    #requestBankFixed = state.requestBank[state.requestBank .<= scenario.nFixed]
-    regretInsertionWithRequestBank(state,scenario,requestBankFixed,visitedRoute=visitedRoute)
+function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(),TO::TimerOutput=TimerOutput();splitRequestBank::Bool=true)
+    
+    if splitRequestBank
+        # Fixed 
+        requestBankFixed = state.requestBank[state.requestBank .<= scenario.nFixed]
+        regretInsertionWithRequestBank(state,scenario,requestBankFixed,visitedRoute=visitedRoute)
 
-    # Expected
-    #requestBankExpected = state.requestBank[state.requestBank .> scenario.nFixed]
-    #regretInsertionWithRequestBank(state,scenario,requestBankExpected,visitedRoute=visitedRoute)
+        # Expected
+        requestBankExpected = state.requestBank[state.requestBank .> scenario.nFixed]
+        regretInsertionWithRequestBank(state,scenario,requestBankExpected,visitedRoute=visitedRoute)
 
-    #state.requestBank = vcat(requestBankFixed, requestBankExpected)
-    state.requestBank = requestBankFixed
+        state.requestBank = vcat(requestBankFixed, requestBankExpected)
+    else
+        requestBank = state.requestBank
+        regretInsertionWithRequestBank(state,scenario,requestBank,visitedRoute=visitedRoute)
+        state.requestBank = requestBank
+    end
+
+    
+    
 
 end
 
@@ -158,7 +166,7 @@ end
 #== 
     Method that performs greedy insertion of requests
 ==#
-function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(),TO::TimerOutput=TimerOutput())
+function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(),TO::TimerOutput=TimerOutput(),splitRequestBank::Bool=true)
     countTotal[] = 0
     countFeasible[] = 0
 
@@ -179,12 +187,15 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
     end
 
     # Shuffle request bank
-    #fixedRequestBank = requestBank[requestBank .<= scenario.nFixed]
-    #expectedRequestBank = requestBank[requestBank .> scenario.nFixed]
-    #shuffle!(fixedRequestBank)
-    #shuffle!(expectedRequestBank)
-    #requestBank = vcat(fixedRequestBank, expectedRequestBank)
-    shuffle!(requestBank) #TODO only when same request bank is wanted
+    if splitRequestBank
+        fixedRequestBank = requestBank[requestBank .<= scenario.nFixed]
+        expectedRequestBank = requestBank[requestBank .> scenario.nFixed]
+        shuffle!(fixedRequestBank)
+        shuffle!(expectedRequestBank)
+        requestBank = vcat(fixedRequestBank, expectedRequestBank)
+    else
+        shuffle!(requestBank)
+    end
     
     # Define insertion matrix
     insertionCosts = zeros(Float64, nRequests, nVehicles)
@@ -272,9 +283,6 @@ function greedyInsertion(state::ALNSState,scenario::Scenario; visitedRoute::Dict
     end
 
     state.requestBank = newRequestBank
-
-    # TODO: delete 
-   # println("GREEDY: TOTAL: ", countTotal[], " FEASIBLE: ", countFeasible[])
 
 end
 
