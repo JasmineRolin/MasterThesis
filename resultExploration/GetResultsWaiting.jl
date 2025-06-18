@@ -8,8 +8,8 @@ gamma = 0.7
 baseFolder = "runfiles/output/Waiting/Dynamic/"
 plotName = "Dynamic"
 
-plotResults = true
-generateTables = false
+plotResults = false
+generateTables = true
 
 if !isdir("plots/Waiting/$(plotName)/")
     mkdir("plots/Waiting/$(plotName)/")
@@ -1012,4 +1012,81 @@ if generateTables
         CSV.write(output_file*".csv", summary_table)
         println("✅ Saved summary table for n=$n → $output_file")
     end
+
+
+
+
+     # request overlapping
+     summary_table = DataFrame(NRequests = Int[],BaseValue = Float64[], RS1 = Float64[],  RS2 = Float64[])
+
+     for n in nRequestList
+        outPutFolder = baseFolder * string(n)
+
+        # Read base method result
+        resultFileBase = string(outPutFolder, "/results_avgOverRuns_false_false.csv")
+        dfBase = CSV.read(resultFileBase, DataFrame)
+        
+        # Relocation strategy 1 
+        resultFile1 = string(outPutFolder, "/results_avgOverRuns_true_true.csv")
+        if !isfile(resultFile1)
+            @warn "Missing file: $resultFile"
+            continue
+        end
+        df1 = CSV.read(resultFile1, DataFrame)
+
+
+        # Relocation strategy 2
+        resultFile2 = string(outPutFolder, "/results_avgOverRuns_true_false.csv")
+        if !isfile(resultFile2)
+            @warn "Missing file: $resultFile"
+            continue
+        end
+        df2 = CSV.read(resultFile2, DataFrame)
+
+
+        meanBase = mean(dfBase.TotalNumberOfRequestsOverlapIdleVehicle_mean)
+        mean1 = mean(df1.TotalNumberOfRequestsOverlapIdleVehicle_mean)
+        mean2 = mean(df2.TotalNumberOfRequestsOverlapIdleVehicle_mean)
+       
+
+        push!(summary_table,(
+            NRequests = n,
+            BaseValue = round(meanBase, digits=2),
+            RS1 = round(mean1, digits=2),
+            RS2 = round(mean2, digits=2)
+        ))
+
+        # Save latex table 
+
+       
+    end
+
+    if plotName == "Base"
+        instanceType = "I"
+    else
+        instanceType = "II"
+    end
+
+    output_file = "plots/Waiting/$(plotName)/comparison_NumberRequestOverlap_mean_summary_$(plotName)"
+
+    open(output_file*".tex", "w") do io
+        # Manually write the LaTeX table environment
+        println(io, "\\begin{table}[H]")
+        println(io, "\\centering")
+    
+        pretty_table(io, summary_table;
+            backend = Val(:latex),
+            tf = tf_latex_default,  # or tf_latex_grid for more lines
+            header = ["n","Base", "RS1", "RS2"],
+            alignment = :c
+        )
+    
+        println(io, "\\caption{Number of requests that overlap with idle vehicle $(instanceType) and instance size n = $(n)}")
+        println(io, "\\label{tab:wait:resrelocation-number-request-overlap-comparison_$(instanceType)_$(n)}")
+        println(io, "\\end{table}")
+    end
+
+    # Save table for this n
+    CSV.write(output_file*".csv", summary_table)
+    println("✅ Saved summary table for n=$n → $output_file")
 end

@@ -14,10 +14,10 @@ using Plots.PlotMeasures
 print("\033c")
 
 # Parameters 
-n = 20
+n = 100
 i = 1
 gridSize = 10
-displayPlots = true
+displayPlots = false
 dynamicProblem = true 
 ALNS = true
 saveResults = false
@@ -31,9 +31,9 @@ nHistoricRequestFiles = 20
 alnsParameters = "tests/resources/ALNSParameters_offlineWaiting.json"
 
 
-true_false = true 
+true_false = false 
 true_true = false
-false_false = false
+false_false = true
 
 
 # Retrieve historic request files 
