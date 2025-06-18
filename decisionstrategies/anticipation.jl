@@ -425,7 +425,7 @@ end
 #==
  Create offline solution with anticipation
 ==#
-function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},destroyMethods::Vector{GenericMethod},requestFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String,nExpected::Int,gridFile::String,nOfflineOriginal::Int;displayPlots::Bool=false,keepExpectedRequests::Bool=false,useAnticipationOnlineRequests::Bool=false)
+function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},destroyMethods::Vector{GenericMethod},requestFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String,nExpected::Int,gridFile::String,nOfflineOriginal::Int;displayPlots::Bool=false,keepExpectedRequests::Bool=false,useAnticipationOnlineRequests::Bool=false,splitRequestBank::Bool=true)
 
     # Variables to determine best solution
     bestRunId = -1
@@ -473,7 +473,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
             throw(msg)
            end
 
-        originalSolution, originalRequestBank,_,_, _,_,_,ALNSIterations = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
+        originalSolution, originalRequestBank,_,_, _,_,_,ALNSIterations = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank,splitRequestBank=splitRequestBank)
         
         # Save solution with requests
         if keepExpectedRequests

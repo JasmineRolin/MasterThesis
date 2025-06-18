@@ -685,7 +685,7 @@ function simulateScenario(scenario::Scenario;alnsParameters::String = "tests/res
    
 end
 
-function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMatrixFile::String,timeMatrixFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json", ALNS::Bool=true, nTimePeriods::Int=24,periodLength::Int=60,testALNS::Bool=false, keepExpectedRequests::Bool=false,measureSlack::Bool=false,relocateWithDemand::Bool=false,useAnticipationOnlineRequests::Bool=false)
+function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMatrixFile::String,timeMatrixFile::String,vehiclesFile::String,parametersFile::String,alnsParameters::String,scenarioName::String;printResults::Bool = false,saveResults::Bool=false,displayPlots::Bool=false,outPutFileFolder::String="tests/output",saveALNSResults::Bool = false,displayALNSPlots::Bool = false,historicRequestFiles::Vector{String} = Vector{String}(),gamma::Float64=0.5,relocateVehicles::Bool=false, anticipation::Bool = false, nExpected::Int=0, gridFile::String="Data/Konsentra/grid.json", ALNS::Bool=true, nTimePeriods::Int=24,periodLength::Int=60,testALNS::Bool=false, keepExpectedRequests::Bool=false,measureSlack::Bool=false,relocateWithDemand::Bool=false,useAnticipationOnlineRequests::Bool=false,splitRequestBank::Bool=true)
 
     if !isdir("tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand))
         mkpath("tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand))
@@ -731,10 +731,10 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
     nRequests = length(scenario.requests)
 
     if anticipation == false
-        solution, requestBank, ALNSIterations = offlineSolution(scenario,repairMethods,destroyMethods,parametersFile,alnsParameters,scenarioName)
+        solution, requestBank, ALNSIterations = offlineSolution(scenario,repairMethods,destroyMethods,parametersFile,alnsParameters,scenarioName,displayPlots=displayPlots,gridFile=gridFile,nExpected=nExpected,requestFile=requestFile,distanceMatrixFile=distanceMatrixFile,timeMatrixFile=timeMatrixFile,vehiclesFile=vehiclesFile,saveALNSResults=saveALNSResults,displayALNSPlots=displayALNSPlots,testALNS=testALNS,splitRequestBank=splitRequestBank)
         nNotServicedExpectedRequests = 0 # Dummy
     elseif anticipation == true && keepExpectedRequests == false
-        solution, requestBank, resultsAnticipation,_,_,_,_,ALNSIterations = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,length(scenario.offlineRequests),displayPlots=displayPlots)
+        solution, requestBank, resultsAnticipation,_,_,_,_,ALNSIterations = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,length(scenario.offlineRequests),displayPlots=displayPlots,splitRequestBank=splitRequestBank)
         updateIds!(solution,length(scenario.requests),nExpected)
         requestBank = requestBank[requestBank .<= scenario.nFixed]
 
@@ -749,7 +749,7 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         end
         nNotServicedExpectedRequests = 0 # Dummy
     else
-        solution, requestBank, resultsAnticipation, scenario,_,_,_,ALNSIterations = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,length(scenario.offlineRequests),displayPlots=displayPlots,keepExpectedRequests=keepExpectedRequests,useAnticipationOnlineRequests=useAnticipationOnlineRequests)
+        solution, requestBank, resultsAnticipation, scenario,_,_,_,ALNSIterations = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,length(scenario.offlineRequests),displayPlots=displayPlots,keepExpectedRequests=keepExpectedRequests,useAnticipationOnlineRequests=useAnticipationOnlineRequests,splitRequestBank=splitRequestBank)
         nRequestBankTemp = length(requestBank)
         expectedRequestBank = requestBank[requestBank .> scenario.nFixed]
         whatHappensToExpected = zeros(Int,6)
@@ -891,7 +891,7 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         if event.id != 0
             nOnline += 1
 
-            solution, requestBank,insertedByALNS = onlineAlgorithm(currentState, requestBank, scenario, destroyMethods, repairMethods, ALNS = ALNS, nNotServicedExpectedRequests=nNotServicedExpectedRequests) 
+            solution, requestBank,insertedByALNS = onlineAlgorithm(currentState, requestBank, scenario, destroyMethods, repairMethods, ALNS = ALNS, nNotServicedExpectedRequests=nNotServicedExpectedRequests,splitRequestBank=splitRequestBank) 
             
             if keepExpectedRequests
                 # Check if event has been changed with its matching request
@@ -921,20 +921,6 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
             solution.totalCost -= notServicedExpected*scenario.taxiParameterExpected
         else
             solution = copySolution(currentState.solution)
-        end
-
-        ## Check that first activity in route does not end before event time
-        for (vehicle, schedule) in enumerate(solution.vehicleSchedules)
-            if length(schedule.route) > 0 && schedule.route[1].endOfServiceTime < event.callTime
-                println("First activity of vehicle ",vehicle," ends before event time: ",schedule.route[1].endOfServiceTime," < ",event.callTime)
-                printRouteHorizontal(schedule)
-                println("First activity of vehicle ends before event time")
-            end
-        end
-
-        if event.request.id == 195
-            println(requestBank)
-            throw("Event 195 is reached")
         end
 
         endTimeEvent = time()

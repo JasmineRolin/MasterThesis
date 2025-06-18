@@ -16,8 +16,8 @@ global countFeasible = Ref(0)
 #== 
     Method that performs regret insertion of requests
 ==#
-function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(),TO::TimerOutput=TimerOutput();splitRequestBank::Bool=true)
-    
+function regretInsertion(state::ALNSState,scenario::Scenario;visitedRoute::Dict{Int, Dict{String, Int}}= Dict{Int, Dict{String, Int}}(),TO::TimerOutput=TimerOutput(),splitRequestBank::Bool=true)
+
     if splitRequestBank
         # Fixed 
         requestBankFixed = state.requestBank[state.requestBank .<= scenario.nFixed]

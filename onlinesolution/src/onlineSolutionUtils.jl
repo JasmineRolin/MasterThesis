@@ -65,7 +65,7 @@ end
 #==
  Run online algorithm
 ==#
-function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario::Scenario, destroyMethods::Vector{GenericMethod}, repairMethods::Vector{GenericMethod};ALNS::Bool=true, nNotServicedExpectedRequests::Int=0)
+function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario::Scenario, destroyMethods::Vector{GenericMethod}, repairMethods::Vector{GenericMethod};ALNS::Bool=true, nNotServicedExpectedRequests::Int=0,splitRequestBank::Bool=true)
     insertedByALNS = false 
 
     # Retrieve info 
@@ -77,7 +77,7 @@ function onlineAlgorithm(currentState::State, requestBank::Vector{Int}, scenario
     # Run ALNS
     # TODO: set correct parameters for alns 
     if ALNS
-        finalSolution,finalOnlineRequestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters_online.json",initialSolution =  currentSolution, requestBank = newRequestBankOnline, event = event, alreadyRejected =  totalNTaxi, visitedRoute = currentState.visitedRoute,stage = "Online", nNotServicedExpectedRequests=nNotServicedExpectedRequests)
+        finalSolution,finalOnlineRequestBank = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile="tests/resources/ALNSParameters_online.json",initialSolution =  currentSolution, requestBank = newRequestBankOnline, event = event, alreadyRejected =  totalNTaxi, visitedRoute = currentState.visitedRoute,stage = "Online", nNotServicedExpectedRequests=nNotServicedExpectedRequests,splitRequestBank=splitRequestBank)
     else
         return currentSolution, newRequestBankOnline, 0
     end

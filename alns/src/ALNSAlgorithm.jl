@@ -15,7 +15,7 @@ const TO = TimerOutput()
 #==
  Method to run ALNS algorithm
 ==#
-function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters, fileName::String;alreadyRejected=0, event=Request(), visitedRoute::Dict{Int,Dict{String,Int}}=Dict(),saveOutPut=false, stage="Offline", nNotServicedExpectedRequests::Int=0)
+function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector{Int},configuration::ALNSConfiguration, parameters::ALNSParameters, fileName::String;alreadyRejected=0, event=Request(), visitedRoute::Dict{Int,Dict{String,Int}}=Dict(),saveOutPut=false, stage="Offline", nNotServicedExpectedRequests::Int=0,splitRequestBank::Bool=true)
     eventId = event.id
     nDestroy = length(configuration.destroyMethods)
     nRepair = length(configuration.repairMethods)
@@ -65,7 +65,7 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
     
 
         @timeit TO "Repair!" begin
-            repairIdx = repair!(scenario, trialState, configuration, visitedRoute=visitedRoute,TO=TO)
+            repairIdx = repair!(scenario, trialState, configuration, visitedRoute=visitedRoute,TO=TO,splitRequestBank = splitRequestBank)
         end
       
         @timeit TO "Hash solution" begin 
