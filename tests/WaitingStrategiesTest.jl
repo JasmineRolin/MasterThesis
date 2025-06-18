@@ -31,8 +31,8 @@ nHistoricRequestFiles = 20
 alnsParameters = "tests/resources/ALNSParameters_offlineWaiting.json"
 
 
-true_false = true 
-true_true = false
+true_false = false 
+true_true = true
 false_false = false
 
 

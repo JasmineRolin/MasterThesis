@@ -1113,7 +1113,7 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
     nRequests = length(scenario.requests)
 
     if anticipation == false
-        solution, requestBank, ALNSIterations = offlineSolution(scenario,repairMethods,destroyMethods,parametersFile,alnsParameters,scenarioName,displayPlots=displayPlots,gridFile=gridFile,nExpected=nExpected,requestFile=requestFile,distanceMatrixFile=distanceMatrixFile,timeMatrixFile=timeMatrixFile,vehiclesFile=vehiclesFile,saveALNSResults=saveALNSResults,displayALNSPlots=displayALNSPlots,testALNS=testALNS,splitRequestBank=splitRequestBank)
+        solution, requestBank, ALNSIterations = offlineSolution(scenario,repairMethods,destroyMethods,parametersFile,alnsParameters,scenarioName,saveALNSResults=saveALNSResults,displayALNSPlots=displayALNSPlots,splitRequestBank=splitRequestBank)
         nNotServicedExpectedRequests = 0 # Dummy
     elseif anticipation == true && keepExpectedRequests == false
         solution, requestBank, resultsAnticipation,_,_,_,_,ALNSIterations = offlineSolutionWithAnticipation(repairMethods,destroyMethods,requestFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,nExpected,gridFile,length(scenario.offlineRequests),displayPlots=displayPlots,splitRequestBank=splitRequestBank)
@@ -1384,7 +1384,7 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         println("Request bank: ", requestBank)
     end
     if displayPlots
-        p = createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge",nFixed=scenario.nFixed)
+        p = createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge",nRequests,nFixed=scenario.nFixed)
         display(p)
         savefig(p, outPutFileFolder*"/final_solution_gantt.png")
         display(plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge"))
