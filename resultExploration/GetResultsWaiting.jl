@@ -1081,12 +1081,124 @@ if generateTables
             alignment = :c
         )
     
-        println(io, "\\caption{Number of requests that overlap with idle vehicle $(instanceType) and instance size n = $(n)}")
-        println(io, "\\label{tab:wait:resrelocation-number-request-overlap-comparison_$(instanceType)_$(n)}")
+        println(io, "\\caption{Number of requests that overlap with idle vehicle $(instanceType) ")
+        println(io, "\\label{tab:wait:resrelocation-number-request-overlap-comparison_$(instanceType)")
         println(io, "\\end{table}")
     end
 
     # Save table for this n
     CSV.write(output_file*".csv", summary_table)
-    println("✅ Saved summary table for n=$n → $output_file")
 end
+
+
+
+
+#================================================================================#
+#================================================================================#
+#================================================================================#
+#================================================================================#
+ytickfont = font(13)
+xtickfont = font(15)
+xguidefont = font(18)
+yguidefont = font(18)
+titlefont = font(18)
+legendfontsize = 15
+markersize = 10
+
+p = plot(size = (1000,1000),title = "", xlabel = "", ylabel = "Comparison",leftmargin=5mm,topmargin=5mm,legend=:topright,legend_background_color = RGBA(1,1,1,0.6),legend_position = (3, 0.5),
+legendfontsize = legendfontsize,
+ytickfont = ytickfont,
+xtickfont = xtickfont,
+xguidefont = xguidefont,
+yguidefont = yguidefont,
+titlefont = titlefont,
+xrotation = 90)
+
+
+resultFile = "plots/Waiting/Dynamic/comparison_nTaxi_summary_300_Dynamic.csv"
+dfUnservicedRequests = CSV.read(resultFile, DataFrame)
+
+resultFile = "plots/Waiting/Dynamic/comparison_TotalEmptyRelocationTime_mean_summary_300_Dynamic.csv"
+dfEmptyRelocationTime = CSV.read(resultFile, DataFrame)
+
+resultFile = "plots/Waiting/Dynamic/comparison_TotalDriveTimeToNearestIdleVehicle_mean_summary_300_Dynamic.csv"
+dfDriveTimeToNearest = CSV.read(resultFile, DataFrame)
+
+nRows = nrow(dfDriveTimeToNearest)
+
+i = 1
+
+scatter!([i],[abs(dfUnservicedRequests[i,:PercentDifferenceRS2])]; 
+marker = :square, 
+color = :forestgreen, 
+label = "Unserviced requests",
+markersize = markersize,
+markerstrokewidth = 0,
+linestyle = :solid,
+linewidth = 2)
+
+scatter!([i],[abs(dfEmptyRelocationTime[i,:PercentDifferenceRS2])]; 
+marker = :circle, 
+color = :steelblue, 
+label = "Empty relocation",
+markersize = markersize,
+markerstrokewidth = 0,
+linestyle = :solid,
+linewidth = 2)
+
+scatter!([i],[abs(dfDriveTimeToNearest[i,:PercentDifferenceRS2])]; 
+marker = :diamond, 
+color = :darkorange, 
+label = "Drive time to nearest",
+markersize = markersize,
+markerstrokewidth = 0,
+linestyle = :solid,
+linewidth = 2)
+
+for i in 2:nRows
+
+    scatter!([i],[abs(dfUnservicedRequests[i,:PercentDifferenceRS2])]; 
+        marker = :square, 
+        color = :forestgreen, 
+        label = "",
+        markersize = markersize,
+        markerstrokewidth = 0,
+        linestyle = :solid,
+        linewidth = 2)
+
+    scatter!([i],[abs(dfEmptyRelocationTime[i,:PercentDifferenceRS2])]; 
+        marker = :circle, 
+        color = :steelblue, 
+        label = "",
+        markersize = markersize,
+        markerstrokewidth = 0,
+        linestyle = :solid,
+        linewidth = 2)
+
+    scatter!([i],[abs(dfDriveTimeToNearest[i,:PercentDifferenceRS2])]; 
+        marker = :diamond, 
+        color = :darkorange, 
+        label = "",
+        markersize = markersize,
+        markerstrokewidth = 0,
+        linestyle = :solid,
+        linewidth = 2)
+end
+
+for x in 1.5:(nRows - 0.5)
+    vline!([x], linestyle = :dot, color = :black, alpha = 0.9,label="")
+end
+
+xtickLabel = ["Inst. $(i)" for i in 1:nRows]
+xticks!((1:nRows,xtickLabel))
+
+savefig(p, "plots/Waiting/$(plotName)/results_COMPARISON_300_$(plotName).pdf")
+println("saved plot at: ", "plots/Waiting/$(plotName)/results_COMPARISON_300_$(plotName).pdf")
+
+
+
+#================================================================================#
+#================================================================================#
+#================================================================================#
+#================================================================================#
+instances = [1]

@@ -3,39 +3,48 @@ using waitingstrategies, domain, offlinesolution, utils, simulationframework, on
 using Plots, JSON, Test
 using Plots.PlotMeasures
 
-#==
-        !!!# OBS OBS OBS OBS OBS #!!!!!
-
-        To run the scenarios with short call time (in Data/WaitingStrategies)
-        - change MAX_DELAY = 15 and MAX_EARLY_ARRIVAL = 5 in instance reader 
-        - use parameters with short call time (tests/resources/ParametersShortCallTime.csv)
-==#
 
 print("\033c")
 
-# Parameters 
-n = 100
-i = 1
-gridSize = 10
-displayPlots = false
-dynamicProblem = true 
-ALNS = true
-saveResults = false
+#------------------------------------------------------------#
+# Script to run waiting strategies 
+#------------------------------------------------------------#
 
-gamma = 0.7
+
+
+# ==========================#
+# Parameters (do change)
+# ==========================#
+n = 300 # Instance size 
+i = 1 # Instance number
+gamma = 0.7 # Vehicle ratio 
+displayPlots = false # Display and save plots
+dynamicProblem = true # Run Instance type II 
+saveResults = false # Save ALNS output 
+
+# ==========================#
+# Methods (do change)
+# ==========================#
+true_false = true # Run with relocation strategy 2 
+true_true = false # Run relocation strategy 1 
+false_false = true # Run without relocation strategy
+inhindsight = false # Run in-hindsight solution 
+
+# ==========================#
+# Parameters that should not be changed 
+# ==========================#
+gridSize = 10 # Grid size (should NOT be changed)
 nPeriods = 48
 maximumTime = 24*60 
 periodLength = Int(maximumTime / nPeriods)
 nHistoricRequestFiles = 20
-
+ALNS = true # DO NOT change 
 alnsParameters = "tests/resources/ALNSParameters_offlineWaiting.json"
 
 
-true_false = false 
-true_true = false
-false_false = true
-
-
+# ====================================================#
+# Historic request files and data files 
+# ====================================================#
 # Retrieve historic request files 
 if dynamicProblem
     historicRequestFiles = Vector{String}()
@@ -73,24 +82,8 @@ else
     maxEarlyArrival = 15
 end
 
-
+# Read scenario 
 scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile,gridFile,maxDelay=maxDelay,maxEarlyArrival=maxEarlyArrival)
-
-# Read instance 
-# for histRequests in historicRequestFiles
-#     scenarioName = replace(histRequests, "Data/Konsentra/OriginalInstance/HistoricData/$(n)/GeneratedRequests_$(n)_" => "")
-#     histScen = readInstance(histRequests,vehiclesFile,parametersFile,scenarioName,distanceMatrixFile,timeMatrixFile,gridFile,maxDelay=maxDelay,maxEarlyArrival=maxEarlyArrival)
-
-#     pScen = plotRequestsAndVehiclesWait(histScen,histScen.grid)
-#     display(pScen)
-
-#     pGant = createGantChartOfRequestsAndVehicles(histScen.vehicles,histScen.requests,Vector{Int}(),scenarioName)
-#     display(pGant)
-# end
-
-
-#savefig(pScen,"tests/WaitingPlots/RequestsAndVehicles_$(n)_$(i)_$(gamma).png")
-
 println("\t nOfflineRequests: ",length(scenario.offlineRequests))
 
 
@@ -168,36 +161,37 @@ end
 #============================================================================#
 # Solve in-hindsigth
 #============================================================================#
-# alnsParameters = "tests/resources/ALNSParameters_offline.json"
+if inhindsight
+    alnsParametersInHindsight = "tests/resources/ALNSParameters_offline.json"
 
-# destroyMethods = Vector{GenericMethod}()
-# addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
-# addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
-# addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
+    destroyMethods = Vector{GenericMethod}()
+    addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
+    addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
+    addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
 
-# # Choose repair methods
-# repairMethods = Vector{GenericMethod}()
-# addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
-# addMethod!(repairMethods,"regretInsertion",regretInsertion)
+    # Choose repair methods
+    repairMethods = Vector{GenericMethod}()
+    addMethod!(repairMethods,"greedyInsertion",greedyInsertion)
+    addMethod!(repairMethods,"regretInsertion",regretInsertion)
 
-# initialSolution, requestBankALNS = simpleConstruction(scenario,scenario.requests)
-# finalSolution,requestBankALNS,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBankALNS,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=true,stage="Offline")
-
+    initialSolution, requestBankALNS = simpleConstruction(scenario,scenario.requests)
+    finalSolution,requestBankALNS,pVals,deltaVals, isImprovedVec,isAcceptedVec,isNewBestVec = runALNS(scenario, scenario.requests, destroyMethods,repairMethods;parametersFile=alnsParametersInHindsight,initialSolution=initialSolution,requestBank=requestBankALNS,event = scenario.onlineRequests[end],displayPlots=displayPlots,saveResults=true,stage="Offline")
+end
 
 
 #============================================================================#
 # Result
 #============================================================================#
-#println("Relocation vehicles TRUE: ", solutionTrue.nTaxi)
+println("Relocation vehicles TRUE: ", solutionTrue.nTaxi)
 println("Relocation vehicles TRUE DEMAND: ", solutionTrueDemand.nTaxi)
 println("Relocation vehicles FALSE: ", solutionFalse.nTaxi)
 #println("ALNS solution: ", finalSolution.nTaxi)
 
 
-# #============================================================================#
-# # Plots 
-# #============================================================================#
-# #============================================================================#
+#============================================================================#
+# Plots 
+#============================================================================#
+#============================================================================#
 
 # probabilityGrid = getProbabilityGrid(scenario,historicRequestFiles)
 

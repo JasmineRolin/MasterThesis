@@ -7,6 +7,8 @@ using offlinesolution
 using onlinesolution
 using alns
 using waitingstrategies
+using StatsPlots
+using CSV, DataFrames
 
 
 include("../../decisionstrategies/anticipation.jl")
@@ -1015,6 +1017,9 @@ function driveTimeToClosestIdleVehicle(currentState::State,event::Event,scenario
     callTime = event.callTime
     closestDriveTime = typemax(Int)
     closestActivityId = -1
+    cloestVehicle = -1
+    closestVehicleOverlap = -1
+    numberOfVehiclesOverlap = 0
 
     for schedule in currentState.solution.vehicleSchedules
         # vehicle has to be idle in pick-up time window 
@@ -1028,24 +1033,43 @@ function driveTimeToClosestIdleVehicle(currentState::State,event::Event,scenario
             # Get drive time to pick-up location 
             driveTime = scenario.time[schedule.route[end-1].activity.id,event.request.pickUpActivity.id]
 
+            numberOfVehiclesOverlap += 1
+
             if driveTime < closestDriveTime
                 closestDriveTime = driveTime
                 closestActivityId = schedule.route[end-1].activity.id
+                cloestVehicle = schedule.vehicle.id
+
+                vehicleIdleStart = lastActivity.startOfServiceTime
+                vehicleIdleEnd = lastActivity.endOfServiceTime
+                pickupStart = event.request.pickUpActivity.timeWindow.startTime
+                pickupEnd = event.request.pickUpActivity.timeWindow.endTime
+
+                closestVehicleOverlap = max(0, min(vehicleIdleEnd, pickupEnd) - max(vehicleIdleStart, pickupStart))
             end
 
         # Check if vehicle has not left depot yet 
         elseif length(schedule.route) == 2 && schedule.route[1].activity.activityType == DEPOT && schedule.route[2].activity.activityType == DEPOT
             # Get drive time to pick-up location 
             driveTime = scenario.time[schedule.route[1].activity.id,event.request.pickUpActivity.id]
+            numberOfVehiclesOverlap += 1
 
             if driveTime < closestDriveTime
                 closestDriveTime = driveTime
                 closestActivityId = schedule.route[1].activity.id
+                cloestVehicle = schedule.vehicle.id
+
+                vehicleIdleStart = schedule.route[1].startOfServiceTime
+                vehicleIdleEnd = schedule.route[1].endOfServiceTime
+                pickupStart = event.request.pickUpActivity.timeWindow.startTime
+                pickupEnd = event.request.pickUpActivity.timeWindow.endTime
+
+                closestVehicleOverlap = max(0, min(vehicleIdleEnd, pickupEnd) - max(vehicleIdleStart, pickupStart))
             end
         end
     end
 
-    return closestDriveTime, closestActivityId
+    return closestDriveTime, closestActivityId, cloestVehicle,closestVehicleOverlap, numberOfVehiclesOverlap
 end
 
 # ------
@@ -1075,6 +1099,11 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
     numberOfRequestsOverlapIdleVehicle = 0 
     # Sum durations to nearest idle vehicle 
     driveTimeToNearestIdleVehicle = 0 
+    driveTimeToNearestIdleVehicleVector = Vector{Int64}()
+    requestIds = Vector{Int64}()
+    isInsertedIntoClosestVehicle = Vector{Bool}()
+    closestVehicleOverlapVector = Vector{Int64}()
+    numberOfVehiclesOverlapVector = Vector{Int64}()
 
     # Retrieve info 
     if relocateVehicles
@@ -1196,12 +1225,12 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         display(p1)
         display(p2)
 
-        if !isdir("tests/Anticipation/"*scenarioName)
-            mkpath("tests/Anticipation/"*scenarioName)
+        if !isdir("tests/WaitingPlots/"*scenarioName)
+            mkpath("tests/WaitingPlots/"*scenarioName)
         end
 
-        savefig(p1,"tests/Anticipation/"*scenarioName*"/InitialSolutionAfterALNS.png")
-        savefig(p2,"tests/Anticipation/"*scenarioName*"/InitialSolutionAfterALNSRoutes.png")
+        savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/InitialSolutionAfterALNS.png")
+        savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/InitialSolutionAfterALNSRoutes.png")
     end
 
     # Initialize visited routes 
@@ -1272,10 +1301,15 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         end
 
         # Find drive time to closest idle vehicle for event 
+        closestVehicle = -1
         if event.id != 0 
-            closestDriveTime, closestActivityId = driveTimeToClosestIdleVehicle(currentState,event,scenario)
+            closestDriveTime, closestActivityId, closestVehicle,closestVehicleOverlap,numberOfVehiclesOverlap = driveTimeToClosestIdleVehicle(currentState,event,scenario)
 
             if closestActivityId != -1 
+                push!(driveTimeToNearestIdleVehicleVector,closestDriveTime)
+                push!(requestIds,event.id)
+                push!(closestVehicleOverlapVector,closestVehicleOverlap)
+                push!(numberOfVehiclesOverlapVector,numberOfVehiclesOverlap)
                 numberOfRequestsOverlapIdleVehicle += 1 
                 driveTimeToNearestIdleVehicle += closestDriveTime
             end
@@ -1320,6 +1354,23 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         endTimeEvent = time()
         averageResponseTime += endTimeEvent - startTimeEvent
 
+  
+        # TODO: jas 
+        if closestVehicle != -1 
+            closestSchedule = solution.vehicleSchedules[closestVehicle]
+
+            isInsertedIntoClosestVehicle = false
+            for assignment in closestSchedule.route
+                if assignment.activity.id == event.id
+                    isInsertedIntoClosestVehicle = true
+                    break
+                end
+            end
+
+            push!(isInsertedIntoClosestVehicle,isInsertedIntoClosestVehicle)
+        end
+
+
         # ALNS removes waiting activity at end of route, so we have to add it again
         if event.id != 0
             schedulesToRelocate = addWaitingActivitiesAtEndOfRouteAfterALNS(solution,scenario,relocateVehicles)
@@ -1342,6 +1393,24 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
             printSolution(currentState.solution,printRouteHorizontal)
         end
 
+
+        # TODO: jas 
+        if event.id in requestBank
+            inRequestBank = event.id in requestBank  
+            timeString = getTimeAsString(event.callTime)
+
+            if event.id == 0 
+                title = "Current Solution, Relocation event, time: "*timeString
+            else
+                title = "Current Solution, Request: "*string(event.id)*", time: "*timeString
+            end  
+
+            p1 = createGantChartOfSolutionOnline(solution,title,nRequests,eventId = event.id,eventTime = event.callTime,nFixed = scenario.nFixed,inRequestBank=inRequestBank,event=event.request)
+            p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,title)
+            savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*".png")
+            savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
+        end
+
         if displayPlots
             inRequestBank = event.id in requestBank  
             timeString = getTimeAsString(event.callTime)
@@ -1356,8 +1425,8 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
             p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,title)
             display(p1)
             display(p2)
-            savefig(p1,"tests/Anticipation/"*scenarioName*"/CurrentSolutionTime"*string(event.callTime)*".pdf")
-            savefig(p2,"tests/Anticipation/"*scenarioName*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
+            savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*".pdf")
+            savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
         end
     end
 
@@ -1386,7 +1455,7 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
     if displayPlots
         p = createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge",nRequests,nFixed=scenario.nFixed)
         display(p)
-        savefig(p, "tests/Anticipation/"*scenarioName*"/final_solution_gantt.png")
+        savefig(p, "tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/final_solution_gantt.png")
         display(plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge"))
         display(createGantChartOfSolutionOnlineComparison(finalSolution, initialSolution,"Comparison between initial and final solution"))
     end
@@ -1420,6 +1489,43 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         println(rpad("Unserviced expected requests offline", 40), nNotServicedExpectedRequestsOffline,"/",scenario.nExpected)
         println(rpad("Unserviced expected requests online", 40), nNotServicedExpectedRequests-nNotServicedExpectedRequestsOffline)
     end
+
+    # TODO: jas 
+    #Box plot of drive time to nearest idle vehicle
+    if length(driveTimeToNearestIdleVehicleVector) > 0
+        p = boxplot(driveTimeToNearestIdleVehicleVector;
+            title = "Drive Time to Nearest Idle Vehicle",
+            ylabel = "Drive Time (s)",
+            xlabel = "",
+            legend = false,
+            linewidth = 2,
+            fillalpha = 0.5,
+            markercolor = :blue,
+            linecolor = :black,
+            boxcolor = :steelblue,
+            outliercolor = :black,
+            whiskerwidth = 1.5,
+            grid = false,
+            framestyle = :box,
+            yguidefont = font(14),
+            titlefont = font(16, "Arial"),
+            xtickfontsize = 10,
+            ytickfontsize = 12,
+            yticks = 0:5:maximum(driveTimeToNearestIdleVehicleVector),
+            size = (600, 400)
+        )
+
+        display(p)
+        savefig(p, "tests/WaitingPlots/" * scenarioName * "/" * string(relocateVehicles) * "_" * string(relocateWithDemand) * "/drive_time_to_nearest_idle_vehicle.png")
+
+        df = DataFrame(request_id = requestIds,drive_time = driveTimeToNearestIdleVehicleVector,isInsertedIntoClosestVehicle = isInsertedIntoClosestVehicle,closestVehicleOverlap = closestVehicleOverlapVector,numberOfVehiclesOverlap = numberOfVehiclesOverlapVector)
+        CSV.write("tests/WaitingPlots/" * scenarioName * "/" * string(relocateVehicles) * "_" * string(relocateWithDemand) * "/drive_time_to_nearest_idle_vehicle.csv", df)
+
+        df = DataFrame(request_bank = requestBank)
+        CSV.write("tests/WaitingPlots/" * scenarioName * "/" * string(relocateVehicles) * "_" * string(relocateWithDemand) * "/requestBank.csv", df)
+    end
+
+
 
     if saveResults
         if !isdir(outPutFileFolder)
