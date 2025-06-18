@@ -81,9 +81,6 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     # Read time and distance matrices from input or initialize empty matrices
     distance, time = getDistanceAndTimeMatrix(distanceMatrixFile,timeMatrixFile,requestFile,depotCoordinates)
 
-    # TODO: jas 
-    #time = Int.(ceil.(time*0.7,))
-
     # Get requests 
     requests = readRequests(requestsDf,nRequests,bufferTime,maximumRideTimePercent,minimumMaximumRideTime,time,maxDelay,maxEarlyArrival)
 

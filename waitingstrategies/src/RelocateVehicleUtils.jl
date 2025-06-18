@@ -13,7 +13,6 @@ export determineWaitingLocation,determineActiveVehiclesPrCell,determineVehicleBa
 function determineWaitingLocation2(time::Array{Int,2},nRequests::Int,depotLocations::Dict{Tuple{Int,Int},Location},grid::Grid,probabilityGrid::Array{Float64,2}, activeVehiclesPrCell::Array{Int,3},period::Int,currentGridCell::Tuple{Int,Int},currentWaitingId::Int,activityBeforeWaitingId::Int,isRouteEmpty::Bool,endOfServiceActivityBeforeWaiting::Int,periodLength::Int,nTimePeriods::Int)
 
     # Active vehicles in period
-    # TODO: jas - perioden burde jo i virkeligheden være den periode hvor man ankommer til grid cell 
     activeVehiclesInPeriod = activeVehiclesPrCell[period, :, :]
 
     # Find time between current cell and depot locations
@@ -25,14 +24,6 @@ function determineWaitingLocation2(time::Array{Int,2},nRequests::Int,depotLocati
     for r in 1:nRows, c in 1:nCols
         depotId = findDepotIdFromGridCell(grid, nRequests, (r, c))
         driveTimeMatrix[r, c] = time[activityBeforeWaitingId, depotId]
-
-        # TODO: jas
-        # waitingStart = endOfServiceActivityBeforeWaiting + driveTimeMatrix[r, c]
-        # periodNew = min(Int(ceil(waitingStart / periodLength)), nTimePeriods)
-        # activeVehicles = activeVehiclesPrCell[periodNew, r, c]
-        # score[r,c] = probabilityGrid[r, c] / (activeVehicles +1) / (driveTimeMatrix[r,c] + 1)
-
-        #println("Period new: ", periodNew, " period: ", period)
     end
 
     # Avoid division by zero or extremely small numbers
@@ -99,9 +90,8 @@ function determineVehicleBalancePrCell(grid::Grid,gamma::Float64,predictedDemand
     vehicleDemand = zeros(Int,nTimePeriods,nRows,nCols)
     realisedDemand = zeros(Int,nTimePeriods,nRows,nCols)
     maxDemandInHorizon = zeros(Float64,nTimePeriods,nRows,nCols)
-    activeVehiclesPerCell = zeros(Int,nTimePeriods,nRows,nCols) # TODO: remove returning this (only for test)
+    activeVehiclesPerCell = zeros(Int,nTimePeriods,nRows,nCols) 
 
-    # TODO: set correctly 
     planningHorizon = 4
 
     # Find vehicle balance for each hour
@@ -135,7 +125,7 @@ function determineActiveVehiclesPrCell(grid::Grid,solution::Solution,nTimePeriod
     
     # Initialize vehicle balance
     realisedDemand = zeros(Int,nTimePeriods,nRows,nCols)
-    activeVehiclesPerCell = zeros(Int,nTimePeriods,nRows,nCols) # TODO: remove returning this (only for test)
+    activeVehiclesPerCell = zeros(Int,nTimePeriods,nRows,nCols) 
 
 
     # Find vehicle balance for each hour
@@ -176,7 +166,6 @@ function determineActiveVehiclesAndDemandPrCell(solution::Solution,endOfPeriodIn
         end
 
         # Active grid cells in the hour
-        # TODO: how are we supposed to count this ? Is a vehicle active in all grid cells in the hour ? but only once pr. grid cell ? 
         activeGridCells = Set{Tuple{Int,Int}}()
 
         # Find activity assignments in hour 
