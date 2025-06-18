@@ -160,11 +160,16 @@ function ALNS(scenario::Scenario, initialSolution::Solution, requestBank::Vector
             numberOfIterationsSinceLastImprovement += 1
             numberOfIterationsSinceLastBest += 1
         end
-
-
+    
         push!(isImprovedVec, isImproved)
         push!(isNewBestVec, isNewBest)
         push!(isAcceptedVec, isAccepted)
+
+        # Break if request bank is empty and max iterations without improvement
+        if currentState.bestSolution.nTaxi == 0 && numberOfIterationsSinceLastBest > maxNumberOfIterationsWithoutNewBest
+            println("ALNS: Termination due to empty request bank and max iterations without improvement reached.")
+            break
+        end
     end
 
     if saveOutPut

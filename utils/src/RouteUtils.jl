@@ -280,7 +280,7 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
         fill!(newEndOfServiceTimes, 0)
     end
 
-    @timeit TO "CheckHighLevelConstraints" begin
+   # @timeit TO "CheckHighLevelConstraints" begin
         pickUpActivity = request.pickUpActivity
         dropOffActivity = request.dropOffActivity
         pickUpStartTime = pickUpActivity.timeWindow.startTime
@@ -312,7 +312,7 @@ function checkFeasibilityOfInsertionAtPosition(request::Request, vehicleSchedule
         end
 
      #   println("AFTER CHECK HIGH LEVEL CONSTRAINTS")
-    end
+   # end
 
     pickUpIdxInBlock = pickUpIdx + 1
     dropOffIdxInBlock = dropOffIdx + 2

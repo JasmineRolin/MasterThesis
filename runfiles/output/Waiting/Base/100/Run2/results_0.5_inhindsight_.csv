@@ -1,1 +1,11 @@
-ScenarioName,TotalElapsedTime,AverageResponseTime,EventsInsertedByALNS,nTaxi,TotalCost,TotalDistance,TotalIdleTime,TotalIdleTimeWithCustomer,TotalRideTime,TotalDirectRideTime,TotalActualRideTime,nOfflineRequests,UnservicedOfflineRequest,nOnlineRequests,UnservicedOnlineRequests,AveragePercentRideSharing
+ScenarioName,TotalElapsedTime,AverageResponseTime,EventsInsertedByALNS,nTaxi,TotalCost,TotalDistance,TotalIdleTime,TotalIdleTimeWithCustomer,TotalRideTime,TotalDirectRideTime,TotalActualRideTime,nOfflineRequests,UnservicedOfflineRequest,nOnlineRequests,UnservicedOnlineRequests,AveragePercentRideSharing,ExcessRideTimePrServicedRequest,TotalEmptyRelocationTime,TotalNumberOfRequestsOverlapIdleVehicle,TotalDriveTimeToNearestIdleVehicle
+Gen_Data_100_0.5_1_Run2,1200.6,0.0,0,7,7981.897502191011,4223.442316979356,6,0,4696,1993,2228,60,7,40,0,9.955,2.35,66,0,0
+Gen_Data_100_0.5_2_Run2,1200.6,0.0,0,3,4092.3025866821604,3904.462982779591,75,0,4471,1937,2442,60,3,40,0,14.102,5.05,148,0,0
+Gen_Data_100_0.5_3_Run2,1200.56,0.0,0,8,9004.060011693253,4067.4829764300503,20,1,4554,1905,2289,60,8,40,0,14.049,3.84,20,0,0
+Gen_Data_100_0.5_4_Run2,1200.69,0.0,0,10,11001.942449127928,4002.880076304894,4,0,4462,1741,2180,60,10,40,0,12.958,4.39,7,0,0
+Gen_Data_100_0.5_5_Run2,1200.67,0.0,0,4,5065.732427417894,4229.26569691099,50,0,4764,2116,2529,60,4,40,0,14.866,4.13,86,0,0
+Gen_Data_100_0.5_6_Run2,1200.59,0.0,0,8,9061.387014019288,3876.901564311867,122,2,4459,1933,2606,60,8,40,0,17.797,6.73,48,0,0
+Gen_Data_100_0.5_7_Run2,1200.58,0.0,0,4,5084.9333512450285,4141.530773517074,39,10,4663,2081,2670,60,4,40,0,19.05,5.89,12,0,0
+Gen_Data_100_0.5_8_Run2,1201.02,0.0,0,6,7015.294112448353,3979.292924264827,22,12,4484,1763,2135,60,6,40,0,11.759,3.72,96,0,0
+Gen_Data_100_0.5_9_Run2,1201.01,0.0,0,11,12047.524336251034,3919.68547539415,21,6,4395,1940,2576,60,11,40,0,17.754,6.36,37,0,0
+Gen_Data_100_0.5_10_Run2,1200.7,0.0,0,4,5040.195647169488,4070.660294260912,37,35,4599,1695,2064,60,4,40,0,11.27,3.69,76,0,0
