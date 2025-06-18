@@ -848,6 +848,8 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
 
     for (itr,event) in enumerate(events)
 
+
+
         startTimeEvent = time()
         println("------------------------------------------------------------------------------------------------------------------------------------------------")
         println("Event: id: ", itr, ", time: ", event.callTime, " request id: ", event.id, " pick up time: ",event.request.pickUpActivity.timeWindow)
@@ -929,6 +931,19 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
             solution = copySolution(currentState.solution)
         end
 
+        ## Check that first activity in route does not end before event time
+        for (vehicle, schedule) in enumerate(solution.vehicleSchedules)
+            if length(schedule.route) > 0 && schedule.route[1].endOfServiceTime < event.callTime
+                println("First activity of vehicle ",vehicle," ends before event time: ",schedule.route[1].endOfServiceTime," < ",event.callTime)
+                printRouteHorizontal(schedule)
+                println("First activity of vehicle ends before event time")
+            end
+        end
+
+        if event.request.id == 195
+            println(requestBank)
+            throw("Event 195 is reached")
+        end
 
         endTimeEvent = time()
         averageResponseTime += endTimeEvent - startTimeEvent

@@ -21,7 +21,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
     gridFile = string("Data/Konsentra/grid_10.json")
 
     nExpected = Int(floor(n*nExpectedPercentage))
-    useAnticipationOnlineRequests = true
+    useAnticipationOnlineRequests = false
 
     #for i in 1:10
         requestFile = string("Data/Konsentra/",dataset,"/",n,"/GeneratedRequests_",n,"_",i,".csv")
@@ -33,14 +33,14 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
         # Read scenario 
         #TODO use pre calculated distance and time matrix file. 
         scenario = readInstance(requestFile,vehiclesFile,parametersFile,scenarioName,"","",gridFile)
-        solution, requestBank = simulateScenario(scenario,requestFile,distanceMatrixFile,timeMatrixFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,anticipation = true,nExpected=nExpected,printResults = false, saveResults = true,gridFile = gridFile, outPutFileFolder = outPutFolder, displayPlots = true, keepExpectedRequests = true, useAnticipationOnlineRequests = useAnticipationOnlineRequests)
+        solution, requestBank = simulateScenario(scenario,requestFile,distanceMatrixFile,timeMatrixFile,vehiclesFile,parametersFile,alnsParameters,scenarioName,anticipation = false,nExpected=nExpected,printResults = false, saveResults = false,gridFile = gridFile, outPutFileFolder = outPutFolder, displayPlots = false, keepExpectedRequests = false, useAnticipationOnlineRequests = useAnticipationOnlineRequests)
     #end
     #dfResults = processResults(outputFiles)
     #CSV.write(outPutFolder*"/results.csv", dfResults)
 
 end
 
-main(20,0.4,0.5,"2025-06-13_Get results","","AnticipationKeepExpected",1)
+main(300,0.4,0.5,"2025-06-13_Get results","","Base",2)
 
 if abspath(PROGRAM_FILE) == @__FILE__
     n = parse(Int, ARGS[1])
