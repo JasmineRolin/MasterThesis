@@ -16,7 +16,7 @@ function offlineSolution(scenario::Scenario,repairMethods::Vector{GenericMethod}
 
     if length(scenario.offlineRequests) == 0
         # If no offline requests, return initial solution
-        return initialSolution, initialRequestBank
+        return initialSolution, initialRequestBank,0
     end
         
     # Run ALNS for offline solution 

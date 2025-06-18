@@ -1386,7 +1386,7 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
     if displayPlots
         p = createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge",nRequests,nFixed=scenario.nFixed)
         display(p)
-        savefig(p, outPutFileFolder*"/final_solution_gantt.png")
+        savefig(p, "tests/Anticipation/"*scenarioName*"/final_solution_gantt.png")
         display(plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge"))
         display(createGantChartOfSolutionOnlineComparison(finalSolution, initialSolution,"Comparison between initial and final solution"))
     end
