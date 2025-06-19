@@ -55,7 +55,7 @@ function main()
         # File names 
         vehiclesFile = string("Data/DataWaitingStrategies/",n,"/Vehicles_",n,"_",gamma,".csv")
         parametersFile = "tests/resources/ParametersShortCallTime.csv"
-        outPutFolder = "runfiles/output/Waiting/Dynamic/"*string(n)*"/Run"*string(run)
+        outPutFolder = "runfiles/output/Waiting/DynamicTEST/"*string(n)*"/Run"*string(run)
         requestFile = string("Data/DataWaitingStrategies/",n,"/GeneratedRequests_",n,"_",i,".csv")
         distanceMatrixFile = string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
         timeMatrixFile =  string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
