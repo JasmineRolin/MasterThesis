@@ -8,7 +8,7 @@ gamma = 0.5
 anticipationDegrees = [0.4]
 #date = "2025-06-04_original_0.7"
 date = "Final_anticiaption"
-name = "Base-InHind-Anti"
+name = "Base-InHind-Anti - v2"
 
 # Define display names
 legend_names = Dict(
@@ -217,7 +217,7 @@ for n in nRequestList
         mkpath("plots/Anticipation/PlotsReport/"*name*"/")
     end
 
-    finalPlot = plot(plots[2], plots[3]; layout=(2,1), size=(1000,2000),leftmargin=5mm,bottommargin=10mm,topmargin=5mm)
+    finalPlot = plot(plots[2], plots[3]; layout=(2,1), size=(900,1500),leftmargin=20mm,bottommargin=10mm,topmargin=5mm)
     savefig(finalPlot, "plots/Anticipation/PlotsReport/$(name)/results_$(n).pdf")
     singlePlot = plot(plots[1]; title = "No. Requests: $(n), Gamma: $(gamma)",size=(1000,750),leftmargin=5mm,bottommargin=5mm,topmargin=5mm,rightmargin=5mm)
     savefig(singlePlot, "plots/Anticipation/PlotsReport/$(name)/results_$(n)_single.pdf")
