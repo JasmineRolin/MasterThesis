@@ -443,7 +443,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
     nRequests = 0
 
     # Create different scenarios and solve problem with known offline requests and predicted online requests 
-    for i in 1:5 #TODO change
+    for i in 1:1 #TODO change
         println("==========================================")
         println("Run: ", i)
 
@@ -474,7 +474,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
            end
 
         originalSolution, originalRequestBank,_,_, _,_,_,ALNSIterations = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
-        
+        println("HERRE1:",originalSolution.totalCost)
         # Save solution with requests
         if keepExpectedRequests
             originalSolutionWithAllRequests = copySolution(originalSolution)
@@ -503,6 +503,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
 
         # Remove expected requests from solution
         removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,originalSolution,nExpected,nFixed,nNotServicedExpectedRequests,originalRequestBank,taxiParameter,taxiParameterExpected)
+        println("HERRE2:",originalSolution.totalCost)
 
         if displayPlots
             #display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and after removing expected requests",nFixed = scenario.nFixed))
@@ -550,6 +551,12 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
             # Calculate Obj
             averageObj += solution.totalCost + originalSolution.nTaxi * taxiParameter 
             averageNotServicedExpectedRequests += length(stateALNS.requestBank)
+            
+            println("Rejected fixed requests: ", originalSolution.nTaxi)
+            println("Rejected expected requests: ", solution.nTaxiExpected)
+            println("Objective: ",solution.totalCost + originalSolution.nTaxi * taxiParameter )
+            printSolution(solution,printRouteHorizontal)
+
 
             println("\t Sub run: ", j)
             println("\t\t Number of not serviced expected requests: ",  length(stateALNS.requestBank),"/",nExpected)
@@ -587,7 +594,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         onlineRequests = bestScenario.onlineRequests
         matches = match_similar_requests(expectedRequests, onlineRequests)
         p = plot_matched_request_gantts(expectedRequests,onlineRequests, matches)
-        #savefig(p, string("resultExploration/results/_matched_requests.png"))
+        savefig(p, string("resultExploration/results/_matched_requests.png"))
         display(p)
     end
 

@@ -849,6 +849,10 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
     for (itr,event) in enumerate(events)
 
 
+        if itr == 1
+            throw("No simulation")
+        end
+
 
         startTimeEvent = time()
         println("------------------------------------------------------------------------------------------------------------------------------------------------")
