@@ -9,7 +9,7 @@ baseFolder = "runfiles/output/Waiting/Dynamic/"
 plotName = "Dynamic"
 
 plotResults = false
-generateTables = true
+generateTables = false
 
 if !isdir("plots/Waiting/$(plotName)/")
     mkdir("plots/Waiting/$(plotName)/")
@@ -1105,95 +1105,157 @@ titlefont = font(18)
 legendfontsize = 15
 markersize = 10
 
-p = plot(size = (1000,1000),title = "", xlabel = "", ylabel = "Comparison",leftmargin=5mm,topmargin=5mm,legend=:topright,legend_background_color = RGBA(1,1,1,0.6),legend_position = (3, 0.5),
-legendfontsize = legendfontsize,
-ytickfont = ytickfont,
-xtickfont = xtickfont,
-xguidefont = xguidefont,
-yguidefont = yguidefont,
-titlefont = titlefont,
-xrotation = 90)
+# p = plot(size = (1000,1000),title = "", xlabel = "", ylabel = "Comparison",leftmargin=5mm,topmargin=5mm,legend=:topright,legend_background_color = RGBA(1,1,1,0.6),legend_position = (3, 0.5),
+# legendfontsize = legendfontsize,
+# ytickfont = ytickfont,
+# xtickfont = xtickfont,
+# xguidefont = xguidefont,
+# yguidefont = yguidefont,
+# titlefont = titlefont,
+# xrotation = 90)
 
 
-resultFile = "plots/Waiting/Dynamic/comparison_nTaxi_summary_300_Dynamic.csv"
-dfUnservicedRequests = CSV.read(resultFile, DataFrame)
+# resultFile = "plots/Waiting/Dynamic/comparison_nTaxi_summary_300_Dynamic.csv"
+# dfUnservicedRequests = CSV.read(resultFile, DataFrame)
 
-resultFile = "plots/Waiting/Dynamic/comparison_TotalEmptyRelocationTime_mean_summary_300_Dynamic.csv"
-dfEmptyRelocationTime = CSV.read(resultFile, DataFrame)
+# resultFile = "plots/Waiting/Dynamic/comparison_TotalEmptyRelocationTime_mean_summary_300_Dynamic.csv"
+# dfEmptyRelocationTime = CSV.read(resultFile, DataFrame)
 
-resultFile = "plots/Waiting/Dynamic/comparison_TotalDriveTimeToNearestIdleVehicle_mean_summary_300_Dynamic.csv"
-dfDriveTimeToNearest = CSV.read(resultFile, DataFrame)
+# resultFile = "plots/Waiting/Dynamic/comparison_TotalDriveTimeToNearestIdleVehicle_mean_summary_300_Dynamic.csv"
+# dfDriveTimeToNearest = CSV.read(resultFile, DataFrame)
 
-nRows = nrow(dfDriveTimeToNearest)
+# nRows = nrow(dfDriveTimeToNearest)
 
-i = 1
+# i = 1
 
-scatter!([i],[abs(dfUnservicedRequests[i,:PercentDifferenceRS2])]; 
-marker = :square, 
-color = :forestgreen, 
-label = "Unserviced requests",
-markersize = markersize,
-markerstrokewidth = 0,
-linestyle = :solid,
-linewidth = 2)
+# scatter!([i],[abs(dfUnservicedRequests[i,:PercentDifferenceRS2])]; 
+# marker = :square, 
+# color = :forestgreen, 
+# label = "Unserviced requests",
+# markersize = markersize,
+# markerstrokewidth = 0,
+# linestyle = :solid,
+# linewidth = 2)
 
-scatter!([i],[abs(dfEmptyRelocationTime[i,:PercentDifferenceRS2])]; 
-marker = :circle, 
-color = :steelblue, 
-label = "Empty relocation",
-markersize = markersize,
-markerstrokewidth = 0,
-linestyle = :solid,
-linewidth = 2)
+# scatter!([i],[abs(dfEmptyRelocationTime[i,:PercentDifferenceRS2])]; 
+# marker = :circle, 
+# color = :steelblue, 
+# label = "Empty relocation",
+# markersize = markersize,
+# markerstrokewidth = 0,
+# linestyle = :solid,
+# linewidth = 2)
 
-scatter!([i],[abs(dfDriveTimeToNearest[i,:PercentDifferenceRS2])]; 
-marker = :diamond, 
-color = :darkorange, 
-label = "Drive time to nearest",
-markersize = markersize,
-markerstrokewidth = 0,
-linestyle = :solid,
-linewidth = 2)
+# scatter!([i],[abs(dfDriveTimeToNearest[i,:PercentDifferenceRS2])]; 
+# marker = :diamond, 
+# color = :darkorange, 
+# label = "Drive time to nearest",
+# markersize = markersize,
+# markerstrokewidth = 0,
+# linestyle = :solid,
+# linewidth = 2)
 
-for i in 2:nRows
+# for i in 2:(nRows-1)
 
-    scatter!([i],[abs(dfUnservicedRequests[i,:PercentDifferenceRS2])]; 
-        marker = :square, 
-        color = :forestgreen, 
-        label = "",
-        markersize = markersize,
-        markerstrokewidth = 0,
-        linestyle = :solid,
-        linewidth = 2)
+#     scatter!([i],[abs(dfUnservicedRequests[i,:PercentDifferenceRS2])]; 
+#         marker = :square, 
+#         color = :forestgreen, 
+#         label = "",
+#         markersize = markersize,
+#         markerstrokewidth = 0,
+#         linestyle = :solid,
+#         linewidth = 2)
 
-    scatter!([i],[abs(dfEmptyRelocationTime[i,:PercentDifferenceRS2])]; 
-        marker = :circle, 
-        color = :steelblue, 
-        label = "",
-        markersize = markersize,
-        markerstrokewidth = 0,
-        linestyle = :solid,
-        linewidth = 2)
+#     scatter!([i],[abs(dfEmptyRelocationTime[i,:PercentDifferenceRS2])]; 
+#         marker = :circle, 
+#         color = :steelblue, 
+#         label = "",
+#         markersize = markersize,
+#         markerstrokewidth = 0,
+#         linestyle = :solid,
+#         linewidth = 2)
 
-    scatter!([i],[abs(dfDriveTimeToNearest[i,:PercentDifferenceRS2])]; 
-        marker = :diamond, 
-        color = :darkorange, 
-        label = "",
-        markersize = markersize,
-        markerstrokewidth = 0,
-        linestyle = :solid,
-        linewidth = 2)
-end
+#     scatter!([i],[abs(dfDriveTimeToNearest[i,:PercentDifferenceRS2])]; 
+#         marker = :diamond, 
+#         color = :darkorange, 
+#         label = "",
+#         markersize = markersize,
+#         markerstrokewidth = 0,
+#         linestyle = :solid,
+#         linewidth = 2)
+# end
 
+# for x in 1.5:(nRows - 0.5)
+#     vline!([x], linestyle = :dot, color = :black, alpha = 0.9,label="")
+# end
+
+# xtickLabel = ["Inst. $(i)" for i in 1:nRows]
+# xticks!((1:nRows,xtickLabel))
+
+# savefig(p, "plots/Waiting/$(plotName)/results_COMPARISON_300_$(plotName).pdf")
+# println("saved plot at: ", "plots/Waiting/$(plotName)/results_COMPARISON_300_$(plotName).pdf")
+using Plots
+using CSV
+using DataFrames
+
+# Fonts & styles
+tickfont = font(13)
+xtickfont = font(15)
+xguidefont = font(18)
+yguidefont = font(18)
+titlefont = font(18)
+legendfontsize = 15
+markersize = 10
+
+# Read data
+dfUnservicedRequests = CSV.read("plots/Waiting/Dynamic/comparison_nTaxi_summary_300_Dynamic.csv", DataFrame)
+dfEmptyRelocationTime = CSV.read("plots/Waiting/Dynamic/comparison_TotalEmptyRelocationTime_mean_summary_300_Dynamic.csv", DataFrame)
+dfDriveTimeToNearest = CSV.read("plots/Waiting/Dynamic/comparison_TotalDriveTimeToNearestIdleVehicle_mean_summary_300_Dynamic.csv", DataFrame)
+
+nRows = nrow(dfUnservicedRequests)-1
+x_vals = collect(1:nRows)
+
+# Absolute values for all 3 metrics
+u_vals = abs.(dfUnservicedRequests[1:(end-1), :PercentDifferenceRS2])
+e_vals = abs.(dfEmptyRelocationTime[1:(end-1), :PercentDifferenceRS2])
+d_vals = abs.(dfDriveTimeToNearest[1:(end-1), :PercentDifferenceRS2])
+
+# Initialize empty plot
+p = plot(size=(1000,1000), title="", xlabel="", ylabel="Comparison",
+    legend=:topright, legendfontsize=legendfontsize,
+    leftmargin=5mm, topmargin=5mm,
+    legend_background_color=RGBA(1,1,1,0.6),
+    legend_position=(3, 0.5),
+    ytickfont=tickfont, xtickfont=xtickfont,
+    xguidefont=xguidefont, yguidefont=yguidefont,
+    titlefont=titlefont, xrotation=90)
+
+# Bar width and offset setup
+bar_width = 0.25
+
+# Slightly offset x-positions for each category
+x_u = x_vals .- bar_width
+x_e = x_vals
+x_d = x_vals .+ bar_width
+
+# Plot bars manually side-by-side
+bar!(x_u, u_vals; bar_width=bar_width, label="Unserviced requests", color=:forestgreen)
+bar!(x_e, e_vals; bar_width=bar_width, label="Empty relocation", color=:steelblue)
+bar!(x_d, d_vals; bar_width=bar_width, label="Drive time to nearest", color=:darkorange)
+
+# Add vertical dashed lines between groups
 for x in 1.5:(nRows - 0.5)
-    vline!([x], linestyle = :dot, color = :black, alpha = 0.9,label="")
+    vline!(p, [x]; linestyle=:dot, color=:black, alpha=0.5, label="")
 end
 
-xtickLabel = ["Inst. $(i)" for i in 1:nRows]
-xticks!((1:nRows,xtickLabel))
+# Custom xtick labels centered at original x values
+xtick_labels = ["Inst. $(i)" for i in 1:nRows]
+xticks!(x_vals, xtick_labels)
 
+# Save
+plotName = "Dynamic"
 savefig(p, "plots/Waiting/$(plotName)/results_COMPARISON_300_$(plotName).pdf")
-println("saved plot at: ", "plots/Waiting/$(plotName)/results_COMPARISON_300_$(plotName).pdf")
+println("saved plot at: plots/Waiting/$(plotName)/results_COMPARISON_300_$(plotName).pdf")
 
 
 
