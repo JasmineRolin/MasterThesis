@@ -15,13 +15,13 @@ print("\033c")
 # ==========================#
 # Parameters (do change)
 # ==========================#
-for i = 1:10
+#for i = 1:10
 n = 300 # Instance size 
-#i = 1 # Instance number
+i = 3 # Instance number
 gamma = 0.7 # Vehicle ratio 
-displayPlots = false # Display and save plots
+displayPlots = true # Display and save plots
 dynamicProblem = true # Run Instance type II 
-saveResults = false # Save ALNS output 
+saveResults = true # Save solution KPIs
 
 # ==========================#
 # Methods (do change)
@@ -248,4 +248,4 @@ println("Relocation vehicles FALSE: ", solutionFalse.nTaxi)
 #     println("\t pick up time window: ($(r.pickUpActivity.timeWindow.startTime) , $(r.pickUpActivity.timeWindow.endTime))")
 #     println("\t drop off time window: ($(r.dropOffActivity.timeWindow.startTime) , $(r.dropOffActivity.timeWindow.endTime))")
 # end
-end
+#end
