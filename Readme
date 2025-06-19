@@ -1,1 +1,2 @@
 In order to run anticipation results use: runfiles/RunAnticipation.jl
+In order to run waiting strategies results use: runfiles/RunWaiting.jl

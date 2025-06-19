@@ -7,19 +7,6 @@ using domain
 using CSV
 
 
-#==
-        !!!# OBS OBS OBS OBS OBS #!!!!!
-
-        To run the scenarios with short call time (in Data/WaitingStrategies)
-        - change MAX_DELAY = 15 and MAX_EARLY_ARRIVAL = 5 in instance reader 
-        - outcomment check for buffer in instance reader in readRequests
-                if callTime > requestTime - bufferTime
-                    throw(ArgumentError(string("Call time is not before required buffer period for request: ",id)))
-                end
-
-==##
-
-
 function main()
     # Receive command line arguments 
     n = parse(Int,ARGS[1])

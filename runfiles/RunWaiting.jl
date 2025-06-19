@@ -183,69 +183,16 @@ end
 #============================================================================#
 # Result
 #============================================================================#
-println("Relocation vehicles TRUE: ", solutionTrue.nTaxi)
-#println("Relocation vehicles TRUE DEMAND: ", solutionTrueDemand.nTaxi)
-println("Relocation vehicles FALSE: ", solutionFalse.nTaxi)
-#println("ALNS solution: ", finalSolution.nTaxi)
+if true_false
+    println("Relocation vehicles TRUE: ", solutionTrue.nTaxi)
+end
+if true_true
+    println("Relocation vehicles TRUE DEMAND: ", solutionTrueDemand.nTaxi)
+end
+if false_false
+    println("Relocation vehicles FALSE: ", solutionFalse.nTaxi)
+end
+if inhindsight
+    println("In-hindsight solution: ", finalSolution.nTaxi)
+end
 
-
-#============================================================================#
-# Plots 
-#============================================================================#
-#============================================================================#
-
-# probabilityGrid = getProbabilityGrid(scenario,historicRequestFiles)
-
-# p = heatmap(probabilityGrid, 
-# c=:viridis,         # color map
-# xlabel="Longitude (grid cols)", 
-# ylabel="Latitude (grid rows)", 
-# title="Realised Demand",
-# colorbar_title="Requests")
-# display(p)
-
-#============================================================================#
-
-#==
- Plot time windows of pick ups 
-==#
-# title = "Pick-Up Time Windows with Call Times for Dynamic Scenario"
-# p = plotScenario(scenario.requests,title)
-
-# display(p)
-# savefig(p,"plots/Waiting/PickUpTimeWindowsExampleDynamic.png")
-
-# #==
-#  Plot time windows for pick up for original problem 
-# ==#
-# i = 5
-# vehiclesFileBase = string("Data/Konsentra/OriginalInstance/",n,"/Vehicles_",n,"_",gamma,".csv")
-# parametersFileBase = "tests/resources/Parameters.csv"
-# gridFileBase = "Data/Konsentra/grid_$(gridSize).json"
-# requestFileBase = "Data/Konsentra/OriginalInstance/$(n)/GeneratedRequests_$(n)_$(i).csv"
-# distanceMatrixFileBase = string("Data/Matrices/OriginalInstance/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
-
-# timeMatrixFileBase =  string("Data/Matrices/OriginalInstance/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
-# scenarioNameBase = string("Gen_Data_",n,"_",gamma,"_",i)
-# scenarioNameBase = string("Gen_Data_",n,"_",gamma,"_",i)
-
-
-# # Read instance 
-# scenarioBase = readInstance(requestFileBase,vehiclesFileBase,parametersFileBase,scenarioNameBase,distanceMatrixFileBase,timeMatrixFileBase,gridFileBase)
-# title = "Pick-Up Time Windows with Call Times for Base Scenario"
-# p = plotScenario(scenarioBase.requests,title)
-
-# display(p)
-# savefig(p,"plots/Waiting/PickUpTimeWindowsExampleBase.png")
-
-
-# for r in scenarioBase.requests
-#     println("Request $(r.id), request type $(r.requestType)") 
-#     println("\t Call time: $(r.callTime)")
-#     println("\t Duration from call time to start TW: $(r.pickUpActivity.timeWindow.startTime - r.callTime)")
-#     println("\t Duration from call time to end TW: $(r.pickUpActivity.timeWindow.endTime - r.callTime)")
-#     println("\t direct drive time: $(r.directDriveTime)")
-#     println("\t pick up time window: ($(r.pickUpActivity.timeWindow.startTime) , $(r.pickUpActivity.timeWindow.endTime))")
-#     println("\t drop off time window: ($(r.dropOffActivity.timeWindow.startTime) , $(r.dropOffActivity.timeWindow.endTime))")
-# end
-#end
