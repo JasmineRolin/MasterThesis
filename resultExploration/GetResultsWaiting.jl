@@ -1221,7 +1221,7 @@ e_vals = abs.(dfEmptyRelocationTime[1:(end-1), :PercentDifferenceRS2])
 d_vals = abs.(dfDriveTimeToNearest[1:(end-1), :PercentDifferenceRS2])
 
 # Initialize empty plot
-p = plot(size=(1000,1000), title="", xlabel="", ylabel="Comparison",
+p = plot(size=(1000,1000), title="", xlabel="", ylabel="Percent absolute decrease",
     legend=:topright, legendfontsize=legendfontsize,
     leftmargin=5mm, topmargin=5mm,
     legend_background_color=RGBA(1,1,1,0.6),
