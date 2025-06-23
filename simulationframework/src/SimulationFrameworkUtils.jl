@@ -815,7 +815,7 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
             mkpath("tests/Anticipation/"*scenarioName)
         end
 
-        savefig(p1,"tests/Anticipation/"*scenarioName*"/InitialSolutionAfterALNS.png")
+        #savefig(p1,"tests/Anticipation/"*scenarioName*"/InitialSolutionAfterALNS.png")
         #savefig(p2,"tests/Anticipation/"*scenarioName*"/InitialSolutionAfterALNSRoutes.png")
     end
 
@@ -921,20 +921,6 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
             solution = copySolution(currentState.solution)
         end
 
-        ## Check that first activity in route does not end before event time
-        for (vehicle, schedule) in enumerate(solution.vehicleSchedules)
-            if length(schedule.route) > 0 && schedule.route[1].endOfServiceTime < event.callTime
-                println("First activity of vehicle ",vehicle," ends before event time: ",schedule.route[1].endOfServiceTime," < ",event.callTime)
-                printRouteHorizontal(schedule)
-                println("First activity of vehicle ends before event time")
-            end
-        end
-
-        if event.request.id == 195
-            println(requestBank)
-            throw("Event 195 is reached")
-        end
-
         endTimeEvent = time()
         averageResponseTime += endTimeEvent - startTimeEvent
 
@@ -981,7 +967,7 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
             p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,title)
             display(p1)
             display(p2)
-            savefig(p1,"tests/Anticipation/"*scenarioName*"/CurrentSolutionTime"*string(event.callTime)*".pdf")
+            #savefig(p1,"tests/Anticipation/"*scenarioName*"/CurrentSolutionTime"*string(event.callTime)*".pdf")
             #savefig(p2,"tests/Anticipation/"*scenarioName*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
         end
     end
