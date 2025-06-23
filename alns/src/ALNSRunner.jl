@@ -8,7 +8,7 @@ export runALNS
  Module to run ALNS algorithm 
 ==#
 
-function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::Vector{GenericMethod},repairMethods::Vector{GenericMethod};outPutFileFolder="tests/output"::String,parametersFile=""::String,saveResults=false::Bool,displayPlots=false::Bool,initialSolution=Solution(scenario)::Solution, requestBank=Vector{Int}(),event = Request(), alreadyRejected = 0::Int, visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}(),stage="Offline", nNotServicedExpectedRequests::Int=0)
+function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::Vector{GenericMethod},repairMethods::Vector{GenericMethod};outPutFileFolder="tests/output"::String,parametersFile=""::String,saveResults=false::Bool,displayPlots=false::Bool,initialSolution=Solution(scenario)::Solution, requestBank=Vector{Int}(),event = Request(), alreadyRejected = 0::Int, visitedRoute::Dict{Int, Dict{String, Int}}=Dict{Int, Dict{String, Int}}(),stage="Offline", nNotServicedExpectedRequests::Int=0,splitRequestBank::Bool=true)
     # Create time stamp and output file folder
     timeStamp = Dates.format(Dates.now(), "yyyy-mm-dd_HH_MM_SS")
     outputFileFolderWithDate = string(outPutFileFolder,"/",timeStamp,"/")
@@ -45,7 +45,7 @@ function runALNS(scenario::Scenario, requests::Vector{Request}, destroyMethods::
 
     # Call ALNS 
     startTime = time()
-    solution, requestBank,pVals,deltaVals,isImprovedVec,isAcceptedVec,isNewBestVec, noIterations = ALNS(scenario,initialSolution, requestBank,configuration,parameters, ALNSOutputFileName, alreadyRejected = alreadyRejected,event = event, visitedRoute=visitedRoute, saveOutPut = saveResults,stage=stage, nNotServicedExpectedRequests=nNotServicedExpectedRequests)
+    solution, requestBank,pVals,deltaVals,isImprovedVec,isAcceptedVec,isNewBestVec, noIterations = ALNS(scenario,initialSolution, requestBank,configuration,parameters, ALNSOutputFileName, alreadyRejected = alreadyRejected,event = event, visitedRoute=visitedRoute, saveOutPut = saveResults,stage=stage, nNotServicedExpectedRequests=nNotServicedExpectedRequests,splitRequestBank=splitRequestBank)
     endTime = time()
 
     # Create results 

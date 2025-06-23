@@ -15,7 +15,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
     dataset = "OriginalInstance"
     vehiclesFile = string("Data/Konsentra/",dataset,"/",n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/Parameters.csv"
-    alnsParameters = "tests/resources/ALNSParameters_offlineAnticipation.json"
+    alnsParameters = "tests/resources/ALNSParameters_offlineAnticipation_long.json"
     ALNSparametersOnline = "tests/resources/ALNSParameters_online.json"
     outPutFolder = string("resultExploration/results/",date,"/",resultType,"/",n,"/",run)
     outputFiles = Vector{String}()
@@ -47,7 +47,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
 
 end
 
-main(20,0.4,0.5,"2025-06-18_Test","","AnticipationKeep",2)
+#main(20,0.4,0.5,"2025-06-18_Test","","AnticipationKeep",2)
 
 if abspath(PROGRAM_FILE) == @__FILE__
     n = parse(Int, ARGS[1])

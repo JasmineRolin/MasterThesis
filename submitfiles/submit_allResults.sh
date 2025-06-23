@@ -38,6 +38,12 @@ for case_type in "${case_types[@]}"; do
         elif [[ "$case_type" == "AnticipationKeepExpected" ]]; then
           jl_file="resultExploration/resultsAnticipationKeepExpected.jl"
           label="${case_type}_${anticipation}"
+        elif [[ "$case_type" == "AnticipationKeepExpected_long_online" ]]; then
+          jl_file="resultExploration/resultsAnticipationKeepExpected_long_online.jl"
+          label="${case_type}_${anticipation}"
+        elif [[ "$case_type" == "AnticipationKeepExpected_long_long_online" ]]; then
+          jl_file="resultExploration/resultsAnticipationKeepExpected_long_long_online.jl"
+          label="${case_type}_${anticipation}"
         elif [[ "$case_type" == "InHindsight" ]]; then
           jl_file="resultExploration/resultsInHindsight.jl"
           label="${case_type}"
