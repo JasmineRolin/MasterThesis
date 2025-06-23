@@ -81,7 +81,7 @@ function readInstance(requestFile::String, vehicleFile::String, parametersFile::
     distance, time = getDistanceAndTimeMatrix(distanceMatrixFile,timeMatrixFile,requestFile,depotCoordinates)
 
     # TODO: jas 
-    time .* 0.5
+    time = Int.(floor.(time.*0.5))
 
 
     # Get requests 

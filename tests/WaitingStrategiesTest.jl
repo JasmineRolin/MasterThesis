@@ -17,7 +17,7 @@ print("\033c")
 # ==========================#
 #for i = 1:10
 n = 100 # Instance size 
-i = 3 # Instance number
+i = 5 # Instance number
 gamma = 0.7 # Vehicle ratio 
 displayPlots = true # Display and save plots
 dynamicProblem = true # Run Instance type II 
