@@ -26,8 +26,8 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
     # Change parameters for the wanted output 
     #-----------------
     printResults = false
-    saveResults = false
-    displayPlots = false
+    saveResults = true
+    displayPlots = true
 
     # Load files and parameters
     vehiclesFile = string("Data/Konsentra/",dataset,"/",n,"/Vehicles_",n,"_",gamma,".csv")
@@ -51,10 +51,10 @@ end
 #----------------
 # Change parameters for wanted scenario 
 #----------------
-n = 20
+n = 300
 nExpectedPercentage = 0.4
 gamma = 0.5
-date = "2025-06-18_test"
+date = "2025-06-23_test"
 run = "run1"
 resultType = "AnticipationKeepExpected"
 instance = 1
