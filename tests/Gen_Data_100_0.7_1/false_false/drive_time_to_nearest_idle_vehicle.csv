@@ -1,0 +1,15 @@
+request_id,drive_time,isInsertedIntoClosestVehicle,closestVehicleOverlap,numberOfVehiclesOverlap,isInserted,canBeReachedByVehicle,closestVehicle,driveTimeToWaitingBefore
+73,26,false,31,2,true,true,14,6
+65,16,false,4,1,true,true,14,13
+77,40,false,11,3,true,true,16,42
+93,12,false,11,5,true,true,15,21
+91,11,false,60,5,true,true,17,44
+62,10,true,46,4,true,true,16,10
+96,14,true,37,6,true,true,14,29
+61,19,false,48,3,false,true,17,-1
+86,20,false,22,3,true,true,2,2
+66,49,false,14,2,true,true,1,27
+98,33,false,20,2,true,true,9,21
+85,12,false,21,6,true,true,11,60
+95,34,false,5,5,true,true,12,51
+88,22,false,46,5,true,true,12,39
