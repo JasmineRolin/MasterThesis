@@ -4,7 +4,7 @@ using Statistics
 # Define parameters
 base_dir = raw"C:/Users/Astrid/OneDrive - Danmarks Tekniske Universitet/Dokumenter/Master Thesis/MasterThesis/resultExploration/results"
 Data = "Final_anticiaption - v2"  # Example value
-method = "AnticipationKeepExpected_long_online"
+method = "AnticipationKeepExpected_online"
 nRequests = "300"
 
 # Store averages per instance

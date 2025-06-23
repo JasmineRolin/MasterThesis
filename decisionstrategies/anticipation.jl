@@ -443,7 +443,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
     nRequests = 0
 
     # Create different scenarios and solve problem with known offline requests and predicted online requests 
-    for i in 1:1 #TODO change
+    for i in 1:5 #TODO change
         println("==========================================")
         println("Run: ", i)
 
@@ -474,7 +474,6 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
            end
 
         originalSolution, originalRequestBank,_,_, _,_,_,ALNSIterations = runALNS(scenario, scenario.offlineRequests, destroyMethods,repairMethods;parametersFile=alnsParameters,initialSolution=initialSolution,requestBank=requestBank)
-        println("HERRE1:",originalSolution.totalCost)
         # Save solution with requests
         if keepExpectedRequests
             originalSolutionWithAllRequests = copySolution(originalSolution)
@@ -503,7 +502,6 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
 
         # Remove expected requests from solution
         removeExpectedRequestsFromSolution!(time,distance,serviceTimes,requests,originalSolution,nExpected,nFixed,nNotServicedExpectedRequests,originalRequestBank,taxiParameter,taxiParameterExpected)
-        println("HERRE2:",originalSolution.totalCost)
 
         if displayPlots
             #display(createGantChartOfSolutionOnline(originalSolution,"Initial Solution "*string(i)*" before ALNS and after removing expected requests",nFixed = scenario.nFixed))
@@ -584,7 +582,7 @@ function offlineSolutionWithAnticipation(repairMethods::Vector{GenericMethod},de
         push!(results, (runId = "Run $i", averageObj = averageObj, averageNotServicedExpectedRequests = averageNotServicedExpectedRequests, 
                         nInitialNotServicedFixedRequests = nNotServicedFixedRequests, nInitialNotServicedExpectedRequests = nNotServicedExpectedRequests, ALNSIterations = ALNSIterations))
         
-        println("BEST RUN: ", bestRunId)
+
 
                         
     end
