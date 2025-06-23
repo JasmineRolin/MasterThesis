@@ -5,6 +5,7 @@ using Random
 using StatsBase
 using domain, utils
 using Plots.PlotMeasures
+using Distributions
 
 
 #==
@@ -62,7 +63,7 @@ end
 #==
 # Generate data sets and vehicles
 ==#
-function generateDataSets(nRequest,DoD,nData,time_range,max_lat, min_lat, max_long, min_long,only_pickup,limitEarlyCallTime,earliestBuffer)
+function generateDataSets(nRequest,DoD,nData,time_range,max_lat, min_lat, max_long, min_long,only_pickup,limitEarlyCallTime,earliestBuffer,NUM_COLS,NUM_ROWS)
     # Load simulation data
     probabilities_time,
     probabilities_offline,
@@ -80,7 +81,7 @@ function generateDataSets(nRequest,DoD,nData,time_range,max_lat, min_lat, max_lo
         distanceDriven= load_simulation_data("Data/Simulation data/")
 
     # Generate request data 
-    newDataList, df_list = generateData(nRequest,DoD,nData, probabilities_offline, probabilities_online, probabilities_location, time_range, x_range, y_range,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long,only_pickup,limitEarlyCallTime,earliestBuffer)
+    newDataList, df_list = generateData(nRequest,DoD,nData, probabilities_offline, probabilities_online, probabilities_location, time_range, x_range, y_range,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long,only_pickup,limitEarlyCallTime,earliestBuffer,NUM_COLS,NUM_ROWS)
 
     return location_matrix, requestTime, newDataList, df_list, probabilities_time,probabilities_offline,probabilities_online,probabilities_location, density_grid, x_range, y_range, requests, distanceDriven
 end
@@ -89,7 +90,7 @@ end
 #==
 # Generate data sets
 ==#
-function generateData(nRequest,DoD,nData,probabilities_offline, probabilities_online, probabilities_location, time_range, x_range, y_range,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long,only_pickup,limitEarlyCallTime,earliestBuffer)
+function generateData(nRequest,DoD,nData,probabilities_offline, probabilities_online, probabilities_location, time_range, x_range, y_range,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long,only_pickup,limitEarlyCallTime,earliestBuffer,NUM_COLS,NUM_ROWS)
     df_list = []
     newDataList = Vector{String}()  
     for i in 1:nData
@@ -101,7 +102,7 @@ function generateData(nRequest,DoD,nData,probabilities_offline, probabilities_on
         while retry_count < 5
             try
                 # Call the function that may throw the error
-                results = makeRequests(nRequest,DoD, probabilities_offline, probabilities_online, probabilities_location, time_range, x_range, y_range, output_file,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long,only_pickup,limitEarlyCallTime,earliestBuffer)
+                results = makeRequests(nRequest,DoD, probabilities_offline, probabilities_online, probabilities_location, time_range, x_range, y_range, output_file,distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long,only_pickup,limitEarlyCallTime,earliestBuffer,NUM_COLS,NUM_ROWS)
                 
                 println("Request generation succeeded!")
                 push!(df_list,results)
@@ -130,7 +131,7 @@ end
 #==
 # Make request
 ==#
-function makeRequests(nSample::Int, DoD::Float64, probabilities_offline::Vector{Float64}, probabilities_online::Vector{Float64}, probabilities_location::Vector{Float64}, time_range::Vector{Int}, x_range::Vector{Float64}, y_range::Vector{Float64}, output_file::String,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long,only_pickup,limitEarlyCallTime,earliestBuffer)
+function makeRequests(nSample::Int, DoD::Float64, probabilities_offline::Vector{Float64}, probabilities_online::Vector{Float64}, probabilities_location::Vector{Float64}, time_range::Vector{Int}, x_range::Vector{Float64}, y_range::Vector{Float64}, output_file::String,distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long,only_pickup,limitEarlyCallTime,earliestBuffer,NUM_ROWS,NUM_COLS)
     results = DataFrame(
         id = Int[],
         pickup_latitude = Float64[],
@@ -144,6 +145,10 @@ function makeRequests(nSample::Int, DoD::Float64, probabilities_offline::Vector{
         direct_drive_time = Int[],
     )
 
+    # TODO: jas 
+    # Hourly grid probabilities
+    # Assume time in hours 6:00 to 23:00
+    hourly_grid_probs = make_hourly_prob_maps()
 
     nOffline = ceil(Int, nSample * (1-DoD))
     nOnline = nSample - nOffline
@@ -188,9 +193,9 @@ function makeRequests(nSample::Int, DoD::Float64, probabilities_offline::Vector{
     # Generate online requests 
     for i in 1:nOnline
         # Sample new location based on KDE probabilities
-        sampled_location = getNewLocations(probabilities_location, x_range, y_range, distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long)
-        pickup_longitude, pickup_latitude = sampled_location[1]
-        dropoff_longitude, dropoff_latitude = sampled_location[2]
+        # sampled_location = getNewLocations(probabilities_location, x_range, y_range, distance_range,probabilities_distance,max_lat, min_lat, max_long, min_long)
+        # pickup_longitude, pickup_latitude = sampled_location[1]
+        # dropoff_longitude, dropoff_latitude = sampled_location[2]
 
         # Determine type of request
         if only_pickup || rand() < 0.5
@@ -199,6 +204,10 @@ function makeRequests(nSample::Int, DoD::Float64, probabilities_offline::Vector{
             sampled_indices = sample(1:length(probabilities_online), Weights(probabilities_online), 1)
             sampledTimePick = time_range[sampled_indices]
             requestTime = ceil(sampledTimePick[1])
+
+            sampled_location =  getLocationAtTime(NUM_ROWS,NUM_COLS,hourly_grid_probs,requestTime,probabilities_distance,probabilities_location,distance_range,x_range,y_range)
+            pickup_longitude, pickup_latitude = sampled_location[1]
+            dropoff_longitude, dropoff_latitude = sampled_location[2]
 
         else
             requestType = 1  # drop-off request
@@ -236,6 +245,90 @@ function makeRequests(nSample::Int, DoD::Float64, probabilities_offline::Vector{
 
     return results
 end
+
+# TODO: jas 
+function make_hourly_prob_maps()
+    hourly_grid_probs = Dict{Int, Matrix{Float64}}()
+
+    for hour in 6:23
+        probs = zeros(NUM_ROWS, NUM_COLS)
+
+        if hour in 6:8  
+            for r in 5:8, c in 3:5
+                probs[r, c] = rand() + 1.0 
+            end
+        elseif hour in 9:11
+            for r in 4:6, c in 4:6
+                probs[r, c] = rand() + 1.0  
+            end
+        elseif hour in 12:14
+            for r in 5:7, c in 3:5
+                probs[r, c] = rand() + 1.0  
+            end
+        elseif hour in 15:17
+            for r in 5:7, c in 5:7
+                probs[r, c] = rand() + 1.0  
+            end
+        elseif hour in 18:20  
+            for r in 3:5, c in 2:4
+                probs[r, c] = rand() + 1.0
+            end
+
+        elseif hour in 20:23  
+            for r in 4:6, c in 3:5
+                probs[r, c] = rand() + 1.0
+            end
+
+        else
+            probs .= rand(NUM_ROWS, NUM_COLS)  # Default: uniform noise
+        end
+
+        # Add some noise to all cells
+        probs .+= 0.1 * rand(NUM_ROWS, NUM_COLS)
+
+        # Normalize to make it a probability distribution
+        probs ./= sum(probs)
+        hourly_grid_probs[hour] = probs
+    end
+
+    return hourly_grid_probs
+end
+
+
+function getGridCell(lat, long)
+    row = clamp(floor(Int, (lat - MIN_LAT) / lat_step) + 1, 1, NUM_ROWS)
+    col = clamp(floor(Int, (long - MIN_LONG) / long_step) + 1, 1, NUM_COLS)
+    return (row, col)
+end
+
+function getLocationAtTime(NUM_ROWS::Int,NUM_COLS::Int,hourly_grid_probs::Dict{Int, Matrix{Float64}},requestTime::Int,probabilities_distance,probabilities_location,distance_range,x_range,y_range)
+    requestHour = ceil(Int, requestTime / 60)  # Convert to hour (6:00 to 23:00)
+    nd = length(distance_range)
+
+    grid_probs = hourly_grid_probs[requestHour]
+    flat_probs = vec(grid_probs)  # Convert to 1D
+
+    idx = sample(1:length(flat_probs), Weights(flat_probs))
+    row = (idx - 1) % NUM_ROWS + 1
+    col = (idx - 1) ÷ NUM_ROWS + 1
+
+    # Sample uniformly within the grid cell
+    long = MIN_LAT + (row - 1 + rand()) * lat_step
+    lat = MIN_LONG + (col - 1 + rand()) * long_step
+
+    # Drop off location 
+    distance_idx = sample(1:nd, Weights(probabilities_distance))
+    sampled_distance = distance_range[distance_idx]
+    sampled_distance = max(sampled_distance, 0.1) 
+
+    # Find drop off
+    grid_coords = [(x, y) for x in x_range for y in y_range]
+    dropoff_x, dropoff_y = find_dropoff((lat, long), grid_coords, sampled_distance, probabilities_location)
+
+    return (lat, long),(dropoff_x, dropoff_y)
+end
+
+#===============================================================#
 
 function getNewLocations(probabilities::Vector{Float64},x_range::Vector{Float64},y_range::Vector{Float64}, distance_range::Vector{Float64},probabilities_distance::Vector{Float64},max_lat, min_lat, max_long, min_long; tolerance_km::Float64 = 1.0)
     n = length(probabilities)
@@ -298,7 +391,10 @@ function find_dropoff(pickup::Tuple{Float64, Float64}, grid_coords::Vector{Tuple
     candidate_idxs = filter(i -> grid_coords[i] != pickup, candidate_idxs)
 
     if isempty(candidate_idxs)
-    error("No candidates found within tolerance range of sampled distance.")
+        println(distance_sample)
+        println("Pickup location: ", pickup)
+
+        error("No candidates found within tolerance range of sampled distance.")
     end
 
     # Sample one index based on probabilities

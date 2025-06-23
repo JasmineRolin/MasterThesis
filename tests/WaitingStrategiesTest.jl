@@ -16,7 +16,7 @@ print("\033c")
 # Parameters (do change)
 # ==========================#
 #for i = 1:10
-n = 20 # Instance size 
+n = 100 # Instance size 
 i = 3 # Instance number
 gamma = 0.7 # Vehicle ratio 
 displayPlots = true # Display and save plots
@@ -26,9 +26,9 @@ saveResults = true # Save solution KPIs
 # ==========================#
 # Methods (do change)
 # ==========================#
-true_false = true # Run with relocation strategy 2 
-true_true = false # Run relocation strategy 1 
-false_false = true # Run without relocation strategy
+true_false = false # Run with relocation strategy 2 
+true_true = true # Run relocation strategy 1 
+false_false = false # Run without relocation strategy
 inhindsight = false # Run in-hindsight solution 
 
 # ==========================#
@@ -48,19 +48,36 @@ alnsParameters = "tests/resources/ALNSParameters_offlineWaiting.json"
 # ====================================================#
 # Retrieve historic request files 
 if dynamicProblem
+    # historicRequestFiles = Vector{String}()
+    # for j in 1:nHistoricRequestFiles
+    #     push!(historicRequestFiles,"Data/DataWaitingStrategies/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
+    # end
+
+    # # File names 
+    # vehiclesFile = string("Data/DataWaitingStrategies/",n,"/Vehicles_",n,"_",gamma,".csv")
+    # parametersFile = "tests/resources/ParametersShortCallTime.csv"
+    # outPutFolder = "runfiles/output/Waiting/Dynamictest/"*string(n)
+    # gridFile = "Data/Konsentra/grid_$(gridSize).json"
+    # requestFile = "Data/DataWaitingStrategies/$(n)/GeneratedRequests_$(n)_$(i).csv"
+    # distanceMatrixFile = string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+    # timeMatrixFile =  string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
+    # scenarioName = string("Gen_Data_",n,"_",gamma,"_",i)
+    # maxDelay = 15
+    # maxEarlyArrival = 5
+
     historicRequestFiles = Vector{String}()
-    for j in 1:nHistoricRequestFiles
-        push!(historicRequestFiles,"Data/DataWaitingStrategies/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
+    for j in 11:30 #1:nHistoricRequestFiles
+        push!(historicRequestFiles,"Data/Konsentra/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
     end
 
     # File names 
-    vehiclesFile = string("Data/DataWaitingStrategies/",n,"/Vehicles_",n,"_",gamma,".csv")
+    vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/ParametersShortCallTime.csv"
     outPutFolder = "runfiles/output/Waiting/Dynamictest/"*string(n)
     gridFile = "Data/Konsentra/grid_$(gridSize).json"
-    requestFile = "Data/DataWaitingStrategies/$(n)/GeneratedRequests_$(n)_$(i).csv"
-    distanceMatrixFile = string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
-    timeMatrixFile =  string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
+    requestFile = "Data/Konsentra/$(n)/GeneratedRequests_$(n)_$(i).csv"
+    distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+    timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
     scenarioName = string("Gen_Data_",n,"_",gamma,"_",i)
     maxDelay = 15
     maxEarlyArrival = 5
@@ -115,7 +132,46 @@ end
 #============================================================================#
 # Solve with relocation using request demand discretized in grid and time 
 #============================================================================#
+function getTimeAsString(callTime::Int)
+    # Find time string 
+    hours = div(callTime, 60)
+    if hours < 10 
+        hours = string("0",hours)
+    else 
+        hours = string(hours)
+    end
+
+    minutes = mod(callTime, 60)
+    if minutes < 10 
+        minutes = string("0",minutes)
+    else 
+        minutes = string(minutes)
+    end
+
+    timeString = hours*":"*minutes
+
+    return timeString
+end
+
 if true_true 
+    # Plots heat maps 
+    averageDemandPrHour = generatePredictedDemand(scenario.grid, historicRequestFiles, nPeriods, periodLength)
+
+    for p in 1:nPeriods
+        time = getTimeAsString(p*periodLength)
+
+        pTitle = "Predicted Demand for Period $(p), time: "* time
+        p = heatmap(averageDemandPrHour[p,:,:], 
+            c=:viridis,         # color map
+            xlabel="Longitude (grid cols)", 
+            ylabel="Latitude (grid rows)", 
+            title=pTitle,
+            colorbar_title="Requests")
+        display(p)
+        #savefig(p,"tests/WaitingPlots/"*scenarioName*"/true_true/PredictedDemandPeriod$(p).png")
+    end
+
+
     if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/true_true")
         mkpath("tests/WaitingPlots/"*scenarioName*"/true_true")
     end
