@@ -7,10 +7,10 @@ gamma=0.7
 # OBS OBS OBS
 
 nPeriods=48
-gridSize=10
+gridSize=5
 
 nRequestsList=(300) 
-relocateOptions=("true false" "false false")  # Pair values as strings
+relocateOptions=("true true" "false false")  # Pair values as strings
 numRuns=1  
 numHistoricRequestFiles=20   
 numData=10   
@@ -56,7 +56,7 @@ Pkg.resolve();
 '
 
 for i in \$(seq 1 ${numData}); do
-    julia --project=. runfiles/RunSimulationWaiting.jl "${nRequests}" "${gamma}" "\${i}" "${relocateVehicles}" "${relocateWithDemand}" "${gridSize}" "${numHistoricRequestFiles}" "${nPeriods}" "${run}" "${baseScenario}"&
+    julia --project=. runfiles/HpcRunfiles/RunSimulationWaiting.jl "${nRequests}" "${gamma}" "\${i}" "${relocateVehicles}" "${relocateWithDemand}" "${gridSize}" "${numHistoricRequestFiles}" "${nPeriods}" "${run}" "${baseScenario}"&
 done
 
 wait

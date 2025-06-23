@@ -34,21 +34,39 @@ function main()
 
     # Retrieve historic request files 
     if !baseScenario 
-        historicRequestFiles = Vector{String}()
-        for j in 1:nHistoricRequestFiles
-            push!(historicRequestFiles,"Data/DataWaitingStrategies/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
-        end
+        # historicRequestFiles = Vector{String}()
+        # for j in 1:nHistoricRequestFiles
+        #     push!(historicRequestFiles,"Data/DataWaitingStrategies/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
+        # end
 
-        # File names 
-        vehiclesFile = string("Data/DataWaitingStrategies/",n,"/Vehicles_",n,"_",gamma,".csv")
-        parametersFile = "tests/resources/ParametersShortCallTime.csv"
-        outPutFolder = "runfiles/output/Waiting/DynamicTEST/"*string(n)*"/Run"*string(run)
-        requestFile = string("Data/DataWaitingStrategies/",n,"/GeneratedRequests_",n,"_",i,".csv")
-        distanceMatrixFile = string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
-        timeMatrixFile =  string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
+        # # File names 
+        # vehiclesFile = string("Data/DataWaitingStrategies/",n,"/Vehicles_",n,"_",gamma,".csv")
+        # parametersFile = "tests/resources/ParametersShortCallTime.csv"
+        # outPutFolder = "runfiles/output/Waiting/DynamicTEST/"*string(n)*"/Run"*string(run)
+        # requestFile = string("Data/DataWaitingStrategies/",n,"/GeneratedRequests_",n,"_",i,".csv")
+        # distanceMatrixFile = string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+        # timeMatrixFile =  string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
         
-        maxDelay = 15 
+        # maxDelay = 15 
+        # maxEarlyArrival = 5
+
+        historicRequestFiles = Vector{String}()
+        for j in 11:30 #1:nHistoricRequestFiles
+            push!(historicRequestFiles,"Data/Konsentra/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
+        end
+    
+        # File names 
+        vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
+        parametersFile = "tests/resources/ParametersShortCallTime.csv"
+        outPutFolder = "runfiles/output/Waiting/DynamicTEST/"*string(n)
+        gridFile = "Data/Konsentra/grid_$(gridSize).json"
+        requestFile = "Data/Konsentra/$(n)/GeneratedRequests_$(n)_$(i).csv"
+        distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+        timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
+        scenarioName = string("Gen_Data_",n,"_",gamma,"_",i)
+        maxDelay = 15
         maxEarlyArrival = 5
+
     else
         historicRequestFiles = Vector{String}()
         for j in 1:nHistoricRequestFiles
