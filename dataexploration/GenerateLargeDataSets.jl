@@ -251,76 +251,41 @@ function make_hourly_prob_maps()
     hourly_grid_probs = Dict{Int, Matrix{Float64}}()
 
     grid5 = true 
-
+    NUM_ROWS = 5
+    NUM_COLS = 5
+    grid5 = true
+    
+    # Define a hotspot cell for each hour
+    hourly_hotspots = Dict(
+        6  => (1, 1),
+        7  => (1, 2),
+        8  => (1, 3),
+        9  => (1, 4),
+        10 => (1, 5),
+        11 => (2, 5),
+        12 => (2, 4),
+        13 => (2, 3),
+        14 => (2, 2),
+        15 => (2, 1),
+        16 => (3, 1),
+        17 => (3, 2),
+        18 => (3, 3),
+        19 => (3, 4),
+        20 => (3, 5),
+        21 => (4, 5),
+        22 => (4, 4),
+        23 => (4, 3),
+    )
+    
     for hour in 6:23
-        probs = zeros(NUM_ROWS, NUM_COLS)
-
-        if hour in 6:8  
-            if grid5
-                for r in 2:4, c in 1:2
-                    probs[r, c] = rand() + 1.0 
-                end
-            else
-                for r in 5:8, c in 3:5
-                    probs[r, c] = rand() + 1.0 
-                end
-            end
-        elseif hour in 9:11
-            if grid5
-                for r in 2:3, c in 2:3
-                    probs[r, c] = rand() + 1.0  
-                end
-            else
-                for r in 4:6, c in 4:6
-                    probs[r, c] = rand() + 1.0  
-                end
-            end
-        elseif hour in 12:14
-            if grid5
-                for r in 2:3, c in 1:2
-                    probs[r, c] = rand() + 1.0  
-                end
-            else
-                for r in 5:7, c in 3:5
-                    probs[r, c] = rand() + 1.0  
-                end
-            end
-        elseif hour in 15:17
-            if grid5
-                for r in 2:3, c in 2:3
-                    probs[r, c] = rand() + 1.0  
-                end
-            else
-                for r in 5:7, c in 5:7
-                    probs[r, c] = rand() + 1.0  
-                end
-            end
-        elseif hour in 18:20  
-            if grid5 
-                for r in 3:5, c in 2:4
-                    probs[r, c] = rand() + 1.0
-                end
-            else
-                for r in 3:5, c in 2:4
-                    probs[r, c] = rand() + 1.0
-                end
-            end
-
-        elseif hour in 20:23  
-            if grid5
-                for r in 2:3, c in 1:2
-                    probs[r, c] = rand() + 1.0
-                end
-            else
-                for r in 4:6, c in 3:5
-                    probs[r, c] = rand() + 1.0
-                end
-            end
-
-        else
-            probs .= rand(NUM_ROWS, NUM_COLS)  # Default: uniform noise
+        probs = rand(NUM_ROWS, NUM_COLS)  # Base random noise
+    
+        if haskey(hourly_hotspots, hour)
+            r, c = hourly_hotspots[hour]
+            probs[r, c] += 2.0 * rand() + 10.0  # Boost hotspot
         end
-
+    
+    
         # Add some noise to all cells
         probs .+= 0.1 * rand(NUM_ROWS, NUM_COLS)
 

@@ -19,7 +19,7 @@ print("\033c")
 n = 100 # Instance size 
 i = 5 # Instance number
 gamma = 0.7 # Vehicle ratio 
-displayPlots = true # Display and save plots
+displayPlots = false # Display and save plots
 dynamicProblem = true # Run Instance type II 
 saveResults = true # Save solution KPIs
 
@@ -27,14 +27,15 @@ saveResults = true # Save solution KPIs
 # Methods (do change)
 # ==========================#
 true_false = false # Run with relocation strategy 2 
-true_true = true # Run relocation strategy 1 
-false_false = true # Run without relocation strategy
+true_true = false # Run relocation strategy 1 
+false_false = false # Run without relocation strategy
+waitFirst = true
 inhindsight = false # Run in-hindsight solution 
 
 # ==========================#
 # Parameters that should not be changed 
 # ==========================#
-gridSize = 5 # Grid size (should NOT be changed)
+gridSize = 10 # Grid size (should NOT be changed)
 nPeriods = 48
 maximumTime = 24*60 
 periodLength = Int(maximumTime / nPeriods)
@@ -48,39 +49,39 @@ alnsParameters = "tests/resources/ALNSParameters_offlineWaiting.json"
 # ====================================================#
 # Retrieve historic request files 
 if dynamicProblem
-    # historicRequestFiles = Vector{String}()
-    # for j in 1:nHistoricRequestFiles
-    #     push!(historicRequestFiles,"Data/DataWaitingStrategies/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
-    # end
-
-    # # File names 
-    # vehiclesFile = string("Data/DataWaitingStrategies/",n,"/Vehicles_",n,"_",gamma,".csv")
-    # parametersFile = "tests/resources/ParametersShortCallTime.csv"
-    # outPutFolder = "runfiles/output/Waiting/Dynamictest/"*string(n)
-    # gridFile = "Data/Konsentra/grid_$(gridSize).json"
-    # requestFile = "Data/DataWaitingStrategies/$(n)/GeneratedRequests_$(n)_$(i).csv"
-    # distanceMatrixFile = string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
-    # timeMatrixFile =  string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
-    # scenarioName = string("Gen_Data_",n,"_",gamma,"_",i)
-    # maxDelay = 15
-    # maxEarlyArrival = 5
-
     historicRequestFiles = Vector{String}()
-    for j in 11:30 #1:nHistoricRequestFiles
-        push!(historicRequestFiles,"Data/Konsentra/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
+    for j in 1:nHistoricRequestFiles
+        push!(historicRequestFiles,"Data/DataWaitingStrategies/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
     end
 
     # File names 
-    vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
+    vehiclesFile = string("Data/DataWaitingStrategies/",n,"/Vehicles_",n,"_",gamma,".csv")
     parametersFile = "tests/resources/ParametersShortCallTime.csv"
     outPutFolder = "runfiles/output/Waiting/Dynamictest/"*string(n)
     gridFile = "Data/Konsentra/grid_$(gridSize).json"
-    requestFile = "Data/Konsentra/$(n)/GeneratedRequests_$(n)_$(i).csv"
-    distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
-    timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
+    requestFile = "Data/DataWaitingStrategies/$(n)/GeneratedRequests_$(n)_$(i).csv"
+    distanceMatrixFile = string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+    timeMatrixFile =  string("Data/DataWaitingStrategies/",n,"/Matrices/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
     scenarioName = string("Gen_Data_",n,"_",gamma,"_",i)
     maxDelay = 15
     maxEarlyArrival = 5
+
+    # historicRequestFiles = Vector{String}()
+    # for j in 11:30 #1:nHistoricRequestFiles
+    #     push!(historicRequestFiles,"Data/Konsentra/HistoricData/$(n)/GeneratedRequests_$(n)_$(j).csv")
+    # end
+
+    # # File names 
+    # vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
+    # parametersFile = "tests/resources/ParametersShortCallTime.csv"
+    # outPutFolder = "runfiles/output/Waiting/Dynamictest/"*string(n)
+    # gridFile = "Data/Konsentra/grid_$(gridSize).json"
+    # requestFile = "Data/Konsentra/$(n)/GeneratedRequests_$(n)_$(i).csv"
+    # distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
+    # timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
+    # scenarioName = string("Gen_Data_",n,"_",gamma,"_",i)
+    # maxDelay = 15
+    # maxEarlyArrival = 5
 
 else 
     historicRequestFiles = Vector{String}()
@@ -207,6 +208,29 @@ if false_false
 
     # Simulate scenario 
     solutionFalse, requestBankFalse = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = saveResults,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=false,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
+
+    state = State(solutionFalse,scenario.onlineRequests[end],0)
+    feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
+    @test msg == ""
+    @test feasible == true
+    println(msg)
+end
+
+#============================================================================#
+# Solve with wait first 
+#============================================================================#
+if waitFirst
+    if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/false_false")
+        mkpath("tests/WaitingPlots/"*scenarioName*"/false_false")
+    end
+    if displayPlots && isdir("tests/WaitingPlots/"*scenarioName*"/false_false")
+        for file in readdir("tests/WaitingPlots/"*scenarioName*"/false_false"; join=true)
+            rm(file; force=true, recursive=true)
+        end
+    end
+
+    # Simulate scenario 
+    solutionFalse, requestBankFalse = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = saveResults,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=false,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false,waitFirst = true);
 
     state = State(solutionFalse,scenario.onlineRequests[end],0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)

@@ -32,6 +32,12 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String,nReque
         markersizeWaiting = 20
         lineWidthWaiting = 39.5
         lineOffSet = 0.5
+    elseif nVehicles < 20 
+        lineWidthActivity = 25.5
+        markersize = 20
+        markersizeWaiting = 20
+        lineWidthWaiting = 39.5
+        lineOffSet = 1
     else
         lineWidthActivity = 11.5
         markersize = 15
@@ -69,6 +75,8 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String,nReque
 
         if nVehicles < 10 
             yPos += 1
+        elseif nVehicles < 20
+            yPos += 2
         else
             yPos += 3
         end
@@ -135,6 +143,8 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String,nReque
 
         if nVehicles < 10 
             yPos += 1
+        elseif nVehicles < 20
+            yPos += 2
         else
             yPos += 3
         end
