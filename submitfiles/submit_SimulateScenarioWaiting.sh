@@ -9,7 +9,7 @@ gamma=0.7
 nPeriods=48
 gridSize=5
 
-nRequestsList=(300) 
+nRequestsList=(100) 
 relocateOptions=("true true" "false false")  # Pair values as strings
 numRuns=1  
 numHistoricRequestFiles=20   

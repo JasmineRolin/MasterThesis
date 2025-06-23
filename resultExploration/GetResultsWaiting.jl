@@ -1,12 +1,12 @@
 using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures, PrettyTables, JSON
 
-nRequestList = [20,100,300,500]
-nRuns = 5
-relocateVehiclesList = [("true","true"),("true","false"),("false","false"),("inhindsight","")]
+nRequestList = [100]
+nRuns = 1
+relocateVehiclesList = [("true","true"),("false","false")]
 gamma = 0.7
-baseFolder = "runfiles/output/Waiting/Dynamic/"
-plotName = "Dynamic"
+baseFolder = "runfiles/output/Waiting/DynamicTEST/"
+plotName = "DynamicTEST"
 
 plotResults = false
 generateTables = false

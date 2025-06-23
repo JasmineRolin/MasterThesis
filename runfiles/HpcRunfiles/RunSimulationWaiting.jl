@@ -58,12 +58,11 @@ function main()
         # File names 
         vehiclesFile = string("Data/Konsentra/",n,"/Vehicles_",n,"_",gamma,".csv")
         parametersFile = "tests/resources/ParametersShortCallTime.csv"
-        outPutFolder = "runfiles/output/Waiting/DynamicTEST/"*string(n)
+        outPutFolder = "runfiles/output/Waiting/DynamicTEST/"*string(n)*"/Run"*string(run)
         gridFile = "Data/Konsentra/grid_$(gridSize).json"
         requestFile = "Data/Konsentra/$(n)/GeneratedRequests_$(n)_$(i).csv"
         distanceMatrixFile = string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_distance.txt")
         timeMatrixFile =  string("Data/Matrices/",n,"/GeneratedRequests_",n,"_",gamma,"_",i,"_time.txt")
-        scenarioName = string("Gen_Data_",n,"_",gamma,"_",i)
         maxDelay = 15
         maxEarlyArrival = 5
 
