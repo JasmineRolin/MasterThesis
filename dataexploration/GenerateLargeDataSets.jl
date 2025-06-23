@@ -250,33 +250,71 @@ end
 function make_hourly_prob_maps()
     hourly_grid_probs = Dict{Int, Matrix{Float64}}()
 
+    grid5 = true 
+
     for hour in 6:23
         probs = zeros(NUM_ROWS, NUM_COLS)
 
         if hour in 6:8  
-            for r in 5:8, c in 3:5
-                probs[r, c] = rand() + 1.0 
+            if grid5
+                for r in 2:4, c in 1:2
+                    probs[r, c] = rand() + 1.0 
+                end
+            else
+                for r in 5:8, c in 3:5
+                    probs[r, c] = rand() + 1.0 
+                end
             end
         elseif hour in 9:11
-            for r in 4:6, c in 4:6
-                probs[r, c] = rand() + 1.0  
+            if grid5
+                for r in 2:3, c in 2:3
+                    probs[r, c] = rand() + 1.0  
+                end
+            else
+                for r in 4:6, c in 4:6
+                    probs[r, c] = rand() + 1.0  
+                end
             end
         elseif hour in 12:14
-            for r in 5:7, c in 3:5
-                probs[r, c] = rand() + 1.0  
+            if grid5
+                for r in 2:3, c in 1:2
+                    probs[r, c] = rand() + 1.0  
+                end
+            else
+                for r in 5:7, c in 3:5
+                    probs[r, c] = rand() + 1.0  
+                end
             end
         elseif hour in 15:17
-            for r in 5:7, c in 5:7
-                probs[r, c] = rand() + 1.0  
+            if grid5
+                for r in 2:3, c in 2:3
+                    probs[r, c] = rand() + 1.0  
+                end
+            else
+                for r in 5:7, c in 5:7
+                    probs[r, c] = rand() + 1.0  
+                end
             end
         elseif hour in 18:20  
-            for r in 3:5, c in 2:4
-                probs[r, c] = rand() + 1.0
+            if grid5 
+                for r in 3:5, c in 2:4
+                    probs[r, c] = rand() + 1.0
+                end
+            else
+                for r in 3:5, c in 2:4
+                    probs[r, c] = rand() + 1.0
+                end
             end
 
         elseif hour in 20:23  
-            for r in 4:6, c in 3:5
-                probs[r, c] = rand() + 1.0
+            if grid5
+                for r in 2:3, c in 1:2
+                    probs[r, c] = rand() + 1.0
+                end
+            else
+                for r in 4:6, c in 3:5
+                    probs[r, c] = rand() + 1.0
+                end
             end
 
         else

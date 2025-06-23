@@ -165,7 +165,8 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String,nReque
     # x labels 
     xPositions = []
     xLabels = []
-    startMinute= Int(Int(floor(minimumTime/60.0,digits = 0))*60)
+    # TODO: jas 
+    startMinute= 350 # Int(Int(floor(minimumTime/60.0,digits = 0))*60)
     endMinutes = 1440 
     for i in startMinute:60:endMinutes
         h = Int(round(i/60.0,digits = 0))

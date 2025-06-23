@@ -51,8 +51,8 @@ global MAX_LAT = 60.721
 global MIN_LAT = 59.165
 global MAX_LONG = 12.458
 global MIN_LONG = 9.948
-global NUM_ROWS = 10
-global NUM_COLS = 10
+global NUM_ROWS = 5
+global NUM_COLS = 5
 
 #==
 # Common 

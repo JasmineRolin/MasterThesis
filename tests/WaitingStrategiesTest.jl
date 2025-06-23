@@ -28,13 +28,13 @@ saveResults = true # Save solution KPIs
 # ==========================#
 true_false = false # Run with relocation strategy 2 
 true_true = true # Run relocation strategy 1 
-false_false = false # Run without relocation strategy
+false_false = true # Run without relocation strategy
 inhindsight = false # Run in-hindsight solution 
 
 # ==========================#
 # Parameters that should not be changed 
 # ==========================#
-gridSize = 10 # Grid size (should NOT be changed)
+gridSize = 5 # Grid size (should NOT be changed)
 nPeriods = 48
 maximumTime = 24*60 
 periodLength = Int(maximumTime / nPeriods)
@@ -206,7 +206,7 @@ if false_false
     end
 
     # Simulate scenario 
-    solutionFalse, requestBankFalse = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = saveResults,saveALNSResults = saveResults, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=false,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
+    solutionFalse, requestBankFalse = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = saveResults,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=false,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false);
 
     state = State(solutionFalse,scenario.onlineRequests[end],0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
@@ -239,10 +239,18 @@ end
 #============================================================================#
 # Result
 #============================================================================#
-println("Relocation vehicles TRUE: ", solutionTrue.nTaxi)
-#println("Relocation vehicles TRUE DEMAND: ", solutionTrueDemand.nTaxi)
-println("Relocation vehicles FALSE: ", solutionFalse.nTaxi)
-#println("ALNS solution: ", finalSolution.nTaxi)
+if true_false
+    println("Relocation vehicles TRUE: ", solutionTrue.nTaxi)
+end
+if true_true
+    println("Relocation vehicles TRUE DEMAND: ", solutionTrueDemand.nTaxi)
+end
+if false_false
+    println("Relocation vehicles FALSE: ", solutionFalse.nTaxi)
+end
+if inhindsight
+    println("ALNS solution: ", finalSolution.nTaxi)
+end
 
 
 #============================================================================#

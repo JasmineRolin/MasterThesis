@@ -110,7 +110,8 @@ function generatePredictedDemand(grid::Grid, historicRequestFiles::Vector{String
         end
     end
 
-    averageDemand = demandGrid ./ nFiles
+    # TODO: jas 
+    averageDemand = (demandGrid ./ nFiles)*10
     return averageDemand  
 end
 
