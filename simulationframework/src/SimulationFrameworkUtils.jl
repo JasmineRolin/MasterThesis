@@ -1587,7 +1587,7 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         end
 
         if waitFirst
-            fileName = outPutFileFolder*"/Simulation_KPI_"*string(scenario.name)*"_waitfirst.json"
+            fileName = outPutFileFolder*"/Simulation_KPI_"*string(scenario.name)*"_waitfirst_.json"
         else
             fileName = outPutFileFolder*"/Simulation_KPI_"*string(scenario.name)*"_"*string(relocateVehicles)*"_"*string(relocateWithDemand)*".json"
         end
