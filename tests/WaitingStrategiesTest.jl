@@ -17,7 +17,7 @@ print("\033c")
 # ==========================#
 #for i = 1:10
 n = 100 # Instance size 
-i = 5 # Instance number
+i = 2 # Instance number
 gamma = 0.7 # Vehicle ratio 
 displayPlots = false # Display and save plots
 dynamicProblem = true # Run Instance type II 
@@ -27,9 +27,9 @@ saveResults = true # Save solution KPIs
 # Methods (do change)
 # ==========================#
 true_false = false # Run with relocation strategy 2 
-true_true = false # Run relocation strategy 1 
-false_false = false # Run without relocation strategy
-waitFirst = true
+true_true = true # Run relocation strategy 1 
+false_false = true # Run without relocation strategy
+waitFirst = false
 inhindsight = false # Run in-hindsight solution 
 
 # ==========================#
@@ -110,11 +110,11 @@ println("\t nOfflineRequests: ",length(scenario.offlineRequests))
 # Solve with relocation using common request location probability grid
 #============================================================================#
 if true_false
-    if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/true_false")
-        mkpath("tests/WaitingPlots/"*scenarioName*"/true_false")
+    if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/true_false_false")
+        mkpath("tests/WaitingPlots/"*scenarioName*"/true_false_false")
     end
-    if displayPlots && isdir("tests/WaitingPlots/"*scenarioName*"/true_false")
-        for file in readdir("tests/WaitingPlots/"*scenarioName*"/true_false"; join=true)
+    if displayPlots && isdir("tests/WaitingPlots/"*scenarioName*"/true_false_false")
+        for file in readdir("tests/WaitingPlots/"*scenarioName*"/true_false_false"; join=true)
             rm(file; force=true, recursive=true)
         end
     end
@@ -155,29 +155,29 @@ function getTimeAsString(callTime::Int)
 end
 
 if true_true 
-    # Plots heat maps 
-    averageDemandPrHour = generatePredictedDemand(scenario.grid, historicRequestFiles, nPeriods, periodLength)
+    # # Plots heat maps 
+    # averageDemandPrHour = generatePredictedDemand(scenario.grid, historicRequestFiles, nPeriods, periodLength)
 
-    for p in 1:nPeriods
-        time = getTimeAsString(p*periodLength)
+    # for p in 1:nPeriods
+    #     time = getTimeAsString(p*periodLength)
 
-        pTitle = "Predicted Demand for Period $(p), time: "* time
-        p = heatmap(averageDemandPrHour[p,:,:], 
-            c=:viridis,         # color map
-            xlabel="Longitude (grid cols)", 
-            ylabel="Latitude (grid rows)", 
-            title=pTitle,
-            colorbar_title="Requests")
-        display(p)
-        #savefig(p,"tests/WaitingPlots/"*scenarioName*"/true_true/PredictedDemandPeriod$(p).png")
+    #     pTitle = "Predicted Demand for Period $(p), time: "* time
+    #     p = heatmap(averageDemandPrHour[p,:,:], 
+    #         c=:viridis,         # color map
+    #         xlabel="Longitude (grid cols)", 
+    #         ylabel="Latitude (grid rows)", 
+    #         title=pTitle,
+    #         colorbar_title="Requests")
+    #     display(p)
+    #     #savefig(p,"tests/WaitingPlots/"*scenarioName*"/true_true/PredictedDemandPeriod$(p).png")
+    # end
+
+
+    if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/true_true_false")
+        mkpath("tests/WaitingPlots/"*scenarioName*"/true_true_false")
     end
-
-
-    if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/true_true")
-        mkpath("tests/WaitingPlots/"*scenarioName*"/true_true")
-    end
-    if displayPlots && isdir("tests/WaitingPlots/"*scenarioName*"/true_true")
-        for file in readdir("tests/WaitingPlots/"*scenarioName*"/true_true"; join=true)
+    if displayPlots && isdir("tests/WaitingPlots/"*scenarioName*"/true_true_false")
+        for file in readdir("tests/WaitingPlots/"*scenarioName*"/true_true_false"; join=true)
             rm(file; force=true, recursive=true)
         end
     end
@@ -197,11 +197,11 @@ end
 # Solve without relocation
 #============================================================================#
 if false_false
-    if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/false_false")
+    if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/false_false_false")
         mkpath("tests/WaitingPlots/"*scenarioName*"/false_false")
     end
-    if displayPlots && isdir("tests/WaitingPlots/"*scenarioName*"/false_false")
-        for file in readdir("tests/WaitingPlots/"*scenarioName*"/false_false"; join=true)
+    if displayPlots && isdir("tests/WaitingPlots/"*scenarioName*"/false_false_false")
+        for file in readdir("tests/WaitingPlots/"*scenarioName*"/false_false_false"; join=true)
             rm(file; force=true, recursive=true)
         end
     end
@@ -220,19 +220,19 @@ end
 # Solve with wait first 
 #============================================================================#
 if waitFirst
-    if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/false_false")
-        mkpath("tests/WaitingPlots/"*scenarioName*"/false_false")
+    if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/true_false_true")
+        mkpath("tests/WaitingPlots/"*scenarioName*"/true_false_true")
     end
-    if displayPlots && isdir("tests/WaitingPlots/"*scenarioName*"/false_false")
-        for file in readdir("tests/WaitingPlots/"*scenarioName*"/false_false"; join=true)
+    if displayPlots && isdir("tests/WaitingPlots/"*scenarioName*"/true_false_true")
+        for file in readdir("tests/WaitingPlots/"*scenarioName*"/true_false_true"; join=true)
             rm(file; force=true, recursive=true)
         end
     end
 
     # Simulate scenario 
-    solutionFalse, requestBankFalse = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = saveResults,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false,waitFirst = true);
+    solutionWait, requestBankWait = simulateScenario(scenario,alnsParameters = alnsParameters,printResults = false,displayPlots = displayPlots,saveResults = saveResults,saveALNSResults = false, displayALNSPlots = false, outPutFileFolder= outPutFolder,historicRequestFiles=historicRequestFiles, gamma=gamma,relocateVehicles=true,nTimePeriods=nPeriods,periodLength=periodLength,scenarioName=scenarioName,relocateWithDemand = false,waitFirst = true);
 
-    state = State(solutionFalse,scenario.onlineRequests[end],0)
+    state = State(solutionWait,scenario.onlineRequests[end],0)
     feasible, msg = checkSolutionFeasibilityOnline(scenario,state)
     @test msg == ""
     @test feasible == true
@@ -271,6 +271,9 @@ if true_true
 end
 if false_false
     println("Relocation vehicles FALSE: ", solutionFalse.nTaxi)
+end
+if waitFirst
+    println("Relocation vehicles TRUE WAIT FIRST: ", solutionWait.nTaxi)
 end
 if inhindsight
     println("ALNS solution: ", finalSolution.nTaxi)

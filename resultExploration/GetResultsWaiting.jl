@@ -1,7 +1,7 @@
 using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures, PrettyTables, JSON
 
-nRequestList = [20,100,300,500]
+nRequestList = [300]
 nRuns = 5
 relocateVehiclesList = [("true","false"),("true","true"),("false","false"),("waitfirst",""),("inhindsight","")]
 gamma = 0.7
@@ -93,6 +93,10 @@ if plotResults
         maxnTaxi = 0
         minnTaxi = typemax(Int)
         for relocateVehiclesOption in relocateVehiclesList
+            if relocateVehiclesOption[1] == "inhindsight"
+                continue # Skip In Hindsight for this plot
+            end
+
             outPutFolder = baseFolder*string(n)
             resultFile = string(outPutFolder, "/results_avgOverRuns_",relocateVehiclesOption[1],"_",relocateVehiclesOption[2],".csv")
             df = CSV.read(resultFile, DataFrame)
@@ -266,7 +270,7 @@ if plotResults
     # Plot empty drive time to/from depot 
     for n in nRequestList
         println("n requests: ",n)
-        p = plot(size = (1000,1000),title = "Results for n = $n", xlabel = "", ylabel = "Total duration of empty relocation time",leftmargin=5mm,topmargin=5mm,legend = :right,legend_background_color = RGBA(1,1,1,0.6),
+        p = plot(size = (1000,1000),title = "", xlabel = "", ylabel = "Total duration of empty relocation time",leftmargin=5mm,topmargin=5mm,legend = :topright,legend_background_color = RGBA(1,1,1,0.6),
         legendfontsize = legendfontsize,
         ytickfont = ytickfont,
         xtickfont = xtickfont,
@@ -279,33 +283,37 @@ if plotResults
         maxnTaxi = 0
         minnTaxi = typemax(Int)
         for relocateVehiclesOption in relocateVehiclesList
+            if relocateVehiclesOption[1] == "inhindsight"
+                continue # Skip In Hindsight for this plot
+            end
+
             outPutFolder = baseFolder*string(n)
             resultFile = string(outPutFolder, "/results_avgOverRuns_",relocateVehiclesOption[1],"_",relocateVehiclesOption[2],".csv")
             df = CSV.read(resultFile, DataFrame)
             nRows = nrow(df)
-           
-        # Plot 
-        if relocateVehiclesOption[1] == "true" && relocateVehiclesOption[2] == "true"
-            color = :forestgreen
-            linestyle = :dot
-            label = "Relocation strategy 1"
-        elseif relocateVehiclesOption[1] == "true" && relocateVehiclesOption[2] == "false"
-            color = :darkorange
-            linestyle = :dot
-            label = "Relocation strategy 2"
-        elseif relocateVehiclesOption[1] == "false" && relocateVehiclesOption[2] == "false"
-            color = :steelblue
-            linestyle = :dash
-            label = "Base method"
-        elseif relocateVehiclesOption[1] == "waitfirst"
-            color = :mediumvioletred
-            linestyle = :dot 
-            label = "Wait first"
-        else
-            color = :gray20 
-            linestyle = :dash
-            label = "In Hindsight"
-        end
+            
+            # Plot 
+            if relocateVehiclesOption[1] == "true" && relocateVehiclesOption[2] == "true"
+                color = :forestgreen
+                linestyle = :dot
+                label = "Relocation strategy 1"
+            elseif relocateVehiclesOption[1] == "true" && relocateVehiclesOption[2] == "false"
+                color = :darkorange
+                linestyle = :dot
+                label = "Relocation strategy 2"
+            elseif relocateVehiclesOption[1] == "false" && relocateVehiclesOption[2] == "false"
+                color = :steelblue
+                linestyle = :dash
+                label = "Base method"
+            elseif relocateVehiclesOption[1] == "waitfirst"
+                color = :mediumvioletred
+                linestyle = :dot 
+                label = "Wait first"
+            else
+                color = :gray20 
+                linestyle = :dash
+                label = "In Hindsight"
+            end
 
 
             plot!(df.TotalEmptyRelocationTime_mean; linestyle = linestyle, marker = :circle, color = color, label = label,markerstrokewidth=0,linewidth=2,markersize=5)
@@ -323,6 +331,8 @@ if plotResults
 
      # Plot distance to depot pr. customer 
      for n in nRequestList
+       
+
         println("n requests: ",n)
         p = plot(size = (1000,1000),title = "Results for n = $n", xlabel = "", ylabel = "Average drive time pr. request to nearest idle vehicle ",leftmargin=5mm,topmargin=5mm,legend = :topright,legend_background_color = RGBA(1,1,1,0.6),
         legendfontsize = legendfontsize,
@@ -337,6 +347,10 @@ if plotResults
         maxnTaxi = 0
         minnTaxi = typemax(Int)
         for relocateVehiclesOption in relocateVehiclesList
+            if relocateVehiclesOption[1] == "inhindsight"
+                continue # Skip In Hindsight for this plot
+            end
+    
             outPutFolder = baseFolder*string(n)
             resultFile = string(outPutFolder, "/results_avgOverRuns_",relocateVehiclesOption[1],"_",relocateVehiclesOption[2],".csv")
             df = CSV.read(resultFile, DataFrame)
@@ -385,7 +399,7 @@ if plotResults
 
     for n in nRequestList
         println("n requests: ",n)
-        p = plot(size = (1000,1000),title = "Results for n = $n", xlabel = "", ylabel = "No. requests with pick-up time window overlapping with idle vehicle",leftmargin=5mm,topmargin=5mm,legend=:topright,legend_background_color = RGBA(1,1,1,0.6),legend_position = (3, 0.5),
+        p = plot(size = (1000,1000),title = "Results for n = $n", xlabel = "", ylabel = "No. requests with pick-up time window overlapping with idle vehicle",leftmargin=5mm,topmargin=5mm,legend=:right,legend_background_color = RGBA(1,1,1,0.6),legend_position = (3, 0.5),
         legendfontsize = legendfontsize,
         ytickfont = ytickfont,
         xtickfont = xtickfont,
@@ -398,6 +412,10 @@ if plotResults
         maxnTaxi = 0
         minnTaxi = typemax(Int)
         for relocateVehiclesOption in relocateVehiclesList
+            if relocateVehiclesOption[1] == "inhindsight"
+                continue # Skip In Hindsight for this plot
+            end
+
             outPutFolder = baseFolder*string(n)
             resultFile = string(outPutFolder, "/results_avgOverRuns_",relocateVehiclesOption[1],"_",relocateVehiclesOption[2],".csv")
             df = CSV.read(resultFile, DataFrame)
@@ -459,8 +477,8 @@ if generateTables
         summary_table = DataFrame(Scenario = String[],
         BaseValue = Float64[], 
         RS1 = Float64[], DifferenceRS1 = Float64[],PercentDifferenceRS1 = Float64[],
-        RS2 = Float64[], DifferenceRS2 = Float64[],PercentDifferenceRS2 = Float64[])
-
+        RS2 = Float64[], DifferenceRS2 = Float64[],PercentDifferenceRS2 = Float64[],
+        WF = Float64[], DifferenceWait = Float64[], PercentDifferenceWait = Float64[])
         
         # Relocation strategy 1 
         resultFile1 = string(outPutFolder, "/results_avgOverRuns_true_true.csv")
@@ -480,6 +498,14 @@ if generateTables
         df2 = CSV.read(resultFile2, DataFrame)
 
 
+        resultFileWait = string(outPutFolder, "/results_avgOverRuns_waitfirst_.csv")
+        if !isfile(resultFileWait)
+            @warn "Missing file: $resultFile"
+            continue
+        end
+        dfWait = CSV.read(resultFileWait, DataFrame)
+
+
         base_values = Float64[]
         new_values1 = Float64[]
         differences1 = Float64[]
@@ -489,11 +515,15 @@ if generateTables
         differences2 = Float64[]
         percentDifferences2 = Float64[]
 
+        new_valuesWait = Float64[]
+        differencesWait = Float64[]
+        percentDifferencesWait = Float64[]
+
         # Collect values for each scenario 
         for (i,row) in enumerate(eachrow(df1))
             baseRow = filter(r -> r.BaseScenario == row.BaseScenario, dfBase)
             RS2Row = filter(r -> r.BaseScenario == row.BaseScenario, df2)
-
+            waitRow = filter(r -> r.BaseScenario == row.BaseScenario, dfWait)
 
             if nrow(baseRow) == 1 && nrow(RS2Row) == 1
                 push!(base_values, round(baseRow[1, :nTaxi_mean],digits=2))
@@ -513,6 +543,14 @@ if generateTables
                 else
                     push!(percentDifferences2,round((differences2[i]/base_values[i]) * 100, digits=2))
                 end
+
+                push!(new_valuesWait, round(waitRow[1, :nTaxi_mean],digits=2))
+                push!(differencesWait, round(new_valuesWait[i]-base_values[i],digits=2))
+                if isapprox(differencesWait[i],0)
+                    push!(percentDifferencesWait,0.0)
+                else
+                    push!(percentDifferencesWait,round((differencesWait[i]/base_values[i]) * 100, digits=2))
+                end
             else
                 @warn "Scenario mismatch or duplicate in base data: $(row.BaseScenario)"
             end
@@ -527,7 +565,11 @@ if generateTables
 
                 RS2 = new_values2[i],
                 DifferenceRS2 = differences2[i], 
-                PercentDifferenceRS2 = percentDifferences2[i]
+                PercentDifferenceRS2 = percentDifferences2[i],
+
+                WF = new_valuesWait[i],
+                DifferenceWait = differencesWait[i], 
+                PercentDifferenceWait = percentDifferencesWait[i]
             ))
 
         end
@@ -545,6 +587,10 @@ if generateTables
             diff2 = round(mean(differences2),digits=2)
             percentDiff2 = round(mean(filter(x -> isfinite(x), percentDifferences2)),digits=2)
 
+            mean_newWait = round(mean(new_valuesWait),digits=2)
+            diffWait = round(mean(differencesWait),digits=2)
+            percentDiffWait = round(mean(filter(x -> isfinite(x), percentDifferencesWait)),digits=2)
+
             push!(summary_table, (
                 Scenario = "Average",
                 BaseValue = mean_base,
@@ -555,7 +601,11 @@ if generateTables
 
                 RS2 = mean_new2,
                 DifferenceRS2 = diff2, 
-                PercentDifferenceRS2 = percentDiff2
+                PercentDifferenceRS2 = percentDiff2,
+
+                WF = mean_newWait,
+                DifferenceWait = diffWait, 
+                PercentDifferenceWait = percentDiffWait
             ))
         end 
 
@@ -578,7 +628,7 @@ if generateTables
             pretty_table(io, summary_table;
                 backend = Val(:latex),
                 tf = tf_latex_default,  # or tf_latex_grid for more lines
-                header = ["Inst.", "Base", "RS1", "\$\\Delta\$  RS1", "% \$\\Delta\$  RS1","RS2", "\$\\Delta\$  RS2", "% \$\\Delta\$  RS2"],
+                header = ["Inst.", "Base", "RS1", "\$\\Delta\$  RS1", "% \$\\Delta\$  RS1","RS2", "\$\\Delta\$  RS2", "% \$\\Delta\$  RS2","WF", "\$\\Delta\$  WF", "% \$\\Delta\$  WF"],
                 alignment = :c
             )
         
@@ -592,7 +642,7 @@ if generateTables
         println("✅ Saved summary table for n=$n → $output_file")
     end
 
-    # Total time spent wmpty relocation 
+    # Total time spent empty relocation 
     for n in nRequestList
         outPutFolder = baseFolder * string(n)
 
@@ -605,8 +655,8 @@ if generateTables
         summary_table = DataFrame(Scenario = String[],
         BaseValue = Float64[], 
         RS1 = Float64[], DifferenceRS1 = Float64[],PercentDifferenceRS1 = Float64[],
-        RS2 = Float64[], DifferenceRS2 = Float64[],PercentDifferenceRS2 = Float64[])
-
+        RS2 = Float64[], DifferenceRS2 = Float64[],PercentDifferenceRS2 = Float64[],
+        WF = Float64[], DifferenceWait = Float64[], PercentDifferenceWait = Float64[])
         
         # Relocation strategy 1 
         resultFile1 = string(outPutFolder, "/results_avgOverRuns_true_true.csv")
@@ -625,6 +675,13 @@ if generateTables
         end
         df2 = CSV.read(resultFile2, DataFrame)
 
+        resultFileWait = string(outPutFolder, "/results_avgOverRuns_waitfirst_.csv")
+        if !isfile(resultFileWait)
+            @warn "Missing file: $resultFile"
+            continue
+        end
+        dfWait = CSV.read(resultFileWait, DataFrame)
+
 
         base_values = Float64[]
         new_values1 = Float64[]
@@ -635,10 +692,15 @@ if generateTables
         differences2 = Float64[]
         percentDifferences2 = Float64[]
 
+        new_valuesWait = Float64[]
+        differencesWait = Float64[]
+        percentDifferencesWait = Float64[]
+
         # Collect values for each scenario 
         for (i,row) in enumerate(eachrow(df1))
             baseRow = filter(r -> r.BaseScenario == row.BaseScenario, dfBase)
             RS2Row = filter(r -> r.BaseScenario == row.BaseScenario, df2)
+            waitRow = filter(r -> r.BaseScenario == row.BaseScenario, dfWait)
 
 
             if nrow(baseRow) == 1 && nrow(RS2Row) == 1
@@ -659,6 +721,14 @@ if generateTables
                 else
                     push!(percentDifferences2,round((differences2[i]/base_values[i]) * 100, digits=2))
                 end
+
+                push!(new_valuesWait, round(waitRow[1, :TotalEmptyRelocationTime_mean],digits=2))
+                push!(differencesWait, round(new_valuesWait[i]-base_values[i],digits=2))
+                if isapprox(differencesWait[i],0)
+                    push!(percentDifferencesWait,0.0)
+                else
+                    push!(percentDifferencesWait,round((differencesWait[i]/base_values[i]) * 100, digits=2))
+                end
             else
                 @warn "Scenario mismatch or duplicate in base data: $(row.BaseScenario)"
             end
@@ -673,7 +743,11 @@ if generateTables
 
                 RS2 = new_values2[i],
                 DifferenceRS2 = differences2[i], 
-                PercentDifferenceRS2 = percentDifferences2[i]
+                PercentDifferenceRS2 = percentDifferences2[i],
+
+                WF = new_valuesWait[i],
+                DifferenceWait = differencesWait[i], 
+                PercentDifferenceWait = percentDifferencesWait[i]
             ))
 
         end
@@ -691,6 +765,11 @@ if generateTables
             diff2 = round(mean(differences2),digits=2)
             percentDiff2 = round(mean(filter(x -> isfinite(x), percentDifferences2)),digits=2)
 
+            mean_newWait = round(mean(new_valuesWait),digits=2)
+            diffWait = round(mean(differencesWait),digits=2)
+            percentDiffWait = round(mean(filter(x -> isfinite(x), percentDifferencesWait)),digits=2)
+
+
             push!(summary_table, (
                 Scenario = "Average",
                 BaseValue = mean_base,
@@ -701,7 +780,11 @@ if generateTables
 
                 RS2 = mean_new2,
                 DifferenceRS2 = diff2, 
-                PercentDifferenceRS2 = percentDiff2
+                PercentDifferenceRS2 = percentDiff2,
+
+                WF = mean_newWait,
+                DifferenceWait = diffWait, 
+                PercentDifferenceWait = percentDiffWait
             ))
         end 
 
@@ -724,7 +807,7 @@ if generateTables
             pretty_table(io, summary_table;
                 backend = Val(:latex),
                 tf = tf_latex_default,  # or tf_latex_grid for more lines
-                header = ["Inst.", "Base", "RS1", "\$\\Delta\$  RS1", "% \$\\Delta\$  RS1","RS2", "\$\\Delta\$  RS2", "% \$\\Delta\$  RS2"],
+                header = ["Inst.", "Base", "RS1", "\$\\Delta\$  RS1", "% \$\\Delta\$  RS1","RS2", "\$\\Delta\$  RS2", "% \$\\Delta\$  RS2","WF", "\$\\Delta\$  WF", "% \$\\Delta\$  WF"],
                 alignment = :c
             )
         
@@ -753,8 +836,8 @@ if generateTables
         summary_table = DataFrame(Scenario = String[],
         BaseValue = Float64[], 
         RS1 = Float64[], DifferenceRS1 = Float64[],PercentDifferenceRS1 = Float64[],
-        RS2 = Float64[], DifferenceRS2 = Float64[],PercentDifferenceRS2 = Float64[])
-
+        RS2 = Float64[], DifferenceRS2 = Float64[],PercentDifferenceRS2 = Float64[],
+        WF = Float64[], DifferenceWait = Float64[], PercentDifferenceWait = Float64[])
         
         # Relocation strategy 1 
         resultFile1 = string(outPutFolder, "/results_avgOverRuns_true_true.csv")
@@ -773,6 +856,13 @@ if generateTables
         end
         df2 = CSV.read(resultFile2, DataFrame)
 
+        resultFileWait = string(outPutFolder, "/results_avgOverRuns_waitfirst_.csv")
+        if !isfile(resultFileWait)
+            @warn "Missing file: $resultFile"
+            continue
+        end
+        dfWait = CSV.read(resultFileWait, DataFrame)
+
 
         base_values = Float64[]
         new_values1 = Float64[]
@@ -783,10 +873,15 @@ if generateTables
         differences2 = Float64[]
         percentDifferences2 = Float64[]
 
+        new_valuesWait = Float64[]
+        differencesWait = Float64[]
+        percentDifferencesWait = Float64[]
+
         # Collect values for each scenario 
         for (i,row) in enumerate(eachrow(df1))
             baseRow = filter(r -> r.BaseScenario == row.BaseScenario, dfBase)
             RS2Row = filter(r -> r.BaseScenario == row.BaseScenario, df2)
+            waitRow = filter(r -> r.BaseScenario == row.BaseScenario, dfWait)
 
 
             if nrow(baseRow) == 1 && nrow(RS2Row) == 1
@@ -810,6 +905,15 @@ if generateTables
                 else
                     push!(percentDifferences2,round((differences2[i]/base_values[i]) * 100, digits=2))
                 end
+
+                valueWait = waitRow[1, :TotalDriveTimeToNearestIdleVehicle_mean] ./ waitRow[1, :TotalNumberOfRequestsOverlapIdleVehicle_mean]
+                push!(new_valuesWait, round(valueWait,digits=2))
+                push!(differencesWait, round(new_valuesWait[i]-base_values[i],digits=2))
+                if isapprox(differencesWait[i],0)
+                    push!(percentDifferencesWait,0.0)
+                else
+                    push!(percentDifferencesWait,round((differencesWait[i]/base_values[i]) * 100, digits=2))
+                end
             else
                 @warn "Scenario mismatch or duplicate in base data: $(row.BaseScenario)"
             end
@@ -824,7 +928,11 @@ if generateTables
 
                 RS2 = new_values2[i],
                 DifferenceRS2 = differences2[i], 
-                PercentDifferenceRS2 = percentDifferences2[i]
+                PercentDifferenceRS2 = percentDifferences2[i],
+
+                WF = new_valuesWait[i],
+                DifferenceWait = differencesWait[i], 
+                PercentDifferenceWait = percentDifferencesWait[i]
             ))
 
         end
@@ -842,6 +950,11 @@ if generateTables
             diff2 = round(mean(differences2),digits=2)
             percentDiff2 = round(mean(filter(x -> isfinite(x), percentDifferences2)),digits=2)
 
+            mean_newWait = round(mean(new_valuesWait),digits=2)
+            diffWait = round(mean(differencesWait),digits=2)
+            percentDiffWait = round(mean(filter(x -> isfinite(x), percentDifferencesWait)),digits=2)
+
+
             push!(summary_table, (
                 Scenario = "Average",
                 BaseValue = mean_base,
@@ -852,7 +965,11 @@ if generateTables
 
                 RS2 = mean_new2,
                 DifferenceRS2 = diff2, 
-                PercentDifferenceRS2 = percentDiff2
+                PercentDifferenceRS2 = percentDiff2, 
+
+                WF = mean_newWait,
+                DifferenceWait = diffWait, 
+                PercentDifferenceWait = percentDiffWait
             ))
         end 
 
@@ -875,7 +992,7 @@ if generateTables
             pretty_table(io, summary_table;
                 backend = Val(:latex),
                 tf = tf_latex_default,  # or tf_latex_grid for more lines
-                header = ["Inst", "Base", "RS1", "\$\\Delta\$  RS1", "% \$\\Delta\$  RS1","RS2", "\$\\Delta\$  RS2", "% \$\\Delta\$  RS2"],
+                header = ["Inst.", "Base", "RS1", "\$\\Delta\$  RS1", "% \$\\Delta\$  RS1","RS2", "\$\\Delta\$  RS2", "% \$\\Delta\$  RS2","WF", "\$\\Delta\$  WF", "% \$\\Delta\$  WF"],
                 alignment = :c
             )
         
@@ -1041,7 +1158,7 @@ if generateTables
 
 
      # request overlapping
-     summary_table = DataFrame(NRequests = Int[],BaseValue = Float64[], RS1 = Float64[],  RS2 = Float64[])
+     summary_table = DataFrame(NRequests = Int[],BaseValue = Float64[], RS1 = Float64[],  RS2 = Float64[],WF = Float64[])
 
      for n in nRequestList
         outPutFolder = baseFolder * string(n)
@@ -1068,16 +1185,25 @@ if generateTables
         df2 = CSV.read(resultFile2, DataFrame)
 
 
+        resultFileWait = string(outPutFolder, "/results_avgOverRuns_waitfirst_.csv")
+        if !isfile(resultFileWait)
+            @warn "Missing file: $resultFile"
+            continue
+        end
+        dfWait = CSV.read(resultFileWait, DataFrame)
+
         meanBase = mean(dfBase.TotalNumberOfRequestsOverlapIdleVehicle_mean)
         mean1 = mean(df1.TotalNumberOfRequestsOverlapIdleVehicle_mean)
         mean2 = mean(df2.TotalNumberOfRequestsOverlapIdleVehicle_mean)
-       
+        meanWait = mean(dfWait.TotalNumberOfRequestsOverlapIdleVehicle_mean)
+
 
         push!(summary_table,(
             NRequests = n,
             BaseValue = round(meanBase, digits=2),
             RS1 = round(mean1, digits=2),
-            RS2 = round(mean2, digits=2)
+            RS2 = round(mean2, digits=2), 
+            WF = round(meanWait, digits=2)
         ))
 
         # Save latex table 
@@ -1101,7 +1227,7 @@ if generateTables
         pretty_table(io, summary_table;
             backend = Val(:latex),
             tf = tf_latex_default,  # or tf_latex_grid for more lines
-            header = ["n","Base", "RS1", "RS2"],
+            header = ["n","Base", "RS1", "RS2","WF"],
             alignment = :c
         )
     

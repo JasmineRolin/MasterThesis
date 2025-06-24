@@ -469,7 +469,7 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
                 p = plotRelocation(predictedDemand,activeVehiclesPerCell,realisedDemand,vehicleBalance,gridCell,previousGridCell,period,periodLength,vehicle,vehicleDemand)
                 display(p)
                 savefig(p,"tests/WaitingPlots/"*scenarioName*"/true_true/CurrentSolutionTime"*string(currentTime)*"_vehicle"*string(vehicle.id)*".png")
-            else
+            elseif !waitFirst
                 p = plotRelocation2(probabilityGrid,score,activeVehiclesPerCell,gridCell,previousGridCell,period,periodLength,vehicle.id)
                 display(p)
                 savefig(p,"tests/WaitingPlots/"*scenarioName*"/true_false/CurrentSolutionTime"*string(currentTime)*"RELOCATION.png")
@@ -1083,6 +1083,79 @@ function driveTimeToClosestIdleVehicle(currentState::State,event::Event,scenario
     return closestDriveTime, closestActivityId, cloestVehicle,closestVehicleOverlap, numberOfVehiclesOverlap
 end
 
+
+
+#==
+ Methid to collect waiting activities 
+==#
+function collectWaitingActivities(solution::Solution)
+    solutionPost = deepcopy(solution)
+
+    for schedule in solutionPost.vehicleSchedules
+        route = Vector{ActivityAssignment}()
+        numberOfWalking = Int[]
+
+        startWaiting = 0
+        startIdx = -1
+        waitingId = -1
+
+        for (idx, assignment) in enumerate(schedule.route)
+            isWaiting = assignment.activity.activityType == WAITING
+            isWalking = schedule.numberOfWalking[idx] != 0
+
+            if isWaiting && !isWalking
+                if waitingId == -1
+                    # Start tracking a new waiting period
+                    waitingId = assignment.activity.id
+                    startWaiting = assignment.startOfServiceTime
+                    startIdx = idx
+                elseif waitingId != assignment.activity.id
+                    # Finish the previous waiting block
+                    schedule.route[startIdx].startOfServiceTime = startWaiting
+                    schedule.route[startIdx].endOfServiceTime = assignment.endOfServiceTime
+
+                    push!(route, schedule.route[startIdx])
+                    push!(numberOfWalking, schedule.numberOfWalking[startIdx])
+
+                    # Start new waiting block
+                    waitingId = assignment.activity.id
+                    startWaiting = assignment.startOfServiceTime
+                    startIdx = idx
+                end
+            else
+                if waitingId != -1
+                    # Finish any ongoing waiting block
+                    schedule.route[startIdx].startOfServiceTime = startWaiting
+                    schedule.route[startIdx].endOfServiceTime = schedule.route[idx-1].endOfServiceTime
+
+                    push!(route, schedule.route[startIdx])
+                    push!(numberOfWalking, schedule.numberOfWalking[startIdx])
+                    waitingId = -1
+                end
+
+                # Always add the current non-waiting assignment
+                push!(route, assignment)
+                push!(numberOfWalking, schedule.numberOfWalking[idx])
+            end
+        end
+
+        # In case the schedule ends with a waiting activity
+        if waitingId != -1
+            lastAssignment = schedule.route[startIdx]
+            lastAssignment.startOfServiceTime = startWaiting
+            lastAssignment.endOfServiceTime = schedule.route[end].endOfServiceTime
+
+            push!(route, lastAssignment)
+            push!(numberOfWalking, schedule.numberOfWalking[startIdx])
+        end
+
+        schedule.route = copy(route)
+        schedule.numberOfWalking = copy(numberOfWalking)
+    end 
+
+    return solutionPost
+end
+
 # ------
 # Function to simulate a scenario
 # ------
@@ -1244,8 +1317,8 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
             mkpath("tests/WaitingPlots/"*scenarioName)
         end
 
-        savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/InitialSolutionAfterALNS.png")
-        savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/InitialSolutionAfterALNSRoutes.png")
+        savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"_"*string(waitFirst)*"/InitialSolutionAfterALNS.png")
+        savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"_"*string(waitFirst)*"/InitialSolutionAfterALNSRoutes.png")
     end
 
     # Initialize visited routes 
@@ -1461,8 +1534,8 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
 
             p1 = createGantChartOfSolutionOnline(solution,title,nRequests,eventId = event.id,eventTime = event.callTime,nFixed = scenario.nFixed,inRequestBank=inRequestBank,event=event.request)
             p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,title)
-            savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*".png")
-            savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
+            savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"_"*string(waitFirst)*"/CurrentSolutionTime"*string(event.callTime)*".png")
+            savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"_"*string(waitFirst)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
         end
 
         if displayPlots
@@ -1479,8 +1552,8 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
             p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,title)
             display(p1)
             display(p2)
-            savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*".png")
-            savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
+            savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"_"*string(waitFirst)*"/CurrentSolutionTime"*string(event.callTime)*".png")
+            savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"_"*string(waitFirst)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
         end
     end
 
@@ -1507,12 +1580,38 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         println("Request bank: ", requestBank)
     end
     if displayPlots
+        # TODO: jas  
+        solutionPost = collectWaitingActivities(finalSolution)
+
         p = createGantChartOfSolutionOnline(finalSolution,"Final Solution after merge",nRequests,nFixed=scenario.nFixed)
         display(p)
-        savefig(p, "tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"/final_solution_gantt.png")
+        savefig(p, "tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"_"*string(waitFirst)*"/final_solution_gantt.png")
         display(plotRoutes(finalSolution,scenario,requestBank,"Final solution after merge"))
         display(createGantChartOfSolutionOnlineComparison(finalSolution, initialSolution,"Comparison between initial and final solution"))
+
+
+        p = createGantChartOfSolutionOnline(solutionPost,"Final Solution after merge, Post-processed",nRequests,nFixed=scenario.nFixed)
+        display(p)
+        savefig(p, "tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"_"*string(waitFirst)*"/final_solution_gantt_post.png")
+
+        p = createGantChartOfSolutionOnlineInverted(solutionPost,"Empty relocation time")
+        display(p)
+        savefig(p, "tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"_"*string(waitFirst)*"/final_solution_gantt_post_empty_relocation.png")
+
     end
+
+
+    # TODO: jas 
+    solutionPost = collectWaitingActivities(finalSolution)
+    p = createGantChartOfSolutionOnline(solutionPost,"Final Solution after merge, Post-processed",nRequests,nFixed=scenario.nFixed)
+    display(p)
+    savefig(p, "tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"_"*string(waitFirst)*"/final_solution_gantt_post.png")
+
+    p = createGantChartOfSolutionOnlineInverted(solutionPost,"Empty relocation time")
+    display(p)
+    savefig(p, "tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"_"*string(waitFirst)*"/final_solution_gantt_post_empty_relocation.png")
+
+
 
     if ALNS == false
         servicedRequests = []
@@ -1589,7 +1688,7 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         if waitFirst
             fileName = outPutFileFolder*"/Simulation_KPI_"*string(scenario.name)*"_waitfirst_.json"
         else
-            fileName = outPutFileFolder*"/Simulation_KPI_"*string(scenario.name)*"_"*string(relocateVehicles)*"_"*string(relocateWithDemand)*".json"
+            fileName = outPutFileFolder*"/Simulation_KPI_"*string(scenario.name)*"_"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"_"*string(waitFirst)*".json"
         end
 
         KPIDict = writeOnlineKPIsToFile(fileName,scenario,finalSolution,requestBank,requestBankOffline,totalElapsedTime,averageResponseTime,eventsInsertedByALNS,numberOfRequestsOverlapIdleVehicle,driveTimeToNearestIdleVehicle)
@@ -1635,6 +1734,8 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
     return finalSolution, requestBank
 
 end
+
+
 
 
 end

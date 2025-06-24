@@ -5,7 +5,7 @@ using Plots.PlotMeasures
 using domain, utils 
 
 export createGantChartOfSolutionOnline, createGantChartOfSolutionOnlineComparison,writeOnlineKPIsToFile,processResults,createGantChartOfSolutionAndEventOnline, createGantChartOfSolutionAndEventOnlineComparison, plotRoutesOnline
-export plotRelocation,createGantChartOfSolutionAnticipation,plotRelocation2
+export plotRelocation,createGantChartOfSolutionAnticipation,plotRelocation2,createGantChartOfSolutionOnlineInverted
 
 # Plot vehicle schedules 
 # Define a function to plot activity assignments for each vehicle
@@ -171,6 +171,143 @@ function createGantChartOfSolutionOnline(solution::Solution,title::String,nReque
         push!(yPositions, yPos)
         push!(yLabels, "Request $(event.id)")
     end
+
+    # x labels 
+    xPositions = []
+    xLabels = []
+    # TODO: jas 
+    startMinute= 350 # Int(Int(floor(minimumTime/60.0,digits = 0))*60)
+    endMinutes = 1440 
+    for i in startMinute:60:endMinutes
+        h = Int(round(i/60.0,digits = 0))
+        if h < 10
+            label = string("0", h, ":00")
+        else
+            label = string(h, ":00")
+        end
+        push!(xLabels, label)
+        push!(xPositions, i)
+    end
+
+    plot!(p, yticks=(yPositions, yLabels))
+    plot!(p, xticks=(xPositions, xLabels), xrotation=90)
+    xlabel!("Time (Hour)")
+    xlims!(startMinute, endMinutes+10)
+    title!(title)
+    
+    return p
+end
+
+
+function createGantChartOfSolutionOnlineInverted(solution::Solution,title::String)
+    yPositions = []
+    yLabels = []
+    yPos = 1
+
+    
+    p = plot(size=(2500,1500),
+    leftmargin=5mm,topmargin=7mm,rightmargin=5mm,bottommargin=20mm,
+    legendfontsize = 17,
+    ytickfont = font(16),
+    xtickfont = font(16),
+    xguidefont = font(18),
+    titlefont = font(20))
+
+    minimumTime = typemax(Int)
+
+    nVehicles = length(solution.vehicleSchedules)
+    if nVehicles < 10 
+        lineWidthActivity = 25.5
+        markersize = 20
+        markersizeWaiting = 20
+        lineWidthWaiting = 39.5
+        lineOffSet = 0.5
+    elseif nVehicles < 20 
+        lineWidthActivity = 25.5
+        markersize = 20
+        markersizeWaiting = 20
+        lineWidthWaiting = 39.5
+        lineOffSet = 1
+    else
+        lineWidthActivity = 11.5
+        markersize = 15
+        markersizeWaiting = 15
+        lineWidthWaiting = 29.5
+        lineOffSet = 1
+    end
+
+    annotateOffSet = 0
+    
+    # Go through waiting activities and plot them (to place behind others )
+    color = :red2
+    for schedule in solution.vehicleSchedules
+        for (idx,assignment) in enumerate(schedule.route)
+
+            if assignment.activity.activityType == WAITING && schedule.numberOfWalking[idx] == 0 
+
+                # Not the same as prev
+                activityBefore = schedule.route[idx-1]
+                if assignment.activity.id != activityBefore.activity.id
+                    # Drive time from activity before 
+                    duration = assignment.startOfServiceTime - activityBefore.endOfServiceTime
+                    
+                    annotatePlacement = activityBefore.endOfServiceTime + duration/2.0
+                    plot!(p, [activityBefore.endOfServiceTime, assignment.startOfServiceTime], [yPos, yPos], linewidth=lineWidthWaiting, label="", color=color, marker=:none,markerstrokewidth=0,markersize=markersizeWaiting,alpha=0.5)
+                    annotate!(p,annotatePlacement, yPos, text(string(duration), :black, 14))
+                end
+
+
+                # If next activity is not waiting (otherwise time is counted twice)
+                if schedule.route[idx+1].activity.activityType != WAITING 
+                    activityAfter = schedule.route[idx+1]
+                    duration = activityAfter.startOfServiceTime - assignment.endOfServiceTime
+                    
+                    annotatePlacement = assignment.endOfServiceTime + duration/2.0
+                    plot!(p, [assignment.endOfServiceTime, activityAfter.startOfServiceTime], [yPos, yPos], linewidth=lineWidthWaiting, label="", color=color, marker=:none,markerstrokewidth=0,markersize=markersizeWaiting,alpha=0.5)
+                    annotate!(p,annotatePlacement, yPos, text(string(duration), :black, 14))
+                end
+                
+            end
+        end
+
+        if nVehicles < 10 
+            yPos += 1
+        elseif nVehicles < 20
+            yPos += 2
+        else
+            yPos += 3
+        end
+    end
+
+     # Plot remaining activities
+     yPos = 1
+     for schedule in solution.vehicleSchedules 
+         for assignment in schedule.route
+             if assignment.startOfServiceTime < minimumTime
+                 minimumTime = assignment.startOfServiceTime
+             end
+ 
+             if assignment.activity.activityType == DEPOT
+                 color = :black
+ 
+                 scatter!(p, [assignment.startOfServiceTime], [yPos], linewidth=lineWidthActivity, label="", color=color, marker=:rect,markerstrokewidth=0,markersize=markersize)
+                 annotate!(p, assignment.startOfServiceTime, yPos, text("D"*string(schedule.vehicle.depotId), :white, 8))
+ 
+             end
+         end
+         hline!([yPos - lineOffSet], linewidth=1, color=:gray, label="")
+ 
+         push!(yPositions, yPos)
+         push!(yLabels, "Vehicle $(schedule.vehicle.id)")
+ 
+         if nVehicles < 10 
+             yPos += 1
+         elseif nVehicles < 20
+             yPos += 2
+         else
+             yPos += 3
+         end
+     end
 
     # x labels 
     xPositions = []
