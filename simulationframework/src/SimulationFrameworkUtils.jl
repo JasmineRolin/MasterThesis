@@ -432,8 +432,9 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
     if relocateWithDemand
         waitingLocationId,waitingLocation,gridCell = determineWaitingLocation(time,depotLocations,grid,nRequests,vehicleBalance,period,previousWaitingLocationId)
     elseif waitFirst
-        waitingLocationId = previousWaitingLocationId
-        waitingLocation = previousWaitingLocation
+        println("wait first")
+        waitingLocationId = activityBeforeWaiting.activity.id
+        waitingLocation = activityBeforeWaiting.activity.location
         gridCell = previousGridCell
         score = zeros(Float64,1,1) # Dummy score 
         println("Waiting location: ",waitingLocationId, " in period: ",period, " as wait first")
@@ -1582,7 +1583,7 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
         end
 
         if waitFirst
-            fileName = outPutFileFolder*"/Simulation_KPI_"*string(scenario.name)*"_waitfirst.json"
+            fileName = outPutFileFolder*"/Simulation_KPI_"*string(scenario.name)*"_waitfirst_.json"
         else
             fileName = outPutFileFolder*"/Simulation_KPI_"*string(scenario.name)*"_"*string(relocateVehicles)*"_"*string(relocateWithDemand)*".json"
         end

@@ -7,11 +7,11 @@ gamma=0.7
 # OBS OBS OBS
 
 nPeriods=48
-gridSize=5
+gridSize=10
 
-nRequestsList=(100) 
-relocateOptions=("true true" "false false")  # Pair values as strings
-numRuns=1  
+nRequestsList=(20 100 300 500) 
+relocateOptions=("true true")  # Pair values as strings
+numRuns=5
 numHistoricRequestFiles=20   
 numData=10   
 baseScenario="false"

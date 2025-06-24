@@ -1,14 +1,14 @@
 using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures, PrettyTables, JSON
 
-nRequestList = [100]
-nRuns = 1
-relocateVehiclesList = [("true","true"),("false","false")]
+nRequestList = [20,100,300,500]
+nRuns = 5
+relocateVehiclesList = [("true","false"),("true","true"),("false","false"),("waitfirst",""),("inhindsight","")]
 gamma = 0.7
-baseFolder = "runfiles/output/Waiting/DynamicTEST/"
-plotName = "DynamicTEST"
+baseFolder = "runfiles/output/Waiting/Dynamic/"
+plotName = "Dynamic"
 
-plotResults = false
+plotResults = true
 generateTables = false
 
 if !isdir("plots/Waiting/$(plotName)/")
@@ -113,6 +113,10 @@ if plotResults
                 color = :steelblue
                 linestyle = :dash
                 label = "Base method"
+            elseif relocateVehiclesOption[1] == "waitfirst"
+                color = :mediumvioletred
+                linestyle = :dot 
+                label = "Wait first"
             else
                 color = :gray20 
                 linestyle = :dash
@@ -175,6 +179,10 @@ if plotResults
                 color = :steelblue
                 linestyle = :dash
                 label = "Base method"
+            elseif relocateVehiclesOption[1] == "waitfirst"
+                color = :mediumvioletred
+                linestyle = :dot 
+                label = "Wait first"
             else
                 color = :gray20 
                 linestyle = :dash
@@ -231,6 +239,10 @@ if plotResults
                 color = :steelblue
                 linestyle = :dash
                 label = "Base method"
+            elseif relocateVehiclesOption[1] == "waitfirst"
+                color = :mediumvioletred
+                linestyle = :dot 
+                label = "Wait first"
             else
                 color = :gray20 
                 linestyle = :dash
@@ -285,6 +297,10 @@ if plotResults
             color = :steelblue
             linestyle = :dash
             label = "Base method"
+        elseif relocateVehiclesOption[1] == "waitfirst"
+            color = :mediumvioletred
+            linestyle = :dot 
+            label = "Wait first"
         else
             color = :gray20 
             linestyle = :dash
@@ -340,6 +356,10 @@ if plotResults
                 color = :steelblue
                 linestyle = :dash
                 label = "Base method"
+            elseif relocateVehiclesOption[1] == "waitfirst"
+                color = :mediumvioletred
+                linestyle = :dot 
+                label = "Wait first"
             else
                 color = :gray20 
                 linestyle = :dash
@@ -398,6 +418,10 @@ if plotResults
                 color = :steelblue
                 linestyle = :dash
                 label = "Base method"
+            elseif relocateVehiclesOption[1] == "waitfirst"
+                color = :mediumvioletred
+                linestyle = :dot 
+                label = "Wait first"
             else
                 color = :gray20 
                 linestyle = :dash
