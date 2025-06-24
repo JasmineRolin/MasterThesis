@@ -1522,21 +1522,21 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
 
 
         # TODO: jas 
-        if event.id in requestBank
-            inRequestBank = event.id in requestBank  
-            timeString = getTimeAsString(event.callTime)
+        # if event.id in requestBank
+        #     inRequestBank = event.id in requestBank  
+        #     timeString = getTimeAsString(event.callTime)
 
-            if event.id == 0 
-                title = "Current Solution, Relocation event, time: "*timeString
-            else
-                title = "Current Solution, Request: "*string(event.id)*", time: "*timeString
-            end  
+        #     if event.id == 0 
+        #         title = "Current Solution, Relocation event, time: "*timeString
+        #     else
+        #         title = "Current Solution, Request: "*string(event.id)*", time: "*timeString
+        #     end  
 
-            p1 = createGantChartOfSolutionOnline(solution,title,nRequests,eventId = event.id,eventTime = event.callTime,nFixed = scenario.nFixed,inRequestBank=inRequestBank,event=event.request)
-            p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,title)
-            savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"_"*string(waitFirst)*"/CurrentSolutionTime"*string(event.callTime)*".png")
-            savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"_"*string(waitFirst)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
-        end
+        #     p1 = createGantChartOfSolutionOnline(solution,title,nRequests,eventId = event.id,eventTime = event.callTime,nFixed = scenario.nFixed,inRequestBank=inRequestBank,event=event.request)
+        #     p2 = plotRoutesOnline(solution,scenario,requestBank,event.request,title)
+        #     savefig(p1,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"_"*string(waitFirst)*"/CurrentSolutionTime"*string(event.callTime)*".png")
+        #     savefig(p2,"tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"_"*string(waitFirst)*"/CurrentSolutionTime"*string(event.callTime)*"Route.png")
+        # end
 
         if displayPlots
             inRequestBank = event.id in requestBank  

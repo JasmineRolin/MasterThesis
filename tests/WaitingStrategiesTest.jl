@@ -27,7 +27,7 @@ saveResults = true # Save solution KPIs
 # Methods (do change)
 # ==========================#
 true_false = false # Run with relocation strategy 2 
-true_true = true # Run relocation strategy 1 
+true_true = false # Run relocation strategy 1 
 false_false = true # Run without relocation strategy
 waitFirst = false
 inhindsight = false # Run in-hindsight solution 
@@ -173,7 +173,7 @@ if true_true
     # end
 
 
-    if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/true_true_false")
+    if !isdir("tests/WaitingPlots/"*scenarioName*"/true_true_false")
         mkpath("tests/WaitingPlots/"*scenarioName*"/true_true_false")
     end
     if displayPlots && isdir("tests/WaitingPlots/"*scenarioName*"/true_true_false")
@@ -197,7 +197,7 @@ end
 # Solve without relocation
 #============================================================================#
 if false_false
-    if displayPlots && !isdir("tests/WaitingPlots/"*scenarioName*"/false_false_false")
+    if !isdir("tests/WaitingPlots/"*scenarioName*"/false_false_false")
         mkpath("tests/WaitingPlots/"*scenarioName*"/false_false")
     end
     if displayPlots && isdir("tests/WaitingPlots/"*scenarioName*"/false_false_false")
