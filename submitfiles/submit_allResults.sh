@@ -7,13 +7,13 @@ n_requests_list=("300")
 anticipation_levels=("0.4")
 run_tags=("run1" "run2" "run3" "run4" "run5")
 gamma="0.5"
-date="2025-06-23_long_online"
+date="2025-06-23_long_long_online"
 ####################
 
 mkdir -p submitfiles/generated_jobs
 
 # Define case types
-case_types=("AnticipationKeepExpected")
+case_types=("AnticipationKeepExpected_long_long_online")
 
 for case_type in "${case_types[@]}"; do
   for n_requests in "${n_requests_list[@]}"; do
