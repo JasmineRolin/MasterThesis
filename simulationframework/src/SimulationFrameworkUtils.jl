@@ -430,10 +430,12 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
 
     # Find waiting location
     if relocateWithDemand
+        println("relocate with demand")
         waitingLocationId,waitingLocation,gridCell = determineWaitingLocation(time,depotLocations,grid,nRequests,vehicleBalance,period,previousWaitingLocationId)
     elseif waitFirst
-        waitingLocationId = previousWaitingLocationId
-        waitingLocation = previousWaitingLocation
+        println("wait first")
+        waitingLocationId = activityBeforeWaiting.activity.id
+        waitingLocation = activityBeforeWaiting.activity.location
         gridCell = previousGridCell
         score = zeros(Float64,1,1) # Dummy score 
         println("Waiting location: ",waitingLocationId, " in period: ",period, " as wait first")
@@ -444,6 +446,7 @@ function relocateWaitingActivityBeforeDepot!(time::Array{Int,2},distance::Array{
         isRouteEmpty = isVehicleScheduleEmpty(currentSchedule)
         waitingLocationId,waitingLocation,gridCell,score = determineWaitingLocation2(time,nRequests,depotLocations,grid,probabilityGrid,activeVehiclesPerCell,period,previousGridCell,previousWaitingLocationId,activityBeforeWaitingId,isRouteEmpty,endOfServiceActivityBeforeWaiting,periodLength,nTimePeriods)
     end
+
     println("Waiting location: ",waitingLocationId, ", period: ",period, ", relocation time: ",relocationTime) 
 
     if waitingLocationId == previousWaitingLocationId
@@ -516,6 +519,8 @@ function relocateVehicles!(time::Array{Int,2},distance::Array{Float64,2},nReques
                           currentSolution::Solution, currentVehicleSchedulesToRelocate::Vector{VehicleSchedule},finalSolution::Solution,currentTime::Int,nTimePeriods::Int,periodLength::Int,
                           displayPlots::Bool,scenarioName::String,relocateWithDemand::Bool,gamma::Float64,waitFirst::Bool)
    
+
+    println("WAIT FIRST: ",waitFirst)
     # Retrieve vehicle schedules in solution 
     currentVehicleSchedules = currentVehicleSchedulesToRelocate
 
