@@ -3,7 +3,7 @@ using Statistics
 
 # Define parameters
 base_dir = raw"C:/Users/Astrid/OneDrive - Danmarks Tekniske Universitet/Dokumenter/Master Thesis/MasterThesis/resultExploration/results"
-Data = "Final_anticiaption - v2"  # Example value
+Data = "Second run"  # Example value
 method = "AnticipationKeepExpected_online"
 nRequests = "300"
 

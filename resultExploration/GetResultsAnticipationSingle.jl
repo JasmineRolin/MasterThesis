@@ -1,14 +1,14 @@
 using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures
 
-methodListBase = ["InHindsight" "BaseCase" "AnticipationKeepExpected" "AnticipationKeepExpected_long" "AnticipationKeepExpected_long_long" "AnticipationKeepExpected_long_long_two"] # "AnticipationKeepExpected_long" "AnticipationKeepExpected_long_long" "AnticipationKeepExpected_long_long_two"]
+methodListBase = ["InHindsight" "BaseCase" "AnticipationKeepExpected" "AnticipationKeepExpected_online" "AnticipationKeepExpected_long_online" "AnticipationKeepExpected_long_long_online" "AnticipationKeepExpected_long_long_two_online"] # "AnticipationKeepExpected_long" "AnticipationKeepExpected_long_long" "AnticipationKeepExpected_long_long_two"]
 nRequestList = [300]
 runList = [1,2,3,4,5]
 gamma = 0.5
 anticipationDegrees = [0.4]
 #date = "2025-06-04_original_0.7"
-date = "Final_anticiaption - v2"
-name = "Base-InHind-Anti-300"
+date = "Second run"
+name = "Second run_lall - 300"
 
 # Define display names
 legend_names = Dict(
@@ -217,7 +217,7 @@ for n in nRequestList
         mkpath("plots/Anticipation/PlotsReport/"*name*"/")
     end
 
-    finalPlot = plot(plots[2], plots[3]; layout=(2,1), size=(1000,2000),leftmargin=5mm,bottommargin=10mm,topmargin=5mm)
+    finalPlot = plot(plots[2], plots[3]; layout=(2,1), size=(1000,1500),leftmargin=20mm,bottommargin=10mm,topmargin=5mm)
     savefig(finalPlot, "plots/Anticipation/PlotsReport/$(name)/results_$(n).pdf")
     singlePlot = plot(plots[1]; title = "No. Requests: $(n), Gamma: $(gamma)",size=(1500,750),leftmargin=10mm,bottommargin=15mm,topmargin=10mm,rightmargin=10mm)
     savefig(singlePlot, "plots/Anticipation/PlotsReport/$(name)/results_$(n)_single.pdf")
