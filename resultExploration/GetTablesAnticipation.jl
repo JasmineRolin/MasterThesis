@@ -5,8 +5,8 @@ using CSV
 
 # Define parameters
 base_dir = "C:/Users/Astrid/OneDrive - Danmarks Tekniske Universitet/Dokumenter/Master Thesis/MasterThesis/resultExploration/results"
-Data = "2025-06-14_tables_long"             # Example value
-method = "AnticipationKeepExpected_0.4"         # Example value
+Data = "Second run"             # Example value
+method = "AnticipationKeepExpected_long_long_two_online"         # Example value
 nRequests = "300"   # Example value
 nRequest = 120
 # A FILE LOOK LIKE THIS: C:\Users\Astrid\OneDrive - Danmarks Tekniske Universitet\Dokumenter\Master Thesis\MasterThesis\resultExploration\results\2025-06-14_tables\AnticipationKeepExpected_0.4\100\run1\whatHappensToExpectedRequests_Gen_Data_100_10.json
@@ -68,7 +68,7 @@ end
 
 
 # Save to CSV
-CSV.write("whatHappendToExpected_$(nRequests)_$(method)_long.csv", df)
-CSV.write("whatHappendToExpected_$(nRequests)_$(method)_average_long.csv", df_average)
+CSV.write("resultExploration/results/whatHappendToExpected_$(nRequests)_$(method)_long.csv", df)
+CSV.write("resultExploration/results/whatHappendToExpected_$(nRequests)_$(method)_average_long.csv", df_average)
 
 println("Averaged results saved to 'averaged_results.csv'.")
