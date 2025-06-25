@@ -198,7 +198,7 @@ end
 #============================================================================#
 if false_false
     if !isdir("tests/WaitingPlots/"*scenarioName*"/false_false_false")
-        mkpath("tests/WaitingPlots/"*scenarioName*"/false_false")
+        mkpath("tests/WaitingPlots/"*scenarioName*"/false_false_false")
     end
     if displayPlots && isdir("tests/WaitingPlots/"*scenarioName*"/false_false_false")
         for file in readdir("tests/WaitingPlots/"*scenarioName*"/false_false_false"; join=true)
