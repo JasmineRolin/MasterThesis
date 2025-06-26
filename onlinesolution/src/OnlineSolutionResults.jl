@@ -250,6 +250,16 @@ function createGantChartOfSolutionOnlineInverted(solution::Solution,title::Strin
                 if assignment.activity.id != activityBefore.activity.id
                     # Drive time from activity before 
                     duration = assignment.startOfServiceTime - activityBefore.endOfServiceTime
+
+                    if duration == 0 
+                        continue;
+                    end
+
+                    if duration < 0 
+                        println("Vehicle: ", schedule.vehicle.id)
+                        println("duration: ", duration)
+                        println("Negative duration for waiting activity: ", assignment.activity.id, " at start time: ", assignment.startOfServiceTime, " with previous activity at end time: ", activityBefore.endOfServiceTime)
+                    end
                     
                     annotatePlacement = activityBefore.endOfServiceTime + duration/2.0
                     plot!(p, [activityBefore.endOfServiceTime, assignment.startOfServiceTime], [yPos, yPos], linewidth=lineWidthWaiting, label="", color=color, marker=:none,markerstrokewidth=0,markersize=markersizeWaiting,alpha=0.5)
@@ -261,6 +271,15 @@ function createGantChartOfSolutionOnlineInverted(solution::Solution,title::Strin
                 if schedule.route[idx+1].activity.activityType != WAITING 
                     activityAfter = schedule.route[idx+1]
                     duration = activityAfter.startOfServiceTime - assignment.endOfServiceTime
+
+                    if duration == 0 
+                        continue;
+                    end
+
+                    if duration < 0 
+                        println("vehcile: ", schedule.vehicle.id)
+                        println("Negative duration for waiting activity: ", assignment.activity.id, " at time: ", assignment.endOfServiceTime, " with next activity at: ", activityAfter.startOfServiceTime)
+                    end
                     
                     annotatePlacement = assignment.endOfServiceTime + duration/2.0
                     plot!(p, [assignment.endOfServiceTime, activityAfter.startOfServiceTime], [yPos, yPos], linewidth=lineWidthWaiting, label="", color=color, marker=:none,markerstrokewidth=0,markersize=markersizeWaiting,alpha=0.5)

@@ -19,17 +19,17 @@ print("\033c")
 n = 100 # Instance size 
 i = 2 # Instance number
 gamma = 0.7 # Vehicle ratio 
-displayPlots = false # Display and save plots
+displayPlots = true # Display and save plots
 dynamicProblem = true # Run Instance type II 
 saveResults = true # Save solution KPIs
 
 # ==========================#
 # Methods (do change)
 # ==========================#
-true_false = false # Run with relocation strategy 2 
-true_true = false # Run relocation strategy 1 
-false_false = true # Run without relocation strategy
-waitFirst = false
+true_false = true # Run with relocation strategy 2 
+true_true = true # Run relocation strategy 1 
+false_false = false # Run without relocation strategy
+waitFirst = true
 inhindsight = false # Run in-hindsight solution 
 
 # ==========================#

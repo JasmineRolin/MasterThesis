@@ -1,7 +1,7 @@
 using onlinesolution
 using CSV, DataFrames, Statistics, Plots, Plots.PlotMeasures, PrettyTables, JSON
 
-nRequestList = [300]
+nRequestList = [20,100,300,500]
 nRuns = 5
 relocateVehiclesList = [("true","false"),("true","true"),("false","false"),("waitfirst",""),("inhindsight","")]
 gamma = 0.7
@@ -9,7 +9,7 @@ baseFolder = "runfiles/output/Waiting/Dynamic/"
 plotName = "Dynamic"
 
 plotResults = true
-generateTables = false
+generateTables = true
 
 if !isdir("plots/Waiting/$(plotName)/")
     mkdir("plots/Waiting/$(plotName)/")

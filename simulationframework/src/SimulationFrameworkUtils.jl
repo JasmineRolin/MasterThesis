@@ -1607,7 +1607,7 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
     display(p)
     savefig(p, "tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"_"*string(waitFirst)*"/final_solution_gantt_post.png")
 
-    p = createGantChartOfSolutionOnlineInverted(solutionPost,"Empty relocation time")
+    p = createGantChartOfSolutionOnlineInverted(finalSolution,"Empty relocation time")
     display(p)
     savefig(p, "tests/WaitingPlots/"*scenarioName*"/"*string(relocateVehicles)*"_"*string(relocateWithDemand)*"_"*string(waitFirst)*"/final_solution_gantt_post_empty_relocation.png")
 
