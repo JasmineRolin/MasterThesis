@@ -26,7 +26,7 @@ function main(n::Int, nExpectedPercentage::Float64, gamma::Float64, date::String
     useAnticipationOnlineRequests = true
     anticipation = true
     keepExpectedRequests = true
-    splitRequestBank = false
+    splitRequestBank = true
     
     printResults = false
     saveResults = true

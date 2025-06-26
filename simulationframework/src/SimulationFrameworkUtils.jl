@@ -715,8 +715,8 @@ function simulateScenario(scenarioInput::Scenario,requestFile::String,distanceMa
 
     # Choose destroy methods
     destroyMethods = Vector{GenericMethod}()
-    addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
-    addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
+    #addMethod!(destroyMethods,"randomDestroy",randomDestroy!)
+    #addMethod!(destroyMethods,"worstRemoval",worstRemoval!)
     addMethod!(destroyMethods,"shawRemoval",shawRemoval!)
 
     # Choose repair methods

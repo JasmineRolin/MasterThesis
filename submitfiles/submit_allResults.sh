@@ -7,7 +7,7 @@ n_requests_list=("300")
 anticipation_levels=("0.4")
 run_tags=("run1" "run2" "run3" "run4" "run5")
 gamma="0.5"
-date="2025-06-23_long_long_online"
+date="2025-06-25_only shaw removal"
 ####################
 
 mkdir -p submitfiles/generated_jobs
